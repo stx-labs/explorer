@@ -63,6 +63,7 @@ export type CompressedMempoolTxTableData = Pick<
     'cause'
   >;
 };
+// TODO: remove this comment
 
 export function compressTransactions(transactions: Transaction[]): CompressedTxTableData[] {
   return transactions.map(tx => {

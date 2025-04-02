@@ -36,6 +36,15 @@ export function FunctionList({ contractId }: { contractId: string }) {
                   setSelectedFunction(fn);
                 }
               }}
+              containerProps={{
+                className: 'group',
+                py: 2,
+                px: 3,
+                borderRadius: 'redesign.md',
+                _hover: {
+                  bg: 'surfacePrimary',
+                },
+              }}
             />
           ))}
         </Stack>

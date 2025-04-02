@@ -4,16 +4,26 @@ import { ReactNode, createContext, useContext } from 'react';
 
 import { MempoolTransaction, Transaction } from '@stacks/stacks-blockchain-api-types';
 
+import { TxIdPageFilters } from './page';
+
 interface TxIdPageDataContextType {
   stxPrice: number;
   initialTxData?: Transaction | MempoolTransaction;
   txId: string;
+  filters: TxIdPageFilters;
 }
 
 const DEFAULT_TX_ID_PAGE_DATA: TxIdPageDataContextType = {
   stxPrice: 0,
   initialTxData: undefined,
   txId: '',
+  filters: {
+    fromAddress: '',
+    toAddress: '',
+    startTime: '',
+    endTime: '',
+    transactionType: [],
+  },
 };
 
 const TxIdPageDataContext = createContext<TxIdPageDataContextType>(DEFAULT_TX_ID_PAGE_DATA);
@@ -23,6 +33,7 @@ interface TxIdPageDataProviderProps {
   stxPrice?: number;
   initialTxData?: Transaction | MempoolTransaction;
   txId: string;
+  filters: TxIdPageFilters;
 }
 
 export function TxIdPageDataProvider({
@@ -30,11 +41,13 @@ export function TxIdPageDataProvider({
   stxPrice = DEFAULT_TX_ID_PAGE_DATA.stxPrice,
   initialTxData,
   txId,
+  filters,
 }: TxIdPageDataProviderProps) {
   const contextValue = {
     stxPrice,
     initialTxData,
     txId,
+    filters,
   };
 
   return (

@@ -1,10 +1,9 @@
-import { NonTupleValueType } from '@/app/sandbox/types/values';
 import { logError } from '@/common/utils/error-utils';
 import { isUint128 } from '@/common/utils/number-utils';
+import { reverseRecord } from '@/common/utils/object-utils';
 
 import {
   Cl,
-  ClarityAbiFunction,
   FungibleComparator,
   FungibleConditionCode,
   FungiblePostCondition,
@@ -15,12 +14,10 @@ import {
   PostConditionMode,
   PostConditionType,
   StxPostCondition,
-  isClarityAbiOptional,
-  isClarityAbiPrimitive,
   validateStacksAddress,
 } from '@stacks/transactions';
 
-import { FunctionFormikState, FunctionParameters } from './FunctionCallForm';
+import { FunctionFormikState } from './FunctionCallForm';
 
 export type PostConditionConditionCode = FungibleConditionCode | NonFungibleConditionCode;
 
@@ -136,79 +133,157 @@ export const postConditionParameterLabels: Record<string, string> = {
   postConditionAssetName: 'Asset Name',
 };
 
-// Creates a post condition from the form values
-export function getPostCondition(
-  postConditionParameters: PostConditionParameters
-): PostCondition[] {
+// Validation functions for each post condition type
+function validateStxPostConditionParams(params: PostConditionParameters): boolean {
   const {
     postConditionType,
+    postConditionAddress,
+    postConditionConditionCode,
+    postConditionAmount,
+  } = params;
+
+  return (
+    postConditionType === PostConditionType.STX &&
+    !!postConditionAddress &&
+    !!postConditionConditionCode &&
+    postConditionAmount != null &&
+    isUint128(postConditionAmount) &&
+    isFungibleConditionCode(postConditionConditionCode)
+  );
+}
+
+function validateFungiblePostConditionParams(params: PostConditionParameters): boolean {
+  const {
+    postConditionType,
+    postConditionAddress,
+    postConditionAssetAddress,
+    postConditionAssetContractName,
+    postConditionAssetName,
+    postConditionConditionCode,
+    postConditionAmount,
+  } = params;
+
+  return (
+    postConditionType === PostConditionType.Fungible &&
+    !!postConditionAddress &&
+    !!postConditionAssetAddress &&
+    !!postConditionAssetContractName &&
+    !!postConditionAssetName &&
+    !!postConditionConditionCode &&
+    postConditionAmount != null &&
+    isUint128(postConditionAmount) &&
+    isFungibleConditionCode(postConditionConditionCode)
+  );
+}
+
+function validateNonFungiblePostConditionParams(params: PostConditionParameters): boolean {
+  const {
+    postConditionType,
+    postConditionAddress,
+    postConditionAssetAddress,
+    postConditionAssetContractName,
+    postConditionAssetName,
+    postConditionConditionCode,
+  } = params;
+
+  return (
+    postConditionType === PostConditionType.NonFungible &&
+    !!postConditionAddress &&
+    !!postConditionAssetAddress &&
+    !!postConditionAssetContractName &&
+    !!postConditionAssetName &&
+    !!postConditionConditionCode &&
+    isNonFungibleConditionCode(postConditionConditionCode)
+  );
+}
+
+enum PCType {
+  STX = 'stx-postcondition',
+  Fungible = 'ft-postcondition',
+  NonFungible = 'nft-postcondition',
+}
+
+// Post condition creation functions
+function createStxPostCondition(params: PostConditionParameters): StxPostCondition {
+  const { postConditionAddress, postConditionConditionCode, postConditionAmount } = params;
+
+  return {
+    type: PCType.STX,
+    address: postConditionAddress!,
+    condition: fungibleConditionCodeToComparator(
+      postConditionConditionCode as FungibleConditionCode
+    ),
+    amount: postConditionAmount!.toString(),
+  } as StxPostCondition;
+}
+
+function createFungiblePostCondition(params: PostConditionParameters): FungiblePostCondition {
+  const {
     postConditionAddress,
     postConditionConditionCode,
     postConditionAmount,
     postConditionAssetAddress,
     postConditionAssetContractName,
     postConditionAssetName,
-  } = postConditionParameters;
+  } = params;
 
-  if (
-    postConditionType === PostConditionType.STX &&
-    postConditionAddress &&
-    postConditionConditionCode &&
-    postConditionAmount != null &&
-    isUint128(postConditionAmount) &&
-    isFungibleConditionCode(postConditionConditionCode)
-  ) {
-    const postCondition = {
-      type: 'stx-postcondition',
-      address: postConditionAddress,
-      condition: fungibleConditionCodeToComparator(postConditionConditionCode),
-      amount: postConditionAmount.toString(),
-    } as StxPostCondition;
-    return [postCondition];
-  } else if (
-    postConditionType === PostConditionType.Fungible &&
-    postConditionAddress &&
-    postConditionAssetAddress &&
-    postConditionAssetContractName &&
-    postConditionAssetName &&
-    postConditionConditionCode &&
-    postConditionAmount != null &&
-    isUint128(postConditionAmount) &&
-    isFungibleConditionCode(postConditionConditionCode)
-  ) {
-    const postCondition = {
-      type: 'ft-postcondition',
-      address: postConditionAddress,
-      condition: fungibleConditionCodeToComparator(postConditionConditionCode),
-      asset: `${postConditionAssetAddress}.${postConditionAssetContractName}::${postConditionAssetName}`,
-      amount: postConditionAmount.toString(),
-    } as FungiblePostCondition;
-    return [postCondition];
-  } else if (
-    postConditionType === PostConditionType.NonFungible &&
-    postConditionAddress &&
-    postConditionAssetAddress &&
-    postConditionAssetContractName &&
-    postConditionAssetName &&
-    postConditionConditionCode &&
-    isNonFungibleConditionCode(postConditionConditionCode)
-  ) {
-    const postCondition = {
-      type: 'nft-postcondition',
-      address: postConditionAddress,
-      condition: nonFungibleConditionCodeToComparator(postConditionConditionCode),
-      asset: `${postConditionAssetAddress}.${postConditionAssetContractName}::${postConditionAssetName}`,
-      assetId: Cl.stringUtf8(postConditionAssetName),
-    } as NonFungiblePostCondition;
-    return [postCondition];
-  } else {
-    logError(
-      new Error(`Error creating post condition for post condition type ${postConditionType}`),
-      'getPostCondition',
-      postConditionParameters
-    );
-    throw new Error(`Error creating post condition for post condition type ${postConditionType}`);
+  return {
+    type: PCType.Fungible,
+    address: postConditionAddress!,
+    condition: fungibleConditionCodeToComparator(
+      postConditionConditionCode as FungibleConditionCode
+    ),
+    asset: `${postConditionAssetAddress}.${postConditionAssetContractName}::${postConditionAssetName}`,
+    amount: postConditionAmount!.toString(),
+  } as FungiblePostCondition;
+}
+
+function createNonFungiblePostCondition(params: PostConditionParameters): NonFungiblePostCondition {
+  const {
+    postConditionAddress,
+    postConditionConditionCode,
+    postConditionAssetAddress,
+    postConditionAssetContractName,
+    postConditionAssetName,
+  } = params;
+
+  return {
+    type: PCType.NonFungible,
+    address: postConditionAddress!,
+    condition: nonFungibleConditionCodeToComparator(
+      postConditionConditionCode as NonFungibleConditionCode
+    ),
+    asset: `${postConditionAssetAddress}.${postConditionAssetContractName}::${postConditionAssetName}`,
+    assetId: Cl.stringUtf8(postConditionAssetName!),
+  } as NonFungiblePostCondition;
+}
+export function getPostCondition(
+  postConditionParameters: PostConditionParameters
+): PostCondition | undefined {
+  // STX Post Condition
+  if (validateStxPostConditionParams(postConditionParameters)) {
+    return createStxPostCondition(postConditionParameters);
   }
+
+  // Fungible Token Post Condition
+  if (validateFungiblePostConditionParams(postConditionParameters)) {
+    return createFungiblePostCondition(postConditionParameters);
+  }
+
+  // Non-Fungible Token Post Condition
+  if (validateNonFungiblePostConditionParams(postConditionParameters)) {
+    return createNonFungiblePostCondition(postConditionParameters);
+  }
+
+  // Handle error case
+  logError(
+    new Error(
+      `Error creating post condition for post condition type ${postConditionParameters.postConditionType}`
+    ),
+    'getPostCondition',
+    postConditionParameters
+  );
+  return undefined;
 }
 
 // Validates the post condition parameters
@@ -278,11 +353,7 @@ export const PostConditionTypeValueMap: Record<PostConditionType, PostConditionT
 };
 
 export const PostConditionTypeValueMapReversed: Record<PostConditionTypeValue, PostConditionType> =
-  {
-    'stx-post-condition': PostConditionType.STX,
-    'fungible-post-condition': PostConditionType.Fungible,
-    'non-fungible-post-condition': PostConditionType.NonFungible,
-  };
+  reverseRecord(PostConditionTypeValueMap);
 
 export const PostConditionTypeOptions = [
   {
@@ -346,15 +417,7 @@ export const PostConditionConditionCodeValueMap: Record<
 export const PostConditionConditionCodeValueMapReversed: Record<
   PostConditionConditionCodeValue,
   PostConditionConditionCode
-> = {
-  'does-not-send': NonFungibleConditionCode.DoesNotSend,
-  sends: NonFungibleConditionCode.Sends,
-  equal: FungibleConditionCode.Equal,
-  greater: FungibleConditionCode.Greater,
-  'greater-equal': FungibleConditionCode.GreaterEqual,
-  less: FungibleConditionCode.Less,
-  'less-equal': FungibleConditionCode.LessEqual,
-};
+> = reverseRecord(PostConditionConditionCodeValueMap);
 
 export function getPostConditionConditionCodeOptions(
   postConditionType: PostConditionType

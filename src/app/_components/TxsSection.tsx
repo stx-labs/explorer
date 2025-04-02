@@ -12,6 +12,7 @@ import {
   TxTableAddressColumnData,
   TxTableData,
   TxsTable,
+  defaultTableContainer,
 } from '@/common/components/table/table-examples/TxsTable';
 import { TxTableColumns } from '@/common/components/table/table-examples/types';
 import { useGlobalContext } from '@/common/context/useGlobalContext';
@@ -109,6 +110,7 @@ export const TxsSection = ({ initialTxTableData }: { initialTxTableData: any }) 
         disablePagination
         pageSize={TXS_LIST_SIZE}
         columnDefinitions={columnDefinitions}
+        tableContainer={defaultTableContainer}
       />
       <ButtonLink
         href={buildUrl('/transactions', network)}

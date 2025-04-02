@@ -123,6 +123,9 @@ export async function handlePublicFunctionCall(
   { contractId, fnAbi, network, queryClient }: ContractCallDependencies
 ): Promise<void> {
   const { contractAddress, contractName } = getContractIdParts(contractId);
+  const postCondition = shouldUsePostConditions(postConditionParams.postConditionMode!)
+    ? getPostCondition(postConditionParams)
+    : undefined;
   await openContractCall({
     contractAddress,
     contractName,
@@ -133,9 +136,7 @@ export async function handlePublicFunctionCall(
     onFinish: () => {
       void queryClient.invalidateQueries({ queryKey: ['addressMempoolTxsInfinite'] });
     },
-    postConditions: shouldUsePostConditions(postConditionParams.postConditionMode!)
-      ? getPostCondition(postConditionParams)
-      : undefined,
+    postConditions: postCondition ? [postCondition] : undefined,
     postConditionMode: postConditionParams.postConditionMode,
   });
 }

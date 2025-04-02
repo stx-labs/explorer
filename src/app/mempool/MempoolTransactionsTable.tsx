@@ -16,7 +16,6 @@ export default function MempoolTransactionsTable({
   initialMempoolTxData,
   searchParams,
 }: MempoolTransactionsTableProps) {
-  console.log({ initialMempoolTxData });
   return (
     <Stack gap={5} mt={{ base: 0, '2xl': 12 }}>
       <Text textStyle="heading-md" color="textPrimary">

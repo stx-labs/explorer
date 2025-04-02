@@ -1,11 +1,13 @@
-import { isConfirmedTx } from '@/common/utils/transactions';
+import { AddressTxsTable } from '@/common/components/table/table-examples/AddressTxsTable';
+import { DEFAULT_LIST_LIMIT } from '@/common/constants/constants';
+import { THIRTY_SECONDS } from '@/common/queries/query-stale-time';
+import { useAddressConfirmedTxsWithTransfers } from '@/common/queries/useAddressConfirmedTxsWithTransfersInfinite';
 import { TabsContent } from '@/ui/Tabs';
 import { Grid, Stack } from '@chakra-ui/react';
 
 import {
-  ContractCallTransaction,
-  MempoolContractCallTransaction,
-  MempoolTransaction,
+  MempoolSmartContractTransaction,
+  SmartContractTransaction,
   Transaction,
 } from '@stacks/stacks-blockchain-api-types';
 
@@ -14,12 +16,16 @@ import { DetailsCard } from './DetailsCard';
 import { Events } from './Events';
 import { TxHeader } from './TxHeader';
 import { TabsContentContainer, TransactionIdPageTab, TxTabs, TxTabsTrigger } from './TxTabs';
-import { FunctionCalled } from './function-called/FunctionCalled';
+import { AvailableFunctions } from './function-called/AvailableFunctions';
 import { PostConditions } from './post-conditions/PostConditions';
 import { Source } from './source/Source';
 import { TxSummary } from './tx-summary/TxSummary';
 
-export const ContractCallPage = ({ tx }: { tx: Transaction | MempoolTransaction }) => {
+export const SmartContractPage = ({
+  tx,
+}: {
+  tx: SmartContractTransaction | MempoolSmartContractTransaction;
+}) => {
   return (
     <>
       <Stack gap={3}>
@@ -31,19 +37,27 @@ export const ContractCallPage = ({ tx }: { tx: Transaction | MempoolTransaction 
   );
 };
 
-export function ContractCallTabTrigger({
+export function SmartContractTabTrigger({
   tx,
   selectedTab,
   setSelectedTab,
 }: {
-  tx: ContractCallTransaction | MempoolContractCallTransaction;
+  tx: SmartContractTransaction | MempoolSmartContractTransaction;
   selectedTab: TransactionIdPageTab;
   setSelectedTab: (tab: TransactionIdPageTab) => void;
 }) {
+  let { data } = useAddressConfirmedTxsWithTransfers(
+    'smart_contract' in tx ? tx.smart_contract.contract_id : '',
+    DEFAULT_LIST_LIMIT,
+    0,
+    {
+      staleTime: THIRTY_SECONDS,
+      gcTime: THIRTY_SECONDS,
+      enabled: 'smart_contract' in tx && !!tx.smart_contract?.contract_id, // Disabling this query if tx is not a smart contract tx
+    }
+  );
+  const txCount = data?.total || 0;
   const numPostConditions = tx.post_conditions.length || 0;
-  const numTxEvents = isConfirmedTx<ContractCallTransaction, MempoolContractCallTransaction>(tx)
-    ? tx.event_count
-    : 0;
 
   return (
     <>
@@ -55,27 +69,25 @@ export function ContractCallTabTrigger({
         onClick={() => setSelectedTab(TransactionIdPageTab.Overview)}
       />
       <TxTabsTrigger
-        key={TransactionIdPageTab.FunctionCall}
-        label={'Function called'}
-        value={TransactionIdPageTab.FunctionCall}
-        isActive={selectedTab === TransactionIdPageTab.FunctionCall}
-        onClick={() => setSelectedTab(TransactionIdPageTab.FunctionCall)}
+        key={TransactionIdPageTab.AvailableFunctions}
+        label={'Available functions'}
+        value={TransactionIdPageTab.AvailableFunctions}
+        isActive={selectedTab === TransactionIdPageTab.AvailableFunctions}
+        onClick={() => setSelectedTab(TransactionIdPageTab.AvailableFunctions)}
+      />
+      <TxTabsTrigger
+        key={TransactionIdPageTab.Transactions}
+        label={`Transactions ${txCount > 0 ? `(${txCount})` : ''}`}
+        value={TransactionIdPageTab.Transactions}
+        isActive={selectedTab === TransactionIdPageTab.Transactions}
+        onClick={() => setSelectedTab(TransactionIdPageTab.Transactions)}
       />
       <TxTabsTrigger
         key={TransactionIdPageTab.PostConditions}
-        label={`Post-conditions`}
-        secondaryLabel={numPostConditions > 0 ? `(${numPostConditions})` : ''}
+        label={`Post-conditions ${numPostConditions > 0 ? `(${numPostConditions})` : ''}`}
         value={TransactionIdPageTab.PostConditions}
         isActive={selectedTab === TransactionIdPageTab.PostConditions}
         onClick={() => setSelectedTab(TransactionIdPageTab.PostConditions)}
-      />
-      <TxTabsTrigger
-        key={TransactionIdPageTab.Events}
-        label={`Events`}
-        secondaryLabel={numTxEvents > 0 ? `(${numTxEvents})` : ''}
-        value={TransactionIdPageTab.Events}
-        isActive={selectedTab === TransactionIdPageTab.Events}
-        onClick={() => setSelectedTab(TransactionIdPageTab.Events)}
       />
       <TxTabsTrigger
         key={TransactionIdPageTab.SourceCode}
@@ -88,10 +100,10 @@ export function ContractCallTabTrigger({
   );
 }
 
-export function ContractCallTabContent({
+export function SmartContractTabContent({
   tx,
 }: {
-  tx: ContractCallTransaction | MempoolContractCallTransaction;
+  tx: SmartContractTransaction | MempoolSmartContractTransaction;
 }) {
   return (
     <>
@@ -104,15 +116,23 @@ export function ContractCallTabContent({
           <TabsContentContainer>
             <TxSummary tx={tx} />
           </TabsContentContainer>
+
           <DetailsCard tx={tx as Transaction} />
         </Grid>
       </TabsContent>
       <TabsContent
-        key={TransactionIdPageTab.FunctionCall}
-        value={TransactionIdPageTab.FunctionCall}
+        key={TransactionIdPageTab.AvailableFunctions}
+        value={TransactionIdPageTab.AvailableFunctions}
         w="100%"
       >
-        <FunctionCalled tx={tx} />
+        <AvailableFunctions tx={tx} />
+      </TabsContent>
+      <TabsContent
+        key={TransactionIdPageTab.Transactions}
+        value={TransactionIdPageTab.Transactions}
+        w="100%"
+      >
+        <AddressTxsTable principal={tx.smart_contract?.contract_id} initialData={undefined} />
       </TabsContent>
       <TabsContent
         key={TransactionIdPageTab.PostConditions}
@@ -122,7 +142,9 @@ export function ContractCallTabContent({
         <PostConditions tx={tx} />
       </TabsContent>
       <TabsContent key={TransactionIdPageTab.Events} value={TransactionIdPageTab.Events} w="100%">
-        <Events tx={tx} />
+        <TabsContentContainer>
+          <Events tx={tx} />
+        </TabsContentContainer>
       </TabsContent>
       <TabsContent key="sourceCode" value="sourceCode" w="100%">
         <Source tx={tx} />
