@@ -1,4 +1,5 @@
 import { TxTabsTrigger } from '@/app/txid/[txId]/redesign/TxTabs';
+import { Source } from '@/app/txid/[txId]/redesign/source/Source';
 import { ScrollIndicator } from '@/common/components/ScrollIndicator';
 import {
   AddressTxsTable,
@@ -79,6 +80,12 @@ export const TokenIdTabs = () => {
               onClick={() => setSelectedTab(TokenIdPageTab.Holders)}
             />
           )}
+          <TxTabsTrigger
+            label="Source code"
+            value={TokenIdPageTab.Source}
+            isActive={selectedTab === TokenIdPageTab.Source}
+            onClick={() => setSelectedTab(TokenIdPageTab.Source)}
+          />
         </TabsList>
       </ScrollIndicator>
       <TabsContent value={TokenIdPageTab.Overview} w="100%">
@@ -101,6 +108,9 @@ export const TokenIdTabs = () => {
           />
         </TabsContent>
       )}
+      <TabsContent value={TokenIdPageTab.Source} w="100%">
+        <Source contractId={tokenId} />
+      </TabsContent>
     </TabsRoot>
   );
 };

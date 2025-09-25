@@ -125,7 +125,7 @@ export function ContractCallTabContent({
         <Events tx={tx} />
       </TabsContent>
       <TabsContent key="sourceCode" value="sourceCode" w="100%">
-        <Source tx={tx} />
+        <Source contractId={tx.contract_call.contract_id} />
       </TabsContent>
     </>
   );

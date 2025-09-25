@@ -1,6 +1,5 @@
 import { callApiWithErrorHandling } from '@/api/callApiWithErrorHandling';
 import { useApiClient } from '@/api/useApiClient';
-import { GenericResponseType } from '@/common/hooks/useInfiniteQueryResult';
 import { TEN_MINUTES } from '@/common/queries/query-stale-time';
 import { getNextPageParam } from '@/common/utils/utils';
 import {

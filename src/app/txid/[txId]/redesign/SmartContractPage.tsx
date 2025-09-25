@@ -152,7 +152,7 @@ export function SmartContractTabContent({
         </TabsContentContainer>
       </TabsContent>
       <TabsContent key="sourceCode" value="sourceCode" w="100%">
-        <Source tx={tx} />
+        <Source contractId={tx.smart_contract?.contract_id} />
       </TabsContent>
     </>
   );
