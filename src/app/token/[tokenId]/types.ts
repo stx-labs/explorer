@@ -74,8 +74,7 @@ export interface TokenInfoProps {
 export interface TokenDataFromStacksApi {
   name?: string;
   symbol?: string;
-  totalSupply?: number;
-  circulatingSupply?: number;
+  totalSupply?: string;
   imageUri?: string;
   decimals?: number;
 }

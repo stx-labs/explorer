@@ -26,7 +26,7 @@ import {
 
 import TokenIdPage from './PageClient';
 import { getTokenInfo } from './getTokenInfo';
-import { getTokenDataRedesign } from './page-data';
+import { getTokenDataFromLunarCrush, getTokenDataFromStacksApi, mergeTokenData } from './page-data';
 import { TokenIdPageDataProvider } from './redesign/context/TokenIdPageContext';
 import { MergedTokenData } from './types';
 
@@ -55,12 +55,10 @@ export default async function (props: {
     | GenericResponseType<CompressedTxAndMempoolTxTableData>
     | undefined;
   let tokenData: MergedTokenData | undefined;
-  let redesignTokenData: MergedTokenData | undefined;
   let txId: string | undefined;
   let txBlockTime: number | undefined;
   let assetId: string | undefined;
   let holders: FungibleTokenHolderList | undefined;
-  let circulatingSupply: string | undefined;
 
   const tokenInfo = await getTokenInfo(tokenId, chain || NetworkModes.Mainnet, api);
 
@@ -69,20 +67,33 @@ export default async function (props: {
 
   if (isRedesign && !isSSRDisabled) {
     try {
-      const [tokenPriceResult, tokenDataResult, contractInfoResult, recentTransactionsResult] =
-        await Promise.allSettled([
-          getTokenPrice(),
-          getTokenDataRedesign(tokenId, apiUrl, !!api),
-          fetchContractInfo(apiUrl, tokenId),
-          fetchRecentTransactions(apiUrl, tokenId),
-        ]);
+      const [
+        tokenPriceResult,
+        tokenDataFromStacksApiResult,
+        tokenDataFromLunarCrushResult,
+        contractInfoResult,
+        recentTransactionsResult,
+      ] = await Promise.allSettled([
+        getTokenPrice(),
+        getTokenDataFromStacksApi(tokenId, apiUrl),
+        getTokenDataFromLunarCrush(tokenId),
+        fetchContractInfo(apiUrl, tokenId),
+        fetchRecentTransactions(apiUrl, tokenId),
+      ]);
 
       tokenPrice = handleSettledResult(tokenPriceResult, 'Failed to fetch token price') || {
         stxPrice: 0,
         btcPrice: 0,
       };
 
-      tokenData = handleSettledResult(tokenDataResult, 'Failed to fetch token data');
+      const tokenDataFromStacksApi = handleSettledResult(
+        tokenDataFromStacksApiResult,
+        'Failed to fetch token data from Stacks API'
+      );
+      const tokenDataFromLunarCrush = handleSettledResult(
+        tokenDataFromLunarCrushResult,
+        'Failed to fetch token data from LunarCrush'
+      );
 
       const recentAddressTransactions = handleSettledResult(
         recentTransactionsResult,
@@ -105,6 +116,8 @@ export default async function (props: {
 
       const tx = handleSettledResult(txResult, 'Failed to fetch transaction');
       holders = handleSettledResult(holdersResult, 'Failed to fetch holders');
+
+      tokenData = mergeTokenData(tokenDataFromStacksApi, tokenDataFromLunarCrush, holders, tokenId);
 
       txBlockTime = tx?.block_time;
 
@@ -130,10 +143,12 @@ export default async function (props: {
     }
   }
 
+  console.log('page', { tokenId, tokenData, txBlockTime, txId });
+
   return (
     <TokenIdPageDataProvider
       tokenId={tokenId}
-      redesignTokenData={redesignTokenData}
+      tokenData={tokenData}
       stxPrice={tokenPrice.stxPrice}
       btcPrice={tokenPrice.btcPrice}
       initialAddressRecentTransactionsData={initialAddressRecentTransactionsData}

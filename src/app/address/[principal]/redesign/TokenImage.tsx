@@ -31,6 +31,7 @@ export const DefaultTokenImage = ({
   );
 };
 
+//TODO: move to shared component
 export const TokenImage = ({
   url,
   alt,

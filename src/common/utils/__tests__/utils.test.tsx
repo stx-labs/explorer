@@ -33,7 +33,6 @@ import {
   truncateStxAddress,
   truncateStxContractId,
   truncateText,
-  validateAssettId,
   validateStacksAddress,
   validateStacksContractId,
 } from '../utils';

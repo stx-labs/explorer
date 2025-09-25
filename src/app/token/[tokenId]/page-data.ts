@@ -1,7 +1,8 @@
 import { fetchTokenDataFromLunarCrush, fetchTokenMetadata } from '@/api/data-fetchers';
 import { logError } from '@/common/utils/error-utils';
 
-import { getFtDecimalAdjustedBalance } from '../../../common/utils/utils';
+import { FungibleTokenHolderList } from '@stacks/stacks-blockchain-api-types';
+
 import { getIsSBTC } from '../../tokens/utils';
 import {
   DeveloperDataRedesign,
@@ -11,7 +12,7 @@ import {
   TokenLinks,
 } from './types';
 
-async function getTokenDataFromStacksApi(
+export async function getTokenDataFromStacksApi(
   tokenId: string,
   apiUrl: string
 ): Promise<TokenDataFromStacksApi | undefined> {
@@ -24,15 +25,10 @@ async function getTokenDataFromStacksApi(
     const totalSupply = tokenMetadata?.total_supply;
     const imageUri = tokenMetadata?.image_uri;
 
-    if (!name || !symbol) {
-      throw new Error(`Token not found. tokenId: ${tokenId}, apiUrl: ${apiUrl}`);
-    }
-
     return {
       name,
       symbol,
-      totalSupply:
-        totalSupply && decimals ? getFtDecimalAdjustedBalance(totalSupply, decimals) : undefined,
+      totalSupply,
       decimals,
       imageUri,
     };
@@ -42,7 +38,7 @@ async function getTokenDataFromStacksApi(
   }
 }
 
-async function getTokenDataFromLunarCrush(
+export async function getTokenDataFromLunarCrush(
   tokenId: string
 ): Promise<TokenDataFromLunarCrush | undefined> {
   try {
@@ -114,65 +110,30 @@ async function getTokenDataFromLunarCrush(
   }
 }
 
-export async function getTokenDataRedesign(
-  tokenId: string,
-  apiUrl: string,
-  isCustomApi: boolean
-): Promise<MergedTokenData> {
-  let tokenDataFromStacksApi: TokenDataFromStacksApi | undefined;
-  let tokenDataFromLunarCrush: TokenDataFromLunarCrush | undefined;
-
-  try {
-    tokenDataFromStacksApi = !isCustomApi
-      ? await getTokenDataFromStacksApi(tokenId, apiUrl)
-      : undefined;
-    tokenDataFromLunarCrush = await getTokenDataFromLunarCrush(tokenId);
-
-    const mergedTokenData =
-      tokenDataFromStacksApi && tokenDataFromLunarCrush
-        ? redesignMergeTokenData(tokenDataFromStacksApi, tokenDataFromLunarCrush, tokenId)
-        : {};
-    return mergedTokenData;
-  } catch (error) {
-    logError(
-      error as Error,
-      'getTokenInfoRedesign',
-      { tokenId, apiUrl, isCustomApi, tokenDataFromStacksApi, tokenDataFromLunarCrush },
-      'error'
-    );
-    return {} as MergedTokenData;
-  }
-}
-
 // Helper function to safely get a value with fallback
 const safeGet = <T>(primary: T | undefined, fallback?: T | undefined): T | undefined => {
   return primary ?? fallback;
 };
 
-function redesignMergeTokenData(
+export function mergeTokenData(
   tokenDataFromStacksApi: TokenDataFromStacksApi | undefined,
   tokenDataFromLunarCrush: TokenDataFromLunarCrush | undefined,
+  holders: FungibleTokenHolderList | undefined,
   tokenId: string
 ): MergedTokenData {
-  // Determine if this is SBTC token for special handling
-  const isSBTC = getIsSBTC(tokenId);
-
   // Basic token information
   const name = safeGet(tokenDataFromLunarCrush?.name, tokenDataFromStacksApi?.name);
-
   const symbol = safeGet(tokenDataFromStacksApi?.symbol, tokenDataFromLunarCrush?.symbol);
+  const imageUri = safeGet(tokenDataFromStacksApi?.imageUri);
 
   const totalSupply = safeGet(tokenDataFromStacksApi?.totalSupply);
 
-  // Special handling for circulating supply based on token type
+  // Special handling for circulating supply for SBTC. If it's SBTC, use the holders total supply (aka circulating supply), otherwise use the circulating supply from LunarCrush first, then fallback to the circulating supply from Stacks API
+  const isSBTC = getIsSBTC(tokenId);
+  const circulatingSupplyFromStacksApi = parseFloat(holders?.total_supply || '0');
   const circulatingSupply = isSBTC
-    ? safeGet(tokenDataFromStacksApi?.circulatingSupply)
-    : safeGet(
-        tokenDataFromLunarCrush?.circulatingSupply,
-        tokenDataFromStacksApi?.circulatingSupply
-      );
-
-  const imageUri = safeGet(tokenDataFromStacksApi?.imageUri);
+    ? safeGet(circulatingSupplyFromStacksApi, tokenDataFromLunarCrush?.circulatingSupply)
+    : safeGet(tokenDataFromLunarCrush?.circulatingSupply, circulatingSupplyFromStacksApi);
 
   // Price information (primarily from LunarCrush)
   const currentPrice = safeGet(tokenDataFromLunarCrush?.currentPrice);
@@ -190,7 +151,6 @@ function redesignMergeTokenData(
   const categories = Array.isArray(tokenDataFromLunarCrush?.categories)
     ? tokenDataFromLunarCrush.categories
     : [];
-
   const links = tokenDataFromLunarCrush?.links || undefined;
   const developerData = tokenDataFromLunarCrush?.developerData || undefined;
 
