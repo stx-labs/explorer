@@ -1,12 +1,13 @@
 import { ContractResponse } from '@/common/types/tx';
 import { FtMetadataResponse } from '@hirosystems/token-metadata-api-client';
 
+import { FungibleTokenHolderList } from '@stacks/stacks-blockchain-api-types';
+
 import { getIsSBTC } from '../../../app/tokens/utils';
 import { LUNAR_CRUSH_API_KEY } from '../../../common/constants/env';
 import { LunarCrushCoin } from '../../../common/types/lunarCrush';
 import { getApiUrl } from '../../../common/utils/network-utils';
 import { getFtDecimalAdjustedBalance } from '../../../common/utils/utils';
-import { HolderResponseType } from './Tabs/data/useHolders';
 import { BasicTokenInfo, DeveloperData, TokenInfoProps, TokenLinks } from './types';
 
 async function getTokenInfoFromLunarCrush(tokenId: string): Promise<LunarCrushCoin | undefined> {
@@ -50,7 +51,7 @@ async function getCirculatingSupplyFromHoldersEndpoint(apiUrl: string, tokenId: 
     console.error('Failed to fetch holders info');
     return null;
   }
-  const holdersInfo: HolderResponseType = await holdersResponse.json();
+  const holdersInfo: FungibleTokenHolderList = await holdersResponse.json();
   if (!holdersInfo?.total_supply) {
     console.error('No total supply found in holders info');
     return null;

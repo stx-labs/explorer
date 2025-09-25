@@ -5,7 +5,6 @@ import { ReactNode, Suspense, useMemo } from 'react';
 import { AddressLink } from '../../../../../common/components/ExplorerLinks';
 import { ListFooter } from '../../../../../common/components/ListFooter';
 import { Section } from '../../../../../common/components/Section';
-import { useSuspenseInfiniteQueryResult } from '../../../../../common/hooks/useInfiniteQueryResult';
 import { useContractById } from '../../../../../common/queries/useContractById';
 import { useFtMetadata } from '../../../../../common/queries/useFtMetadata';
 import { ftDecimals, truncateMiddleDeprecated } from '../../../../../common/utils/utils';
@@ -14,7 +13,7 @@ import { ScrollableBox } from '../../../../_components/BlockList/ScrollableDiv';
 import { mobileBorderCss } from '../../../../_components/BlockList/consts';
 import { ExplorerErrorBoundary } from '../../../../_components/ErrorBoundary';
 import { TokenInfoProps } from '../../types';
-import { HolderInfo, HolderResponseType, useSuspenseFtHolders } from '../data/useHolders';
+import { useSuspenseFtHolders } from '../data/useHolders';
 import { HoldersTableSkeleton } from './skeleton';
 
 const StyledTable = styled(Table.Root)`
@@ -198,8 +197,12 @@ const HoldersTableBase = ({
   const ftName = contract?.abi?.fungible_tokens[0].name;
   const response = useSuspenseFtHolders(`${tokenId}::${ftName}`);
   const { isFetchingNextPage, fetchNextPage, hasNextPage } = response;
-  const { total: totalNumHolders, total_supply: totalSupply } = response.data.pages[0];
-  const holderBalances = useSuspenseInfiniteQueryResult<HolderInfo, HolderResponseType>(response);
+  console.log({ response });
+  const {
+    total: totalNumHolders,
+    total_supply: totalSupply,
+    results: holderBalances,
+  } = response.data.pages[0];
   const filteredHolderBalances = holderBalances.filter(holder => holder.balance !== '0');
   const { data: tokenMetadata } = useFtMetadata(contract?.contract_id);
   const decimals = useMemo(() => tokenMetadata?.decimals, [tokenMetadata]);

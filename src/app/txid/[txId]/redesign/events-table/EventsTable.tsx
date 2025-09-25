@@ -3,6 +3,7 @@
 import { ScrollIndicator } from '@/common/components/ScrollIndicator';
 import {
   AddressLinkCellRenderer,
+  IndexCellRenderer,
   StringRenderer,
 } from '@/common/components/table/CommonTableCellRenderers';
 import { Table } from '@/common/components/table/Table';
@@ -21,11 +22,7 @@ import { type JSX, useCallback, useEffect, useMemo, useRef, useState } from 'rea
 
 import { TransactionEvent } from '@stacks/stacks-blockchain-api-types';
 
-import {
-  AmountCellRenderer,
-  AssetEventTypeCellRenderer,
-  IndexCellRenderer,
-} from './EventsTableCellRenderers';
+import { AmountCellRenderer, AssetEventTypeCellRenderer } from './EventsTableCellRenderers';
 import { EVENTS_TABLE_PAGE_SIZE } from './consts';
 import { EventsTableFilters } from './filters/useEventsTableFilters';
 import {

@@ -1,11 +1,10 @@
 import { TxLink } from '@/common/components/ExplorerLinks';
 import { TransactionStatus as TransactionStatusEnum } from '@/common/constants/constants';
 import { getTransactionStatus, getTxTitle } from '@/common/utils/transactions';
-import { formatStacksAmount, microToStacksFormatted, truncateHex } from '@/common/utils/utils';
+import { truncateHex } from '@/common/utils/utils';
 import { TransactionTypeBadge } from '@/ui/Badge';
 import { Text } from '@/ui/Text';
 import { Tooltip } from '@/ui/Tooltip';
-import MicroStxIcon from '@/ui/icons/MicroStxIcon';
 import StacksIconThin from '@/ui/icons/StacksIconThin';
 import { Flex, Icon } from '@chakra-ui/react';
 import { ArrowRight, Clock, Question, XCircle } from '@phosphor-icons/react';
@@ -29,23 +28,6 @@ export const TxLinkCellRenderer = (value: string) => {
     <TxLink txId={value} variant="tableLink">
       <EllipsisText>{truncateHex(value, 4, 5, false)}</EllipsisText>
     </TxLink>
-  );
-};
-
-export const FeeCellRenderer = (value: string) => {
-  // TODO: Make this a common cell renderer after merging the function called tab PR
-  const stx = microToStacksFormatted(value);
-  const microStx = formatStacksAmount(value);
-
-  return (
-    <Flex alignItems="center" gap={1}>
-      <Icon h={3} w={3} color="textSecondary">
-        {stx.length > microStx.length ? <MicroStxIcon /> : <StacksIconThin />}
-      </Icon>
-      <EllipsisText fontSize="sm">
-        {stx.length > microStx.length ? `${microStx} µSTX` : `${stx} STX`}
-      </EllipsisText>
-    </Flex>
   );
 };
 

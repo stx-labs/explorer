@@ -1,6 +1,8 @@
 import { RISKY_TOKENS, VERIFIED_TOKENS } from '@/app/token/[tokenId]/consts';
 import { Metadata } from '@hirosystems/token-metadata-api-client';
 
+import { bigintPow } from './number-utils';
+
 export const deriveTokenTickerFromAssetId = (assetId: string) => {
   const ticker = assetId.toUpperCase();
   if (ticker.includes('-')) {
@@ -35,18 +37,44 @@ export function getTokenImageUrlFromTokenMetadata(tokenMetadata: Metadata): stri
 }
 
 export function calculateHoldingPercentage(
-  balance: string,
-  totalSupply: string | undefined
+  balance: string | number | bigint | undefined,
+  totalSupply: string | number | bigint | undefined,
+  precision: number = 4
 ): number | undefined {
-  if (!totalSupply) return undefined;
-  return (parseFloat(balance) / parseFloat(totalSupply)) * 100;
+  if (balance === undefined || totalSupply === undefined) {
+    return undefined;
+  }
+
+  // Convert to BigInt if possible for precision, otherwise fallback to Number
+  try {
+    const b = BigInt(balance);
+    const t = BigInt(totalSupply);
+
+    if (t <= BigInt(0) || b < BigInt(0)) return undefined;
+
+    // Multiply before dividing to preserve precision, then convert to number
+    const percentage = Number((b * bigintPow(BigInt(10), precision)) / t) / 100; // 2 decimals by default
+    return parseFloat(percentage.toFixed(precision));
+  } catch {
+    // Fallback for cases where balance/totalSupply aren't integer-like
+    const balNum = Number(balance);
+    const totalNum = Number(totalSupply);
+    if (!isFinite(balNum) || !isFinite(totalNum) || totalNum <= 0 || balNum < 0) {
+      return undefined;
+    }
+
+    const percentage = (balNum / totalNum) * 100;
+    return parseFloat(percentage.toFixed(precision));
+  }
 }
 
 export function formatHoldingPercentage(percentage: number | undefined): string {
-  if (percentage == null) return '-';
+  if (percentage === undefined || percentage < 0) return '-';
   return percentage === 0
     ? '0%'
-    : percentage > 0 && percentage < 0.0001
-      ? '<0.0001%'
-      : `${percentage.toFixed(4)}%`;
+    : percentage >= 100
+      ? '100%'
+      : percentage > 0 && percentage < 0.0001
+        ? '<0.0001%'
+        : `${percentage.toFixed(4)}%`;
 }

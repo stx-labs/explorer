@@ -25,13 +25,12 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 import { MempoolTransaction, Transaction } from '@stacks/stacks-blockchain-api-types';
 
 import { ScrollIndicator } from '../../ScrollIndicator';
-import { AddressLinkCellRenderer } from '../CommonTableCellRenderers';
+import { AddressLinkCellRenderer, FeeCellRenderer } from '../CommonTableCellRenderers';
 import { Table } from '../Table';
 import { DefaultTableColumnHeader } from '../TableComponents';
 import { TableContainer } from '../TableContainer';
 import { EventsCellRenderer, TransactionTitleCellRenderer } from './AddressTxsTaBleCellRenderers';
 import {
-  FeeCellRenderer,
   IconCellRenderer,
   TimeStampCellRenderer,
   TxLinkCellRenderer,

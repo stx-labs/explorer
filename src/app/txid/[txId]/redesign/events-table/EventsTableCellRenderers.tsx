@@ -1,10 +1,10 @@
+import { EllipsisText } from '@/common/components/table/CommonTableCellRenderers';
 import {
   formatStacksAmount,
   getAssetNameParts,
   microToStacksFormatted,
 } from '@/common/utils/utils';
-import { DefaultBadge, DefaultBadgeIcon, DefaultBadgeLabel, SimpleTag } from '@/ui/Badge';
-import { Text, TextProps } from '@/ui/Text';
+import { DefaultBadge, DefaultBadgeIcon, DefaultBadgeLabel } from '@/ui/Badge';
 import { Tooltip } from '@/ui/Tooltip';
 import MicroStxIcon from '@/ui/icons/MicroStxIcon';
 import StacksIconThin from '@/ui/icons/StacksIconThin';
@@ -17,20 +17,6 @@ import {
   getAssetEventTypeIcon,
   getAssetEventTypeLabel,
 } from './utils';
-
-const EllipsisText = ({ children, ...textProps }: { children: React.ReactNode } & TextProps) => {
-  return (
-    <Text
-      whiteSpace="nowrap"
-      overflow="hidden"
-      textOverflow="ellipsis"
-      fontSize="sm"
-      {...textProps}
-    >
-      {children}
-    </Text>
-  );
-};
 
 export const AssetEventTypeCellRenderer = ({
   assetEventType,
@@ -47,17 +33,6 @@ export const AssetEventTypeCellRenderer = ({
         />
       }
       label={<DefaultBadgeLabel label={getAssetEventTypeLabel(assetEventType)} />}
-    />
-  );
-};
-
-export const IndexCellRenderer = ({ index }: { index: number }) => {
-  return (
-    <SimpleTag
-      label={index.toString()}
-      _groupHover={{
-        bg: 'surfaceTertiary',
-      }}
     />
   );
 };
@@ -113,23 +88,6 @@ export const AmountCellRenderer = ({
   }
 
   return <EllipsisText fontSize="sm">-</EllipsisText>;
-};
-
-export const FeeCellRenderer = (value: string) => {
-  // TODO: Make this a common cell renderer after merging the function called tab PR
-  const stx = microToStacksFormatted(value);
-  const microStx = formatStacksAmount(value);
-
-  return (
-    <Flex alignItems="center" gap={1}>
-      <Icon h={3} w={3} color="textSecondary">
-        {stx.length > microStx.length ? <MicroStxIcon /> : <StacksIconThin />}
-      </Icon>
-      <EllipsisText fontSize="sm">
-        {stx.length > microStx.length ? `${microStx} µSTX` : `${stx} STX`}
-      </EllipsisText>
-    </Flex>
-  );
 };
 
 export const TimeStampCellRenderer = (value: string, tooltip?: string) => {

@@ -74,12 +74,20 @@ export function MarketDataCard() {
   const { tokenData, holders } = useTokenIdPageData();
 
   const circulatingSupply =
-    holders?.total_supply && tokenData?.decimals
-      ? getFtDecimalAdjustedBalance(holders?.total_supply, tokenData?.decimals)
+    holders?.total_supply && tokenData?.decimals !== undefined
+      ? formatNumber(
+          getFtDecimalAdjustedBalance(holders?.total_supply, tokenData?.decimals),
+          0,
+          tokenData?.decimals
+        )
       : NO_DATA;
   const totalSupply =
-    tokenData?.totalSupply && tokenData?.decimals
-      ? getFtDecimalAdjustedBalance(tokenData?.totalSupply, tokenData?.decimals)
+    tokenData?.totalSupply && tokenData?.decimals !== undefined
+      ? formatNumber(
+          getFtDecimalAdjustedBalance(tokenData?.totalSupply, tokenData?.decimals),
+          0,
+          tokenData?.decimals
+        )
       : NO_DATA;
   const totalHolders = holders?.total ? formatNumber(holders.total) : NO_DATA;
   const price = tokenData?.currentPrice ? formatUsdValue(tokenData.currentPrice) : NO_DATA;

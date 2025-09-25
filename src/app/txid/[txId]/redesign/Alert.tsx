@@ -4,8 +4,7 @@ import { Alert } from '@/components/ui/alert';
 import { Link } from '@/ui/Link';
 import { Text } from '@/ui/Text';
 import { Stack } from '@chakra-ui/react';
-import { Clock, Question, XCircle } from '@phosphor-icons/react';
-import { WarningDiamond } from '@phosphor-icons/react';
+import { Clock, Question, WarningDiamond, XCircle } from '@phosphor-icons/react';
 
 import { MempoolTransaction, Transaction } from '@stacks/stacks-blockchain-api-types';
 

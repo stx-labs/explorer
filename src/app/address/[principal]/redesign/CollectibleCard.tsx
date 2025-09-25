@@ -23,7 +23,6 @@ export function CollectibleCard({
 }) {
   const { address, contract, asset } = getAssetNameParts(assetId);
   const contractId = `${address}.${contract}`;
-  console.log({ address, contract, asset });
 
   const { data: tokenMetadata } = useNftMetadata(
     { contractId, tokenId: tokenId?.toString() },

@@ -8,3 +8,9 @@ export function isUint128(value: number | bigint): boolean {
 export function isStringNumber(value: string): boolean {
   return !isNaN(Number(value));
 }
+
+export function bigintPow(base: bigint, exp: number): bigint {
+  let result = BigInt(1);
+  for (let i = 0; i < exp; i++) result = result * base;
+  return result;
+}

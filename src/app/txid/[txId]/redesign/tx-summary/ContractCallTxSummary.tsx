@@ -10,8 +10,7 @@ import {
 } from '@stacks/stacks-blockchain-api-types';
 
 import { useTxIdPageData } from '../../TxIdPageContext';
-import { PriceSummaryItemValue, SummaryItem } from './SummaryItem';
-import { SponsorTag } from './SummaryItem';
+import { PriceSummaryItemValue, SponsorTag, SummaryItem } from './SummaryItem';
 
 export const ContractCallTxSummaryItems = ({
   tx,

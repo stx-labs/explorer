@@ -125,8 +125,11 @@ export function mergeTokenData(
   const name = safeGet(tokenDataFromLunarCrush?.name, tokenDataFromStacksApi?.name);
   const symbol = safeGet(tokenDataFromStacksApi?.symbol, tokenDataFromLunarCrush?.symbol);
   const imageUri = safeGet(tokenDataFromStacksApi?.imageUri);
+  const decimals = safeGet(tokenDataFromStacksApi?.decimals);
 
-  const totalSupply = safeGet(tokenDataFromStacksApi?.totalSupply);
+  const totalSupply = tokenDataFromStacksApi?.totalSupply
+    ? parseFloat(tokenDataFromStacksApi?.totalSupply)
+    : undefined;
 
   // Special handling for circulating supply for SBTC. If it's SBTC, use the holders total supply (aka circulating supply), otherwise use the circulating supply from LunarCrush first, then fallback to the circulating supply from Stacks API
   const isSBTC = getIsSBTC(tokenId);
@@ -159,6 +162,7 @@ export function mergeTokenData(
     symbol,
     totalSupply,
     imageUri,
+    decimals,
     circulatingSupply,
     categories,
     links,

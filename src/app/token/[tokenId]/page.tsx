@@ -143,8 +143,6 @@ export default async function (props: {
     }
   }
 
-  console.log('page', { tokenId, tokenData, txBlockTime, txId });
-
   return (
     <TokenIdPageDataProvider
       tokenId={tokenId}

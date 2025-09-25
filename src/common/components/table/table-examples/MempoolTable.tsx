@@ -20,14 +20,13 @@ import { type JSX, useCallback, useEffect, useMemo, useRef, useState } from 'rea
 
 import { MempoolTransaction, Transaction } from '@stacks/stacks-blockchain-api-types';
 
-import { AddressLinkCellRenderer } from '../CommonTableCellRenderers';
+import { AddressLinkCellRenderer, FeeCellRenderer } from '../CommonTableCellRenderers';
 import { Table } from '../Table';
 import { DefaultTableColumnHeader } from '../TableComponents';
 import { TableContainer } from '../TableContainer';
 import { UpdateTableBannerRow } from '../UpdateTableBannerRow';
 import { TxTableFilters } from '../tx-table/useTxTableFilters';
 import {
-  FeeCellRenderer,
   IconCellRenderer,
   TimeStampCellRenderer,
   TransactionTitleCellRenderer,
