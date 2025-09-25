@@ -15,7 +15,7 @@ interface TokenIdPageDataContextType {
     | GenericResponseType<CompressedTxAndMempoolTxTableData>
     | undefined;
   tokenId: string;
-  redesignTokenData: MergedTokenData | undefined;
+  tokenData: MergedTokenData | undefined;
   txBlockTime: number | undefined;
   txId: string | undefined;
   assetId: string | undefined;
@@ -34,7 +34,7 @@ export function TokenIdPageDataProvider({
   btcPrice,
   initialAddressRecentTransactionsData,
   tokenId,
-  redesignTokenData,
+  tokenData,
   txBlockTime,
   txId,
   assetId,
@@ -45,7 +45,7 @@ export function TokenIdPageDataProvider({
     btcPrice,
     initialAddressRecentTransactionsData,
     tokenId,
-    redesignTokenData,
+    tokenData,
     txBlockTime,
     txId,
     assetId,

@@ -6,6 +6,7 @@ import {
   SummaryItem,
 } from '@/app/txid/[txId]/redesign/tx-summary/SummaryItem';
 import { Circle } from '@/common/components/Circle';
+import { StackingCardItem } from '@/common/components/id-pages/Overview';
 import { AddressTxsTable } from '@/common/components/table/table-examples/AddressTxsTable';
 import { ADDRESS_ID_PAGE_RECENT_ADDRESS_TXS_LIMIT } from '@/common/components/table/table-examples/consts';
 import { getFtDecimalAdjustedBalance, microToStacks } from '@/common/utils/utils';
@@ -148,17 +149,6 @@ const BalanceCard = () => {
           tokenBalanceType="sbtc"
         />
       </Stack>
-    </Stack>
-  );
-};
-
-const StackingCardItem = ({ label, value }: { label: string; value: ReactNode }) => {
-  return (
-    <Stack gap={0.5}>
-      <Text textStyle="text-medium-sm" color="textSecondary">
-        {label}
-      </Text>
-      {value}
     </Stack>
   );
 };

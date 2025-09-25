@@ -78,13 +78,16 @@ export const validateAssettId = (assetId: string): boolean => {
   try {
     if (!assetId) return false;
 
-    // Validate format: address.contract::asset (exactly one '.' and one '::')
-    const assetIdRegex = /^[^.]+\.[^.:]+::[^:]+$/;
-    if (!assetIdRegex.test(assetId)) return false;
+    // Validate format: should have exactly one '.' separator before '::'
+    const assetIdParts = assetId.split('::');
 
-    const { address, contract, asset } = getAssetNameParts(assetId);
-    if (!address || !contract || !asset) return false;
-    const contractId = `${address}.${contract}`;
+    // Validate format: should have exactly one '::' separator
+    const colonSeparatorCount = assetIdParts.length - 1;
+    if (colonSeparatorCount !== 1) return false;
+
+    const [contractId, assetName] = assetIdParts;
+    if (!contractId || !assetName) return false;
+
     return validateStacksContractId(contractId);
   } catch (e) {
     return false;

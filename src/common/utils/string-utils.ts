@@ -38,3 +38,27 @@ export function isValidJSON(str: string): boolean {
     return false;
   }
 }
+
+export function formatUsdValue(
+  value: number,
+  minimumFractionDigits = 2,
+  maximumFractionDigits = 2
+): string {
+  return new Intl.NumberFormat(undefined, {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits,
+    maximumFractionDigits,
+  }).format(value);
+}
+
+export function formatNumber(
+  value: number,
+  minimumFractionDigits = 0,
+  maximumFractionDigits = 0
+): string {
+  return new Intl.NumberFormat(undefined, {
+    minimumFractionDigits,
+    maximumFractionDigits,
+  }).format(value);
+}
