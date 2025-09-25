@@ -43,9 +43,40 @@ export const switchSlotRecipe = defineSlotRecipe({
         },
         label: {},
       },
+      redesignPrimary: {
+        root: {},
+        thumb: {
+          bg: 'surfaceTertiary',
+          boxShadow: 'elevation1',
+        },
+        control: {
+          bg: 'surfaceFifth',
+
+          _checked: {
+            bg: 'surfaceInvert',
+          },
+        },
+        label: {},
+      },
+    },
+    size: {
+      small: {
+        root: {
+          '--switch-width': '42px',
+          '--switch-height': '24px',
+          '--switch-indicator-font-size': 'fontSizes.xs',
+        },
+      },
+      large: {
+        root: {
+          '--switch-width': 14,
+          '--switch-height': 8,
+          '--switch-indicator-font-size': 'fontSizes.sm',
+        },
+      },
     },
   },
   defaultVariants: {
-    variant: 'primary',
+    // variant: 'primary',
   },
 });
