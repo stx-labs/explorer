@@ -9,6 +9,7 @@ import {
   TenureChangeTransaction,
 } from '@stacks/stacks-blockchain-api-types';
 
+import { useTxIdPageData } from '../../TxIdPageContext';
 import { PriceSummaryItemValue, SummaryItem } from './SummaryItem';
 
 export const TenureChangeTxSummaryItems = ({
@@ -16,6 +17,7 @@ export const TenureChangeTxSummaryItems = ({
 }: {
   tx: TenureChangeTransaction | MempoolTenureChangeTransaction;
 }) => {
+  const { stxPrice } = useTxIdPageData();
   return (
     <>
       <SummaryItem label="ID" value={tx.tx_id} showCopyButton />
@@ -50,7 +52,7 @@ export const TenureChangeTxSummaryItems = ({
       <SummaryItem
         label="Fee"
         value={tx.fee_rate}
-        valueRenderer={value => <PriceSummaryItemValue value={value} />}
+        valueRenderer={value => <PriceSummaryItemValue value={value} stxPrice={stxPrice} />}
       />
       <SummaryItem label="Nonce" value={tx.nonce?.toString() || ''} showCopyButton />
       <SummaryItem

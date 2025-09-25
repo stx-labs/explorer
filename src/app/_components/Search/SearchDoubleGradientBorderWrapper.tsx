@@ -84,7 +84,7 @@ const visibleGradientBorderStyle = {
   },
 };
 
-export function DoubleGradientBorderWrapper({
+export function SearchDoubleGradientBorderWrapper({
   children,
   ...flexProps
 }: { children: ReactNode } & FlexProps) {
