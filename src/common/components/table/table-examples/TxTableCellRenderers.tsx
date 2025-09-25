@@ -82,7 +82,11 @@ export const TimeStampCellRenderer = (value: string, tooltip?: string) => {
   );
 
   if (tooltip) {
-    return <Tooltip content={tooltip}>{content}</Tooltip>;
+    return (
+      <Tooltip content={tooltip} variant="redesignPrimary">
+        {content}
+      </Tooltip>
+    );
   }
 
   return content;
@@ -135,7 +139,7 @@ function getTxStatusBgColor(status: TransactionStatus | MempoolTransactionStatus
   }
 }
 
-const StatusTag = ({ status }: { status: TransactionStatus | MempoolTransactionStatus }) => {
+export const StatusTag = ({ status }: { status: TransactionStatus | MempoolTransactionStatus }) => {
   return (
     <Flex
       alignItems="center"
@@ -162,7 +166,10 @@ export const TransactionTitleCellRenderer = (tx: Transaction | MempoolTransactio
     </TxLink>
   );
 
-  if (tx.tx_status && txStatus === TransactionStatusEnum.FAILED) {
+  if (
+    tx.tx_status &&
+    (txStatus === TransactionStatusEnum.FAILED || txStatus === TransactionStatusEnum.PENDING)
+  ) {
     return (
       <Flex alignItems="center" gap={1.5}>
         {content}

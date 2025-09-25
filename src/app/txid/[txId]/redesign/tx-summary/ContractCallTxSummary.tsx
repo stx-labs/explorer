@@ -8,6 +8,7 @@ import {
   MempoolContractCallTransaction,
 } from '@stacks/stacks-blockchain-api-types';
 
+import { useTxIdPageData } from '../../TxIdPageContext';
 import { PriceSummaryItemValue, SummaryItem } from './SummaryItem';
 
 export const ContractCallTxSummaryItems = ({
@@ -15,6 +16,7 @@ export const ContractCallTxSummaryItems = ({
 }: {
   tx: ContractCallTransaction | MempoolContractCallTransaction;
 }) => {
+  const { stxPrice } = useTxIdPageData();
   return (
     <>
       <SummaryItem
@@ -68,7 +70,7 @@ export const ContractCallTxSummaryItems = ({
       <SummaryItem
         label="Fee"
         value={tx.fee_rate}
-        valueRenderer={value => <PriceSummaryItemValue value={value} />}
+        valueRenderer={value => <PriceSummaryItemValue value={value} stxPrice={stxPrice} />}
       />
       <SummaryItem label="Nonce" value={tx.nonce?.toString() || ''} showCopyButton />
       {isConfirmedTx<ContractCallTransaction, MempoolContractCallTransaction>(tx) && (

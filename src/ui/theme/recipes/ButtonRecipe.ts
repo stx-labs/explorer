@@ -148,7 +148,15 @@ export const buttonRecipe = defineRecipe({
           },
         },
       },
-      unstyled: {},
+      unstyled: {
+        bg: 'transparent',
+        border: 'none',
+        borderRadius: 'none',
+        p: 0,
+        textDecoration: 'none',
+        minH: 0,
+        minW: 0,
+      },
       buttonLink: {
         h: 'auto',
         bg: 'transparent',

@@ -2,6 +2,9 @@ export const sbtcDepositAddress = 'SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4';
 export const sbtcContractAddress = 'SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token';
 export const sbtcWidthdrawlContractAddress =
   'SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-withdrawal';
+export const SBTC_ASSET_ID = 'SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token::sbtc-token';
+export const DROID_CONTRACT_ADDRESS = 'SP2EEV5QBZA454MSMW9W3WJNRXVJF36VPV17FFKYH.DROID';
+const zsbtcContractAddress = 'SP2VCQJGH7PHP2DJK7Z0V48AGBHQAW3R3ZW1QF4N.zsbtc-token';
 export const RISKY_TOKENS = [
   'SP1J45NVEGQ7ZA4M57TGF0RAB00TMYCYG00X8EF5B.granite-btc',
   'SP37WN2BYHKZ90T1ATHTCNG8EFYHS3B49KNGS02ZK.rstSTX',
@@ -17,5 +20,5 @@ export const RISKY_NFTS = [
 export const RISKY_NFT_RULES = [
   /\.StacksDao$/, // Exact match for contract names ending with .StacksDao (case sensitive)
 ];
-export const legitsBTCDerivatives = ['SP2VCQJGH7PHP2DJK7Z0V48AGBHQAW3R3ZW1QF4N.zsbtc-token'];
-export const VERIFIED_TOKENS = ['SP2EEV5QBZA454MSMW9W3WJNRXVJF36VPV17FFKYH.DROID'];
+export const legitsBTCDerivatives = [zsbtcContractAddress];
+export const VERIFIED_TOKENS = [DROID_CONTRACT_ADDRESS, zsbtcContractAddress, sbtcContractAddress];

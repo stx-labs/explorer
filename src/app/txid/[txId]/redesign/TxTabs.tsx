@@ -14,7 +14,7 @@ import { PostConditions } from './post-conditions/PostConditions';
 import { Source } from './source/Source';
 import { TxSummary } from './tx-summary/TxSummary';
 
-function TabTriggerComponent({
+export function TabTriggerComponent({
   label,
   value,
   secondaryLabel,

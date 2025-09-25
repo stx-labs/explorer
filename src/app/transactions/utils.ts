@@ -64,103 +64,113 @@ export type CompressedMempoolTxTableData = Pick<
   >;
 };
 
-export function compressTransactions(transactions: Transaction[]): CompressedTxTableData[] {
-  return transactions.map(tx => {
-    const minimalTx: CompressedTxTableData = {
-      tx_id: tx.tx_id,
-      tx_type: tx.tx_type,
-      tx_status: tx.tx_status,
-      block_height: tx.block_height,
-      fee_rate: tx.fee_rate,
-      block_time: tx.block_time,
-      sender_address: tx.sender_address,
-      is_unanchored: tx.is_unanchored,
-      microblock_canonical: tx.microblock_canonical,
-      canonical: tx.canonical,
+export type CompressedTxAndMempoolTxTableData =
+  | CompressedMempoolTxTableData
+  | CompressedTxTableData;
+
+export function compressTransaction(transaction: Transaction): CompressedTxTableData {
+  const minimalTx: CompressedTxTableData = {
+    tx_id: transaction.tx_id,
+    tx_type: transaction.tx_type,
+    tx_status: transaction.tx_status,
+    block_height: transaction.block_height,
+    fee_rate: transaction.fee_rate,
+    block_time: transaction.block_time,
+    sender_address: transaction.sender_address,
+    is_unanchored: transaction.is_unanchored,
+    microblock_canonical: transaction.microblock_canonical,
+    canonical: transaction.canonical,
+  };
+
+  if ('token_transfer' in transaction && transaction.token_transfer) {
+    minimalTx.token_transfer = {
+      amount: transaction.token_transfer.amount,
+      recipient_address: transaction.token_transfer.recipient_address,
     };
+  }
 
-    if ('token_transfer' in tx && tx.token_transfer) {
-      minimalTx.token_transfer = {
-        amount: tx.token_transfer.amount,
-        recipient_address: tx.token_transfer.recipient_address,
-      };
-    }
+  if ('smart_contract' in transaction && transaction.smart_contract) {
+    minimalTx.smart_contract = {
+      contract_id: transaction.smart_contract.contract_id,
+    };
+  }
 
-    if ('smart_contract' in tx && tx.smart_contract) {
-      minimalTx.smart_contract = {
-        contract_id: tx.smart_contract.contract_id,
-      };
-    }
+  if ('contract_call' in transaction && transaction.contract_call) {
+    minimalTx.contract_call = {
+      contract_id: transaction.contract_call.contract_id,
+      function_name: transaction.contract_call.function_name,
+    };
+  }
 
-    if ('contract_call' in tx && tx.contract_call) {
-      minimalTx.contract_call = {
-        contract_id: tx.contract_call.contract_id,
-        function_name: tx.contract_call.function_name,
-      };
-    }
+  if ('coinbase_payload' in transaction && transaction.coinbase_payload) {
+    minimalTx.coinbase_payload = {
+      alt_recipient: transaction.coinbase_payload.alt_recipient,
+    };
+  }
 
-    if ('coinbase_payload' in tx && tx.coinbase_payload) {
-      minimalTx.coinbase_payload = {
-        alt_recipient: tx.coinbase_payload.alt_recipient,
-      };
-    }
+  if ('tenure_change_payload' in transaction && transaction.tenure_change_payload) {
+    minimalTx.tenure_change_payload = {
+      cause: transaction.tenure_change_payload.cause,
+    };
+  }
 
-    if ('tenure_change_payload' in tx && tx.tenure_change_payload) {
-      minimalTx.tenure_change_payload = {
-        cause: tx.tenure_change_payload.cause,
-      };
-    }
+  return minimalTx;
+}
 
-    return minimalTx;
-  });
+export function compressTransactions(transactions: Transaction[]): CompressedTxTableData[] {
+  return transactions.map(tx => compressTransaction(tx));
+}
+
+export function compressMempoolTransaction(
+  transaction: MempoolTransaction
+): CompressedMempoolTxTableData {
+  const minimalTx: CompressedMempoolTxTableData = {
+    tx_id: transaction.tx_id,
+    tx_type: transaction.tx_type,
+    tx_status: transaction.tx_status,
+    fee_rate: transaction.fee_rate,
+    sender_address: transaction.sender_address,
+    receipt_time: transaction.receipt_time,
+    receipt_time_iso: transaction.receipt_time_iso,
+  };
+
+  if ('token_transfer' in transaction && transaction.token_transfer) {
+    minimalTx.token_transfer = {
+      amount: transaction.token_transfer.amount,
+      recipient_address: transaction.token_transfer.recipient_address,
+    };
+  }
+
+  if ('smart_contract' in transaction && transaction.smart_contract) {
+    minimalTx.smart_contract = {
+      contract_id: transaction.smart_contract.contract_id,
+    };
+  }
+
+  if ('contract_call' in transaction && transaction.contract_call) {
+    minimalTx.contract_call = {
+      contract_id: transaction.contract_call.contract_id,
+      function_name: transaction.contract_call.function_name,
+    };
+  }
+
+  if ('coinbase_payload' in transaction && transaction.coinbase_payload) {
+    minimalTx.coinbase_payload = {
+      alt_recipient: transaction.coinbase_payload.alt_recipient,
+    };
+  }
+
+  if ('tenure_change_payload' in transaction && transaction.tenure_change_payload) {
+    minimalTx.tenure_change_payload = {
+      cause: transaction.tenure_change_payload.cause,
+    };
+  }
+
+  return minimalTx;
 }
 
 export function compressMempoolTransactions(
   transactions: MempoolTransaction[]
 ): CompressedMempoolTxTableData[] {
-  return transactions.map(tx => {
-    const minimalTx: CompressedMempoolTxTableData = {
-      tx_id: tx.tx_id,
-      tx_type: tx.tx_type,
-      tx_status: tx.tx_status,
-      fee_rate: tx.fee_rate,
-      sender_address: tx.sender_address,
-      receipt_time: tx.receipt_time,
-      receipt_time_iso: tx.receipt_time_iso,
-    };
-
-    if ('token_transfer' in tx && tx.token_transfer) {
-      minimalTx.token_transfer = {
-        amount: tx.token_transfer.amount,
-        recipient_address: tx.token_transfer.recipient_address,
-      };
-    }
-
-    if ('smart_contract' in tx && tx.smart_contract) {
-      minimalTx.smart_contract = {
-        contract_id: tx.smart_contract.contract_id,
-      };
-    }
-
-    if ('contract_call' in tx && tx.contract_call) {
-      minimalTx.contract_call = {
-        contract_id: tx.contract_call.contract_id,
-        function_name: tx.contract_call.function_name,
-      };
-    }
-
-    if ('coinbase_payload' in tx && tx.coinbase_payload) {
-      minimalTx.coinbase_payload = {
-        alt_recipient: tx.coinbase_payload.alt_recipient,
-      };
-    }
-
-    if ('tenure_change_payload' in tx && tx.tenure_change_payload) {
-      minimalTx.tenure_change_payload = {
-        cause: tx.tenure_change_payload.cause,
-      };
-    }
-
-    return minimalTx;
-  });
+  return transactions.map(tx => compressMempoolTransaction(tx));
 }

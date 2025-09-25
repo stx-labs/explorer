@@ -117,7 +117,10 @@ function SortIcon({ isSortable, sortDirection, onSort }: SortIconProps) {
 export type TableProps<T> = {
   data: T[];
   columns: ColumnDef<T>[];
-  onSort?: (columnId: string, sortDirection: 'asc' | 'desc' | undefined) => Promise<T[]>;
+  onSort?: (
+    columnId: string | undefined,
+    sortDirection: 'asc' | 'desc' | undefined
+  ) => Promise<T[]>;
   isLoading?: boolean;
   isFetching?: boolean;
   isFiltered?: boolean;
@@ -186,7 +189,7 @@ const EmptyTable = ({ message }: { message?: string }) => {
 
 const LoadingTable = () => {
   return (
-    <Stack justifyContent="center" alignItems="center" h="full" w="full" flex={1}>
+    <Stack justifyContent="center" alignItems="center" h="full" w="full" flex={1} py={8}>
       <Icon h={16} w={16}>
         <Spinner size="md" />
       </Icon>
@@ -299,7 +302,7 @@ export function Table<T>({
     return tableContainerWrapper(<LoadingTable />);
   }
 
-  if (!isLoading && !isFetching && tableData.length === 0) {
+  if (!isLoading && !isFetching && tableData && tableData.length === 0) {
     if (isFiltered) {
       return tableContainerWrapper(emptyFilteredTableUi ?? <EmptyFilteredTable />);
     }

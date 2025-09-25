@@ -47,6 +47,15 @@ export const TEXT_STYLES = defineTextStyles({
       lineHeight: 'redesign.medium',
     },
   },
+  'text-regular-2xl': {
+    value: {
+      fontFamily: 'var(--font-instrument-sans)',
+      fontSize: '2xl',
+      fontWeight: 'regular',
+      letterSpacing: 'normal',
+      lineHeight: 'redesign.medium',
+    },
+  },
 
   // Medium Variants
   'text-medium-xs': {
