@@ -9,6 +9,7 @@ import MicroStxIcon from '@/ui/icons/MicroStxIcon';
 import StacksIconThin from '@/ui/icons/StacksIconThin';
 import { Flex, Icon } from '@chakra-ui/react';
 import { ArrowRight, Clock, Question, XCircle } from '@phosphor-icons/react';
+import { ReactNode } from 'react';
 
 import {
   MempoolTransaction,
@@ -83,13 +84,17 @@ export const TimeStampCellRenderer = (value: string, tooltip?: string) => {
   );
 
   if (tooltip) {
-    return <Tooltip content={tooltip}>{content}</Tooltip>;
+    return (
+      <Tooltip content={tooltip} variant="redesignPrimary">
+        {content}
+      </Tooltip>
+    );
   }
 
   return content;
 };
 
-export const IconCellRenderer = (value: React.ReactNode) => {
+export const IconCellRenderer = (value: ReactNode) => {
   return (
     <Icon h={3} w={3} color="textSecondary">
       {value}
@@ -136,7 +141,7 @@ function getTxStatusBgColor(status: TransactionStatus | MempoolTransactionStatus
   }
 }
 
-const StatusTag = ({ status }: { status: TransactionStatus | MempoolTransactionStatus }) => {
+export const StatusTag = ({ status }: { status: TransactionStatus | MempoolTransactionStatus }) => {
   return (
     <Flex
       alignItems="center"
@@ -163,7 +168,10 @@ export const TransactionTitleCellRenderer = (tx: Transaction | MempoolTransactio
     </TxLink>
   );
 
-  if (tx.tx_status && txStatus === TransactionStatusEnum.FAILED) {
+  if (
+    tx.tx_status &&
+    (txStatus === TransactionStatusEnum.FAILED || txStatus === TransactionStatusEnum.PENDING)
+  ) {
     return (
       <Flex alignItems="center" gap={1.5}>
         {content}

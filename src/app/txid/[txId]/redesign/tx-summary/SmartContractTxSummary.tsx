@@ -1,3 +1,4 @@
+import { useTxIdPageData } from '@/app/txid/[txId]/TxIdPageContext';
 import { AddressLink } from '@/common/components/ExplorerLinks';
 import { formatBlockTime } from '@/common/utils/time-utils';
 import { isConfirmedTx } from '@/common/utils/transaction-utils';
@@ -23,6 +24,7 @@ export const SmartContractTxSummaryItems = ({
 }: {
   tx: SmartContractTransaction | MempoolSmartContractTransaction;
 }) => {
+  const { stxPrice } = useTxIdPageData();
   return (
     <>
       <SummaryItem
@@ -65,7 +67,7 @@ export const SmartContractTxSummaryItems = ({
       <SummaryItem
         label="Fee"
         value={tx.fee_rate}
-        valueRenderer={value => <PriceSummaryItemValue value={value} />}
+        valueRenderer={value => <PriceSummaryItemValue value={value} stxPrice={stxPrice} />}
       />
       <SummaryItem label="Nonce" value={tx.nonce?.toString() || ''} showCopyButton />
       {isConfirmedTx<SmartContractTransaction, MempoolSmartContractTransaction>(tx) && (

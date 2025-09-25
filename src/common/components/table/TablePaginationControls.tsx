@@ -8,7 +8,7 @@ import {
 import { Text } from '@/ui/Text';
 import { Button, Flex, Grid, HStack, Input, Separator } from '@chakra-ui/react';
 import { PaginationState } from '@tanstack/react-table';
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
 export interface TablePaginationControlsProps {
   pageIndex: number; // the current page index
@@ -44,6 +44,8 @@ export function TablePaginationControls({
     },
     [handlePageChange, pageSize]
   );
+
+  const numPages = useMemo(() => Math.ceil(totalRows / pageSize), [totalRows, pageSize]);
 
   return (
     <Grid
@@ -113,58 +115,62 @@ export function TablePaginationControls({
         </PaginationRoot>
       </Flex>
 
-      <Separator
-        orientation={{ base: 'horizontal', lg: 'vertical' }}
-        h="auto"
-        alignSelf="stretch"
-        borderColor="redesignBorderSecondary"
-      />
-
-      <Flex gap={4} px={4} py={{ base: 3, lg: 2 }} alignItems="center" justifyContent="center">
-        <Flex gap={2} alignItems="center">
-          <Input
-            aria-label="Go to page number"
-            variant="redesignPrimary"
-            value={inputValue}
-            onChange={e => setInputValue(e.target.value)}
-            minW={12}
-            maxW={12}
-            px={1.5}
-            h={6}
-            type="number"
-            onKeyDown={e => {
-              if (e.key === 'Enter') {
-                goToPageEventHandler(inputValue);
-              }
-            }}
-            bg="transparent"
-            css={{
-              // Hide the spinner buttons
-              '&::-webkit-outer-spin-button, &::-webkit-inner-spin-button': {
-                WebkitAppearance: 'none',
-                margin: 0,
-              },
-              '&[type=number]': {
-                MozAppearance: 'textfield',
-              },
-            }}
+      {numPages > 5 && (
+        <>
+          <Separator
+            orientation={{ base: 'horizontal', lg: 'vertical' }}
+            h="auto"
+            alignSelf="stretch"
+            borderColor="redesignBorderSecondary"
           />
-          <Text fontSize="xs" color="textTertiary">
-            of {pageCount > 1000 ? '1000+' : pageCount} pages
-          </Text>
-        </Flex>
-        <Button
-          py={1.5}
-          px={3}
-          onClick={() => {
-            goToPageEventHandler(inputValue);
-          }}
-          variant="redesignSecondary"
-          size="small"
-        >
-          Go
-        </Button>
-      </Flex>
+
+          <Flex gap={4} px={4} py={{ base: 3, lg: 2 }} alignItems="center" justifyContent="center">
+            <Flex gap={2} alignItems="center">
+              <Input
+                aria-label="Go to page number"
+                variant="redesignPrimary"
+                value={inputValue}
+                onChange={e => setInputValue(e.target.value)}
+                minW={12}
+                maxW={12}
+                px={1.5}
+                h={6}
+                type="number"
+                onKeyDown={e => {
+                  if (e.key === 'Enter') {
+                    goToPageEventHandler(inputValue);
+                  }
+                }}
+                bg="transparent"
+                css={{
+                  // Hide the spinner buttons
+                  '&::-webkit-outer-spin-button, &::-webkit-inner-spin-button': {
+                    WebkitAppearance: 'none',
+                    margin: 0,
+                  },
+                  '&[type=number]': {
+                    MozAppearance: 'textfield',
+                  },
+                }}
+              />
+              <Text fontSize="xs" color="textTertiary">
+                of {pageCount > 1000 ? '1000+' : pageCount} pages
+              </Text>
+            </Flex>
+            <Button
+              py={1.5}
+              px={3}
+              onClick={() => {
+                goToPageEventHandler(inputValue);
+              }}
+              variant="redesignSecondary"
+              size="small"
+            >
+              Go
+            </Button>
+          </Flex>
+        </>
+      )}
     </Grid>
   );
 }
