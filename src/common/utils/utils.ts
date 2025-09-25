@@ -74,6 +74,23 @@ export const validateStacksContractId = (contractId?: string): boolean => {
   }
 };
 
+export const validateAssettId = (assetId: string): boolean => {
+  try {
+    if (!assetId) return false;
+
+    // Validate format: address.contract::asset (exactly one '.' and one '::')
+    const assetIdRegex = /^[^.]+\.[^.:]+::[^:]+$/;
+    if (!assetIdRegex.test(assetId)) return false;
+
+    const { address, contract, asset } = getAssetNameParts(assetId);
+    if (!address || !contract || !asset) return false;
+    const contractId = `${address}.${contract}`;
+    return validateStacksContractId(contractId);
+  } catch (e) {
+    return false;
+  }
+};
+
 export function shortenHexDeprecated(hex: string, length = 4) {
   return `${hex.substring(0, length + 2)}…${hex.substring(hex.length - length)}`;
 }

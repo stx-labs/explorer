@@ -24,6 +24,22 @@ export interface DeveloperData {
   last_4_weeks_commit_activity_series: [] | null;
 }
 
+export interface DeveloperDataRedesign {
+  forks?: number;
+  stars?: number;
+  subscribers?: number;
+  total_issues?: number;
+  closed_issues?: number;
+  pull_requests_merged?: number;
+  pull_request_contributors?: number;
+  code_additions_deletions_4_weeks?: {
+    additions: number;
+    deletions: number;
+  };
+  commit_count_4_weeks?: number;
+  last_4_weeks_commit_activity_series?: [];
+}
+
 export interface BasicTokenInfo {
   name: string | null;
   symbol: string | null;
@@ -54,3 +70,31 @@ export interface TokenInfoProps {
     marketCapRank: number | null;
   };
 }
+
+export interface TokenDataFromStacksApi {
+  name?: string;
+  symbol?: string;
+  totalSupply?: number;
+  circulatingSupply?: number;
+  imageUri?: string;
+  decimals?: number;
+}
+
+export interface TokenDataFromLunarCrush {
+  name?: string;
+  symbol?: string;
+  categories?: string[];
+  links?: TokenLinks;
+  circulatingSupply?: number;
+  currentPrice?: number;
+  priceChangePercentage24h?: number;
+  currentPriceInBtc?: number;
+  priceInBtcChangePercentage24h?: number;
+  marketCap?: number;
+  tradingVolume24h?: number;
+  tradingVolumeChangePercentage24h?: number;
+  developerData?: DeveloperDataRedesign;
+  marketCapRank?: number;
+}
+
+export interface MergedTokenData extends TokenDataFromStacksApi, TokenDataFromLunarCrush {}

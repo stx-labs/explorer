@@ -33,6 +33,7 @@ import {
   truncateStxAddress,
   truncateStxContractId,
   truncateText,
+  validateAssettId,
   validateStacksAddress,
   validateStacksContractId,
 } from '../utils';
@@ -524,5 +525,96 @@ describe('validateStacksContractId', () => {
     );
     expect(validateStacksContractId('invalid')).toBe(false);
     expect(validateStacksContractId()).toBe(false);
+  });
+});
+
+describe('validateAssettId', () => {
+  test('should validate valid asset IDs', () => {
+    // Valid asset ID with proper format: address.contract::asset
+    expect(
+      validateAssettId('SP3D6PV2ACBPEKYJTCMH7HEN02KP87QSP8KTEH335.token-contract::my-token')
+    ).toBe(true);
+    expect(validateAssettId('SP1H1733V5MZ3SZ9XRW9FKYGEZT0JDGEB8Y634C7R.arkadiko-token::diko')).toBe(
+      true
+    );
+    expect(validateAssettId('SP4SZE494VC2YC5JYG7AYFQ44F5Q4PYV7DVMDPBG.ststx-token::ststx')).toBe(
+      true
+    );
+  });
+
+  test('should reject empty or falsy asset IDs', () => {
+    expect(validateAssettId('')).toBe(false);
+    expect(validateAssettId(null as any)).toBe(false);
+    expect(validateAssettId(undefined as any)).toBe(false);
+  });
+
+  test('should reject asset IDs with invalid format', () => {
+    // Missing asset name (no ::)
+    expect(validateAssettId('SP3D6PV2ACBPEKYJTCMH7HEN02KP87QSP8KTEH335.token-contract')).toBe(
+      false
+    );
+
+    // Missing contract name
+    expect(validateAssettId('SP3D6PV2ACBPEKYJTCMH7HEN02KP87QSP8KTEH335::my-token')).toBe(false);
+
+    // Missing address
+    expect(validateAssettId('.token-contract::my-token')).toBe(false);
+
+    // Invalid format (no periods or colons)
+    expect(validateAssettId('invalid-asset-id')).toBe(false);
+
+    // Too many parts
+    expect(
+      validateAssettId('SP3D6PV2ACBPEKYJTCMH7HEN02KP87QSP8KTEH335.contract.extra::asset')
+    ).toBe(false);
+  });
+
+  test('should reject asset IDs with invalid Stacks addresses', () => {
+    // Invalid address format
+    expect(validateAssettId('INVALID_ADDRESS.token-contract::my-token')).toBe(false);
+    expect(validateAssettId('123.token-contract::my-token')).toBe(false);
+    expect(validateAssettId('short.token-contract::my-token')).toBe(false);
+  });
+
+  test('should reject asset IDs missing required parts', () => {
+    // Missing asset name after ::
+    expect(validateAssettId('SP3D6PV2ACBPEKYJTCMH7HEN02KP87QSP8KTEH335.token-contract::')).toBe(
+      false
+    );
+
+    // Missing contract name before ::
+    expect(validateAssettId('SP3D6PV2ACBPEKYJTCMH7HEN02KP87QSP8KTEH335.::my-token')).toBe(false);
+
+    // Only address
+    expect(validateAssettId('SP3D6PV2ACBPEKYJTCMH7HEN02KP87QSP8KTEH335')).toBe(false);
+  });
+
+  test('should handle edge cases and malformed inputs', () => {
+    // Multiple :: separators
+    expect(
+      validateAssettId('SP3D6PV2ACBPEKYJTCMH7HEN02KP87QSP8KTEH335.contract::asset::extra')
+    ).toBe(false);
+
+    // Special characters in parts
+    expect(
+      validateAssettId('SP3D6PV2ACBPEKYJTCMH7HEN02KP87QSP8KTEH335.contract-name::asset-name')
+    ).toBe(true);
+    expect(
+      validateAssettId('SP3D6PV2ACBPEKYJTCMH7HEN02KP87QSP8KTEH335.contract_name::asset_name')
+    ).toBe(true);
+
+    // Whitespace
+    expect(validateAssettId(' SP3D6PV2ACBPEKYJTCMH7HEN02KP87QSP8KTEH335.contract::asset ')).toBe(
+      false
+    );
+    expect(validateAssettId('SP3D6PV2ACBPEKYJTCMH7HEN02KP87QSP8KTEH335.contract::asset name')).toBe(
+      true
+    );
+  });
+
+  test('should handle exceptions gracefully', () => {
+    // Test that function returns false when getAssetNameParts throws
+    // This would happen if the input format is completely malformed
+    expect(validateAssettId('completely::malformed::input::with::too::many::parts')).toBe(false);
   });
 });
