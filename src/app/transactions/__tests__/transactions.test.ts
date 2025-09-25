@@ -1,6 +1,6 @@
 import { storybookTxTableData } from '@/stories/table-utils/tx-table-data';
 
-import { compressTransactions } from '../utils';
+import { compressTransactions } from '@/common/utils/transaction-utils';
 
 describe('compressTransactions', () => {
   it('should compress a token transfer transaction', () => {

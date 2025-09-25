@@ -117,7 +117,10 @@ function SortIcon({ isSortable, sortDirection, onSort }: SortIconProps) {
 export type TableProps<T> = {
   data: T[];
   columns: ColumnDef<T>[];
-  onSort?: (columnId: string, sortDirection: 'asc' | 'desc' | undefined) => Promise<T[]>;
+  onSort?: (
+    columnId: string | undefined,
+    sortDirection: 'asc' | 'desc' | undefined
+  ) => Promise<T[]>;
   isLoading?: boolean;
   isFetching?: boolean;
   isFiltered?: boolean;
@@ -141,7 +144,7 @@ export type TableProps<T> = {
 
 const ErrorTable = ({ error }: { error: string }) => {
   return (
-    <Stack justifyContent="center" alignItems="center" h="full" w="full" flex={1} gap={3}>
+    <Stack justifyContent="center" alignItems="center" h="full" w="full" flex={1} gap={3} py={16}>
       <Icon h={8} w={8} color="iconError">
         <WarningOctagon />
       </Icon>
@@ -155,7 +158,7 @@ const ErrorTable = ({ error }: { error: string }) => {
 const EmptyFilteredTable = () => {
   // This isn't used now, but the plan is to use this once I start implementing filtering
   return (
-    <Stack justifyContent="center" alignItems="center" h="full" w="full" flex={1} gap={6}>
+    <Stack justifyContent="center" alignItems="center" h="full" w="full" flex={1} gap={6} py={16}>
       <Icon h={16} w={16}>
         <StacksFrowneyIcon />
       </Icon>
@@ -173,7 +176,7 @@ const EmptyFilteredTable = () => {
 
 const EmptyTable = ({ message }: { message?: string }) => {
   return (
-    <Stack justifyContent="center" alignItems="center" h="full" w="full" flex={1} gap={6}>
+    <Stack justifyContent="center" alignItems="center" h="full" w="full" flex={1} gap={6} py={16}>
       <Icon h={16} w={16}>
         <StacksFrowneyIcon />
       </Icon>
@@ -186,7 +189,7 @@ const EmptyTable = ({ message }: { message?: string }) => {
 
 const LoadingTable = () => {
   return (
-    <Stack justifyContent="center" alignItems="center" h="full" w="full" flex={1}>
+    <Stack justifyContent="center" alignItems="center" h="full" w="full" flex={1} py={16}>
       <Icon h={16} w={16}>
         <Spinner size="md" />
       </Icon>
@@ -299,7 +302,7 @@ export function Table<T>({
     return tableContainerWrapper(<LoadingTable />);
   }
 
-  if (!isLoading && !isFetching && tableData.length === 0) {
+  if (!isLoading && !isFetching && tableData && tableData.length === 0) {
     if (isFiltered) {
       return tableContainerWrapper(emptyFilteredTableUi ?? <EmptyFilteredTable />);
     }

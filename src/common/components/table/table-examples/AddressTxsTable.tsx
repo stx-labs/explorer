@@ -1,190 +1,196 @@
 'use client';
 
+import { TxTableAddressColumnData } from '@/common/components/table/table-examples/TxsTable';
 import { GenericResponseType } from '@/common/hooks/useInfiniteQueryResult';
 import { THIRTY_SECONDS } from '@/common/queries/query-stale-time';
 import {
-  getAddressConfirmedTxsWithTransfersQueryKey,
-  useAddressConfirmedTxsWithTransfers,
+  getAddressTxsQueryKey,
+  useAddressTxs,
 } from '@/common/queries/useAddressConfirmedTxsWithTransfersInfinite';
 import { formatTimestamp, formatTimestampToRelativeTime } from '@/common/utils/time-utils';
-import { CompressedTxTableData } from '@/common/utils/transaction-utils';
-import { getAmount, getToAddress } from '@/common/utils/transaction-utils';
+import {
+  CompressedTxAndMempoolTxTableData,
+  getAmount,
+  getToAddress,
+  isConfirmedTx,
+} from '@/common/utils/transaction-utils';
 import { validateStacksContractId } from '@/common/utils/utils';
-import { Flex, Icon } from '@chakra-ui/react';
+import { Flex } from '@chakra-ui/react';
 import { ArrowRight } from '@phosphor-icons/react';
 import { useQueryClient } from '@tanstack/react-query';
 import { ColumnDef, Header, PaginationState } from '@tanstack/react-table';
-import { type JSX, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 
-import { Transaction } from '@stacks/stacks-blockchain-api-types';
+import { MempoolTransaction, Transaction } from '@stacks/stacks-blockchain-api-types';
 
 import { ScrollIndicator } from '../../ScrollIndicator';
 import { AddressLinkCellRenderer } from '../CommonTableCellRenderers';
 import { Table } from '../Table';
 import { DefaultTableColumnHeader } from '../TableComponents';
 import { TableContainer } from '../TableContainer';
+import { EventsCellRenderer, TransactionTitleCellRenderer } from './AddressTxsTaBleCellRenderers';
 import {
-  EventsCellRenderer,
   FeeCellRenderer,
   IconCellRenderer,
   TimeStampCellRenderer,
-  TransactionTitleCellRenderer,
   TxLinkCellRenderer,
   TxTypeCellRenderer,
 } from './TxTableCellRenderers';
-import { TX_TABLE_PAGE_SIZE } from './consts';
-import { TxTableColumns } from './types';
 
-export interface AddressTxTableData {
-  [TxTableColumns.Transaction]: Transaction;
-  [TxTableColumns.TxId]: string;
-  [TxTableColumns.TxType]: Transaction['tx_type'];
-  [TxTableColumns.From]: TxTableAddressColumnData;
-  [TxTableColumns.ArrowRight]: JSX.Element;
-  [TxTableColumns.To]: TxTableAddressColumnData;
-  [TxTableColumns.Fee]: string;
-  [TxTableColumns.Amount]: number;
-  [TxTableColumns.BlockTime]: number;
-  [TxTableColumns.Events]: Transaction;
+export enum AddressTxsTableColumns {
+  Transaction = 'transaction',
+  TxId = 'txId',
+  TxType = 'txType',
+  From = 'from',
+  ArrowRight = 'arrowRight',
+  To = 'to',
+  Fee = 'fee',
+  Amount = 'amount',
+  BlockTime = 'blockTime',
+  Events = 'events',
 }
 
-export interface TxTableAddressColumnData {
-  address: string;
-  isContract: boolean;
+export interface AddressTxsTableData {
+  [AddressTxsTableColumns.Transaction]: AddressTxsTableTransactionTitleColumnData;
+  [AddressTxsTableColumns.TxId]: string;
+  [AddressTxsTableColumns.TxType]: Transaction['tx_type'];
+  [AddressTxsTableColumns.From]: TxTableAddressColumnData;
+  [AddressTxsTableColumns.ArrowRight]: null;
+  [AddressTxsTableColumns.To]: TxTableAddressColumnData;
+  [AddressTxsTableColumns.Fee]: string;
+  [AddressTxsTableColumns.Amount]: number;
+  [AddressTxsTableColumns.BlockTime]: number | undefined;
+  [AddressTxsTableColumns.Events]: AddressTxsTableEventsColumnData;
 }
 
-export const defaultColumnDefinitions: ColumnDef<AddressTxTableData>[] = [
+type AddressTxsTableTransactionTitleColumnData = {
+  principal: string;
+  tx: Transaction | MempoolTransaction;
+};
+
+type AddressTxsTableEventsColumnData = {
+  numEvents: number;
+  txId: string;
+};
+
+export const EVENTS_COLUMN_DEFINITION: ColumnDef<AddressTxsTableData> = {
+  id: AddressTxsTableColumns.Events,
+  header: ({ header }: { header: Header<AddressTxsTableData, unknown> }) => (
+    <Flex alignItems="center" justifyContent="flex-end" w="full">
+      <DefaultTableColumnHeader header={header}>Events</DefaultTableColumnHeader>
+    </Flex>
+  ),
+  accessorKey: AddressTxsTableColumns.Events,
+  cell: info => {
+    const { numEvents, txId } = info.row.original[AddressTxsTableColumns.Events];
+    return (
+      <Flex alignItems="center" justifyContent="flex-end" w="full">
+        {EventsCellRenderer(numEvents, txId)}
+      </Flex>
+    );
+  },
+  enableSorting: false,
+};
+
+export const defaultColumnDefinitions: ColumnDef<AddressTxsTableData>[] = [
   {
-    id: TxTableColumns.Transaction,
+    id: AddressTxsTableColumns.Transaction,
     header: 'Transaction',
-    accessorKey: TxTableColumns.Transaction,
+    accessorKey: AddressTxsTableColumns.Transaction,
     cell: info => {
-      const transaction = info.row.original[TxTableColumns.Transaction];
-      return TransactionTitleCellRenderer(transaction);
+      const { principal, tx } = info.row.original[AddressTxsTableColumns.Transaction];
+      return TransactionTitleCellRenderer(principal, tx);
     },
     enableSorting: false,
   },
   {
-    id: TxTableColumns.TxId,
-    header: 'ID',
-    accessorKey: TxTableColumns.TxId,
-    cell: info => {
-      const txId = info.row.original[TxTableColumns.TxId];
-      return TxLinkCellRenderer(txId);
-    },
-    enableSorting: false,
-  },
-  {
-    id: TxTableColumns.TxType,
+    id: AddressTxsTableColumns.TxType,
     header: 'Type',
-    accessorKey: TxTableColumns.TxType,
-    cell: info => {
-      const txType = info.row.original[TxTableColumns.TxType];
-      return <TxTypeCellRenderer txType={txType} />;
-    },
+    accessorKey: AddressTxsTableColumns.TxType,
+    cell: info => <TxTypeCellRenderer txType={info.row.original[AddressTxsTableColumns.TxType]} />,
     enableSorting: false,
   },
   {
-    id: TxTableColumns.From,
+    id: AddressTxsTableColumns.TxId,
+    header: 'ID',
+    accessorKey: AddressTxsTableColumns.TxId,
+    cell: info => TxLinkCellRenderer(info.row.original[AddressTxsTableColumns.TxId]),
+    enableSorting: false,
+  },
+  {
+    id: AddressTxsTableColumns.From,
     header: 'From',
-    accessorKey: TxTableColumns.From,
-    cell: info => {
-      const from = info.row.original[TxTableColumns.From];
-      return AddressLinkCellRenderer(from);
-    },
+    accessorKey: AddressTxsTableColumns.From,
+    cell: info => AddressLinkCellRenderer(info.row.original[AddressTxsTableColumns.From]),
     enableSorting: false,
   },
   {
-    id: TxTableColumns.ArrowRight,
+    id: AddressTxsTableColumns.ArrowRight,
     header: '',
-    accessorKey: TxTableColumns.ArrowRight,
-    cell: info => {
-      const arrowRight = info.row.original[TxTableColumns.ArrowRight];
-      return IconCellRenderer(arrowRight);
-    },
+    accessorKey: AddressTxsTableColumns.ArrowRight,
+    cell: info => IconCellRenderer(<ArrowRight />),
     enableSorting: false,
     size: 45,
     minSize: 45,
     maxSize: 45,
   },
   {
-    id: TxTableColumns.To,
+    id: AddressTxsTableColumns.To,
     header: 'To',
-    accessorKey: TxTableColumns.To,
-    cell: info => {
-      const to = info.row.original[TxTableColumns.To];
-      return AddressLinkCellRenderer(to);
-    },
+    accessorKey: AddressTxsTableColumns.To,
+    cell: info => AddressLinkCellRenderer(info.row.original[AddressTxsTableColumns.To]),
     enableSorting: false,
   },
   {
-    id: TxTableColumns.Fee,
-    header: ({ header }: { header: Header<AddressTxTableData, unknown> }) => (
+    id: AddressTxsTableColumns.Fee,
+    header: ({ header }: { header: Header<AddressTxsTableData, unknown> }) => (
       <Flex alignItems="center" justifyContent="flex-end" w="full">
         <DefaultTableColumnHeader header={header}>Fee</DefaultTableColumnHeader>
       </Flex>
     ),
-    accessorKey: TxTableColumns.Fee,
-    cell: info => {
-      const fee = info.row.original[TxTableColumns.Fee];
-      return (
-        <Flex alignItems="center" justifyContent="flex-end" w="full">
-          {FeeCellRenderer(fee)}
-        </Flex>
-      );
-    },
+    accessorKey: AddressTxsTableColumns.Fee,
+    cell: info => (
+      <Flex alignItems="center" justifyContent="flex-end" w="full">
+        {FeeCellRenderer(info.row.original[AddressTxsTableColumns.Fee])}
+      </Flex>
+    ),
     enableSorting: false,
   },
   {
-    id: TxTableColumns.BlockTime,
-    header: ({ header }: { header: Header<AddressTxTableData, unknown> }) => (
+    id: AddressTxsTableColumns.BlockTime,
+    header: ({ header }: { header: Header<AddressTxsTableData, unknown> }) => (
       <Flex alignItems="center" justifyContent="flex-end" w="full">
         <DefaultTableColumnHeader header={header}>Timestamp</DefaultTableColumnHeader>
       </Flex>
     ),
-    accessorKey: TxTableColumns.BlockTime,
-    cell: info => {
-      const blockTime = info.row.original[TxTableColumns.BlockTime];
-      return (
-        <Flex alignItems="center" justifyContent="flex-end" w="full">
-          {TimeStampCellRenderer(
-            formatTimestampToRelativeTime(blockTime),
-            formatTimestamp(blockTime, 'HH:mm:ss', true)
-          )}
-        </Flex>
-      );
-    },
+    accessorKey: AddressTxsTableColumns.BlockTime,
+    cell: info => (
+      <Flex alignItems="center" justifyContent="flex-end" w="full">
+        {TimeStampCellRenderer(
+          formatTimestampToRelativeTime(
+            info.row.original[AddressTxsTableColumns.BlockTime] as number
+          ),
+          formatTimestamp(
+            info.row.original[AddressTxsTableColumns.BlockTime] as number,
+            'HH:mm:ss',
+            true
+          )
+        )}
+      </Flex>
+    ),
     enableSorting: false,
     meta: {
       tooltip: 'Timestamps are shown in your local timezone',
     },
   },
-  {
-    id: TxTableColumns.Events,
-    header: ({ header }: { header: Header<AddressTxTableData, unknown> }) => (
-      <Flex alignItems="center" justifyContent="flex-end" w="full">
-        <DefaultTableColumnHeader header={header}>Events</DefaultTableColumnHeader>
-      </Flex>
-    ),
-    accessorKey: TxTableColumns.Events,
-    cell: info => {
-      const events = info.row.original[TxTableColumns.Events];
-      return (
-        <Flex alignItems="center" justifyContent="flex-end" w="full">
-          {EventsCellRenderer(events)}
-        </Flex>
-      );
-    },
-    enableSorting: false,
-  },
 ];
 
 export interface AddressTxsTableProps {
   principal: string;
-  initialData: GenericResponseType<CompressedTxTableData> | undefined;
+  initialData?: GenericResponseType<CompressedTxAndMempoolTxTableData> | undefined;
   disablePagination?: boolean;
-  columnDefinitions?: ColumnDef<AddressTxTableData>[];
-  pageSize?: number;
+  columnDefinitions?: ColumnDef<AddressTxsTableData>[];
+  pageSize: number;
   onTotalChange?: (total: number) => void;
 }
 
@@ -193,8 +199,7 @@ export function AddressTxsTable({
   initialData,
   disablePagination = false,
   columnDefinitions,
-  pageSize = TX_TABLE_PAGE_SIZE,
-  onTotalChange,
+  pageSize,
 }: AddressTxsTableProps) {
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
@@ -212,7 +217,6 @@ export function AddressTxsTable({
   const queryClient = useQueryClient();
 
   const isCacheSetWithInitialData = useRef(false);
-
   /**
    * HACK: react query's cache is taking precedence over the initial data, which is causing hydration errors
    * Setting the gcTime to 0 prevents this from happening but it also prevents us from caching requests as the user paginates through the table
@@ -220,7 +224,7 @@ export function AddressTxsTable({
    * By explicitly setting the cache for the first page with initial data, we guarantee the table will use the initial data from the server and behave as expected
    */
   if (isCacheSetWithInitialData.current === false && initialData) {
-    const queryKey = getAddressConfirmedTxsWithTransfersQueryKey(
+    const queryKey = getAddressTxsQueryKey(
       principal,
       pagination.pageSize,
       pagination.pageIndex * pagination.pageSize
@@ -230,7 +234,7 @@ export function AddressTxsTable({
   }
 
   // fetch data
-  let { data, refetch, isFetching, isLoading } = useAddressConfirmedTxsWithTransfers(
+  let { data, isFetching, isLoading } = useAddressTxs(
     principal,
     pagination.pageSize,
     pagination.pageIndex * pagination.pageSize,
@@ -242,43 +246,37 @@ export function AddressTxsTable({
 
   const { total, results: txs = [] } = data || {};
 
-  useEffect(() => {
-    if (onTotalChange && typeof total === 'number') {
-      onTotalChange(total);
-    }
-  }, [total, onTotalChange]);
-
-  const rowData: AddressTxTableData[] = useMemo(
+  const rowData: AddressTxsTableData[] = useMemo(
     () =>
       txs.map(tx => {
-        const transaction = tx.tx;
-        const amount = getAmount(transaction);
-        const to = getToAddress(transaction);
+        const isConfirmed = isConfirmedTx(tx);
+        const to = getToAddress(tx);
+        const amount = getAmount(tx);
+        const events = isConfirmed ? tx.events || [] : [];
 
         return {
-          [TxTableColumns.Transaction]: transaction,
-          [TxTableColumns.TxId]: transaction.tx_id,
-          [TxTableColumns.TxType]: transaction.tx_type,
-          [TxTableColumns.From]: {
-            address: transaction.sender_address,
-            isContract: validateStacksContractId(transaction.sender_address),
+          [AddressTxsTableColumns.Transaction]: { principal, tx },
+          [AddressTxsTableColumns.TxId]: tx.tx_id,
+          [AddressTxsTableColumns.TxType]: tx.tx_type,
+          [AddressTxsTableColumns.From]: {
+            address: tx.sender_address,
+            isContract: validateStacksContractId(tx.sender_address),
           },
-          [TxTableColumns.ArrowRight]: (
-            <Icon color="iconTertiary">
-              <ArrowRight />
-            </Icon>
-          ),
-          [TxTableColumns.To]: {
+          [AddressTxsTableColumns.ArrowRight]: null,
+          [AddressTxsTableColumns.To]: {
             address: to,
             isContract: validateStacksContractId(to),
           },
-          [TxTableColumns.Fee]: transaction.fee_rate,
-          [TxTableColumns.Amount]: amount,
-          [TxTableColumns.BlockTime]: transaction.block_time,
-          [TxTableColumns.Events]: transaction,
+          [AddressTxsTableColumns.Fee]: tx.fee_rate,
+          [AddressTxsTableColumns.Amount]: amount,
+          [AddressTxsTableColumns.BlockTime]: isConfirmed ? tx.block_time : undefined,
+          [AddressTxsTableColumns.Events]: {
+            numEvents: events.length,
+            txId: tx.tx_id,
+          },
         };
       }),
-    [txs]
+    [principal, txs]
   );
 
   return (
