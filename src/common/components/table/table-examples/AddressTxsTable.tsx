@@ -186,6 +186,8 @@ export const defaultColumnDefinitions: ColumnDef<AddressTxsTableData>[] = [
   },
 ];
 
+export const columnDefinitionsWithEvents = [...defaultColumnDefinitions, EVENTS_COLUMN_DEFINITION];
+
 export interface AddressTxsTableProps {
   principal: string;
   initialData?: GenericResponseType<CompressedTxAndMempoolTxTableData> | undefined;

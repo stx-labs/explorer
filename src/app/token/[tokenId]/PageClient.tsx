@@ -1,5 +1,6 @@
 'use client';
 
+import { TokenInfoProps } from '@/app/token/[tokenId]/types';
 import { getHasSBTCInName, getIsSBTC } from '@/app/tokens/utils';
 import { useIsRedesignUrl } from '@/common/utils/url-utils';
 import { Link } from '@/ui/Link';
@@ -16,7 +17,6 @@ import TokenIdPageRedesign from './PageClientRedesign';
 import { TokenTabs } from './Tabs';
 import { TokenInfo } from './TokenInfo';
 import { RISKY_TOKENS, VERIFIED_TOKENS, legitsBTCDerivatives } from './consts';
-import { TokenInfoProps } from './types';
 
 const WarningMessage = ({ text }: { text: string | ReactNode }) => {
   return (

@@ -4,7 +4,7 @@ import { FungibleTokensTableWithFilters } from '@/common/components/table/fungib
 import {
   AddressTxsTable,
   EVENTS_COLUMN_DEFINITION,
-  defaultColumnDefinitions,
+  columnDefinitionsWithEvents,
 } from '@/common/components/table/table-examples/AddressTxsTable';
 import {
   ADDRESS_ID_PAGE_ADDRESS_TXS_LIMIT,
@@ -23,11 +23,6 @@ enum AddressIdPageTab {
   Tokens = 'tokens',
   Collectibles = 'collectibles',
 }
-
-const TransactionsTabAddressTxsTableColumnDefinitions = [
-  ...defaultColumnDefinitions,
-  EVENTS_COLUMN_DEFINITION,
-];
 
 export const AddressTabs = ({ principal }: { principal: string }) => {
   const [selectedTab, setSelectedTab] = useState(AddressIdPageTab.Overview);
@@ -100,7 +95,7 @@ export const AddressTabs = ({ principal }: { principal: string }) => {
         <AddressTxsTable
           principal={principal}
           pageSize={ADDRESS_ID_PAGE_ADDRESS_TXS_LIMIT}
-          columnDefinitions={TransactionsTabAddressTxsTableColumnDefinitions}
+          columnDefinitions={columnDefinitionsWithEvents}
         />
       </TabsContent>
       <TabsContent key={AddressIdPageTab.Tokens} value={AddressIdPageTab.Tokens}>

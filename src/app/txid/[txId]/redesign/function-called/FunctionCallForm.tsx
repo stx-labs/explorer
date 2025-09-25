@@ -5,6 +5,7 @@ import { Select } from '@/common/components/Select';
 import { useGlobalContext } from '@/common/context/useGlobalContext';
 import { logError } from '@/common/utils/error-utils';
 import { InvalidFunctionType, getInvalidFunctionType, showFn } from '@/common/utils/sandbox';
+import { Alert } from '@/components/ui/alert';
 import { Button } from '@/ui/Button';
 import { Text } from '@/ui/Text';
 import { Flex, Stack } from '@chakra-ui/react';
@@ -14,7 +15,6 @@ import { FC, useMemo, useState } from 'react';
 
 import { ClarityAbiFunction, ClarityValue, PostConditionMode } from '@stacks/transactions';
 
-import { Alert } from '../Alert';
 import { Argument } from './Argument';
 import { PostConditionForm } from './PostConditionForm';
 import { ReadOnlyField } from './ReadOnlyField';
