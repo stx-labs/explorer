@@ -6,6 +6,7 @@ import { TxsTableWithFilters } from '@/common/components/table/tx-table/TxsTable
 import { useGlobalContext } from '@/common/context/useGlobalContext';
 import { GenericResponseType } from '@/common/hooks/useInfiniteQueryResult';
 import { buildUrl } from '@/common/utils/buildUrl';
+import { CompressedTxTableData } from '@/common/utils/transaction-utils';
 import { ButtonLink } from '@/ui/ButtonLink';
 import { Text } from '@/ui/Text';
 import { Flex, Stack } from '@chakra-ui/react';
@@ -14,7 +15,6 @@ import {
   TxTableFiltersProvider,
   TxTableFilters as TxTableFiltersType,
 } from '../../common/components/table/tx-table/useTxTableFilters';
-import { CompressedTxTableData } from './utils';
 
 export default function ({
   initialTxTableData,

@@ -2,10 +2,9 @@
 
 import { MempoolTableWithFilters } from '@/common/components/table/mempool-table/MempoolTableWithFilters';
 import { GenericResponseType } from '@/common/hooks/useInfiniteQueryResult';
+import { CompressedMempoolTxTableData } from '@/common/utils/transaction-utils';
 import { Text } from '@/ui/Text';
 import { Stack } from '@chakra-ui/react';
-
-import { CompressedMempoolTxTableData } from '../transactions/utils';
 
 interface MempoolTransactionsTableProps {
   initialMempoolTxData?: GenericResponseType<CompressedMempoolTxTableData>;

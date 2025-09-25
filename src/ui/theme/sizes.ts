@@ -21,14 +21,15 @@ import { SPACE } from './space';
 export const CURRENT_SIZES = {
   3.5: { value: '0.875rem' }, // 14px
   4.5: { value: '1.125rem' }, // 18px
-  18: { value: '4.5rem' }, // 72px
   5.5: { value: '1.375rem' }, // 22px
+  10.5: { value: '2.625rem' }, // 42px
   13: { value: '3.25rem' }, // 52px
   13.5: { value: '3.375rem' }, // 54px
   14: { value: '3.5rem' }, // 56px
   14.5: { value: '3.625rem' }, // 58px
   15: { value: '3.75rem' }, // 60px
   17: { value: '4.25rem' }, // 68px
+  18: { value: '4.5rem' }, // 72px
   25: { value: '6.25rem' }, // 100px
   30: { value: '7.5rem' }, // 120px
   50: { value: '12.5rem' }, // 200px

@@ -4,6 +4,7 @@ import { NetworkModes } from '@/common/types/network';
 import { logError } from '@/common/utils/error-utils';
 import { SampleTxsFeeEstimate, getSampleTxsFeeEstimate } from '@/common/utils/fee-utils';
 import { getApiUrl } from '@/common/utils/network-utils';
+import { CompressedTxTableData } from '@/common/utils/transaction-utils';
 import { Flex, Stack } from '@chakra-ui/react';
 
 import { NetworkOverview } from './_components/NetworkOverview/NetworkOverview';
@@ -21,7 +22,6 @@ import {
   fetchUIMempoolStats,
 } from './data';
 import { CommonSearchParams } from './transactions/page';
-import { CompressedTxTableData } from './transactions/utils';
 
 interface HomeSearchParams extends CommonSearchParams {
   ssr?: string;

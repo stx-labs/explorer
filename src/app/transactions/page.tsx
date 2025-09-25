@@ -5,15 +5,16 @@ import { fetchBnsAddress } from '@/common/queries/bns-queries';
 import { NetworkModes } from '@/common/types/network';
 import { logError } from '@/common/utils/error-utils';
 import { getApiUrl } from '@/common/utils/network-utils';
+import { CompressedTxTableData, compressTransactions } from '@/common/utils/transaction-utils';
 import { hasBnsExtension } from '@/common/utils/utils';
 import 'react-datepicker/dist/react-datepicker.css';
 
 import Page from './PageClient';
-import { CompressedTxTableData, compressTransactions } from './utils';
 
 export interface CommonSearchParams {
   chain?: string;
   api?: string;
+  ssr?: string;
 }
 
 export interface TxPageSearchParams extends CommonSearchParams {

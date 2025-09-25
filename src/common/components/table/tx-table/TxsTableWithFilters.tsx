@@ -1,7 +1,6 @@
-import { CompressedTxTableData } from '@/app/transactions/utils';
-import { TxsTable } from '@/common/components/table/table-examples/TxsTable';
-import { defaultTableContainer } from '@/common/components/table/table-examples/TxsTable';
+import { TxsTable, defaultTableContainer } from '@/common/components/table/table-examples/TxsTable';
 import { GenericResponseType } from '@/common/hooks/useInfiniteQueryResult';
+import { CompressedTxTableData } from '@/common/utils/transaction-utils';
 
 import { useTxTableFilters } from './useTxTableFilters';
 

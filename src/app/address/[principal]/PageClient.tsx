@@ -1,5 +1,6 @@
 'use client';
 
+import { useIsRedesignUrl } from '@/common/utils/url-utils';
 import { Grid, GridProps, Stack } from '@chakra-ui/react';
 
 import { useSuspenseAccountBalance } from '../../../common/queries/useAccountBalance';
@@ -8,6 +9,7 @@ import { hasTokenBalance } from '../../../common/utils/accounts';
 import { AddressTxListTabs } from '../../../features/txs-list/tabs/AddressTxListTabs';
 import { PageTitle } from '../../_components/PageTitle';
 import { AddressSummary } from './AddressSummary';
+import RedesignPageClient from './RedesignPageClient';
 import { StxBalance } from './StxBalance';
 import { TokenBalanceCard } from './TokenBalanceCard';
 
@@ -29,6 +31,12 @@ export default function AddressPage({ principal }: { principal: string }) {
   const { data: nonces } = useAddressNonces({ address: principal });
 
   const hasTokenBalances = hasTokenBalance(balance);
+
+  const isRedesign = useIsRedesignUrl();
+
+  if (isRedesign) {
+    return <RedesignPageClient principal={principal} />;
+  }
 
   return (
     <>
