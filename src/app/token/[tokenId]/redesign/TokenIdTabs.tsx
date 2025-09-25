@@ -1,4 +1,5 @@
 import { TxTabsTrigger } from '@/app/txid/[txId]/redesign/TxTabs';
+import { AvailableFunctions } from '@/app/txid/[txId]/redesign/function-called/AvailableFunctions';
 import { Source } from '@/app/txid/[txId]/redesign/source/Source';
 import { ScrollIndicator } from '@/common/components/ScrollIndicator';
 import {
@@ -27,8 +28,14 @@ enum TokenIdPageTab {
 export const TokenIdTabs = () => {
   const [selectedTab, setSelectedTab] = useState(TokenIdPageTab.Overview);
 
-  const { initialAddressRecentTransactionsData, tokenId, assetId, tokenData, holders } =
-    useTokenIdPageData();
+  const {
+    initialAddressRecentTransactionsData,
+    tokenId,
+    assetId,
+    tokenData,
+    holders,
+    numFunctions,
+  } = useTokenIdPageData();
   const totalAddressTransactions = initialAddressRecentTransactionsData?.total || 0;
   const totalHolders = holders?.total || 0;
 
@@ -86,6 +93,21 @@ export const TokenIdTabs = () => {
             isActive={selectedTab === TokenIdPageTab.Source}
             onClick={() => setSelectedTab(TokenIdPageTab.Source)}
           />
+          <TxTabsTrigger
+            label="Source code"
+            value={TokenIdPageTab.Source}
+            isActive={selectedTab === TokenIdPageTab.Source}
+            onClick={() => setSelectedTab(TokenIdPageTab.Source)}
+          />
+          <TxTabsTrigger
+            label="Available functions"
+            secondaryLabel={
+              numFunctions && numFunctions > 0 ? `(${numFunctions.toLocaleString()})` : ''
+            }
+            value={TokenIdPageTab.AvailableFunctions}
+            isActive={selectedTab === TokenIdPageTab.AvailableFunctions}
+            onClick={() => setSelectedTab(TokenIdPageTab.AvailableFunctions)}
+          />
         </TabsList>
       </ScrollIndicator>
       <TabsContent value={TokenIdPageTab.Overview} w="100%">
@@ -110,6 +132,9 @@ export const TokenIdTabs = () => {
       )}
       <TabsContent value={TokenIdPageTab.Source} w="100%">
         <Source contractId={tokenId} />
+      </TabsContent>
+      <TabsContent value={TokenIdPageTab.AvailableFunctions} w="100%">
+        <AvailableFunctions contractId={tokenId} />
       </TabsContent>
     </TabsRoot>
   );

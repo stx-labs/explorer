@@ -59,6 +59,7 @@ export default async function (props: {
   let txBlockTime: number | undefined;
   let assetId: string | undefined;
   let holders: FungibleTokenHolderList | undefined;
+  let numFunctions: number | undefined;
 
   const tokenInfo = await getTokenInfo(tokenId, chain || NetworkModes.Mainnet, api);
 
@@ -107,6 +108,7 @@ export default async function (props: {
         : undefined;
       const ftName = abi ? abi.fungible_tokens[0].name : undefined;
       assetId = ftName ? `${tokenId}::${ftName}` : undefined;
+      numFunctions = abi.functions.length;
 
       const [txResult, holdersResult] = await Promise.allSettled([
         // dependent queries
@@ -154,6 +156,7 @@ export default async function (props: {
       txId={txId}
       assetId={assetId}
       holders={holders}
+      numFunctions={numFunctions}
     >
       <TokenIdPage tokenId={tokenId} tokenInfo={tokenInfo} />
     </TokenIdPageDataProvider>

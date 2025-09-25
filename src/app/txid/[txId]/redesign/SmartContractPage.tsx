@@ -126,7 +126,7 @@ export function SmartContractTabContent({
         value={TransactionIdPageTab.AvailableFunctions}
         w="100%"
       >
-        <AvailableFunctions tx={tx} />
+        <AvailableFunctions contractId={tx.smart_contract?.contract_id} />
       </TabsContent>
       <TabsContent
         key={TransactionIdPageTab.Transactions}

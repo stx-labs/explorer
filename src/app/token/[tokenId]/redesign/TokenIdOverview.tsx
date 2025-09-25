@@ -3,7 +3,7 @@ import { SummaryItem } from '@/app/txid/[txId]/redesign/tx-summary/SummaryItem';
 import { TokenLink, TxLink } from '@/common/components/ExplorerLinks';
 import { StackingCardItem } from '@/common/components/id-pages/Overview';
 import { AddressTxsTable } from '@/common/components/table/table-examples/AddressTxsTable';
-import { DEFAULT_RECENT_ADDRESS_TXS_LIMIT } from '@/common/components/table/table-examples/consts';
+import { DEFAULT_OVERVIEW_TAB_TABLE_PAGE_SIZE } from '@/common/components/table/table-examples/consts';
 import { formatNumber, formatUsdValue } from '@/common/utils/string-utils';
 import { formatTimestamp } from '@/common/utils/time-utils';
 import { getFtDecimalAdjustedBalance } from '@/common/utils/utils';
@@ -144,8 +144,8 @@ export const TokenIdOverview = () => {
           <AddressTxsTable
             principal={tokenId}
             initialData={initialAddressRecentTransactionsData}
+            pageSize={DEFAULT_OVERVIEW_TAB_TABLE_PAGE_SIZE}
             disablePagination
-            pageSize={DEFAULT_RECENT_ADDRESS_TXS_LIMIT}
           />
         </Stack>
       </Stack>
