@@ -15,11 +15,13 @@ import { useState } from 'react';
 
 import { useAddressIdPageData } from '../AddressIdPageContext';
 import { AddressOverview } from './AddressOverview';
+import { NFTTable } from './NFTTable';
 
 enum AddressIdPageTab {
   Overview = 'overview',
   Transactions = 'transactions',
   Tokens = 'tokens',
+  Collectibles = 'collectibles',
 }
 
 const TransactionsTabAddressTxsTableColumnDefinitions = [
@@ -34,6 +36,9 @@ export const AddressTabs = ({ principal }: { principal: string }) => {
   const totalAddressTransactions = initialAddressRecentTransactionsData?.total || 0;
   const totalAddressFungibleTokens = Object.entries(
     initialAddressBalancesData?.fungible_tokens || {}
+  ).length;
+  const totalAddressNonFungibleTokens = Object.entries(
+    initialAddressBalancesData?.non_fungible_tokens || {}
   ).length;
 
   return (
@@ -76,6 +81,16 @@ export const AddressTabs = ({ principal }: { principal: string }) => {
               onClick={() => setSelectedTab(AddressIdPageTab.Tokens)}
             />
           )}
+          {totalAddressNonFungibleTokens > 0 && (
+            <TxTabsTrigger
+              key={AddressIdPageTab.Collectibles}
+              label={`Collectibles`}
+              secondaryLabel={`(${totalAddressNonFungibleTokens.toLocaleString()})`}
+              value={AddressIdPageTab.Collectibles}
+              isActive={selectedTab === AddressIdPageTab.Collectibles}
+              onClick={() => setSelectedTab(AddressIdPageTab.Collectibles)}
+            />
+          )}
         </TabsList>
       </ScrollIndicator>
       <TabsContent key={AddressIdPageTab.Overview} value={AddressIdPageTab.Overview} w="100%">
@@ -93,6 +108,9 @@ export const AddressTabs = ({ principal }: { principal: string }) => {
           principal={principal}
           pageSize={ADDRESS_ID_PAGE_FUNGIBLE_TOKENS_LIMIT}
         />
+      </TabsContent>
+      <TabsContent key={AddressIdPageTab.Collectibles} value={AddressIdPageTab.Collectibles}>
+        <NFTTable />
       </TabsContent>
     </TabsRoot>
   );
