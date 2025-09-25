@@ -52,7 +52,6 @@ import { Button } from '../../../ui/Button';
 import { Input, InputProps } from '../../../ui/Input';
 import { Kbd } from '../../../ui/Kbd';
 import { Text } from '../../../ui/Text';
-import { DoubleGradientBorderWrapper } from './DoubleGradientBorderWrapper';
 import {
   BlockResultItem,
   BnsResultItem,
@@ -63,6 +62,7 @@ import {
   TenureChangeResultItem,
   TokenTransferResultItem,
 } from './ResultItem';
+import { SearchDoubleGradientBorderWrapper } from './SearchDoubleGradientBorderWrapper';
 
 export function SearchResultsWrapper({
   children,
@@ -521,7 +521,7 @@ function SearchInput({
   }, [dispatch, quickNavUrl, router, searchEntityUrl, tempSearchTerm]);
 
   return (
-    <DoubleGradientBorderWrapper {...flexProps}>
+    <SearchDoubleGradientBorderWrapper {...flexProps}>
       <Flex
         background={'surfaceSecondary'}
         alignItems={'center'}
@@ -558,7 +558,7 @@ function SearchInput({
         </Flex>
         <EndElement handleSearch={handleSearch} />
       </Flex>
-    </DoubleGradientBorderWrapper>
+    </SearchDoubleGradientBorderWrapper>
   );
 }
 

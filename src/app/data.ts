@@ -1,6 +1,7 @@
 import { stacksAPIFetch } from '@/api/stacksAPIFetch';
 import { GenericResponseType } from '@/common/hooks/useInfiniteQueryResult';
 import { PoxInfo } from '@/common/queries/usePoxInforRaw';
+import { NUM_TEN_MINUTES_IN_DAY } from '@/common/utils/consts';
 import { getApiUrl } from '@/common/utils/network-utils';
 import { MICROSTACKS_IN_STACKS } from '@/common/utils/utils';
 
@@ -158,8 +159,6 @@ export async function fetchCurrentStackingCycle(
   api?: string
 ): Promise<UIStackingCycle> {
   const poxData = await fetchStackingCycleData(chain, api);
-
-  const NUM_TEN_MINUTES_IN_DAY = (24 * 60) / 10;
 
   const {
     current_cycle: { id: cycleId = 0, stacked_ustx = 0 } = ({} = {}),

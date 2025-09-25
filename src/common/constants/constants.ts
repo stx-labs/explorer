@@ -19,6 +19,7 @@ export const APP_DETAILS = {
 export const DEFAULT_DEVNET_SERVER = 'http://localhost:3999';
 
 export enum MODALS {
+  QR_CODE = 'modals/qr-code',
   SEARCH = 'modals/search',
   ADD_NETWORK = 'modals/add-network',
   ADD_NETWORK_NEW = 'modals/add-network-new',

@@ -29,7 +29,7 @@ export function Controls({ groupByBtc, liveUpdates, horizontal, ...rest }: Contr
     <ControlsLayout horizontal={horizontal} {...rest}>
       <Fieldset.Root w="fit-content">
         <Field.Root display="flex" gap={3} w="fit-content">
-          <Switch {...groupByBtc}>
+          <Switch {...groupByBtc} variant="redesignPrimary" size="small">
             <Field.Label
               htmlFor="group-by-btc"
               mb="0"
@@ -48,7 +48,7 @@ export function Controls({ groupByBtc, liveUpdates, horizontal, ...rest }: Contr
       </Fieldset.Root>
       <Fieldset.Root w="fit-content">
         <Field.Root display="flex" gap={3} w="fit-content">
-          <Switch {...liveUpdates}>
+          <Switch {...liveUpdates} variant="redesignPrimary" size="small">
             <Field.Label
               htmlFor="live-updates"
               mb="0"
