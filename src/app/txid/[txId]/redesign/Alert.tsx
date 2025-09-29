@@ -1,14 +1,14 @@
 import { TransactionStatus as TransactionStatusEnum } from '@/common/constants/constants';
 import { getTransactionStatus } from '@/common/utils/transactions';
-import { Alert as ChakraAlert } from '@/components/ui/alert';
+import { Alert } from '@/components/ui/alert';
 import { Link } from '@/ui/Link';
 import { Text } from '@/ui/Text';
 import { Stack } from '@chakra-ui/react';
-import { Clock, Question, XCircle } from '@phosphor-icons/react';
+import { Clock, Question, WarningDiamond, XCircle } from '@phosphor-icons/react';
 
 import { MempoolTransaction, Transaction } from '@stacks/stacks-blockchain-api-types';
 
-export type AlertStatus = 'neutral' | 'warning' | 'error';
+export type AlertStatus = 'neutral' | 'warning' | 'error' | 'info';
 
 export function getAlertIcon(status: AlertStatus) {
   switch (status) {
@@ -18,26 +18,9 @@ export function getAlertIcon(status: AlertStatus) {
       return <Clock weight="bold" />;
     case 'neutral':
       return <Question weight="bold" />;
+    case 'info':
+      return <WarningDiamond weight="bold" />;
   }
-}
-
-export function Alert({
-  status,
-  title,
-  description,
-}: {
-  status: AlertStatus;
-  title?: string;
-  description: string | React.ReactNode;
-}) {
-  return (
-    <ChakraAlert
-      status={status}
-      title={title}
-      description={description}
-      icon={getAlertIcon(status)}
-    />
-  );
 }
 
 export function PendingAlert() {
@@ -173,4 +156,43 @@ export function getTxAlert(tx: Transaction | MempoolTransaction) {
   }
 
   return alertContent;
+}
+
+export function TokenAlert({ tokenId }: { tokenId: string }) {
+  const txType = tx.tx_type;
+  const txStatus = getTransactionStatus(tx);
+
+  const isSuspicious = true;
+
+  if (isSuspicious) {
+    return <SuspiciousTokenAlert />;
+  }
+
+  return alertContent;
+}
+
+export function SuspiciousTokenAlert() {
+  return (
+    <Alert
+      status="error"
+      title="Unknown or newly issued token"
+      description={
+        'This token appears to be a misrepresentation or is associated with suspicious activity. Investing in unknown or new crypto tokens carries high risk and may result in total loss. Do your own research, as these tokens can be volatile and lack transparency. Ensure you fully trust the token or entity before interacting with it.'
+      }
+    />
+  );
+}
+
+export function SimilarTokenAlert() {
+  return (
+    <Alert
+      status="error"
+      title="Unknown or newly issued token"
+      description={
+        'This token appears to be a misrepresentation or is associated with suspicious activity. Investing in unknown or new crypto tokens carries high risk and may result in total loss. Do your own research, as these tokens can be volatile and lack transparency. Ensure you fully trust the token or entity before interacting with it.'
+      }
+      alertBg="colors.feedback.yellow-200"
+      alertIconColor="colors.feedback.yellow-700"
+    />
+  );
 }
