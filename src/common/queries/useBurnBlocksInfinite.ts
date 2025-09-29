@@ -99,3 +99,12 @@ export function useBurnBlocks(
     ...options,
   });
 }
+
+export function useBurnBlocksPaginated(
+  pageIndex: number,
+  limit = DEFAULT_BURN_BLOCKS_LIMIT,
+  options: any = {}
+): UseQueryResult<GenericResponseType<BurnBlock>> {
+  const offset = pageIndex * limit;
+  return useBurnBlocks(limit, offset, options);
+}

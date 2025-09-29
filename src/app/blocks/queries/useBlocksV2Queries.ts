@@ -11,6 +11,7 @@ import { getNextPageParam } from '../../../common/utils/utils';
 
 export const BLOCKS_V2_INFINITE_QUERY_KEY = 'blocksV2Infinite';
 export const BLOCKS_V2_LIST_QUERY_KEY = 'blocksV2List';
+export const BLOCKS_V2_PAGINATED_QUERY_KEY = 'blocksV2Paginated';
 
 export function getBlocksV2InfiniteQueryKey(limit: number, network: string) {
   return [BLOCKS_V2_INFINITE_QUERY_KEY, limit, network];
@@ -18,6 +19,10 @@ export function getBlocksV2InfiniteQueryKey(limit: number, network: string) {
 
 export function getBlocksV2ListQueryKey(limit: number, networkUrl: string) {
   return [BLOCKS_V2_LIST_QUERY_KEY, limit, networkUrl];
+}
+
+export function getBlocksV2PaginatedQueryKey(limit: number, offset: number, networkUrl: string) {
+  return [BLOCKS_V2_PAGINATED_QUERY_KEY, limit, offset, networkUrl];
 }
 
 export const useBlocksV2Infinite = (
@@ -62,6 +67,27 @@ export const useBlocksV2List = (
     queryKey: getBlocksV2ListQueryKey(limit, activeNetwork.url),
     queryFn: async () => {
       const url = `${activeNetwork.url}/extended/v2/blocks/?limit=${limit}`;
+      const response = await stacksAPIFetch(url);
+      const data = await response.json();
+      return data as GenericResponseType<NakamotoBlock>;
+    },
+    staleTime: TWO_MINUTES,
+    ...options,
+  });
+};
+
+export const useBlocksV2Paginated = (
+  pageIndex: number,
+  limit = DEFAULT_LIST_LIMIT,
+  options?: any
+): UseQueryResult<GenericResponseType<NakamotoBlock>> => {
+  const { activeNetwork } = useGlobalContext();
+  const offset = pageIndex * limit;
+
+  return useQuery({
+    queryKey: getBlocksV2PaginatedQueryKey(limit, offset, activeNetwork.url),
+    queryFn: async function fetchBlocksV2Paginated() {
+      const url = `${activeNetwork.url}/extended/v2/blocks/?limit=${limit}&offset=${offset}`;
       const response = await stacksAPIFetch(url);
       const data = await response.json();
       return data as GenericResponseType<NakamotoBlock>;
