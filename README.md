@@ -13,7 +13,7 @@
 
 The [Stacks Explorer](https://explorer.hiro.so/) is an observability tool that helps users, developers, miners, and investors understand the Stacks Blockchain. It's built with [React](https://reactjs.org/), [next.js](https://nextjs.org/) and [Chakra UI](https://chakra-ui.com/).
 
-This README will guide you through the process of setting up and running the Stacks Explorer locally and how to contribute to the project.
+This README will guide you through the process of setting up and running the Stacks Explorer locally and how to contribute to the project
 
 ## Bugs and feature requests
 
