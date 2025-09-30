@@ -1,10 +1,10 @@
+import { fetchTokenMetadata } from '@/api/data-fetchers';
 import { ContractResponse } from '@/common/types/tx';
-import { FtMetadataResponse } from '@hirosystems/token-metadata-api-client';
+import { logError } from '@/common/utils/error-utils';
 
 import { getIsSBTC } from '../../../app/tokens/utils';
 import { LUNAR_CRUSH_API_KEY } from '../../../common/constants/env';
 import { LunarCrushCoin } from '../../../common/types/lunarCrush';
-import { getApiUrl } from '../../../common/utils/network-utils';
 import { getFtDecimalAdjustedBalance } from '../../../common/utils/utils';
 import { HolderResponseType } from './Tabs/data/useHolders';
 import { BasicTokenInfo, DeveloperData, TokenInfoProps, TokenLinks } from './types';
@@ -61,25 +61,20 @@ async function getCirculatingSupplyFromHoldersEndpoint(apiUrl: string, tokenId: 
 
 async function getBasicTokenInfoFromStacksApi(
   tokenId: string,
-  chain: string,
-  api?: string
+  apiUrl: string
 ): Promise<BasicTokenInfo | undefined> {
-  const isCustomApi = !!api;
-
   try {
-    const apiUrl = isCustomApi ? api : getApiUrl(chain);
-    if (!tokenId || !apiUrl || isCustomApi) {
-      throw new Error('Unable to fetch token info for this request');
-    }
+    const tokenMetadata = await fetchTokenMetadata(apiUrl, tokenId);
 
-    const tokenMetadataResponse = await fetch(`${apiUrl}/metadata/v1/ft/${tokenId}`);
-    const tokenMetadata: FtMetadataResponse = await tokenMetadataResponse.json();
-
-    const tokenName = tokenMetadata?.name;
-    const tokenSymbol = tokenMetadata?.symbol;
-    const tokenDecimals = tokenMetadata?.decimals;
+    const { name: tokenName, symbol: tokenSymbol, decimals: tokenDecimals } = tokenMetadata;
 
     if (!tokenName || !tokenSymbol) {
+      logError(
+        new Error('token not found'),
+        'getBasicTokenInfoFromStacksApi',
+        { tokenId },
+        'error'
+      );
       throw new Error('token not found');
     }
 
@@ -198,26 +193,25 @@ async function getDetailedTokenInfoFromLunarCrush(tokenId: string, basicTokenInf
 
 export async function getTokenInfo(
   tokenId: string,
-  chain: string,
-  api?: string
+  apiUrl: string,
+  isCustomApi: boolean
 ): Promise<TokenInfoProps> {
-  const isCustomApi = !!api;
+  let basicTokenInfo,
+    detailedTokenInfo = {};
 
   try {
-    if (!tokenId || isCustomApi) {
-      throw new Error('cannot fetch token info for this request');
-    }
-
-    const basicTokenInfo = await getBasicTokenInfoFromStacksApi(tokenId, chain, api);
-    if (!basicTokenInfo) {
-      console.error('token not found in Stacks API', tokenId, chain, api);
-      return {};
+    if (!isCustomApi) {
+      basicTokenInfo = await getBasicTokenInfoFromStacksApi(tokenId, apiUrl);
+      if (!basicTokenInfo) {
+        logError(new Error('token not found in Stacks API'), 'getTokenInfo', { tokenId }, 'error');
+        return {};
+      }
     }
 
     const detailedTokenInfo = await getDetailedTokenInfoFromLunarCrush(tokenId, basicTokenInfo);
     return detailedTokenInfo;
   } catch (error) {
-    console.error(error);
+    logError(error as Error, 'getTokenInfo', { tokenId }, 'error');
     return {};
   }
 }

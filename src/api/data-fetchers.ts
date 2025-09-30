@@ -1,6 +1,7 @@
 import { stacksAPIFetch } from '@/api/stacksAPIFetch';
 import { PoxInfo } from '@/common/queries/usePoxInforRaw';
 import { NUM_TEN_MINUTES_IN_DAY } from '@/common/utils/consts';
+import { FtMetadataResponse } from '@hirosystems/token-metadata-api-client';
 
 import {
   AddressBalanceResponse,
@@ -124,4 +125,16 @@ export async function fetchRecentTransactions(
 
   const recentTransactionsResponse: AddressTransactionsListResponse = await response.json();
   return recentTransactionsResponse;
+}
+
+export async function fetchTokenMetadata(apiUrl: string, tokenId: string): Promise<FtMetadataResponse> {
+  const response = await stacksAPIFetch(`${apiUrl}/metadata/v1/ft/${tokenId}`);
+  const tokenMetadata: FtMetadataResponse = await response.json();
+  return tokenMetadata;
+}
+
+export async function fetchTokenHolders(apiUrl: string, tokenId: string): Promise<FtMetadataResponse> {
+  const response = await stacksAPIFetch(`${apiUrl}/metadata/v1/ft/${tokenId}`);
+  const tokenMetadata: FtMetadataResponse = await response.json();
+  return tokenMetadata;
 }

@@ -15,6 +15,7 @@ import { TokenTabs } from './Tabs';
 import { TokenInfo } from './TokenInfo';
 import { RISKY_TOKENS, VERIFIED_TOKENS, legitsBTCDerivatives } from './consts';
 import { TokenInfoProps } from './types';
+import { useTokenIdPageData } from './redesign/context/TokenIdPageContext';
 
 const WarningMessage = ({ text }: { text: string | ReactNode }) => {
   return (
@@ -36,13 +37,8 @@ const WarningMessage = ({ text }: { text: string | ReactNode }) => {
   );
 };
 
-export default function PageClient({
-  tokenId,
-  tokenInfo,
-}: {
-  tokenId: string;
-  tokenInfo: TokenInfoProps;
-}) {
+export default function TokenIdPage() {
+  const { tokenId, tokenInfo } = useTokenIdPageData();
   if (!tokenInfo.basic) throw new Error('Could not find token info');
   const { name, symbol, imageUri } = tokenInfo.basic;
   const categories = tokenInfo.extended?.categories || [];

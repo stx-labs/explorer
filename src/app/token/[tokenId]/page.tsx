@@ -1,8 +1,20 @@
+import {
+  CompressedTxAndMempoolTxTableData,
+  compressMempoolTransaction,
+  compressTransaction,
+} from '@/api/data-compressors';
+import { fetchRecentTransactions } from '@/api/data-fetchers';
+import { getTokenPrice } from '@/app/getTokenPriceInfo';
+import { GenericResponseType } from '@/common/hooks/useInfiniteQueryResult';
 import { logError } from '@/common/utils/error-utils';
-import PageClient from './PageClient';
-import { getTokenInfo } from './getTokenInfo';
+import { getApiUrl } from '@/common/utils/network-utils';
 import { isConfirmedTx } from '@/common/utils/transactions';
-import { compressMempoolTransaction } from '@/app/transactions/utils';
+
+import { MempoolTransaction, Transaction } from '@stacks/stacks-blockchain-api-types';
+
+import TokenIdPage from './PageClient';
+import { getTokenInfo } from './getTokenInfo';
+import { TokenIdPageDataProvider } from './redesign/context/TokenIdPageContext';
 
 export default async function (props: {
   params: Promise<{ tokenId: string }>;
@@ -11,6 +23,7 @@ export default async function (props: {
   const searchParams = await props.searchParams;
 
   const { chain, api } = searchParams;
+  const apiUrl = getApiUrl(chain, api);
 
   const params = await props.params;
 
@@ -26,7 +39,7 @@ export default async function (props: {
 
   try {
     tokenPrice = await getTokenPrice();
-    const recentAddressTransactions = await fetchRecentTransactions(apiUrl, principal);
+    const recentAddressTransactions = await fetchRecentTransactions(apiUrl, tokenId);
     const compressedRecentAddressTransactions = {
       ...recentAddressTransactions,
       results: recentAddressTransactions.results.map(tx => {
@@ -40,11 +53,15 @@ export default async function (props: {
   } catch (error) {
     logError(
       error as Error,
-      'Address Id page server-side fetch for initial data',
-      { principal, tokenPrice, initialAddressBalancesData, chain, api },
+      'Token Id page server-side fetch for initial data',
+      { tokenId, tokenPrice, initialAddressRecentTransactionsData, chain, api },
       'error'
     );
   }
-  const tokenInfo = await getTokenInfo(tokenId, chain, api);
-  return <PageClient tokenId={tokenId} tokenInfo={tokenInfo} />;
+  const tokenInfo = await getTokenInfo(apiUrl, tokenId, !!api);
+  return (
+    <TokenIdPageDataProvider tokenId={tokenId} tokenInfo={tokenInfo}>
+      <TokenIdPage />
+    </TokenIdPageDataProvider>
+  );
 }
