@@ -17,10 +17,7 @@ export function useBitcoinTableData(
     let sourceData: BurnBlock[] = [];
 
     if (btcBlocksQuery.data) {
-      const currentPageData = btcBlocksQuery.data.pages[pagination.pageIndex];
-      if (currentPageData) {
-        sourceData = currentPageData.results;
-      }
+      sourceData = Array.isArray(btcBlocksQuery.data.results) ? btcBlocksQuery.data.results : [];
     }
 
     return sourceData.map((block: BurnBlock) => {
@@ -53,10 +50,7 @@ export function useStacksTableData(
     let sourceData: any[] = [];
 
     if (stxBlocksQuery.data) {
-      const currentPageData = stxBlocksQuery.data.pages[pagination.pageIndex];
-      if (currentPageData) {
-        sourceData = Array.isArray(currentPageData.results) ? currentPageData.results : [];
-      }
+      sourceData = Array.isArray(stxBlocksQuery.data.results) ? stxBlocksQuery.data.results : [];
     }
 
     const groupedByBurnBlock = sourceData.reduce((groups: Record<string, any[]>, block: any) => {
