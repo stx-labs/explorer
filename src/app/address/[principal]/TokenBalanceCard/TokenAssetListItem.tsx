@@ -9,12 +9,15 @@ import React from 'react';
 import { NonFungibleTokenHolding } from '@stacks/stacks-blockchain-api-types/generated';
 import { cvToJSON, hexToCV } from '@stacks/transactions';
 
-import { AddressLink, TokenLink } from '../../../../common/components/ExplorerLinks';
+import { AddressLink } from '../../../../common/components/ExplorerLinks';
 import { TwoColsListItem } from '../../../../common/components/TwoColumnsListItem';
 import { FtTokenAmount, NftTokenAmount } from '../../../../common/components/balances/TokenAmount';
 import { FtTokenSymbol, NftTokenSymbol } from '../../../../common/components/balances/TokenSymbol';
+import { useFtMetadata } from '../../../../common/queries/useFtMetadata';
+import { TOKENS_WITH_METADATA_NAME_OVERRIDE } from '../../../../common/utils/token-display-name';
 import { getAssetNameParts, initBigNumber } from '../../../../common/utils/utils';
 import { FtAvatar } from './FtAvatar';
+import { FtTokenLink } from './FtTokenLink';
 import { NftAvatar } from './NftAvatar';
 
 interface TokenAssetListItemProps extends FlexProps {
@@ -34,6 +37,13 @@ export const TokenAssetListItem: React.FC<TokenAssetListItemProps> = ({
 }) => {
   const { address, asset, contract } = getAssetNameParts(token);
   const contractId = `${address}.${contract}`;
+
+  // Only fetch metadata for specific tokens with known name mismatches
+  const needsMetadata =
+    tokenType === 'fungible_tokens' && TOKENS_WITH_METADATA_NAME_OVERRIDE.includes(contractId);
+
+  const { data: ftMetadata } = useFtMetadata(needsMetadata ? contractId : undefined);
+
   const firstNftValue = (() => {
     if (!holdings?.length) return undefined;
     try {
@@ -66,13 +76,18 @@ export const TokenAssetListItem: React.FC<TokenAssetListItemProps> = ({
           tokenType === 'non_fungible_tokens' ? (
             <AddressLink principal={`${address}.${contract}`}>{bnsName || asset}</AddressLink>
           ) : (
-            <TokenLink tokenId={`${address}.${contract}`}>{bnsName || asset}</TokenLink>
+            <FtTokenLink
+              contractId={contractId}
+              asset={asset}
+              bnsName={bnsName}
+              ftMetadata={ftMetadata}
+            />
           ),
         subtitle:
           tokenType === 'non_fungible_tokens' ? (
             <NftTokenSymbol asset={asset} />
           ) : (
-            <FtTokenSymbol asset={asset} contractId={contractId} />
+            <FtTokenSymbol asset={asset} contractId={contractId} ftMetadata={ftMetadata} />
           ),
       }}
       rightContent={{
