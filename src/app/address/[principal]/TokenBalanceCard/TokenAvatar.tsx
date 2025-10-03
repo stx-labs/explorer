@@ -1,11 +1,9 @@
 'use client';
 
-import React from 'react';
-
 import { DefaultTokenImage } from './DefaultTokenImage';
 import { TokenImage } from './TokenImage';
 import { TokenVideo } from './TokenVideo';
-import { useImageUrl } from './useImageUrl';
+import { useImageContentType } from './useImageUrl';
 
 export function TokenAvatar({
   metadataImageUrl,
@@ -14,7 +12,7 @@ export function TokenAvatar({
   metadataImageUrl?: string;
   asset: string;
 }) {
-  const { url, contentType } = useImageUrl(metadataImageUrl);
+  const { url, contentType } = useImageContentType(metadataImageUrl);
   if (!url) return <DefaultTokenImage asset={asset} />;
   if (contentType?.startsWith('video')) {
     return <TokenVideo url={url} />;

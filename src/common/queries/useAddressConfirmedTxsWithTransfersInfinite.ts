@@ -12,6 +12,7 @@ import {
   AddressTransaction,
   AddressTransactionEvent,
   AddressTransactionWithTransfers,
+  AddressTransactionsListResponse,
 } from '@stacks/stacks-blockchain-api-types';
 
 import { callApiWithErrorHandling } from '../../api/callApiWithErrorHandling';
@@ -23,6 +24,42 @@ import { TWO_MINUTES } from './query-stale-time';
 
 export const ADDRESS_CONFIRMED_TXS_WITH_TRANSFERS_INFINITE_QUERY_KEY =
   'addressConfirmedTxsWithTransfersInfinite';
+const ADDRESS_TXS_QUERY_KEY = 'address-txs';
+
+export function getAddressTxsQueryKey(principal: string, limit: number, offset: number) {
+  return [ADDRESS_TXS_QUERY_KEY, principal, limit, offset];
+}
+
+// Retrieves both confirmed and mempool transactions
+export function useAddressTxs(
+  principal: string,
+  limit = DEFAULT_LIST_LIMIT,
+  offset = 0,
+  options: any = {}
+): UseQueryResult<AddressTransactionsListResponse> {
+  const apiClient = useApiClient();
+  return useQuery({
+    queryKey: getAddressTxsQueryKey(principal, limit, offset),
+    queryFn: async () => {
+      if (!principal) return undefined;
+      return await callApiWithErrorHandling(
+        apiClient,
+        '/extended/v1/address/{principal}/transactions',
+        {
+          params: {
+            path: { principal },
+            query: {
+              limit,
+              offset,
+            },
+          },
+        }
+      );
+    },
+    enabled: !!principal,
+    ...options,
+  });
+}
 
 export const ADDRESS_CONFIRMED_TXS_WITH_TRANSFERS_QUERY_KEY = 'addressConfirmedTxsWithTransfers';
 

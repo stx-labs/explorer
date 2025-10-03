@@ -10,6 +10,8 @@ export function SignersDistributionFilter({
 }) {
   return (
     <Switch
+      variant="redesignPrimary"
+      size="small"
       id="only-show-public-signers"
       onCheckedChange={() => {
         setOnlyShowPublicSigners(!onlyShowPublicSigners);

@@ -5,10 +5,10 @@ import {
 } from '@/common/components/CopyButton';
 import { microToStacks, microToStacksFormatted, usdFormatter } from '@/common/utils/utils';
 import { Text } from '@/ui/Text';
+import { Tooltip } from '@/ui/Tooltip';
 import StacksIconThin from '@/ui/icons/StacksIconThin';
 import { Flex, Icon, Stack, Table } from '@chakra-ui/react';
-
-import { useTxIdPageData } from '../../TxIdPageContext';
+import { Question } from '@phosphor-icons/react';
 
 export const DEFAULT_BUTTON_STYLING: ExtendedButtonProps = {
   bg: (copied: boolean) => (copied ? 'surfaceInvert' : 'transparent'),
@@ -75,8 +75,7 @@ export function SummaryItemValue({
   );
 }
 
-export function PriceSummaryItemValue({ value }: { value: string }) {
-  const { stxPrice } = useTxIdPageData();
+export function PriceSummaryItemValue({ value, stxPrice }: { value: string; stxPrice: number }) {
   const stxAmount = microToStacks(value);
   const usdValue = stxPrice * stxAmount;
   const formattedValue = microToStacksFormatted(value);
@@ -106,11 +105,13 @@ export function SummaryItem({
   value,
   valueRenderer,
   showCopyButton,
+  infoText,
 }: {
   label: string;
   value: string;
   valueRenderer?: (value: string) => React.ReactNode;
   showCopyButton?: boolean;
+  infoText?: string;
 }) {
   return (
     <>
@@ -135,7 +136,16 @@ export function SummaryItem({
           }}
           border="none"
         >
-          <SummaryItemLabel label={label} />
+          <Flex gap={1.5} alignItems="center">
+            <SummaryItemLabel label={label} />
+            {infoText && (
+              <Tooltip content={infoText} variant="redesignPrimary">
+                <Icon h={3.5} w={3.5} color="iconTertiary">
+                  <Question />
+                </Icon>
+              </Tooltip>
+            )}
+          </Flex>
         </Table.Cell>
         <Table.Cell
           _groupHover={{
