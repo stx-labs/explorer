@@ -67,7 +67,6 @@ export const FunctionCallForm: FC<FunctionCallFormProps> = ({
   );
 
   if (!showFn(contractId, fnAbi)) {
-    // TODO: introduce private badge
     const invalidFunctionType = getInvalidFunctionType(contractId, fnAbi);
     return (
       <Alert

@@ -3,7 +3,6 @@
 import { ScrollIndicator } from '@/common/components/ScrollIndicator';
 import { AddressLinkCellRenderer } from '@/common/components/table/CommonTableCellRenderers';
 import { Table } from '@/common/components/table/Table';
-import { FeeCellRenderer } from '@/common/components/table/table-examples/TxTableCellRenderers';
 import { GenericResponseType } from '@/common/hooks/useInfiniteQueryResult';
 import { THIRTY_SECONDS } from '@/common/queries/query-stale-time';
 import { getTxEventsByIdQueryKey, useTxEventsById } from '@/common/queries/useTxEventsById';
@@ -14,7 +13,13 @@ import { useQueryClient } from '@tanstack/react-query';
 import { ColumnDef, PaginationState } from '@tanstack/react-table';
 import { type JSX, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { AssetEventTypeCellRenderer, IndexCellRenderer } from './EventsTableCellRenderers';
+import { TransactionEvent } from '@stacks/stacks-blockchain-api-types';
+
+import {
+  AmountCellRenderer,
+  AssetEventTypeCellRenderer,
+  IndexCellRenderer,
+} from './EventsTableCellRenderers';
 import { EVENTS_TABLE_PAGE_SIZE } from './consts';
 import { EventsTableFilters } from './filters/useEventsTableFilters';
 import {
@@ -49,7 +54,7 @@ export interface EventsTableData {
   [EventsTableColumns.AssetEventType]: ExtendedTransactionEventAssetType;
   [EventsTableColumns.Asset]: string;
   [EventsTableColumns.AssetType]: string;
-  [EventsTableColumns.Amount]: number;
+  [EventsTableColumns.Amount]: EventsTableAmountData;
   [EventsTableColumns.From]: EventsTableAddressColumnData;
   [EventsTableColumns.ArrowRight]: JSX.Element;
   [EventsTableColumns.To]: EventsTableAddressColumnData;
@@ -60,12 +65,17 @@ export interface TxTableAddressColumnData {
   isContract: boolean;
 }
 
+export interface EventsTableAmountData {
+  amount: string | undefined;
+  event: TransactionEvent;
+}
+
 export const defaultColumnDefinitions: ColumnDef<EventsTableData>[] = [
   {
     id: EventsTableColumns.Index,
     header: '#',
     accessorKey: EventsTableColumns.Index,
-    cell: info => <IndexCellRenderer index={info.getValue() as number} />,
+    cell: info => <IndexCellRenderer index={info.row.original[EventsTableColumns.Index]} />,
     enableSorting: false,
   },
   {
@@ -74,7 +84,7 @@ export const defaultColumnDefinitions: ColumnDef<EventsTableData>[] = [
     accessorKey: EventsTableColumns.AssetEventType,
     cell: info => (
       <AssetEventTypeCellRenderer
-        assetEventType={info.getValue() as ExtendedTransactionEventAssetType}
+        assetEventType={info.row.original[EventsTableColumns.AssetEventType]}
       />
     ),
     enableSorting: false,
@@ -83,42 +93,42 @@ export const defaultColumnDefinitions: ColumnDef<EventsTableData>[] = [
     id: EventsTableColumns.Asset,
     header: 'Asset',
     accessorKey: EventsTableColumns.Asset,
-    cell: info => info.getValue() as string,
+    cell: info => info.row.original[EventsTableColumns.Asset],
     enableSorting: false,
   },
   {
     id: EventsTableColumns.AssetType,
     header: 'Asset Type',
     accessorKey: EventsTableColumns.AssetType,
-    cell: info => info.getValue() as string,
+    cell: info => info.row.original[EventsTableColumns.AssetType],
     enableSorting: false,
   },
   {
     id: EventsTableColumns.Amount,
     header: 'Amount',
     accessorKey: EventsTableColumns.Amount,
-    cell: info => FeeCellRenderer(info.getValue() as string),
+    cell: info => AmountCellRenderer(info.row.original[EventsTableColumns.Amount]),
     enableSorting: false,
   },
   {
     id: EventsTableColumns.From,
     header: 'From',
     accessorKey: EventsTableColumns.From,
-    cell: info => AddressLinkCellRenderer(info.getValue() as EventsTableAddressColumnData),
+    cell: info => AddressLinkCellRenderer(info.row.original[EventsTableColumns.From]),
     enableSorting: false,
   },
   {
     id: EventsTableColumns.ArrowRight,
     header: '',
     accessorKey: EventsTableColumns.ArrowRight,
-    cell: info => info.getValue() as JSX.Element,
+    cell: info => info.row.original[EventsTableColumns.ArrowRight],
     enableSorting: false,
   },
   {
     id: EventsTableColumns.To,
     header: 'To',
     accessorKey: EventsTableColumns.To,
-    cell: info => AddressLinkCellRenderer(info.getValue() as EventsTableAddressColumnData),
+    cell: info => AddressLinkCellRenderer(info.row.original[EventsTableColumns.To]),
     enableSorting: false,
   },
 ];
@@ -191,6 +201,8 @@ export function EventsTable({
     }
   );
 
+  console.log('events', data);
+
   // Reset pagination when filters change
   useEffect(() => {
     setPagination(prev => ({
@@ -217,7 +229,10 @@ export function EventsTable({
           [EventsTableColumns.AssetEventType]: assetEventType,
           [EventsTableColumns.Asset]: asset,
           [EventsTableColumns.AssetType]: assetType,
-          [EventsTableColumns.Amount]: amount,
+          [EventsTableColumns.Amount]: {
+            event,
+            amount,
+          },
           [EventsTableColumns.From]: {
             address: from,
             isContract: validateStacksContractId(from),

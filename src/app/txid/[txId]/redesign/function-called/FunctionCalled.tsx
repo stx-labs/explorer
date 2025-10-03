@@ -54,6 +54,7 @@ function FunctionResult({ tx }: { tx: ContractCallTransaction | MempoolContractC
         templateColumns={{ base: 'minmax(0, 1fr)', md: '80px minmax(0, 1fr)' }}
         gap={3}
         columnGap={12}
+        alignItems="center"
       >
         {type?.includes('tuple') ? (
           <>

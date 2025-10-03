@@ -79,7 +79,7 @@ const AddressBadge = ({ address }: { address: string }) => {
 const FromToBadges = ({ tx }: { tx: Transaction | MempoolTransaction }) => {
   const toAddress = getToAddress(tx);
   return (
-    <Flex gap={1} alignItems="center">
+    <Flex gap={1} alignItems="center" flexWrap="wrap">
       <AddressBadge address={tx.sender_address} />
       {toAddress ? (
         <>

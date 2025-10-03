@@ -193,8 +193,7 @@ describe('Post Condition Creation', () => {
         postConditionAmount: 100,
       };
       const result = getPostCondition(params);
-      expect(result).toHaveLength(1);
-      expect(result[0]).toEqual({
+      expect(result).toEqual({
         type: 'stx-postcondition',
         address: 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM',
         condition: 'eq',
@@ -213,8 +212,7 @@ describe('Post Condition Creation', () => {
         postConditionAssetName: 'token',
       };
       const result = getPostCondition(params);
-      expect(result).toHaveLength(1);
-      expect(result[0]).toEqual({
+      expect(result).toEqual({
         type: 'ft-postcondition',
         address: 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM',
         condition: 'gt',
@@ -233,12 +231,15 @@ describe('Post Condition Creation', () => {
         postConditionAssetName: 'nft-token',
       };
       const result = getPostCondition(params);
-      expect(result).toHaveLength(1);
-      expect(result[0]).toMatchObject({
+      expect(result).toEqual({
         type: 'nft-postcondition',
         address: 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM',
         condition: 'sent',
         asset: 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.my-nft::nft-token',
+        assetId: {
+          type: 'utf8',
+          value: 'nft-token',
+        },
       });
     });
 
@@ -248,7 +249,8 @@ describe('Post Condition Creation', () => {
         postConditionAddress: 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM',
         // Missing condition code and amount
       };
-      expect(() => getPostCondition(params)).toThrow();
+      const result = getPostCondition(params);
+      expect(result).toEqual(undefined);
     });
 
     it('should throw error for invalid amount (not uint128)', () => {
@@ -258,7 +260,8 @@ describe('Post Condition Creation', () => {
         postConditionConditionCode: FungibleConditionCode.Equal,
         postConditionAmount: -100, // Invalid uint128
       };
-      expect(() => getPostCondition(params)).toThrow();
+      const result = getPostCondition(params);
+      expect(result).toEqual(undefined);
     });
   });
 });

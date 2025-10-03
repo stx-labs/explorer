@@ -53,12 +53,6 @@ export const BlockHeightBadge = forwardRef<
 >(({ children, blockType, blockHeight, disableLink = false, ...rest }, ref) => {
   const network = useGlobalContext().activeNetwork;
 
-  const text = (
-    <Text textStyle="text-mono-sm" color="textPrimary" textDecoration="none">
-      #{blockHeight}
-    </Text>
-  );
-
   return (
     <Badge ref={ref} {...rest} variant="solid" type="blockHeight">
       <Flex alignItems="center" gap={1}>
@@ -67,7 +61,9 @@ export const BlockHeightBadge = forwardRef<
           color={blockType === 'stx' ? 'accent.stacks-500' : 'accent.bitcoin-500'}
         />
         {disableLink ? (
-          text
+          <Text textStyle="text-mono-sm" color="textPrimary" textDecoration="none">
+            #{blockHeight}
+          </Text>
         ) : (
           <NextLink
             href={buildUrl(
@@ -76,7 +72,9 @@ export const BlockHeightBadge = forwardRef<
             )}
             variant="tableLink"
           >
-            {text}
+            <Text textStyle="text-mono-sm" textDecoration="none">
+              #{blockHeight}
+            </Text>
           </NextLink>
         )}
       </Flex>

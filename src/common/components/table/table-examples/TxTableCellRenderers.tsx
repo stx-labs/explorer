@@ -3,11 +3,12 @@ import { TransactionStatus as TransactionStatusEnum } from '@/common/constants/c
 import { getTransactionStatus, getTxTitle } from '@/common/utils/transactions';
 import { formatStacksAmount, microToStacksFormatted, truncateHex } from '@/common/utils/utils';
 import { TransactionTypeBadge } from '@/ui/Badge';
+import { Text } from '@/ui/Text';
 import { Tooltip } from '@/ui/Tooltip';
 import MicroStxIcon from '@/ui/icons/MicroStxIcon';
 import StacksIconThin from '@/ui/icons/StacksIconThin';
 import { Flex, Icon } from '@chakra-ui/react';
-import { Clock, Question, XCircle } from '@phosphor-icons/react';
+import { ArrowRight, Clock, Question, XCircle } from '@phosphor-icons/react';
 
 import {
   MempoolTransaction,
@@ -172,4 +173,39 @@ export const TransactionTitleCellRenderer = (tx: Transaction | MempoolTransactio
   }
 
   return content;
+};
+
+export const EventsCellRenderer = (tx: Transaction | MempoolTransaction) => {
+  const eventCount = 'event_count' in tx ? tx.event_count : 0;
+
+  if (eventCount === 0) {
+    return (
+      <Text textStyle="text-regular-sm" color="textSecondary">
+        -
+      </Text>
+    );
+  }
+
+  return (
+    <TxLink txId={tx.tx_id} variant="tableLink">
+      <Flex
+        alignItems="center"
+        gap={1.5}
+        p={2}
+        bg="surfacePrimary"
+        w="fit-content"
+        borderRadius="redesign.sm"
+        _groupHover={{
+          bg: 'surfaceTertiary',
+        }}
+      >
+        <Text color="textPrimary" textStyle="text-regular-xs" fontFamily="var(--font-matter-mono)">
+          {'event_count' in tx ? tx.event_count : 0}
+        </Text>
+        <Icon h={3} w={3} color="iconSecondary">
+          <ArrowRight />
+        </Icon>
+      </Flex>
+    </TxLink>
+  );
 };

@@ -8,4 +8,5 @@ export enum TxTableColumns {
   Fee = 'fee',
   Amount = 'amount',
   BlockTime = 'blockTime',
+  Events = 'events',
 }

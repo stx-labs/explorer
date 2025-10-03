@@ -1,8 +1,10 @@
 import {
   InfiniteData,
   UseInfiniteQueryResult,
+  UseQueryResult,
   UseSuspenseInfiniteQueryResult,
   useInfiniteQuery,
+  useQuery,
   useSuspenseInfiniteQuery,
 } from '@tanstack/react-query';
 
@@ -19,8 +21,46 @@ import { GenericResponseType } from '../hooks/useInfiniteQueryResult';
 import { getNextPageParam } from '../utils/utils';
 import { TWO_MINUTES } from './query-stale-time';
 
-const ADDRESS_CONFIRMED_TXS_WITH_TRANSFERS_INFINITE_QUERY_KEY =
+export const ADDRESS_CONFIRMED_TXS_WITH_TRANSFERS_INFINITE_QUERY_KEY =
   'addressConfirmedTxsWithTransfersInfinite';
+
+export const ADDRESS_CONFIRMED_TXS_WITH_TRANSFERS_QUERY_KEY = 'addressConfirmedTxsWithTransfers';
+
+export function getAddressConfirmedTxsWithTransfersQueryKey(
+  principal: string,
+  limit = DEFAULT_LIST_LIMIT,
+  offset = 0
+) {
+  return [ADDRESS_CONFIRMED_TXS_WITH_TRANSFERS_QUERY_KEY, principal, limit, offset];
+}
+
+export function useAddressConfirmedTxsWithTransfers(
+  principal: string,
+  limit = DEFAULT_LIST_LIMIT,
+  offset = 0,
+  options: any = {}
+): UseQueryResult<GenericResponseType<AddressTransactionWithTransfers>> {
+  const apiClient = useApiClient();
+  return useQuery({
+    queryKey: getAddressConfirmedTxsWithTransfersQueryKey(principal, limit, offset),
+    queryFn: async () => {
+      return await callApiWithErrorHandling(
+        apiClient,
+        '/extended/v1/address/{principal}/transactions_with_transfers',
+        {
+          params: {
+            query: {
+              limit,
+              offset,
+            },
+            path: { principal },
+          },
+        }
+      );
+    },
+    ...options,
+  });
+}
 
 export function useAddressConfirmedTxsWithTransfersInfinite(
   principal?: string,

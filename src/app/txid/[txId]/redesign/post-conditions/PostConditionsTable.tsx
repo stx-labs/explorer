@@ -14,8 +14,10 @@ import { ColumnDef, Header } from '@tanstack/react-table';
 import {
   ContractCallTransaction,
   MempoolContractCallTransaction,
+  MempoolSmartContractTransaction,
   PostConditionFungibleConditionCode,
   PostConditionNonFungibleConditionCode,
+  SmartContractTransaction,
 } from '@stacks/stacks-blockchain-api-types';
 
 import {
@@ -125,7 +127,11 @@ function getPostConditionCellText(postConditionCode: PostConditionConditionCode)
 }
 
 function getRowData(
-  tx: ContractCallTransaction | MempoolContractCallTransaction
+  tx:
+    | ContractCallTransaction
+    | MempoolContractCallTransaction
+    | SmartContractTransaction
+    | MempoolSmartContractTransaction
 ): PostConditionTableData[] {
   const { post_conditions: postConditions } = tx;
   const senderAddress = tx.sender_address;
@@ -171,7 +177,11 @@ function getRowData(
 export function PostConditionsTable({
   tx,
 }: {
-  tx: ContractCallTransaction | MempoolContractCallTransaction;
+  tx:
+    | ContractCallTransaction
+    | MempoolContractCallTransaction
+    | SmartContractTransaction
+    | MempoolSmartContractTransaction;
 }) {
   const rowData = getRowData(tx);
   return (

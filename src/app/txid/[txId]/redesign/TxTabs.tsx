@@ -1,20 +1,26 @@
 import { ScrollIndicator } from '@/common/components/ScrollIndicator';
 import { ValueBasisFilterPopover } from '@/common/components/table/filters/value-basis-filter/ValueBasisFiterPopover';
-import { TabsContent, TabsList, TabsRoot, TabsTrigger } from '@/ui/Tabs';
+import { TabsList, TabsRoot, TabsTrigger } from '@/ui/Tabs';
 import { Text } from '@/ui/Text';
-import { Flex, Grid, Stack, StackProps } from '@chakra-ui/react';
+import { Flex, Stack, StackProps } from '@chakra-ui/react';
 import { useState } from 'react';
 
 import { MempoolTransaction, Transaction } from '@stacks/stacks-blockchain-api-types';
 
-import { DetailsCard } from './DetailsCard';
-import { Events } from './Events';
-import { FunctionCalled } from './function-called/FunctionCalled';
-import { PostConditions } from './post-conditions/PostConditions';
-import { Source } from './source/Source';
-import { TxSummary } from './tx-summary/TxSummary';
+import { ContractCallTabContent, ContractCallTabTrigger } from './ContractCallPage';
+import { SmartContractTabContent, SmartContractTabTrigger } from './SmartContractPage';
+import { TokenTransferTabContent, TokenTransferTabTrigger } from './TokenTransferPage';
 
-function TabTriggerComponent({
+export enum TransactionIdPageTab {
+  Overview = 'overview',
+  Events = 'events',
+  FunctionCall = 'functionCall',
+  PostConditions = 'postConditions',
+  SourceCode = 'sourceCode',
+  AvailableFunctions = 'availableFunctions',
+  Transactions = 'transactions',
+}
+export function TxTabsTrigger({
   label,
   value,
   secondaryLabel,
@@ -43,11 +49,23 @@ function TabTriggerComponent({
       onClick={onClick}
     >
       <Flex gap={1} alignItems="center">
-        <Text textStyle="heading-xs" color={isActive ? 'textPrimary' : 'textSecondary'}>
+        <Text
+          textStyle="heading-xs"
+          color={isActive ? 'textPrimary' : 'textSecondary'}
+          _groupHover={{
+            color: isActive ? 'textPrimary' : 'textPrimary',
+          }}
+        >
           {label}
         </Text>
         {secondaryLabel && (
-          <Text textStyle="heading-xs" color={isActive ? 'textPrimary' : 'textTertiary'}>
+          <Text
+            textStyle="heading-xs"
+            color={isActive ? 'textSecondary' : 'textTertiary'}
+            _groupHover={{
+              color: isActive ? 'textSecondary' : 'textSecondary',
+            }}
+          >
             {secondaryLabel}
           </Text>
         )}
@@ -73,83 +91,23 @@ export function TabsContentContainer({
   );
 }
 
-enum TransactionIdPageTab {
-  Overview = 'overview',
-  Events = 'events',
-  FunctionCall = 'functionCall',
-  PostConditions = 'postConditions',
-  SourceCode = 'sourceCode',
-}
-
-function getTabsTriggersByTransactionType(
-  tx: Transaction | MempoolTransaction,
-  selectedTab: TransactionIdPageTab,
-  setSelectedTab: (tab: TransactionIdPageTab) => void
-) {
-  const numTxEvents = 'event_count' in tx ? tx.event_count : 0;
-  const numPostConditions = 'post_conditions' in tx ? tx.post_conditions.length : 0;
+function TxTabsTriggers({
+  tx,
+  selectedTab,
+  setSelectedTab,
+}: {
+  tx: Transaction | MempoolTransaction;
+  selectedTab: TransactionIdPageTab;
+  setSelectedTab: (tab: TransactionIdPageTab) => void;
+}) {
   if (tx.tx_type === 'token_transfer') {
     return (
-      <>
-        <TabTriggerComponent
-          key={TransactionIdPageTab.Overview}
-          label="Overview"
-          value={TransactionIdPageTab.Overview}
-          isActive={selectedTab === TransactionIdPageTab.Overview}
-          onClick={() => setSelectedTab(TransactionIdPageTab.Overview)}
-        />
-        <TabTriggerComponent
-          key={TransactionIdPageTab.Events}
-          label={`Events`}
-          secondaryLabel={numTxEvents > 0 ? `(${numTxEvents})` : ''}
-          value={TransactionIdPageTab.Events}
-          isActive={selectedTab === TransactionIdPageTab.Events}
-          onClick={() => setSelectedTab(TransactionIdPageTab.Events)}
-        />
-      </>
+      <TokenTransferTabTrigger tx={tx} selectedTab={selectedTab} setSelectedTab={setSelectedTab} />
     );
   }
   if (tx.tx_type === 'contract_call') {
     return (
-      <>
-        <TabTriggerComponent
-          key={TransactionIdPageTab.Overview}
-          label="Overview"
-          value={TransactionIdPageTab.Overview}
-          isActive={selectedTab === TransactionIdPageTab.Overview}
-          onClick={() => setSelectedTab(TransactionIdPageTab.Overview)}
-        />
-        <TabTriggerComponent
-          key={TransactionIdPageTab.FunctionCall}
-          label={'Function called'}
-          value={TransactionIdPageTab.FunctionCall}
-          isActive={selectedTab === TransactionIdPageTab.FunctionCall}
-          onClick={() => setSelectedTab(TransactionIdPageTab.FunctionCall)}
-        />
-        <TabTriggerComponent
-          key={TransactionIdPageTab.PostConditions}
-          label={`Post-conditions`}
-          secondaryLabel={numPostConditions > 0 ? `(${numPostConditions})` : ''}
-          value={TransactionIdPageTab.PostConditions}
-          isActive={selectedTab === TransactionIdPageTab.PostConditions}
-          onClick={() => setSelectedTab(TransactionIdPageTab.PostConditions)}
-        />
-        <TabTriggerComponent
-          key={TransactionIdPageTab.Events}
-          label={`Events`}
-          secondaryLabel={numTxEvents > 0 ? `(${numTxEvents})` : ''}
-          value={TransactionIdPageTab.Events}
-          isActive={selectedTab === TransactionIdPageTab.Events}
-          onClick={() => setSelectedTab(TransactionIdPageTab.Events)}
-        />
-        <TabTriggerComponent
-          key={TransactionIdPageTab.SourceCode}
-          label={'Source code'}
-          value={TransactionIdPageTab.SourceCode}
-          isActive={selectedTab === TransactionIdPageTab.SourceCode}
-          onClick={() => setSelectedTab(TransactionIdPageTab.SourceCode)}
-        />
-      </>
+      <ContractCallTabTrigger tx={tx} selectedTab={selectedTab} setSelectedTab={setSelectedTab} />
     );
   }
   if (tx.tx_type === 'coinbase') {
@@ -159,68 +117,19 @@ function getTabsTriggersByTransactionType(
     return null;
   }
   if (tx.tx_type === 'smart_contract') {
-    return null;
+    return (
+      <SmartContractTabTrigger tx={tx} selectedTab={selectedTab} setSelectedTab={setSelectedTab} />
+    );
   }
   return null;
 }
 
-function getTabsContentByTransactionType(tx: Transaction | MempoolTransaction) {
+function TxTabsContent({ tx }: { tx: Transaction | MempoolTransaction }) {
   if (tx.tx_type === 'token_transfer') {
-    return (
-      <>
-        <TabsContent
-          key={TransactionIdPageTab.Overview}
-          value={TransactionIdPageTab.Overview}
-          w="100%"
-        >
-          <TabsContentContainer>
-            <TxSummary tx={tx} />
-          </TabsContentContainer>
-        </TabsContent>
-        <TabsContent key={TransactionIdPageTab.Events} value={TransactionIdPageTab.Events} w="100%">
-          <Events tx={tx} />
-        </TabsContent>
-      </>
-    );
+    return <TokenTransferTabContent tx={tx} />;
   }
   if (tx.tx_type === 'contract_call') {
-    return (
-      <>
-        <TabsContent
-          key={TransactionIdPageTab.Overview}
-          value={TransactionIdPageTab.Overview}
-          w="100%"
-        >
-          <Grid templateColumns={{ base: '1fr', md: '75% 25%' }} gap={2}>
-            <TabsContentContainer>
-              <TxSummary tx={tx} />
-            </TabsContentContainer>
-
-            <DetailsCard tx={tx as Transaction} />
-          </Grid>
-        </TabsContent>
-        <TabsContent
-          key={TransactionIdPageTab.FunctionCall}
-          value={TransactionIdPageTab.FunctionCall}
-          w="100%"
-        >
-          <FunctionCalled tx={tx} />
-        </TabsContent>
-        <TabsContent
-          key={TransactionIdPageTab.PostConditions}
-          value={TransactionIdPageTab.PostConditions}
-          w="100%"
-        >
-          <PostConditions tx={tx} />
-        </TabsContent>
-        <TabsContent key={TransactionIdPageTab.Events} value={TransactionIdPageTab.Events} w="100%">
-          <Events tx={tx} />
-        </TabsContent>
-        <TabsContent key="sourceCode" value="sourceCode" w="100%">
-          <Source tx={tx} />
-        </TabsContent>
-      </>
-    );
+    return <ContractCallTabContent tx={tx} />;
   }
   if (tx.tx_type === 'coinbase') {
     return null;
@@ -229,13 +138,14 @@ function getTabsContentByTransactionType(tx: Transaction | MempoolTransaction) {
     return null;
   }
   if (tx.tx_type === 'smart_contract') {
-    return null;
+    return <SmartContractTabContent tx={tx} />;
   }
   return null;
 }
 
 export const TxTabs = ({ tx }: { tx: Transaction | MempoolTransaction }) => {
   const [selectedTab, setSelectedTab] = useState(TransactionIdPageTab.Overview);
+
   return (
     <TabsRoot
       variant="primary"
@@ -254,7 +164,9 @@ export const TxTabs = ({ tx }: { tx: Transaction | MempoolTransaction }) => {
         rowGap={2}
       >
         <ScrollIndicator>
-          <TabsList>{getTabsTriggersByTransactionType(tx, selectedTab, setSelectedTab)}</TabsList>
+          <TabsList>
+            <TxTabsTriggers tx={tx} selectedTab={selectedTab} setSelectedTab={setSelectedTab} />
+          </TabsList>
         </ScrollIndicator>
 
         {tx.tx_type === 'token_transfer' && (
@@ -264,7 +176,7 @@ export const TxTabs = ({ tx }: { tx: Transaction | MempoolTransaction }) => {
           </Flex>
         )}
       </Flex>
-      {getTabsContentByTransactionType(tx)}
+      <TxTabsContent tx={tx} />
     </TabsRoot>
   );
 };
