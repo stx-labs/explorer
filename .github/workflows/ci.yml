@@ -1,24 +1,21 @@
 # PRs:
+#   - Builds Explorer (no package push)
+# Pushes to main:
 #   - Builds Explorer
-# Pushes:
-#   - Builds Explorer
-#   - Pushes Docker image to Docker Hub
-#   - Deploys to staging environment
-# Tags:
-#   - Builds Explorer
-#   - Pushes Docker image to Docker Hub
-#   - Deploys to staging environment
-#   - Deploys to prod environment
+#   - Pushes Docker image to GitHub Container Registry
+#   - Creates attestations for supply chain security
 
-name: CI/CD
+name: CI
 on:
   push:
     branches:
-      - '**'
+      - main
     paths-ignore:
       - '**/CHANGELOG.md'
       - '**/package.json'
   pull_request:
+    branches:
+      - main
   workflow_dispatch:
 
 concurrency:
@@ -29,82 +26,61 @@ jobs:
   build-publish:
     permissions:
       contents: write
-      issues: write
-      pull-requests: write
+      packages: write
+      attestations: write
+      id-token: write
     runs-on: ubuntu-latest
     outputs:
       docker_image_digest: ${{ steps.docker_push.outputs.digest }}
       version: ${{ steps.docker_meta.outputs.version }}
       new_release_published: ${{ steps.semantic.outputs.new_release_published }}
     steps:
-      - name: Generate release bot app token
-        id: generate_token
-        uses: actions/create-github-app-token@v1
-        with:
-          app-id: ${{ secrets.HIROSYSTEMS_RELEASE_BOT_ID }}
-          private-key: ${{ secrets.HIROSYSTEMS_RELEASE_BOT_PEM }}
-
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
-          persist-credentials: false
-
-      - name: Get bot user ID
-        id: bot-user-id
-        run: |
-          echo "user-id=$(gh api "/users/${{ steps.generate_token.outputs.app-slug }}[bot]" --jq .id)" >> "$GITHUB_OUTPUT"
-        env:
-          GH_TOKEN: ${{ steps.generate_token.outputs.token }}
+          fetch-depth: 0
 
       - name: Semantic Release
         uses: cycjimmy/semantic-release-action@v3
         id: semantic
         if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
         env:
-          GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SEMANTIC_RELEASE_PACKAGE: ${{ github.event.repository.name }}
-          GIT_AUTHOR_EMAIL: '${{ steps.bot-user-id.outputs.user-id }}+${{ steps.generate_token.outputs.app-slug }}[bot]@users.noreply.github.com'
-          GIT_COMMITTER_EMAIL: '${{ steps.bot-user-id.outputs.user-id }}+${{ steps.generate_token.outputs.app-slug }}[bot]@users.noreply.github.com'
         with:
           semantic_version: 19
           extra_plugins: |
             @semantic-release/changelog
             @semantic-release/git
 
-      - name: Checkout tag
-        if: steps.semantic.outputs.new_release_version != ''
-        uses: actions/checkout@v3
-        with:
-          ref: v${{ steps.semantic.outputs.new_release_version }}
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
       - name: Docker meta
         id: docker_meta
-        uses: docker/metadata-action@v4
+        uses: docker/metadata-action@v5
         with:
-          images: ${{ github.repository }}
+          images: ghcr.io/stx-labs/explorer
           tags: |
             type=ref,event=branch
             type=ref,event=pr
             type=semver,pattern={{version}},value=${{ steps.semantic.outputs.new_release_version }},enable=${{ steps.semantic.outputs.new_release_published == 'true' }}
             type=semver,pattern={{major}}.{{minor}},value=${{ steps.semantic.outputs.new_release_version }},enable=${{ steps.semantic.outputs.new_release_published == 'true' }}
 
-      - name: Login to Dockerhub
-        uses: docker/login-action@v2
+      - name: Login to GitHub Container Registry
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build/Tag/Push Image
         id: docker_push
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v5
         with:
-          push: true
+          push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
           platforms: linux/amd64
           tags: ${{ steps.docker_meta.outputs.tags }}
           labels: ${{ steps.docker_meta.outputs.labels }}
@@ -115,118 +91,15 @@ jobs:
             NEXT_PUBLIC_SENTRY_DSN=${{ secrets.NEXT_PUBLIC_SENTRY_DSN }}
             SENTRY_AUTH_TOKEN=${{ secrets.SENTRY_AUTH_TOKEN }}
 
-      - name: Deployment Info
-        run: 'echo "::warning::Will deploy docker tag/digest: ${{ steps.docker_meta.outputs.version }}/${{ steps.docker_push.outputs.digest }}"'
-
-  deploy-dev:
-    runs-on: ubuntu-latest
-    needs:
-      - build-publish
-    env:
-      DEPLOY_ENV: dev
-    environment:
-      name: k8s-dev
-      url: https://explorer.dev.hiro.so/
-    steps:
-      - name: Checkout actions repo
-        uses: actions/checkout@v3
+      - name: Generate Artifact Attestation
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        id: generate_artifact_attestation
+        uses: actions/attest-build-provenance@c074443f1aee8d4aeeae555aebba3282517141b2 # v2.2.3
         with:
-          token: ${{ secrets.DEVOPS_ACTIONS_REPO_PAT }}
-          repository: ${{ secrets.DEVOPS_ACTIONS_REPO }}
+          subject-name: ghcr.io/stx-labs/explorer
+          subject-digest: ${{ steps.docker_push.outputs.digest }}
+          push-to-registry: true
 
-      - name: Deploy Explorer
-        uses: ./actions/deploy
-        with:
-          docker_image: ${{ github.repository }}
-          docker_image_tag_or_digest: ${{ needs.build-publish.outputs.docker_image_digest }}
-          file_pattern: manifests/sites/explorer/${{ env.DEPLOY_ENV }}/base/kustomization.yaml
-          gh_token: ${{ secrets.DEVOPS_K8S_REPO_PAT }}
-          gpg_key: ${{ secrets.HIRO_DEVOPS_GPG_KEY }}
-          gpg_key_passphrase: ${{ secrets.HIRO_DEVOPS_GPG_KEY_PASSPHRASE }}
-          gpg_key_id: ${{ secrets.HIRO_DEVOPS_GPG_KEY_ID }}
+      - name: Docker Build Info
+        run: 'echo "::notice::Built and pushed docker image to GHCR: ${{ steps.docker_meta.outputs.tags }}"'
 
-  auto-approve-dev:
-    runs-on: ubuntu-latest
-    if: needs.build-publish.outputs.new_release_published == 'true'
-    needs:
-      - build-publish
-    steps:
-      - name: Approve pending deployment
-        run: |
-          sleep 5
-          ENV_ID=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" -H "Accept: application/vnd.github.v3+json" "https://api.github.com/repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/pending_deployments" | jq -r '.[0].environment.id // empty')
-          if [[ -n "${ENV_ID}" ]]; then
-            curl -s -X POST -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" -H "Accept: application/vnd.github.v3+json" "https://api.github.com/repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/pending_deployments" -d "{\"environment_ids\":[${ENV_ID}],\"state\":\"approved\",\"comment\":\"auto approve\"}"
-          fi
-
-  deploy-staging:
-    runs-on: ubuntu-latest
-    needs:
-      - build-publish
-      - deploy-dev
-    env:
-      DEPLOY_ENV: stg
-    environment:
-      name: k8s-staging
-      url: https://explorer.stg.hiro.so/
-    steps:
-      - name: Checkout actions repo
-        uses: actions/checkout@v3
-        with:
-          token: ${{ secrets.DEVOPS_ACTIONS_REPO_PAT }}
-          repository: ${{ secrets.DEVOPS_ACTIONS_REPO }}
-
-      - name: Deploy Explorer
-        uses: ./actions/deploy
-        with:
-          docker_image: ${{ github.repository }}
-          docker_image_tag_or_digest: ${{ needs.build-publish.outputs.docker_image_digest }}
-          file_pattern: manifests/sites/explorer/${{ env.DEPLOY_ENV }}/base/kustomization.yaml
-          gh_token: ${{ secrets.DEVOPS_K8S_REPO_PAT }}
-          gpg_key: ${{ secrets.HIRO_DEVOPS_GPG_KEY }}
-          gpg_key_passphrase: ${{ secrets.HIRO_DEVOPS_GPG_KEY_PASSPHRASE }}
-          gpg_key_id: ${{ secrets.HIRO_DEVOPS_GPG_KEY_ID }}
-
-  auto-approve-staging:
-    runs-on: ubuntu-latest
-    if: needs.build-publish.outputs.new_release_published == 'true'
-    needs:
-      - build-publish
-      - deploy-dev
-    steps:
-      - name: Approve pending deployment
-        run: |
-          sleep 5
-          ENV_ID=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" -H "Accept: application/vnd.github.v3+json" "https://api.github.com/repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/pending_deployments" | jq -r '.[0].environment.id // empty')
-          if [[ -n "${ENV_ID}" ]]; then
-            curl -s -X POST -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" -H "Accept: application/vnd.github.v3+json" "https://api.github.com/repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/pending_deployments" -d "{\"environment_ids\":[${ENV_ID}],\"state\":\"approved\",\"comment\":\"auto approve\"}"
-          fi
-
-  deploy-prod:
-    runs-on: ubuntu-latest
-    if: needs.build-publish.outputs.new_release_published == 'true'
-    needs:
-      - build-publish
-      - deploy-staging
-    env:
-      DEPLOY_ENV: prd
-    environment:
-      name: k8s-prod
-      url: https://explorer.hiro.so/
-    steps:
-      - name: Checkout actions repo
-        uses: actions/checkout@v3
-        with:
-          token: ${{ secrets.DEVOPS_ACTIONS_REPO_PAT }}
-          repository: ${{ secrets.DEVOPS_ACTIONS_REPO }}
-
-      - name: Deploy Explorer
-        uses: ./actions/deploy
-        with:
-          docker_image: ${{ github.repository }}
-          docker_image_tag_or_digest: ${{ needs.build-publish.outputs.docker_image_digest }}
-          file_pattern: manifests/sites/explorer/${{ env.DEPLOY_ENV }}/base/kustomization.yaml
-          gh_token: ${{ secrets.DEVOPS_K8S_REPO_PAT }}
-          gpg_key: ${{ secrets.HIRO_DEVOPS_GPG_KEY }}
-          gpg_key_passphrase: ${{ secrets.HIRO_DEVOPS_GPG_KEY_PASSPHRASE }}
-          gpg_key_id: ${{ secrets.HIRO_DEVOPS_GPG_KEY_ID }}
