@@ -9,12 +9,13 @@ import React from 'react';
 import { NonFungibleTokenHolding } from '@stacks/stacks-blockchain-api-types/generated';
 import { cvToJSON, hexToCV } from '@stacks/transactions';
 
-import { AddressLink, TokenLink } from '../../../../common/components/ExplorerLinks';
+import { AddressLink } from '../../../../common/components/ExplorerLinks';
 import { TwoColsListItem } from '../../../../common/components/TwoColumnsListItem';
 import { FtTokenAmount, NftTokenAmount } from '../../../../common/components/balances/TokenAmount';
 import { FtTokenSymbol, NftTokenSymbol } from '../../../../common/components/balances/TokenSymbol';
 import { getAssetNameParts, initBigNumber } from '../../../../common/utils/utils';
 import { FtAvatar } from './FtAvatar';
+import { FtTokenLink } from './FtTokenLink';
 import { NftAvatar } from './NftAvatar';
 
 interface TokenAssetListItemProps extends FlexProps {
@@ -66,7 +67,7 @@ export const TokenAssetListItem: React.FC<TokenAssetListItemProps> = ({
           tokenType === 'non_fungible_tokens' ? (
             <AddressLink principal={`${address}.${contract}`}>{bnsName || asset}</AddressLink>
           ) : (
-            <TokenLink tokenId={`${address}.${contract}`}>{bnsName || asset}</TokenLink>
+            <FtTokenLink contractId={contractId} asset={asset} bnsName={bnsName} />
           ),
         subtitle:
           tokenType === 'non_fungible_tokens' ? (
