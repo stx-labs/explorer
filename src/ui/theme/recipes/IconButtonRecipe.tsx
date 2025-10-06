@@ -23,6 +23,16 @@ export const iconButtonRecipe = defineRecipe({
           color: 'iconSecondary',
         },
       },
+      redesignSecondary: {
+        bg: 'surfacePrimary !important',
+        borderRadius: 'redesign.sm',
+        _hover: {
+          bg: 'surfaceFifth !important',
+        },
+        _icon: {
+          color: 'iconSecondary',
+        },
+      },
     },
     size: {
       '2xs': {
@@ -37,14 +47,13 @@ export const iconButtonRecipe = defineRecipe({
         },
       },
       xs: {
-        h: '8',
-        minW: '8',
+        h: 8,
+        minW: 8,
         textStyle: 'xs',
-        px: '2.5',
-        gap: '1',
+        p: 2.5,
         _icon: {
-          width: '4',
-          height: '4',
+          width: 4,
+          height: 4,
         },
       },
       sm: {
@@ -103,8 +112,5 @@ export const iconButtonRecipe = defineRecipe({
         },
       },
     },
-  },
-  defaultVariants: {
-    variant: 'primary',
   },
 });

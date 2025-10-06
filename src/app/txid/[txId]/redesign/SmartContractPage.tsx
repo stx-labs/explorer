@@ -1,4 +1,5 @@
 import { AddressTxsTable } from '@/common/components/table/table-examples/AddressTxsTable';
+import { SMART_CONTRACT_TX_ID_PAGE_ADDRESS_TXS_PAGE_SIZE } from '@/common/components/table/table-examples/consts';
 import { DEFAULT_LIST_LIMIT } from '@/common/constants/constants';
 import { THIRTY_SECONDS } from '@/common/queries/query-stale-time';
 import { useAddressConfirmedTxsWithTransfers } from '@/common/queries/useAddressConfirmedTxsWithTransfersInfinite';
@@ -132,7 +133,11 @@ export function SmartContractTabContent({
         value={TransactionIdPageTab.Transactions}
         w="100%"
       >
-        <AddressTxsTable principal={tx.smart_contract?.contract_id} initialData={undefined} />
+        <AddressTxsTable
+          principal={tx.smart_contract?.contract_id}
+          initialData={undefined}
+          pageSize={SMART_CONTRACT_TX_ID_PAGE_ADDRESS_TXS_PAGE_SIZE}
+        />
       </TabsContent>
       <TabsContent
         key={TransactionIdPageTab.PostConditions}

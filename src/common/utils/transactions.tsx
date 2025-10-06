@@ -1,5 +1,6 @@
 'use client';
 
+// use client is required due to the use of Phosphor icons
 import ClarityIcon from '@/ui/icons/ClarityIcon';
 import TransferIcon from '@/ui/icons/TransferIcon';
 import { ArrowsClockwise, Clock, Cube, PhoneCall, Question, XCircle } from '@phosphor-icons/react';
