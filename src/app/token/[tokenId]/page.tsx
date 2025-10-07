@@ -58,7 +58,7 @@ export default async function (props: {
       'error'
     );
   }
-  const tokenInfo = await getTokenInfo(apiUrl, tokenId, !!api);
+  const tokenInfo = await getTokenInfo(tokenId, apiUrl, !!api);
   return (
     <TokenIdPageDataProvider tokenId={tokenId} tokenInfo={tokenInfo}>
       <TokenIdPage />
