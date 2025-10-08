@@ -292,19 +292,19 @@ export async function getTokenInfo(
   apiUrl: string,
   isCustomApi: boolean
 ): Promise<TokenInfoProps> {
-  let basicTokenInfo,
-    detailedTokenInfo = {};
+  let tokenInfoFromStacksApi,
+    tokenInfoFromLunarCrush = {};
 
   try {
     if (!isCustomApi) {
-      basicTokenInfo = await getTokenInfoFromStacksApi(tokenId, apiUrl);
-      if (!basicTokenInfo) {
+      tokenInfoFromStacksApi = await getTokenInfoFromStacksApi(tokenId, apiUrl);
+      if (!tokenInfoFromStacksApi) {
         logError(new Error('token not found in Stacks API'), 'getTokenInfo', { tokenId }, 'error');
         return {};
       }
     }
 
-    const detailedTokenInfo = await getTokenInfoFromLunarCrush(tokenId, basicTokenInfo);
+    const detailedTokenInfo = await getTokenInfoFromLunarCrush(tokenId);
 
     return detailedTokenInfo;
   } catch (error) {

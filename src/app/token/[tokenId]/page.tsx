@@ -36,6 +36,7 @@ export default async function (props: {
   let initialAddressRecentTransactionsData:
     | GenericResponseType<CompressedTxAndMempoolTxTableData>
     | undefined;
+    let tokenInfo: TokenInfo | undefined;
 
   try {
     tokenPrice = await getTokenPrice();
@@ -50,6 +51,7 @@ export default async function (props: {
       }),
     };
     initialAddressRecentTransactionsData = compressedRecentAddressTransactions;
+    tokenInfo = await getTokenInfo(tokenId, apiUrl, !!api);
   } catch (error) {
     logError(
       error as Error,
@@ -58,7 +60,6 @@ export default async function (props: {
       'error'
     );
   }
-  const tokenInfo = await getTokenInfo(tokenId, apiUrl, !!api);
   return (
     <TokenIdPageDataProvider tokenId={tokenId} tokenInfo={tokenInfo}>
       <TokenIdPage />
