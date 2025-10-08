@@ -103,14 +103,108 @@ async function getTokenInfoFromStacksApi(
   }
 }
 
-async function getTokenInfoFromLunarCrush(tokenId: string, basicTokenInfo: BasicTokenInfo) {
+// async function getTokenInfoFromLunarCrush(tokenId: string) {
+//   try {
+//     const tokenInfoResponse = await fetchTokenInfoFromLunarCrush(tokenId);
+//     if (!tokenInfoResponse) {
+//       return undefined;
+//     }
+//     if (!tokenInfoResponse || tokenInfoResponse?.error) {
+//       console.error('token not found in LunarCrush');
+//       return {
+//         basic: basicTokenInfo,
+//       };
+//     }
+
+//     const isSBTC = getIsSBTC(tokenId);
+
+//     const name = tokenInfoResponse?.data?.name || basicTokenInfo.name || null;
+//     const symbol = basicTokenInfo.symbol || tokenInfoResponse?.data?.symbol || null;
+//     const categories: string[] = [];
+
+//     const totalSupply = basicTokenInfo.totalSupply || null;
+//     const circulatingSupplyFromBasicTokenInfo = basicTokenInfo.circulatingSupply || null;
+//     const circulatingSupply = isSBTC
+//       ? circulatingSupplyFromBasicTokenInfo // LunarCrush is returning an incorrect circulating supply for SBTC. Use the circulating supply from the holders endpoint on Stacks API instead.
+//       : tokenInfoResponse?.data?.circulating_supply || circulatingSupplyFromBasicTokenInfo || null;
+//     const imageUri = basicTokenInfo.imageUri || undefined;
+
+//     const currentPrice = tokenInfoResponse?.data?.price || null;
+//     const currentPriceInBtc = tokenInfoResponse?.data?.price_btc || null;
+//     const priceChangePercentage24h = tokenInfoResponse?.data?.percent_change_24h || null;
+//     const priceInBtcChangePercentage24h = null;
+
+//     const marketCap = tokenInfoResponse?.data?.market_cap || null;
+//     const tradingVolume24h = tokenInfoResponse?.data?.volume_24h || null;
+//     const tradingVolumeChangePercentage24h = null;
+//     const developerData: DeveloperData = {
+//       forks: null,
+//       stars: null,
+//       subscribers: null,
+//       total_issues: null,
+//       closed_issues: null,
+//       pull_requests_merged: null,
+//       pull_request_contributors: null,
+//       code_additions_deletions_4_weeks: null,
+//       commit_count_4_weeks: null,
+//       last_4_weeks_commit_activity_series: null,
+//     };
+
+//     const links: TokenLinks = {
+//       websites: [],
+//       blockchain: [],
+//       chat: [],
+//       forums: [],
+//       announcements: [],
+//       repos: [],
+//       social: [],
+//     };
+
+//     const marketCapRank = tokenInfoResponse?.data?.market_cap_rank || null;
+
+//     const tokenInfo = {
+//       basic: {
+//         name,
+//         symbol,
+//         totalSupply,
+//         imageUri,
+//         circulatingSupply,
+//       },
+//       extended: {
+//         categories,
+
+//         links,
+//         circulatingSupply,
+
+//         currentPrice,
+//         priceChangePercentage24h,
+//         currentPriceInBtc,
+//         priceInBtcChangePercentage24h,
+
+//         marketCap,
+
+//         tradingVolume24h,
+//         tradingVolumeChangePercentage24h,
+
+//         developerData,
+//         marketCapRank,
+//       },
+//     };
+
+//     return tokenInfo;
+//   } catch (error) {
+//     console.error(error);
+//     return {
+//       basic: basicTokenInfo,
+//     };
+//   }
+// }
+
+async function getTokenInfoFromLunarCrush(tokenId: string) {
   try {
     const tokenInfoResponse = await fetchTokenInfoFromLunarCrush(tokenId);
-    if (!tokenInfoResponse || tokenInfoResponse?.error) {
-      console.error('token not found in LunarCrush');
-      return {
-        basic: basicTokenInfo,
-      };
+    if (!tokenInfoResponse) {
+      return undefined;
     }
 
     const isSBTC = getIsSBTC(tokenId);
