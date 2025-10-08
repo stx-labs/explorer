@@ -1,7 +1,6 @@
 'use client';
 
 import { useSubscribeTxs } from '@/app/_components/BlockList/Sockets/useSubscribeTxs';
-import { CompressedMempoolTxTableData } from '@/app/transactions/utils';
 import { ScrollIndicator } from '@/common/components/ScrollIndicator';
 import { GenericResponseType } from '@/common/hooks/useInfiniteQueryResult';
 import { THIRTY_SECONDS } from '@/common/queries/query-stale-time';
@@ -10,6 +9,7 @@ import {
   useMempoolTransactions,
 } from '@/common/queries/useMempoolTransactionsInfinite';
 import { formatTimestamp, formatTimestampToRelativeTime } from '@/common/utils/time-utils';
+import { CompressedMempoolTxTableData } from '@/common/utils/transaction-utils';
 import { getAmount, getToAddress } from '@/common/utils/transaction-utils';
 import { validateStacksContractId } from '@/common/utils/utils';
 import { Flex } from '@chakra-ui/react';

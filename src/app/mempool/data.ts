@@ -4,10 +4,10 @@ import { GenericResponseType } from '@/common/hooks/useInfiniteQueryResult';
 import { NetworkModes } from '@/common/types/network';
 import { logError } from '@/common/utils/error-utils';
 import { getApiUrl } from '@/common/utils/network-utils';
-
-import { MempoolTransaction } from '@stacks/stacks-blockchain-api-types';
-
-import { CompressedMempoolTxTableData, compressMempoolTransactions } from '../transactions/utils';
+import {
+  CompressedMempoolTxTableData,
+  compressMempoolTransactions,
+} from '@/common/utils/transaction-utils';
 
 export async function fetchMempoolTransactions(
   chain: string,

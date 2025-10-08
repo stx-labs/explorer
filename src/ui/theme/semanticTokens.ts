@@ -291,6 +291,12 @@ export const NEW_SEMANTIC_TOKENS = {
     iconError: {
       value: { base: '{colors.feedback.red-500}', _dark: '{colors.feedback.red-400}' },
     },
+    iconSuccess: {
+      value: { base: '{colors.feedback.green-500}', _dark: '{colors.feedback.green-400}' },
+    },
+    iconBitcoin: {
+      value: { base: '{colors.accent.bitcoin-600}', _dark: '{colors.accent.bitcoin-500}' },
+    },
     surfacePrimary: {
       value: { base: '{colors.neutral.sand-150}', _dark: '{colors.neutral.sand-900}' },
     },

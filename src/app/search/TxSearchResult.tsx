@@ -1,6 +1,6 @@
-import { CompressedTxTableData, compressTransactions } from '@/app/transactions/utils';
 import { TxsTableWithFilters } from '@/common/components/table/tx-table/TxsTableWithFilters';
 import { GenericResponseType } from '@/common/hooks/useInfiniteQueryResult';
+import { CompressedTxTableData, compressTransactions } from '@/common/utils/transaction-utils';
 import { UseQueryResult } from '@tanstack/react-query';
 import { useMemo } from 'react';
 

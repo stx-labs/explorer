@@ -1,6 +1,5 @@
 'use client';
 
-import { CompressedTxTableData } from '@/app/transactions/utils';
 import { GenericResponseType } from '@/common/hooks/useInfiniteQueryResult';
 import { THIRTY_SECONDS } from '@/common/queries/query-stale-time';
 import {
@@ -8,6 +7,7 @@ import {
   useAddressConfirmedTxsWithTransfers,
 } from '@/common/queries/useAddressConfirmedTxsWithTransfersInfinite';
 import { formatTimestamp, formatTimestampToRelativeTime } from '@/common/utils/time-utils';
+import { CompressedTxTableData } from '@/common/utils/transaction-utils';
 import { getAmount, getToAddress } from '@/common/utils/transaction-utils';
 import { validateStacksContractId } from '@/common/utils/utils';
 import { Flex, Icon } from '@chakra-ui/react';

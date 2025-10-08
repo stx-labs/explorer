@@ -1,6 +1,5 @@
 'use client';
 
-import { CompressedMempoolTxTableData } from '@/app/transactions/utils';
 import { TxTableFilters } from '@/common/components/table/filters/TxTableFilters';
 import { MempoolTable } from '@/common/components/table/table-examples/MempoolTable';
 import {
@@ -8,6 +7,7 @@ import {
   useTxTableFilters,
 } from '@/common/components/table/tx-table/useTxTableFilters';
 import { GenericResponseType } from '@/common/hooks/useInfiniteQueryResult';
+import { CompressedMempoolTxTableData } from '@/common/utils/transaction-utils';
 import { Stack } from '@chakra-ui/react';
 
 interface MempoolTableWithFiltersContentProps {

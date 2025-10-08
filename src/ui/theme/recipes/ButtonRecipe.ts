@@ -162,6 +162,10 @@ export const buttonRecipe = defineRecipe({
         _focus: {
           bg: 'none',
         },
+        borderRadius: 'none',
+        textDecoration: 'none',
+        minH: 0,
+        minW: 0,
       },
       buttonLink: {
         h: 'auto',
