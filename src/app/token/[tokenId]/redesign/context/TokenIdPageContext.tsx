@@ -4,17 +4,16 @@ import { CompressedTxAndMempoolTxTableData } from '@/app/transactions/utils';
 import { GenericResponseType } from '@/common/hooks/useInfiniteQueryResult';
 import { ReactNode, createContext, useContext } from 'react';
 
-import {
-  AddressTransactionsListResponse,
-} from '@stacks/stacks-blockchain-api-types';
+import { MergedTokenData } from '../../types';
 
 interface TokenIdPageDataContextType {
   stxPrice: number;
   btcPrice: number;
-  initialAddressRecentTransactionsData?:
-    | AddressTransactionsListResponse
-    | GenericResponseType<CompressedTxAndMempoolTxTableData>;
+  initialAddressRecentTransactionsData:
+    | GenericResponseType<CompressedTxAndMempoolTxTableData>
+    | undefined;
   tokenId: string;
+  tokenData: MergedTokenData | undefined;
 }
 
 const DEFAULT_TOKEN_ID_PAGE_DATA: TokenIdPageDataContextType = {
@@ -22,6 +21,7 @@ const DEFAULT_TOKEN_ID_PAGE_DATA: TokenIdPageDataContextType = {
   btcPrice: 0,
   initialAddressRecentTransactionsData: undefined,
   tokenId: '',
+  tokenData: undefined,
 };
 
 const TokenIdPageDataContext = createContext<TokenIdPageDataContextType>(
@@ -30,11 +30,12 @@ const TokenIdPageDataContext = createContext<TokenIdPageDataContextType>(
 
 interface TokenIdPageDataProviderProps {
   children: ReactNode;
-  stxPrice?: number;
-  btcPrice?: number;
-  initialAddressRecentTransactionsData?:
-    | AddressTransactionsListResponse
-    | GenericResponseType<CompressedTxAndMempoolTxTableData>;
+  stxPrice: number;
+  btcPrice: number;
+  initialAddressRecentTransactionsData:
+    | GenericResponseType<CompressedTxAndMempoolTxTableData>
+    | undefined;
+  tokenData: MergedTokenData | undefined;
   tokenId: string;
 }
 
@@ -44,12 +45,14 @@ export function TokenIdPageDataProvider({
   btcPrice = DEFAULT_TOKEN_ID_PAGE_DATA.btcPrice,
   initialAddressRecentTransactionsData,
   tokenId,
+  tokenData,
 }: TokenIdPageDataProviderProps) {
   const contextValue = {
     stxPrice,
     btcPrice,
     initialAddressRecentTransactionsData,
     tokenId,
+    tokenData,
   };
 
   return (
@@ -60,5 +63,9 @@ export function TokenIdPageDataProvider({
 }
 
 export function useTokenIdPageData() {
-  return useContext(TokenIdPageDataContext);
+  const context = useContext(TokenIdPageDataContext);
+  if (!context) {
+    throw new Error('useTokenIdPageData must be used within a TokenIdPageDataProvider');
+  }
+  return context;
 }

@@ -15,6 +15,8 @@ import { TokenTabs } from './Tabs';
 import { TokenInfo } from './TokenInfo';
 import { RISKY_TOKENS, VERIFIED_TOKENS, legitsBTCDerivatives } from './consts';
 import { useTokenIdPageData } from './redesign/context/TokenIdPageContext';
+import { useIsRedesignUrl } from '@/common/utils/url-utils';
+import TokenIdPageRedesign from './PageClientRedesign';
 
 const WarningMessage = ({ text }: { text: string | ReactNode }) => {
   return (
@@ -38,6 +40,10 @@ const WarningMessage = ({ text }: { text: string | ReactNode }) => {
 
 export default function TokenIdPage() {
   const { tokenId, tokenInfo } = useTokenIdPageData();
+  const isRedesignUrl = useIsRedesignUrl();
+  if (isRedesignUrl) {
+    return <TokenIdPageRedesign />;
+  }
   if (!tokenInfo.basic) throw new Error('Could not find token info');
   const { name, symbol, imageUri } = tokenInfo.basic;
   const categories = tokenInfo.extended?.categories || [];

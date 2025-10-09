@@ -62,7 +62,13 @@ export default async function (props: {
     );
   }
   return (
-    <TokenIdPageDataProvider tokenId={tokenId} tokenInfo={tokenData}>
+    <TokenIdPageDataProvider
+      tokenId={tokenId}
+      tokenData={tokenData}
+      stxPrice={tokenPrice.stxPrice}
+      btcPrice={tokenPrice.btcPrice}
+      initialAddressRecentTransactionsData={initialAddressRecentTransactionsData}
+    >
       <TokenIdPage />
     </TokenIdPageDataProvider>
   );
