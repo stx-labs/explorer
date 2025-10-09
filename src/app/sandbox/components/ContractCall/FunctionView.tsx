@@ -243,6 +243,8 @@ export const FunctionView: FC<FunctionViewProps> = ({ fn, contractId, cancelButt
                           : 'Allow Mode'}
                       </Text>
                       <Switch
+                        variant="redesignPrimary"
+                        size="small"
                         id="post-condition-mode"
                         disabled={isReadOnly}
                         onChange={() => {
