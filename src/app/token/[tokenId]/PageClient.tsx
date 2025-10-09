@@ -40,9 +40,10 @@ const WarningMessage = ({ text }: { text: string | ReactNode }) => {
 
 export default function TokenIdPage() {
   const isRedesignUrl = useIsRedesignUrl();
-  const { tokenId, tokenData } =
-    useTokenIdPageData();
+  const { tokenId, tokenData } = useTokenIdPageData();
+
   if (!tokenData?.basic) throw new Error('Could not find token info');
+
   const { name, symbol, imageUri } = tokenData.basic || {};
   const categories = tokenData?.extended?.categories || [];
   const hasSBTCInName = getHasSBTCInName(name ?? '', symbol ?? '');
@@ -98,7 +99,7 @@ export default function TokenIdPage() {
           </Flex>
         )}
         <Flex alignItems={'center'} gap={2} flexWrap="wrap">
-          <Image src={imageUri} alt={name ?? ''} h={10} w={10} />
+          {imageUri && <Image src={imageUri} alt={name ?? ''} h={10} w={10} />}
           <PageTitle>
             {name} ({symbol})
           </PageTitle>

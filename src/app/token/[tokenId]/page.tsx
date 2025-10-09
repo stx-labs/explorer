@@ -8,7 +8,6 @@ import { getTokenPrice } from '@/app/getTokenPriceInfo';
 import { GenericResponseType } from '@/common/hooks/useInfiniteQueryResult';
 import { logError } from '@/common/utils/error-utils';
 import { getApiUrl } from '@/common/utils/network-utils';
-import { isConfirmedTx } from '@/common/utils/transactions';
 
 import { MempoolTransaction, Transaction } from '@stacks/stacks-blockchain-api-types';
 
@@ -16,6 +15,10 @@ import TokenIdPage from './PageClient';
 import { getTokenInfo } from './page-data';
 import { TokenIdPageDataProvider } from './redesign/context/TokenIdPageContext';
 import { MergedTokenData } from './types';
+
+function isConfirmedTx<T extends Transaction, U extends MempoolTransaction>(tx: T | U): tx is T {
+  return 'block_height' in tx && tx.block_height !== undefined;
+}
 
 export default async function (props: {
   params: Promise<{ tokenId: string }>;
