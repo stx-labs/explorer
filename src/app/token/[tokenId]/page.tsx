@@ -13,8 +13,9 @@ import { isConfirmedTx } from '@/common/utils/transactions';
 import { MempoolTransaction, Transaction } from '@stacks/stacks-blockchain-api-types';
 
 import TokenIdPage from './PageClient';
-import { getTokenInfo } from './getTokenInfo';
+import { getTokenInfo } from './page-data';
 import { TokenIdPageDataProvider } from './redesign/context/TokenIdPageContext';
+import { MergedTokenData } from './types';
 
 export default async function (props: {
   params: Promise<{ tokenId: string }>;
@@ -36,7 +37,7 @@ export default async function (props: {
   let initialAddressRecentTransactionsData:
     | GenericResponseType<CompressedTxAndMempoolTxTableData>
     | undefined;
-    let tokenInfo: TokenInfo | undefined;
+  let tokenData: MergedTokenData | undefined;
 
   try {
     tokenPrice = await getTokenPrice();
@@ -51,7 +52,7 @@ export default async function (props: {
       }),
     };
     initialAddressRecentTransactionsData = compressedRecentAddressTransactions;
-    tokenInfo = await getTokenInfo(tokenId, apiUrl, !!api);
+    tokenData = await getTokenInfo(tokenId, apiUrl, !!api);
   } catch (error) {
     logError(
       error as Error,
@@ -61,7 +62,7 @@ export default async function (props: {
     );
   }
   return (
-    <TokenIdPageDataProvider tokenId={tokenId} tokenInfo={tokenInfo}>
+    <TokenIdPageDataProvider tokenId={tokenId} tokenInfo={tokenData}>
       <TokenIdPage />
     </TokenIdPageDataProvider>
   );

@@ -4,22 +4,18 @@ import { TabTriggerComponent } from '@/common/components/TabsContainer';
 import { TabsList, TabsRoot } from '@/ui/Tabs';
 import { useState } from 'react';
 
-import { ContractAvailableFunctions } from '../../../../common/components/ContractAvailableFunctions';
 import {
   useContractById,
   useSuspenseContractById,
 } from '../../../../common/queries/useContractById';
-import { AddressConfirmedTxsList } from '../../../../features/txs-list/AddressConfirmedTxsList';
-import { AddressMempoolTxsList } from '../../../../features/txs-list/AddressMempoolTxsList';
-import { CodeEditor } from '../../../../ui/CodeEditor';
 import { TabsRootProps } from '../../../../ui/Tabs';
 import { ExplorerErrorBoundary } from '../../../_components/ErrorBoundary';
-import { sbtcDepositAddress, sbtcWidthdrawlContractAddress } from '../consts';
-import { DeveloperData, TokenInfoProps } from '../types';
+import { sbtcWidthdrawlContractAddress } from '../consts';
+import { DeveloperData, MergedTokenData } from '../types';
 
 interface TokenTabsProps extends Partial<TabsRootProps> {
   tokenId: string;
-  tokenInfo: TokenInfoProps;
+  tokenInfo: MergedTokenData;
   developerData?: DeveloperData;
 }
 

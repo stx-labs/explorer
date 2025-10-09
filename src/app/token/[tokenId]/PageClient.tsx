@@ -14,7 +14,6 @@ import { PageTitle } from '../../_components/PageTitle';
 import { TokenTabs } from './Tabs';
 import { TokenInfo } from './TokenInfo';
 import { RISKY_TOKENS, VERIFIED_TOKENS, legitsBTCDerivatives } from './consts';
-import { TokenInfoProps } from './types';
 import { useTokenIdPageData } from './redesign/context/TokenIdPageContext';
 
 const WarningMessage = ({ text }: { text: string | ReactNode }) => {

@@ -13,7 +13,7 @@ import { Text } from '../../../../../ui/Text';
 import { ScrollableBox } from '../../../../_components/BlockList/ScrollableDiv';
 import { mobileBorderCss } from '../../../../_components/BlockList/consts';
 import { ExplorerErrorBoundary } from '../../../../_components/ErrorBoundary';
-import { TokenInfoProps } from '../../types';
+import { MergedTokenData } from '../../types';
 import { HolderInfo, HolderResponseType, useSuspenseFtHolders } from '../data/useHolders';
 import { HoldersTableSkeleton } from './skeleton';
 
@@ -190,7 +190,7 @@ const HoldersTableBase = ({
   tokenInfo,
 }: {
   tokenId: string;
-  tokenInfo: TokenInfoProps;
+  tokenInfo: MergedTokenData;
 }) => {
   const tokenPrice = tokenInfo.extended?.currentPrice;
   // TODO: use asset id from token metadata. api is going to add it soon
@@ -242,7 +242,7 @@ const HoldersTableBase = ({
   );
 };
 
-const HoldersTable = ({ tokenId, tokenInfo }: { tokenId: string; tokenInfo: TokenInfoProps }) => {
+const HoldersTable = ({ tokenId, tokenInfo }: { tokenId: string; tokenInfo: MergedTokenData }) => {
   return (
     <ExplorerErrorBoundary
       Wrapper={Section}

@@ -24,16 +24,16 @@ export interface DeveloperData {
   last_4_weeks_commit_activity_series: [] | null;
 }
 
-export interface BasicTokenInfo {
+export interface TokenDataFromStacksApi {
   name: string | null;
   symbol: string | null;
   totalSupply: number | null;
   circulatingSupply: number | null;
-  imageUri: string | undefined;
+  imageUri: string | null;
 }
 
-export interface TokenInfoProps {
-  basic?: BasicTokenInfo;
+export interface MergedTokenData {
+  basic?: TokenDataFromStacksApi;
   extended?: {
     categories: string[];
 

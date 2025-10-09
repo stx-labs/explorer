@@ -3,13 +3,13 @@ import { ErrorBoundary } from 'react-error-boundary';
 
 import { getIsSBTC } from '../../../../app/tokens/utils';
 import { StatsWrapper } from '../../../_components/Stats/StatsWrapper';
-import { TokenInfoProps } from '../types';
+import { MergedTokenData } from '../types';
 import { MarketCap } from './MarketCap';
 import { Price } from './Price';
 import { Supply } from './Supply';
 import { Transaction } from './Transaction';
 
-export const TokenInfo: FC<{ tokenInfo: TokenInfoProps; tokenId: string }> = ({
+export const TokenInfo: FC<{ tokenInfo: MergedTokenData; tokenId: string }> = ({
   tokenInfo,
   tokenId,
 }) => {

@@ -12,13 +12,13 @@ import { CodeEditor } from '../../../../ui/CodeEditor';
 import { TabsRootProps } from '../../../../ui/Tabs';
 import { ExplorerErrorBoundary } from '../../../_components/ErrorBoundary';
 import { sbtcDepositAddress, sbtcWidthdrawlContractAddress } from '../consts';
-import { DeveloperData, TokenInfoProps } from '../types';
+import { DeveloperData, MergedTokenData } from '../types';
 import { Developers } from './Developers';
 import HoldersTable from './holders/Holders';
 
 interface TokenTabsProps extends Partial<TabsRootProps> {
   tokenId: string;
-  tokenInfo: TokenInfoProps;
+  tokenInfo: MergedTokenData;
   developerData?: DeveloperData;
 }
 

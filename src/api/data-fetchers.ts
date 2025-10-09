@@ -1,6 +1,8 @@
 import { stacksAPIFetch } from '@/api/stacksAPIFetch';
+import { LUNAR_CRUSH_API_KEY } from '@/common/constants/env';
 import { PoxInfo } from '@/common/queries/usePoxInforRaw';
-import { NUM_TEN_MINUTES_IN_DAY } from '@/common/utils/consts';
+import { LunarCrushCoin } from '@/common/types/lunarCrush';
+import { logError } from '@/common/utils/error-utils';
 import { FtMetadataResponse } from '@hirosystems/token-metadata-api-client';
 
 import {
@@ -127,14 +129,49 @@ export async function fetchRecentTransactions(
   return recentTransactionsResponse;
 }
 
-export async function fetchTokenMetadata(apiUrl: string, tokenId: string): Promise<FtMetadataResponse> {
+export async function fetchTokenMetadata(
+  apiUrl: string,
+  tokenId: string
+): Promise<FtMetadataResponse> {
   const response = await stacksAPIFetch(`${apiUrl}/metadata/v1/ft/${tokenId}`);
   const tokenMetadata: FtMetadataResponse = await response.json();
   return tokenMetadata;
 }
 
-export async function fetchTokenHolders(apiUrl: string, tokenId: string): Promise<FtMetadataResponse> {
+export async function fetchTokenHolders(
+  apiUrl: string,
+  tokenId: string
+): Promise<FtMetadataResponse> {
   const response = await stacksAPIFetch(`${apiUrl}/metadata/v1/ft/${tokenId}`);
   const tokenMetadata: FtMetadataResponse = await response.json();
   return tokenMetadata;
+}
+
+export async function fetchTokenInfoFromLunarCrush(
+  tokenId: string
+): Promise<LunarCrushCoin | undefined> {
+  try {
+    const response = await (
+      await fetch(`https://lunarcrush.com/api4/public/coins/${tokenId}/v1`, {
+        cache: 'default',
+        next: { revalidate: 60 * 10 }, // Revalidate every 10 minutes
+        headers: {
+          Authorization: `Bearer ${LUNAR_CRUSH_API_KEY}`,
+        },
+      })
+    ).json();
+    if (!response || response?.error) {
+      throw new Error('Error fetching token data from Lunar Crush');
+    }
+  } catch (error) {
+    logError(
+      new Error('Error fetching token data from Lunar Crush'),
+      'getLunarCrushTokenData',
+      {
+        tokenId,
+      },
+      'error'
+    );
+    return undefined;
+  }
 }
