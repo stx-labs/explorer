@@ -53,6 +53,10 @@ export default async function (props: {
     };
     initialAddressRecentTransactionsData = compressedRecentAddressTransactions;
     tokenData = await getTokenInfo(tokenId, apiUrl, !!api);
+    console.log({
+      tokenData,
+      initialAddressRecentTransactionsData,
+    });
   } catch (error) {
     logError(
       error as Error,

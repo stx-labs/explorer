@@ -115,7 +115,7 @@ export function TokenTabsBase({ tokenId, tokenInfo, developerData }: TokenTabsPr
   );
 }
 
-export function instaTokenTabs(props: TokenTabsProps) {
+export function TokenTabs(props: TokenTabsProps) {
   return (
     <ExplorerErrorBoundary tryAgainButton>
       <TokenTabsBase {...props} />
