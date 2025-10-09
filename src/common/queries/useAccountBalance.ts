@@ -7,8 +7,9 @@ import { useApiClient } from '../../api/useApiClient';
 import { ONE_MINUTE } from './query-stale-time';
 
 const ACCOUNT_BALANCE_QUERY_KEY = 'accountBalance';
+export const getAccountBalanceQueryKey = (address?: string) => [ACCOUNT_BALANCE_QUERY_KEY, address];
 
-export function useAccountBalance(address?: string) {
+export function useAccountBalance(address?: string, options: any = {}) {
   const apiClient = useApiClient();
   return useQuery<AddressBalanceResponse | undefined>({
     queryKey: [ACCOUNT_BALANCE_QUERY_KEY, address],
@@ -24,6 +25,7 @@ export function useAccountBalance(address?: string) {
     },
     staleTime: ONE_MINUTE,
     enabled: !!address,
+    ...options,
   });
 }
 
