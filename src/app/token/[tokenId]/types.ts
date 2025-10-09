@@ -32,6 +32,23 @@ export interface TokenDataFromStacksApi {
   imageUri: string | null;
 }
 
+export interface TokenDataFromLunarCrush {
+  name: string | null;
+  symbol: string | null;
+  categories: string[];
+  links: TokenLinks;
+  circulatingSupply: number | null;
+  currentPrice: number | null;
+  priceChangePercentage24h: number | null;
+  currentPriceInBtc: number | null;
+  priceInBtcChangePercentage24h: number | null;
+  marketCap: number | null;
+  tradingVolume24h: number | null;
+  tradingVolumeChangePercentage24h: number | null;
+  developerData: DeveloperData;
+  marketCapRank: number | null;
+}
+
 export interface MergedTokenData {
   basic?: TokenDataFromStacksApi;
   extended?: {
@@ -54,3 +71,5 @@ export interface MergedTokenData {
     marketCapRank: number | null;
   };
 }
+
+export interface RedesignMergedTokenData extends TokenDataFromStacksApi, TokenDataFromLunarCrush {}

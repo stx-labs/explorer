@@ -1,23 +1,9 @@
-import { getIsSBTC } from '@/app/tokens/utils';
+import { TabTriggerComponent } from '@/app/txid/[txId]/redesign/TxTabs';
 import { ScrollIndicator } from '@/common/components/ScrollIndicator';
-import { TabTriggerComponent } from '@/common/components/TabsContainer';
-import { TabsList, TabsRoot } from '@/ui/Tabs';
+import { TabsContent, TabsList, TabsRoot } from '@/ui/Tabs';
 import { useState } from 'react';
 
-import {
-  useContractById,
-  useSuspenseContractById,
-} from '../../../../common/queries/useContractById';
-import { TabsRootProps } from '../../../../ui/Tabs';
-import { ExplorerErrorBoundary } from '../../../_components/ErrorBoundary';
-import { sbtcWidthdrawlContractAddress } from '../consts';
-import { DeveloperData, MergedTokenData } from '../types';
-
-interface TokenTabsProps extends Partial<TabsRootProps> {
-  tokenId: string;
-  tokenInfo: MergedTokenData;
-  developerData?: DeveloperData;
-}
+import { TokenIdOverview } from './TokenIdOverview';
 
 enum TokenIdPageTab {
   Overview = 'overview',
@@ -27,25 +13,19 @@ enum TokenIdPageTab {
   AvailableFunctions = 'availableFunctions',
 }
 
-export function TokenTabsBase({ tokenId, tokenInfo, developerData }: TokenTabsProps) {
-  const { data: contract } = useSuspenseContractById(tokenId);
-  const source = contract?.source_code;
-  const isSBTC = getIsSBTC(tokenId);
-  const { data: sbtcWithdrawalContract } = useContractById(
-    isSBTC ? sbtcWidthdrawlContractAddress : undefined
-  );
-
-  const [selectedTab, setSelectedTab] = useState<TokenIdPageTab>(TokenIdPageTab.Overview);
+export const TokenIdTabs = () => {
+  const [selectedTab, setSelectedTab] = useState(TokenIdPageTab.Overview);
 
   return (
     <TabsRoot
       variant="primary"
       size="redesignMd"
-      defaultValue={selectedTab}
+      defaultValue={TokenIdPageTab.Overview}
       gap={2}
       rowGap={2}
       borderRadius="redesign.xl"
       w="full"
+      lazyMount // needed to reduce the number of requests made to the API
     >
       <ScrollIndicator>
         <TabsList>
@@ -56,49 +36,11 @@ export function TokenTabsBase({ tokenId, tokenInfo, developerData }: TokenTabsPr
             isActive={selectedTab === TokenIdPageTab.Overview}
             onClick={() => setSelectedTab(TokenIdPageTab.Overview)}
           />
-          <TabTriggerComponent
-            key={TokenIdPageTab.Transactions}
-            label={`Transactions`}
-            secondaryLabel={numTxs > 0 ? `(${numTxs})` : ''}
-            value={TokenIdPageTab.Transactions}
-            isActive={selectedTab === TokenIdPageTab.Transactions}
-            onClick={() => setSelectedTab(TokenIdPageTab.Transactions)}
-          />
-          <TabTriggerComponent
-            key={TokenIdPageTab.Holders}
-            label="Holders"
-            secondaryLabel={numHolders > 0 ? `(${numHolders})` : ''}
-            value={TokenIdPageTab.Holders}
-            isActive={selectedTab === TokenIdPageTab.Holders}
-            onClick={() => setSelectedTab(TokenIdPageTab.Holders)}
-          />
-          <TabTriggerComponent
-            key={TokenIdPageTab.Source}
-            label="Source"
-            value={TokenIdPageTab.Source}
-            isActive={selectedTab === TokenIdPageTab.Source}
-            onClick={() => setSelectedTab(TokenIdPageTab.Source)}
-          />
-          <TabTriggerComponent
-            key={TokenIdPageTab.AvailableFunctions}
-            label="Available Functions"
-            secondaryLabel={numFunctions > 0 ? `(${numFunctions})` : ''}
-            value={TokenIdPageTab.AvailableFunctions}
-            isActive={selectedTab === TokenIdPageTab.AvailableFunctions}
-            onClick={() => setSelectedTab(TokenIdPageTab.AvailableFunctions)}
-          />
         </TabsList>
       </ScrollIndicator>
-
-      {getTabsContentByTransactionType(tx)}
+      <TabsContent key={TokenIdPageTab.Overview} value={TokenIdPageTab.Overview} w="100%">
+        <TokenIdOverview />
+      </TabsContent>
     </TabsRoot>
   );
-}
-
-export function TokenTabs(props: TokenTabsProps) {
-  return (
-    <ExplorerErrorBoundary tryAgainButton>
-      <TokenTabsBase {...props} />
-    </ExplorerErrorBoundary>
-  );
-}
+};

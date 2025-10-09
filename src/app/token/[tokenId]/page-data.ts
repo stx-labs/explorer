@@ -5,7 +5,13 @@ import { logError } from '@/common/utils/error-utils';
 import { getFtDecimalAdjustedBalance } from '../../../common/utils/utils';
 import { getIsSBTC } from '../../tokens/utils';
 import { HolderResponseType } from './Tabs/data/useHolders';
-import { DeveloperData, MergedTokenData, TokenDataFromStacksApi, TokenLinks } from './types';
+import {
+  DeveloperData,
+  MergedTokenData,
+  RedesignMergedTokenData,
+  TokenDataFromStacksApi,
+  TokenLinks,
+} from './types';
 
 async function getCirculatingSupplyFromHoldersEndpoint(apiUrl: string, tokenId: string) {
   const contractInfoResponse = await fetch(`${apiUrl}/extended/v1/contract/${tokenId}`);
@@ -225,7 +231,7 @@ export async function getTokenInfo(
   tokenId: string,
   apiUrl: string,
   isCustomApi: boolean
-): Promise<MergedTokenData> {
+): Promise<[MergedTokenData, RedesignMergedTokenData]> {
   let tokenDataFromStacksApi: TokenDataFromStacksApi | undefined;
   let tokenDataFromLunarCrush: TokenDataFromLunarCrush | undefined;
 
@@ -235,9 +241,15 @@ export async function getTokenInfo(
       : undefined;
     tokenDataFromLunarCrush = await getTokenInfoFromLunarCrush(tokenId);
 
-    return tokenDataFromStacksApi && tokenDataFromLunarCrush
-      ? mergeTokenData(tokenId, tokenDataFromStacksApi, tokenDataFromLunarCrush)
-      : {};
+    const mergedTokenData =
+      tokenDataFromStacksApi && tokenDataFromLunarCrush
+        ? mergeTokenData(tokenId, tokenDataFromStacksApi, tokenDataFromLunarCrush)
+        : {};
+    const redesignMergedTokenData =
+      tokenDataFromStacksApi && tokenDataFromLunarCrush
+        ? redesignMergeTokenData(tokenDataFromStacksApi, tokenDataFromLunarCrush, tokenId)
+        : {};
+    return [mergedTokenData, redesignMergedTokenData];
   } catch (error) {
     logError(
       error as Error,
@@ -245,6 +257,84 @@ export async function getTokenInfo(
       { tokenId, apiUrl, isCustomApi, tokenDataFromStacksApi, tokenDataFromLunarCrush },
       'error'
     );
-    return {};
+    return [{}, {}];
   }
+}
+
+// Helper function to safely get a value with fallback
+const safeGet = <T>(
+  primary: T | undefined | null,
+  fallback: T | undefined | null = null
+): T | null => {
+  return primary ?? fallback ?? null;
+};
+
+// Helper function to check if a value is valid (not null, undefined, or empty string)
+const isValidValue = (value: any): boolean => {
+  return value !== null && value !== undefined && value !== '';
+};
+
+function redesignMergeTokenData(
+  tokenDataFromStacksApi: TokenDataFromStacksApi | undefined,
+  tokenDataFromLunarCrush: TokenDataFromLunarCrush | undefined,
+  tokenId: string
+) {
+  // Determine if this is SBTC token for special handling
+  const isSBTC = getIsSBTC(tokenId);
+
+  // Basic token information
+  const name = safeGet(tokenDataFromLunarCrush?.name, tokenDataFromStacksApi?.name);
+
+  const symbol = safeGet(tokenDataFromStacksApi?.symbol, tokenDataFromLunarCrush?.symbol);
+
+  const totalSupply = safeGet(tokenDataFromStacksApi?.totalSupply);
+
+  // Special handling for circulating supply based on token type
+  const circulatingSupply = isSBTC
+    ? safeGet(tokenDataFromStacksApi?.circulatingSupply)
+    : safeGet(
+        tokenDataFromLunarCrush?.circulatingSupply,
+        tokenDataFromStacksApi?.circulatingSupply
+      );
+
+  const imageUri = safeGet(tokenDataFromStacksApi?.imageUri);
+
+  // Price information (primarily from LunarCrush)
+  const currentPrice = safeGet(tokenDataFromLunarCrush?.currentPrice);
+  const currentPriceInBtc = safeGet(tokenDataFromLunarCrush?.currentPriceInBtc);
+  const priceChangePercentage24h = safeGet(tokenDataFromLunarCrush?.priceChangePercentage24h);
+  const priceInBtcChangePercentage24h = null; // Not available from current sources
+
+  // Market data (primarily from LunarCrush)
+  const marketCap = safeGet(tokenDataFromLunarCrush?.marketCap);
+  const tradingVolume24h = safeGet(tokenDataFromLunarCrush?.tradingVolume24h);
+  const tradingVolumeChangePercentage24h = null; // Not available from current sources
+  const marketCapRank = safeGet(tokenDataFromLunarCrush?.marketCapRank);
+
+  // Categories and links (LunarCrush only)
+  const categories = Array.isArray(tokenDataFromLunarCrush?.categories)
+    ? tokenDataFromLunarCrush.categories
+    : [];
+
+  const links = tokenDataFromLunarCrush?.links || undefined;
+  const developerData = tokenDataFromLunarCrush?.developerData || undefined;
+
+  return {
+    name,
+    symbol,
+    totalSupply,
+    imageUri,
+    circulatingSupply,
+    categories,
+    links,
+    currentPrice,
+    priceChangePercentage24h,
+    currentPriceInBtc,
+    priceInBtcChangePercentage24h,
+    marketCap,
+    tradingVolume24h,
+    tradingVolumeChangePercentage24h,
+    developerData,
+    marketCapRank,
+  };
 }

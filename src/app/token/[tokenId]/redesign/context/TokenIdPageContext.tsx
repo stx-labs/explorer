@@ -4,7 +4,7 @@ import { CompressedTxAndMempoolTxTableData } from '@/app/transactions/utils';
 import { GenericResponseType } from '@/common/hooks/useInfiniteQueryResult';
 import { ReactNode, createContext, useContext } from 'react';
 
-import { MergedTokenData } from '../../types';
+import { MergedTokenData, RedesignMergedTokenData } from '../../types';
 
 interface TokenIdPageDataContextType {
   stxPrice: number;
@@ -14,6 +14,7 @@ interface TokenIdPageDataContextType {
     | undefined;
   tokenId: string;
   tokenData: MergedTokenData | undefined;
+  redesignTokenData: RedesignMergedTokenData | undefined;
 }
 
 const DEFAULT_TOKEN_ID_PAGE_DATA: TokenIdPageDataContextType = {
@@ -22,6 +23,7 @@ const DEFAULT_TOKEN_ID_PAGE_DATA: TokenIdPageDataContextType = {
   initialAddressRecentTransactionsData: undefined,
   tokenId: '',
   tokenData: undefined,
+  redesignTokenData: undefined,
 };
 
 const TokenIdPageDataContext = createContext<TokenIdPageDataContextType>(
@@ -36,6 +38,7 @@ interface TokenIdPageDataProviderProps {
     | GenericResponseType<CompressedTxAndMempoolTxTableData>
     | undefined;
   tokenData: MergedTokenData | undefined;
+  redesignTokenData: RedesignMergedTokenData | undefined;
   tokenId: string;
 }
 
@@ -46,6 +49,7 @@ export function TokenIdPageDataProvider({
   initialAddressRecentTransactionsData,
   tokenId,
   tokenData,
+  redesignTokenData,
 }: TokenIdPageDataProviderProps) {
   const contextValue = {
     stxPrice,
@@ -53,6 +57,7 @@ export function TokenIdPageDataProvider({
     initialAddressRecentTransactionsData,
     tokenId,
     tokenData,
+    redesignTokenData,
   };
 
   return (

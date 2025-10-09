@@ -12,9 +12,9 @@ import { getApiUrl } from '@/common/utils/network-utils';
 import { MempoolTransaction, Transaction } from '@stacks/stacks-blockchain-api-types';
 
 import TokenIdPage from './PageClient';
-import { getTokenInfo } from './page-data';
+import { getTokenInfo, getRedesignTokenData } from './page-data';
 import { TokenIdPageDataProvider } from './redesign/context/TokenIdPageContext';
-import { MergedTokenData } from './types';
+import { MergedTokenData, RedesignMergedTokenData } from './types';
 
 function isConfirmedTx<T extends Transaction, U extends MempoolTransaction>(tx: T | U): tx is T {
   return 'block_height' in tx && tx.block_height !== undefined;
@@ -41,6 +41,7 @@ export default async function (props: {
     | GenericResponseType<CompressedTxAndMempoolTxTableData>
     | undefined;
   let tokenData: MergedTokenData | undefined;
+  let redesignTokenData: RedesignMergedTokenData | undefined;
 
   try {
     tokenPrice = await getTokenPrice();
@@ -55,11 +56,7 @@ export default async function (props: {
       }),
     };
     initialAddressRecentTransactionsData = compressedRecentAddressTransactions;
-    tokenData = await getTokenInfo(tokenId, apiUrl, !!api);
-    console.log({
-      tokenData,
-      initialAddressRecentTransactionsData,
-    });
+    [tokenData, redesignTokenData] = await getTokenInfo(tokenId, apiUrl, !!api);
   } catch (error) {
     logError(
       error as Error,
@@ -72,6 +69,7 @@ export default async function (props: {
     <TokenIdPageDataProvider
       tokenId={tokenId}
       tokenData={tokenData}
+      redesignTokenData={redesignTokenData}
       stxPrice={tokenPrice.stxPrice}
       btcPrice={tokenPrice.btcPrice}
       initialAddressRecentTransactionsData={initialAddressRecentTransactionsData}
