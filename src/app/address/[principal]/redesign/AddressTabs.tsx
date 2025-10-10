@@ -1,11 +1,15 @@
 import { TxTabsTrigger } from '@/app/txid/[txId]/redesign/TxTabs';
 import { ScrollIndicator } from '@/common/components/ScrollIndicator';
+import { FungibleTokensTableWithFilters } from '@/common/components/table/fungible-tokens-table/FungibleTokensTableWithFilters';
 import {
   AddressTxsTable,
   EVENTS_COLUMN_DEFINITION,
   defaultColumnDefinitions,
 } from '@/common/components/table/table-examples/AddressTxsTable';
-import { ADDRESS_ID_PAGE_ADDRESS_TXS_LIMIT } from '@/common/components/table/table-examples/consts';
+import {
+  ADDRESS_ID_PAGE_ADDRESS_TXS_LIMIT,
+  ADDRESS_ID_PAGE_FUNGIBLE_TOKENS_LIMIT,
+} from '@/common/components/table/table-examples/consts';
 import { TabsContent, TabsList, TabsRoot } from '@/ui/Tabs';
 import { useState } from 'react';
 
@@ -15,6 +19,7 @@ import { AddressOverview } from './AddressOverview';
 enum AddressIdPageTab {
   Overview = 'overview',
   Transactions = 'transactions',
+  Tokens = 'tokens',
 }
 
 const TransactionsTabAddressTxsTableColumnDefinitions = [
@@ -24,8 +29,12 @@ const TransactionsTabAddressTxsTableColumnDefinitions = [
 
 export const AddressTabs = ({ principal }: { principal: string }) => {
   const [selectedTab, setSelectedTab] = useState(AddressIdPageTab.Overview);
-  const { initialAddressRecentTransactionsData } = useAddressIdPageData();
+  const { initialAddressRecentTransactionsData, initialAddressBalancesData } =
+    useAddressIdPageData();
   const totalAddressTransactions = initialAddressRecentTransactionsData?.total || 0;
+  const totalAddressFungibleTokens = Object.entries(
+    initialAddressBalancesData?.fungible_tokens || {}
+  ).length;
 
   return (
     <TabsRoot
@@ -57,6 +66,16 @@ export const AddressTabs = ({ principal }: { principal: string }) => {
             isActive={selectedTab === AddressIdPageTab.Transactions}
             onClick={() => setSelectedTab(AddressIdPageTab.Transactions)}
           />
+          {totalAddressFungibleTokens > 0 && (
+            <TxTabsTrigger
+              key={AddressIdPageTab.Tokens}
+              label={`Tokens`}
+              secondaryLabel={`(${totalAddressFungibleTokens.toLocaleString()})`}
+              value={AddressIdPageTab.Tokens}
+              isActive={selectedTab === AddressIdPageTab.Tokens}
+              onClick={() => setSelectedTab(AddressIdPageTab.Tokens)}
+            />
+          )}
         </TabsList>
       </ScrollIndicator>
       <TabsContent key={AddressIdPageTab.Overview} value={AddressIdPageTab.Overview} w="100%">
@@ -67,6 +86,12 @@ export const AddressTabs = ({ principal }: { principal: string }) => {
           principal={principal}
           pageSize={ADDRESS_ID_PAGE_ADDRESS_TXS_LIMIT}
           columnDefinitions={TransactionsTabAddressTxsTableColumnDefinitions}
+        />
+      </TabsContent>
+      <TabsContent key={AddressIdPageTab.Tokens} value={AddressIdPageTab.Tokens}>
+        <FungibleTokensTableWithFilters
+          principal={principal}
+          pageSize={ADDRESS_ID_PAGE_FUNGIBLE_TOKENS_LIMIT}
         />
       </TabsContent>
     </TabsRoot>
