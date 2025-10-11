@@ -33,7 +33,14 @@ interface ButtonVariantProps
 
 type ButtonLinkProps = LinkVariantProps | ButtonVariantProps;
 
-const ButtonLinkBase = forwardRef<HTMLElement, ButtonLinkProps>(
+function isButtonProps(props: ButtonLinkProps): props is ButtonVariantProps {
+  return props.buttonLinkType === 'button';
+}
+
+const ButtonLinkBase = forwardRef<
+  HTMLButtonElement | HTMLAnchorElement,
+  ButtonLinkProps
+>(
   (
     {
       children,
@@ -44,8 +51,11 @@ const ButtonLinkBase = forwardRef<HTMLElement, ButtonLinkProps>(
     },
     ref
   ) => {
+    const ArrowIcon = buttonLinkDirection === 'forward' ? ArrowRight : ArrowLeft;
+
     const arrowIcon = (
       <Icon
+        as={ArrowIcon}
         w={buttonLinkSize === 'big' ? 3.5 : 3}
         h={buttonLinkSize === 'big' ? 3.5 : 3}
         color="iconTertiary"
@@ -53,9 +63,7 @@ const ButtonLinkBase = forwardRef<HTMLElement, ButtonLinkProps>(
           color: 'iconPrimary',
         }}
         aria-hidden="true"
-      >
-        {buttonLinkDirection === 'forward' ? <ArrowRight /> : <ArrowLeft />}
-      </Icon>
+      />
     );
 
     const content = (
@@ -73,8 +81,8 @@ const ButtonLinkBase = forwardRef<HTMLElement, ButtonLinkProps>(
     );
 
     // Button variant
-    if (buttonLinkType === 'button') {
-      const { onClick, ...buttonProps } = props as ButtonVariantProps;
+    if (isButtonProps(props)) {
+      const { onClick, ...buttonProps } = props;
       return (
         <Button
           ref={ref as React.Ref<HTMLButtonElement>}
@@ -88,7 +96,7 @@ const ButtonLinkBase = forwardRef<HTMLElement, ButtonLinkProps>(
     }
 
     // Link variant (default)
-    const { href, ...linkProps } = props as LinkVariantProps;
+    const { href, ...linkProps } = props;
     const isExternal = href?.startsWith('http');
 
     return isExternal ? (
