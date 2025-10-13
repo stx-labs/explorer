@@ -24,7 +24,8 @@ enum AddressIdPageTab {
   Collectibles = 'collectibles',
 }
 
-const TransactionsTabAddressTxsTableColumnDefinitions = [
+// TODO: move this to a shared location
+export const TransactionsTabAddressTxsTableColumnDefinitions = [
   ...defaultColumnDefinitions,
   EVENTS_COLUMN_DEFINITION,
 ];

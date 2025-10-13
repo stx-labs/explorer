@@ -7,7 +7,7 @@ import {
 } from '@/app/txid/[txId]/redesign/tx-summary/SummaryItem';
 import { Circle } from '@/common/components/Circle';
 import { AddressTxsTable } from '@/common/components/table/table-examples/AddressTxsTable';
-import { ADDRESS_ID_PAGE_RECENT_ADDRESS_TXS_LIMIT } from '@/common/components/table/table-examples/consts';
+import { DEFAULT_RECENT_ADDRESS_TXS_LIMIT } from '@/common/components/table/table-examples/consts';
 import { microToStacks } from '@/common/utils/utils';
 import { SimpleTag } from '@/ui/Badge';
 import { NextLink } from '@/ui/NextLink';
@@ -354,7 +354,7 @@ export const AddressOverview = () => {
             principal={principal}
             initialData={initialAddressRecentTransactionsData}
             disablePagination
-            pageSize={ADDRESS_ID_PAGE_RECENT_ADDRESS_TXS_LIMIT}
+            pageSize={DEFAULT_RECENT_ADDRESS_TXS_LIMIT}
           />
         </Stack>
       </Stack>
