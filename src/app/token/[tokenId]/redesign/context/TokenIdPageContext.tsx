@@ -4,6 +4,8 @@ import { CompressedTxAndMempoolTxTableData } from '@/app/transactions/utils';
 import { GenericResponseType } from '@/common/hooks/useInfiniteQueryResult';
 import { ReactNode, createContext, useContext } from 'react';
 
+import { FungibleTokenHolderList } from '@stacks/stacks-blockchain-api-types';
+
 import { MergedTokenData, RedesignMergedTokenData } from '../../types';
 
 interface TokenIdPageDataContextType {
@@ -15,6 +17,10 @@ interface TokenIdPageDataContextType {
   tokenId: string;
   tokenData: MergedTokenData | undefined;
   redesignTokenData: RedesignMergedTokenData | undefined;
+  txBlockTime: number | undefined;
+  txId: string | undefined;
+  assetId: string | undefined;
+  holders: FungibleTokenHolderList | undefined;
 }
 
 const DEFAULT_TOKEN_ID_PAGE_DATA: TokenIdPageDataContextType = {
@@ -24,6 +30,10 @@ const DEFAULT_TOKEN_ID_PAGE_DATA: TokenIdPageDataContextType = {
   tokenId: '',
   tokenData: undefined,
   redesignTokenData: undefined,
+  txBlockTime: undefined,
+  txId: undefined,
+  assetId: undefined,
+  holders: undefined,
 };
 
 const TokenIdPageDataContext = createContext<TokenIdPageDataContextType>(
@@ -40,6 +50,10 @@ interface TokenIdPageDataProviderProps {
   tokenData: MergedTokenData | undefined;
   redesignTokenData: RedesignMergedTokenData | undefined;
   tokenId: string;
+  txBlockTime: number | undefined;
+  txId: string | undefined;
+  assetId: string | undefined;
+  holders: FungibleTokenHolderList | undefined;
 }
 
 export function TokenIdPageDataProvider({
@@ -50,6 +64,10 @@ export function TokenIdPageDataProvider({
   tokenId,
   tokenData,
   redesignTokenData,
+  txBlockTime,
+  txId,
+  assetId,
+  holders,
 }: TokenIdPageDataProviderProps) {
   const contextValue = {
     stxPrice,
@@ -58,6 +76,10 @@ export function TokenIdPageDataProvider({
     tokenId,
     tokenData,
     redesignTokenData,
+    txBlockTime,
+    txId,
+    assetId,
+    holders,
   };
 
   return (

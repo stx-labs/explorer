@@ -1,3 +1,4 @@
+import { TokenImage } from '@/common/components/table/fungible-tokens-table/FungibleTokensTableCellRenderers';
 import { useIsInViewport } from '@/common/hooks/useIsInViewport';
 import {
   truncateStxAddress,
@@ -56,14 +57,21 @@ const Badge = ({
   );
 };
 
-const TokenIdBadgeUnminimized = ({ tokenId }: { tokenId: string }) => {
-  const isContract = validateStacksContractId(tokenId);
-  return tokenId ? (
+const TokenNameBadgeUnminimized = ({ name }: { name: string }) => {
+  return name ? (
+    <Text textStyle="heading-sm" color="textPrimary">
+      {name}
+    </Text>
+  ) : null;
+};
+
+const TokenSymbolBadgeUnminimized = ({ symbol }: { symbol: string }) => {
+  return symbol ? (
     <Badge
-      copyValue={tokenId}
-      value={isContract ? truncateStxContractId(tokenId) : truncateStxAddress(tokenId)}
-      copiedText={`Address copied to clipboard`}
-      textProps={{ textStyle: 'heading-sm' }}
+      copyValue={symbol}
+      value={symbol}
+      copiedText={`Token symbol copied to clipboard`}
+      textProps={{ textStyle: 'text-medium-md' }}
     />
   ) : null;
 };
@@ -83,7 +91,7 @@ const TokenIdBadgeMinimized = ({ tokenId }: { tokenId: string }) => {
 const TokenIdLabelBadgeUnminimized = () => {
   return (
     <DefaultBadge
-      icon={<DefaultBadgeIcon icon={<Coin />} color="iconInvert" size={4.5} bg="iconPrimary" />}
+      icon={<DefaultBadgeIcon icon={<Coin />} color="iconInvert" size={3} bg="iconPrimary" />}
       label={<DefaultBadgeLabel label={'Token'} />}
     />
   );
@@ -95,28 +103,29 @@ const TokenIdLabelBadgeMinimized = () => {
   );
 };
 
-export const TokenIdHeaderUnminimized = forwardRef<HTMLDivElement, { tokenId: string }>(
-  ({ tokenId }, ref) => {
-    return (
-      <Flex
-        bg={`linear-gradient(to bottom, var(--stacks-colors-redesign-border-primary), var(--stacks-colors-redesign-border-secondary))`}
-        padding={`${BORDER_WIDTH}px`}
-        borderRadius={`calc(var(--stacks-radii-redesign-xl) + ${BORDER_WIDTH}px)`}
-        boxShadow="elevation2"
-        ref={ref}
-      >
-        <Stack p={4} gap={3} w="full" borderRadius="redesign.xl" bg="surfaceSecondary">
-          <TokenIdLabelBadgeUnminimized />
-          <Flex gap={4} flexWrap="wrap">
-            <Flex gap={2} flexWrap="wrap" alignItems="flex-end">
-              <TokenIdBadgeUnminimized tokenId={tokenId} />
-            </Flex>
-          </Flex>
-        </Stack>
-      </Flex>
-    );
-  }
-);
+export const TokenIdHeaderUnminimized = forwardRef<
+  HTMLDivElement,
+  { name: string; symbol: string; imageUrl: string }
+>(({ name, symbol, imageUrl }, ref) => {
+  return (
+    <Flex
+      bg={`linear-gradient(to bottom, var(--stacks-colors-redesign-border-primary), var(--stacks-colors-redesign-border-secondary))`}
+      padding={`${BORDER_WIDTH}px`}
+      borderRadius={`calc(var(--stacks-radii-redesign-xl) + ${BORDER_WIDTH}px)`}
+      boxShadow="elevation2"
+      ref={ref}
+    >
+      <Stack p={4} gap={3} w="full" borderRadius="redesign.xl" bg="surfaceSecondary">
+        <TokenIdLabelBadgeUnminimized />
+        <Flex gap={2} flexWrap="wrap" alignItems="center">
+          <TokenImage url={imageUrl} alt={name} />
+          <TokenNameBadgeUnminimized name={name} />
+          <TokenSymbolBadgeUnminimized symbol={symbol} />
+        </Flex>
+      </Stack>
+    </Flex>
+  );
+});
 
 export const TokenIdHeaderMinimized = ({ tokenId }: { tokenId: string }) => {
   return (
@@ -144,13 +153,19 @@ export const TokenIdHeaderMinimized = ({ tokenId }: { tokenId: string }) => {
 };
 
 export const TokenIdHeader = () => {
-  const { tokenId } = useTokenIdPageData();
+  const { tokenId, redesignTokenData } = useTokenIdPageData();
+  const { name, symbol, imageUri } = redesignTokenData || {};
   const txHeaderRef = useRef<HTMLDivElement>(null);
   const isHeaderInView = useIsInViewport(txHeaderRef);
 
   return (
     <>
-      <TokenIdHeaderUnminimized tokenId={tokenId} ref={txHeaderRef} />
+      <TokenIdHeaderUnminimized
+        name={name || ''}
+        symbol={symbol || ''}
+        imageUrl={imageUri || ''}
+        ref={txHeaderRef}
+      />
       <motion.div // TODO: move to shared component
         initial={{ opacity: 0, y: -20 }}
         animate={{

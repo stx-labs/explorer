@@ -11,6 +11,9 @@ import {
   AddressTransactionsListResponse,
   BnsNamesOwnByAddressResponse,
   BurnchainRewardsTotal,
+  FungibleTokenHolderList,
+  SmartContract,
+  Transaction,
 } from '@stacks/stacks-blockchain-api-types';
 
 export const getAddressBalancesTag = (principal: string) => `address-balances-${principal}`;
@@ -174,4 +177,45 @@ export async function fetchTokenInfoFromLunarCrush(
     );
     return undefined;
   }
+}
+
+export async function fetchContractInfo(
+  apiUrl: string,
+  contractId: string
+): Promise<SmartContract> {
+  const response = await stacksAPIFetch(`${apiUrl}/extended/v1/contract/${contractId}`);
+  const contractInfo: SmartContract = await response.json();
+  return contractInfo;
+}
+
+export async function fetchTx(apiUrl: string, txId: string): Promise<Transaction> {
+  const response = await stacksAPIFetch(`${apiUrl}/extended/v1/tx/${txId}`);
+  const tx: Transaction = await response.json();
+  return tx;
+}
+
+export async function fetchHolders(
+  apiUrl: string,
+  assetId: string,
+  limit?: number,
+  offset?: number
+): Promise<FungibleTokenHolderList> {
+  const params = new URLSearchParams();
+
+  if (limit !== undefined) {
+    params.append('limit', limit.toString());
+  }
+
+  if (offset !== undefined) {
+    params.append('offset', offset.toString());
+  }
+
+  const queryString = params.toString();
+  const url = queryString
+    ? `${apiUrl}/extended/v1/tokens/ft/${assetId}/holders?${queryString}`
+    : `${apiUrl}/extended/v1/tokens/ft/${assetId}/holders`;
+
+  const response = await stacksAPIFetch(url);
+  const holderList: FungibleTokenHolderList = await response.json();
+  return holderList;
 }

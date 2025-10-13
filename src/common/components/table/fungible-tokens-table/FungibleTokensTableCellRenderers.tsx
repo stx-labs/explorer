@@ -62,7 +62,8 @@ export function FungibleTokenCellRenderer(value: FungibleTokenTableTokenColumnDa
   );
 }
 
-// This was copied
+// This was copied 
+// TODO: move to shared component
 export const TokenImage = ({ url, alt, ...props }: { url: string; alt: string }) => {
   const [imageUrl, setImageUrl] = useState<string>(encodeURI(decodeURI(url)));
   const [badImage, setBadImage] = useState<boolean>(false);
