@@ -1,4 +1,9 @@
-import { useSuspenseInfiniteQuery } from '@tanstack/react-query';
+import { callApiWithErrorHandling } from '@/api/callApiWithErrorHandling';
+import { useApiClient } from '@/api/useApiClient';
+import { useQuery, useSuspenseInfiniteQuery } from '@tanstack/react-query';
+import { UseQueryResult } from '@tanstack/react-query';
+
+import { FungibleTokenHolderList } from '@stacks/stacks-blockchain-api-types';
 
 import { useGlobalContext } from '../../../../../common/context/useGlobalContext';
 import { GenericResponseType } from '../../../../../common/hooks/useInfiniteQueryResult';
@@ -16,6 +21,41 @@ export interface HolderResponseType extends GenericResponseType<HolderInfo> {
 
 const DEFAULT_HOLDER_LIMIT = 20;
 const HOLDERS_QUERY_KEY = 'holders';
+
+export function getHoldersQueryKey(assetId: string, limit: number, offset: number) {
+  return [HOLDERS_QUERY_KEY, assetId, limit, offset];
+}
+
+export function useHolders(
+  assetId: string,
+  limit = DEFAULT_HOLDER_LIMIT,
+  offset = 0,
+  options: any = {}
+): UseQueryResult<FungibleTokenHolderList> {
+  const apiClient = useApiClient();
+
+  return useQuery<FungibleTokenHolderList>({
+    queryKey: [HOLDERS_QUERY_KEY, assetId],
+    queryFn: async () => {
+      if (!assetId) return undefined;
+      return await callApiWithErrorHandling(
+        apiClient,
+        `/extended/v1/tokens/ft/${assetId}/holders`,
+        {
+          params: {
+            path: { assetId },
+            query: {
+              limit,
+              offset,
+            },
+          },
+        }
+      );
+    },
+    enabled: !!assetId,
+    ...options,
+  });
+}
 
 const fetchHolders = async (
   apiUrl: string,

@@ -1,13 +1,17 @@
+import { TransactionsTabAddressTxsTableColumnDefinitions } from '@/app/address/[principal]/redesign/AddressTabs';
 import { TabTriggerComponent } from '@/app/txid/[txId]/redesign/TxTabs';
 import { ScrollIndicator } from '@/common/components/ScrollIndicator';
+import { AddressTxsTable } from '@/common/components/table/table-examples/AddressTxsTable';
+import { HoldersTable } from '@/common/components/table/table-examples/HoldersTable';
+import {
+  DEFAULT_ADDRESS_TXS_LIMIT,
+  DEFAULT_HOLDER_LIMIT,
+} from '@/common/components/table/table-examples/consts';
 import { TabsContent, TabsList, TabsRoot } from '@/ui/Tabs';
 import { useState } from 'react';
 
 import { TokenIdOverview } from './TokenIdOverview';
 import { useTokenIdPageData } from './context/TokenIdPageContext';
-import { AddressTxsTable } from '@/common/components/table/table-examples/AddressTxsTable';
-import { DEFAULT_ADDRESS_TXS_LIMIT } from '@/common/components/table/table-examples/consts';
-import { TransactionsTabAddressTxsTableColumnDefinitions } from '@/app/address/[principal]/redesign/AddressTabs';
 
 enum TokenIdPageTab {
   Overview = 'overview',
@@ -20,8 +24,9 @@ enum TokenIdPageTab {
 export const TokenIdTabs = () => {
   const [selectedTab, setSelectedTab] = useState(TokenIdPageTab.Overview);
 
-  const { initialAddressRecentTransactionsData, tokenId } = useTokenIdPageData();
+  const { initialAddressRecentTransactionsData, tokenId, holders, assetId } = useTokenIdPageData();
   const totalAddressTransactions = initialAddressRecentTransactionsData?.total || 0;
+  const totalHolders = holders?.total || 0;
 
   return (
     <TabsRoot
@@ -53,6 +58,14 @@ export const TokenIdTabs = () => {
             isActive={selectedTab === TokenIdPageTab.Transactions}
             onClick={() => setSelectedTab(TokenIdPageTab.Transactions)}
           />
+          <TabTriggerComponent
+            key={TokenIdPageTab.Holders}
+            label="Holders"
+            secondaryLabel={totalHolders > 0 ? `(${totalHolders.toLocaleString()})` : ''}
+            value={TokenIdPageTab.Holders}
+            isActive={selectedTab === TokenIdPageTab.Holders}
+            onClick={() => setSelectedTab(TokenIdPageTab.Holders)}
+          />
         </TabsList>
       </ScrollIndicator>
       <TabsContent key={TokenIdPageTab.Overview} value={TokenIdPageTab.Overview} w="100%">
@@ -64,6 +77,9 @@ export const TokenIdTabs = () => {
           pageSize={DEFAULT_ADDRESS_TXS_LIMIT}
           columnDefinitions={TransactionsTabAddressTxsTableColumnDefinitions}
         />
+      </TabsContent>
+      <TabsContent key={TokenIdPageTab.Holders} value={TokenIdPageTab.Holders} w="100%">
+        <HoldersTable assetId={assetId || ''} pageSize={DEFAULT_HOLDER_LIMIT} />
       </TabsContent>
     </TabsRoot>
   );
