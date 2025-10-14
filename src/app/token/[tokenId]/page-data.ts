@@ -69,6 +69,7 @@ async function getTokenInfoFromStacksApi(
     return {
       name,
       symbol,
+      decimals,
       totalSupply:
         totalSupply && decimals ? getFtDecimalAdjustedBalance(totalSupply, decimals) : null,
       circulatingSupply:
@@ -278,12 +279,14 @@ function redesignMergeTokenData(
   tokenDataFromStacksApi: TokenDataFromStacksApi | undefined,
   tokenDataFromLunarCrush: TokenDataFromLunarCrush | undefined,
   tokenId: string
-) {
+): RedesignMergedTokenData {
   // Determine if this is SBTC token for special handling
   const isSBTC = getIsSBTC(tokenId);
 
   // Basic token information
   const name = safeGet(tokenDataFromLunarCrush?.name, tokenDataFromStacksApi?.name);
+
+  const decimals = safeGet(tokenDataFromStacksApi?.decimals, 0);
 
   const symbol = safeGet(tokenDataFromStacksApi?.symbol, tokenDataFromLunarCrush?.symbol);
 
@@ -324,6 +327,7 @@ function redesignMergeTokenData(
     symbol,
     totalSupply,
     imageUri,
+    decimals,
     circulatingSupply,
     categories,
     links,

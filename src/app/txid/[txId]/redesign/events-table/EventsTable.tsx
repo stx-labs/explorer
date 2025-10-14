@@ -2,6 +2,7 @@
 
 import { ScrollIndicator } from '@/common/components/ScrollIndicator';
 import { AddressLinkCellRenderer } from '@/common/components/table/CommonTableCellRenderers';
+import { IndexCellRenderer } from '@/common/components/table/CommonTableCellRenderers';
 import { Table } from '@/common/components/table/Table';
 import { FeeCellRenderer } from '@/common/components/table/table-examples/TxTableCellRenderers';
 import { GenericResponseType } from '@/common/hooks/useInfiniteQueryResult';
@@ -14,7 +15,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { ColumnDef, PaginationState } from '@tanstack/react-table';
 import { type JSX, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { AssetEventTypeCellRenderer, IndexCellRenderer } from './EventsTableCellRenderers';
+import { AssetEventTypeCellRenderer } from './EventsTableCellRenderers';
 import { EVENTS_TABLE_PAGE_SIZE } from './consts';
 import { EventsTableFilters } from './filters/useEventsTableFilters';
 import {

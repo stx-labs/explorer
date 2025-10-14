@@ -1,20 +1,30 @@
 'use client';
 
 import { getHoldersQueryKey, useHolders } from '@/app/token/[tokenId]/Tabs/data/useHolders';
-import { TxTableAddressColumnData } from '@/common/components/table/table-examples/TxsTable';
 import { GenericResponseType } from '@/common/hooks/useInfiniteQueryResult';
 import { THIRTY_SECONDS } from '@/common/queries/query-stale-time';
+import {
+  calculateHoldingPercentage,
+  formatHoldingPercentage,
+} from '@/common/utils/fungible-token-utils';
+import {
+  ftDecimals,
+  getFtDecimalAdjustedBalance,
+  validateStacksContractId,
+} from '@/common/utils/utils';
 import { useQueryClient } from '@tanstack/react-query';
 import { ColumnDef, PaginationState } from '@tanstack/react-table';
 import { useCallback, useMemo, useRef, useState } from 'react';
 
-import { MempoolTransaction, Transaction } from '@stacks/stacks-blockchain-api-types';
-
 import { ScrollIndicator } from '../../ScrollIndicator';
-import { AddressLinkCellRenderer } from '../CommonTableCellRenderers';
+import {
+  AddressLinkCellRenderer,
+  AddressLinkCellRendererProps,
+  EllipsisText,
+  IndexCellRenderer,
+} from '../CommonTableCellRenderers';
 import { Table } from '../Table';
 import { TableContainer } from '../TableContainer';
-import { TransactionTitleCellRenderer } from './AddressTxsTaBleCellRenderers';
 
 export enum HoldersTableColumns {
   Index = 'index',
@@ -25,52 +35,51 @@ export enum HoldersTableColumns {
 
 export interface HoldersTableData {
   [HoldersTableColumns.Index]: number;
-  [HoldersTableColumns.Address]: string;
+  [HoldersTableColumns.Address]: AddressLinkCellRendererProps;
   [HoldersTableColumns.Balance]: string;
   [HoldersTableColumns.Holding]: string;
 }
 
-type AddressTxsTableTransactionTitleColumnData = {
-  principal: string;
-  tx: Transaction | MempoolTransaction;
-};
-
 export const defaultColumnDefinitions: ColumnDef<HoldersTableData>[] = [
   {
     id: HoldersTableColumns.Index,
-    header: 'Index',
+    header: '#',
     accessorKey: HoldersTableColumns.Index,
-    cell: info => {
-      const { principal, tx } = info.getValue() as AddressTxsTableTransactionTitleColumnData;
-      return TransactionTitleCellRenderer(principal, tx);
-    },
+    cell: info => <IndexCellRenderer index={info.row.original[HoldersTableColumns.Index]} />,
     enableSorting: false,
   },
   {
     id: HoldersTableColumns.Address,
     header: 'Address',
     accessorKey: HoldersTableColumns.Address,
-    cell: info => AddressLinkCellRenderer(info.getValue() as TxTableAddressColumnData),
+    cell: info =>
+      AddressLinkCellRenderer({
+        address: info.row.original[HoldersTableColumns.Address].address,
+        isContract: info.row.original[HoldersTableColumns.Address].isContract,
+      }),
     enableSorting: false,
   },
   {
     id: HoldersTableColumns.Balance,
     header: 'Balance',
     accessorKey: HoldersTableColumns.Balance,
-    cell: info => info.getValue() as string,
+    cell: info => <EllipsisText>{info.row.original[HoldersTableColumns.Balance]}</EllipsisText>,
     enableSorting: false,
   },
   {
     id: HoldersTableColumns.Holding,
     header: 'Holding',
     accessorKey: HoldersTableColumns.Holding,
-    cell: info => info.getValue() as string,
+    cell: info => <EllipsisText>{info.row.original[HoldersTableColumns.Holding]}</EllipsisText>,
     enableSorting: false,
   },
 ];
 
 export interface HoldersTableProps {
   assetId: string;
+  circulatingSupply?: number | null;
+  totalSupply?: number | null;
+  decimals?: number;
   initialData?: GenericResponseType<HoldersTableData> | undefined;
   disablePagination?: boolean;
   columnDefinitions?: ColumnDef<HoldersTableData>[];
@@ -80,6 +89,9 @@ export interface HoldersTableProps {
 
 export function HoldersTable({
   assetId,
+  circulatingSupply,
+  totalSupply,
+  decimals,
   initialData,
   disablePagination = false,
   columnDefinitions,
@@ -129,20 +141,32 @@ export function HoldersTable({
   );
 
   const { total, results: holders = [] } = data || {};
-  console.log('HoldersTable', { holders });
+  console.log('HoldersTable', { holders, totalSupply, circulatingSupply, decimals });
 
-  const rowData: HoldersTableData[] = useMemo(
-    () =>
-      holders.map((holder, index) => {
-        return {
-          [HoldersTableColumns.Index]: index,
-          [HoldersTableColumns.Address]: holder.address,
-          [HoldersTableColumns.Balance]: holder.balance,
-          [HoldersTableColumns.Holding]: holder.holding,
-        };
-      }),
-    [holders]
-  );
+  const rowData: HoldersTableData[] = useMemo(() => {
+    return holders.map((holder, index) => {
+      const balance = parseFloat(holder.balance);
+      const formattedBalance = ftDecimals(balance, decimals);
+      const holdingPercentageFormatted = totalSupply
+        ? formatHoldingPercentage(
+            calculateHoldingPercentage(
+              getFtDecimalAdjustedBalance(holder.balance, decimals).toString(),
+              totalSupply.toString()
+            )
+          )
+        : undefined;
+
+      return {
+        [HoldersTableColumns.Index]: index,
+        [HoldersTableColumns.Address]: {
+          address: holder.address,
+          isContract: validateStacksContractId(holder.address),
+        },
+        [HoldersTableColumns.Balance]: formattedBalance,
+        [HoldersTableColumns.Holding]: holdingPercentageFormatted || 'N/A',
+      };
+    });
+  }, [holders, totalSupply, decimals]);
 
   return (
     <Table

@@ -1,5 +1,6 @@
 import { TransactionsTabAddressTxsTableColumnDefinitions } from '@/app/address/[principal]/redesign/AddressTabs';
 import { TabTriggerComponent } from '@/app/txid/[txId]/redesign/TxTabs';
+import { Source } from '@/app/txid/[txId]/redesign/source/Source';
 import { ScrollIndicator } from '@/common/components/ScrollIndicator';
 import { AddressTxsTable } from '@/common/components/table/table-examples/AddressTxsTable';
 import { HoldersTable } from '@/common/components/table/table-examples/HoldersTable';
@@ -24,9 +25,12 @@ enum TokenIdPageTab {
 export const TokenIdTabs = () => {
   const [selectedTab, setSelectedTab] = useState(TokenIdPageTab.Overview);
 
-  const { initialAddressRecentTransactionsData, tokenId, holders, assetId } = useTokenIdPageData();
+  const { initialAddressRecentTransactionsData, tokenId, holders, assetId, redesignTokenData } =
+    useTokenIdPageData();
   const totalAddressTransactions = initialAddressRecentTransactionsData?.total || 0;
   const totalHolders = holders?.total || 0;
+  const { circulatingSupply, totalSupply, decimals } = redesignTokenData || {};
+  console.log('TokenIdTabs', { redesignTokenData });
 
   return (
     <TabsRoot
@@ -79,7 +83,13 @@ export const TokenIdTabs = () => {
         />
       </TabsContent>
       <TabsContent key={TokenIdPageTab.Holders} value={TokenIdPageTab.Holders} w="100%">
-        <HoldersTable assetId={assetId || ''} pageSize={DEFAULT_HOLDER_LIMIT} />
+        <HoldersTable
+          assetId={assetId || ''}
+          pageSize={DEFAULT_HOLDER_LIMIT}
+          circulatingSupply={circulatingSupply}
+          totalSupply={totalSupply}
+          decimals={decimals}
+        />
       </TabsContent>
     </TabsRoot>
   );

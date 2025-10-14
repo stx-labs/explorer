@@ -4,6 +4,7 @@ import { Badge } from '@/ui/Badge';
 import { Text, TextProps } from '@/ui/Text';
 import ClarityIcon from '@/ui/icons/ClarityIcon';
 import { Flex, Icon } from '@chakra-ui/react';
+import { SimpleTag } from '@/ui/Badge';
 
 export const EllipsisText = ({
   children,
@@ -61,5 +62,18 @@ export const AddressLinkCellRenderer = (value: AddressLinkCellRendererProps) => 
     </AddressLink>
   ) : (
     <EllipsisText fontSize="sm">-</EllipsisText>
+  );
+};
+
+export const IndexCellRenderer = ({ index }: { index: number }) => {
+  return (
+    <SimpleTag
+      label={index.toString()}
+      containerProps={{
+        _groupHover: {
+          bg: 'surfaceTertiary',
+        },
+      }}
+    />
   );
 };

@@ -29,6 +29,7 @@ export interface TokenDataFromStacksApi {
   symbol: string | null;
   totalSupply: number | null;
   circulatingSupply: number | null;
+  decimals: number | null;
   imageUri: string | null;
 }
 

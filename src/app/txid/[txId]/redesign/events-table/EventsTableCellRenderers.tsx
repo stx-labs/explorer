@@ -1,5 +1,5 @@
-import { DefaultBadge, DefaultBadgeIcon, DefaultBadgeLabel, SimpleTag } from '@/ui/Badge';
-import { Text, TextProps } from '@/ui/Text';
+import { EllipsisText } from '@/common/components/table/CommonTableCellRenderers';
+import { DefaultBadge, DefaultBadgeIcon, DefaultBadgeLabel } from '@/ui/Badge';
 import { Tooltip } from '@/ui/Tooltip';
 import StacksIconThin from '@/ui/icons/StacksIconThin';
 import { Flex, Icon } from '@chakra-ui/react';
@@ -9,20 +9,6 @@ import {
   getAssetEventTypeIcon,
   getAssetEventTypeLabel,
 } from './utils';
-
-const EllipsisText = ({ children, ...textProps }: { children: React.ReactNode } & TextProps) => {
-  return (
-    <Text
-      whiteSpace="nowrap"
-      overflow="hidden"
-      textOverflow="ellipsis"
-      fontSize="sm"
-      {...textProps}
-    >
-      {children}
-    </Text>
-  );
-};
 
 export const AssetEventTypeCellRenderer = ({
   assetEventType,
@@ -39,19 +25,6 @@ export const AssetEventTypeCellRenderer = ({
         />
       }
       label={<DefaultBadgeLabel label={getAssetEventTypeLabel(assetEventType)} />}
-    />
-  );
-};
-
-export const IndexCellRenderer = ({ index }: { index: number }) => {
-  return (
-    <SimpleTag
-      label={index.toString()}
-      containerProps={{
-        _groupHover: {
-          bg: 'surfaceTertiary',
-        },
-      }}
     />
   );
 };
