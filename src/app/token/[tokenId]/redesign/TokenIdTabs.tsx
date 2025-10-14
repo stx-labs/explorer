@@ -70,6 +70,13 @@ export const TokenIdTabs = () => {
             isActive={selectedTab === TokenIdPageTab.Holders}
             onClick={() => setSelectedTab(TokenIdPageTab.Holders)}
           />
+          <TabTriggerComponent
+            key={TokenIdPageTab.Source}
+            label="Source code"
+            value={TokenIdPageTab.Source}
+            isActive={selectedTab === TokenIdPageTab.Source}
+            onClick={() => setSelectedTab(TokenIdPageTab.Source)}
+          />
         </TabsList>
       </ScrollIndicator>
       <TabsContent key={TokenIdPageTab.Overview} value={TokenIdPageTab.Overview} w="100%">
@@ -90,6 +97,9 @@ export const TokenIdTabs = () => {
           totalSupply={totalSupply}
           decimals={decimals}
         />
+      </TabsContent>
+      <TabsContent key={TokenIdPageTab.Source} value={TokenIdPageTab.Source} w="100%">
+        <Source contractId={tokenId} />
       </TabsContent>
     </TabsRoot>
   );
