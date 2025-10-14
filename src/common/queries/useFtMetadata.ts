@@ -73,7 +73,7 @@ export function useFungibleTokensMetadataQueries(
 /**
  * Hook that transforms the raw query results into a more convenient format
  */
-export function useFungibleTokensMetadataTransformed(
+export function useFungibleTokensMetadata(
   tokenIds: string[],
   options?: Omit<UseQueryOptions<FtMetadataResponse, Error>, 'queryKey' | 'queryFn'>
 ): {
@@ -96,19 +96,4 @@ export function useFungibleTokensMetadataTransformed(
     isFetching: isMetadataFetching,
     metadataErrors,
   };
-}
-
-/**
- * @deprecated Use useFungibleTokensMetadataTransformed instead. This hook is kept for backward compatibility.
- */
-export function useFungibleTokensMetadata(
-  tokenIds: string[],
-  options?: Omit<UseQueryOptions<FtMetadataResponse, Error>, 'queryKey' | 'queryFn'>
-): {
-  ftMetadata: (FtMetadataResponse | undefined)[];
-  isLoading: boolean;
-  isFetching: boolean;
-  metadataErrors: unknown[];
-} {
-  return useFungibleTokensMetadataTransformed(tokenIds, options);
 }
