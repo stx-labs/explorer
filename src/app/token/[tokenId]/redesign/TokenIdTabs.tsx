@@ -1,5 +1,6 @@
 import { TransactionsTabAddressTxsTableColumnDefinitions } from '@/app/address/[principal]/redesign/AddressTabs';
 import { TabTriggerComponent } from '@/app/txid/[txId]/redesign/TxTabs';
+import { AvailableFunctions } from '@/app/txid/[txId]/redesign/function-called/AvailableFunctions';
 import { Source } from '@/app/txid/[txId]/redesign/source/Source';
 import { ScrollIndicator } from '@/common/components/ScrollIndicator';
 import { AddressTxsTable } from '@/common/components/table/table-examples/AddressTxsTable';
@@ -25,8 +26,14 @@ enum TokenIdPageTab {
 export const TokenIdTabs = () => {
   const [selectedTab, setSelectedTab] = useState(TokenIdPageTab.Overview);
 
-  const { initialAddressRecentTransactionsData, tokenId, holders, assetId, redesignTokenData } =
-    useTokenIdPageData();
+  const {
+    initialAddressRecentTransactionsData,
+    tokenId,
+    holders,
+    assetId,
+    redesignTokenData,
+    numFunctions,
+  } = useTokenIdPageData();
   const totalAddressTransactions = initialAddressRecentTransactionsData?.total || 0;
   const totalHolders = holders?.total || 0;
   const { circulatingSupply, totalSupply, decimals } = redesignTokenData || {};
@@ -77,6 +84,16 @@ export const TokenIdTabs = () => {
             isActive={selectedTab === TokenIdPageTab.Source}
             onClick={() => setSelectedTab(TokenIdPageTab.Source)}
           />
+          <TabTriggerComponent
+            key={TokenIdPageTab.AvailableFunctions}
+            label="Available functions"
+            secondaryLabel={
+              numFunctions && numFunctions > 0 ? `(${numFunctions.toLocaleString()})` : ''
+            }
+            value={TokenIdPageTab.AvailableFunctions}
+            isActive={selectedTab === TokenIdPageTab.AvailableFunctions}
+            onClick={() => setSelectedTab(TokenIdPageTab.AvailableFunctions)}
+          />
         </TabsList>
       </ScrollIndicator>
       <TabsContent key={TokenIdPageTab.Overview} value={TokenIdPageTab.Overview} w="100%">
@@ -100,6 +117,13 @@ export const TokenIdTabs = () => {
       </TabsContent>
       <TabsContent key={TokenIdPageTab.Source} value={TokenIdPageTab.Source} w="100%">
         <Source contractId={tokenId} />
+      </TabsContent>
+      <TabsContent
+        key={TokenIdPageTab.AvailableFunctions}
+        value={TokenIdPageTab.AvailableFunctions}
+        w="100%"
+      >
+        <AvailableFunctions contractId={tokenId} />
       </TabsContent>
     </TabsRoot>
   );

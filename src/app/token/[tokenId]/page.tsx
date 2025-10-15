@@ -56,6 +56,7 @@ export default async function (props: {
   let txBlockTime: number | undefined;
   let assetId: string | undefined;
   let holders: FungibleTokenHolderList | undefined;
+  let numFunctions: number | undefined;
 
   try {
     tokenPrice = await getTokenPrice();
@@ -63,6 +64,7 @@ export default async function (props: {
 
     const contractInfo = await fetchContractInfo(apiUrl, tokenId);
     const abi: ContractInterfaceResponse = JSON.parse(contractInfo.abi);
+    numFunctions = abi.functions.length;
     const ftName = abi.fungible_tokens[0].name;
     assetId = `${tokenId}::${ftName}`;
     holders = await fetchHolders(apiUrl, assetId, 10, 0);
@@ -103,6 +105,7 @@ export default async function (props: {
       txId={txId}
       assetId={assetId}
       holders={holders}
+      numFunctions={numFunctions}
     >
       <TokenIdPage />
     </TokenIdPageDataProvider>

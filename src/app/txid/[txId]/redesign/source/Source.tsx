@@ -6,13 +6,6 @@ import { buildUrl } from '@/common/utils/buildUrl';
 import { ButtonLink } from '@/ui/ButtonLink';
 import { Stack } from '@chakra-ui/react';
 
-import {
-  ContractCallTransaction,
-  MempoolContractCallTransaction,
-  MempoolSmartContractTransaction,
-  SmartContractTransaction,
-} from '@stacks/stacks-blockchain-api-types';
-
 import { CodeEditor, withControls } from './CodeEditor';
 
 const CodeEditorWithControls = withControls(CodeEditor, true, true);

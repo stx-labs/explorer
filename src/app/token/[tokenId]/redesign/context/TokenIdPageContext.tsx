@@ -21,6 +21,7 @@ interface TokenIdPageDataContextType {
   txId: string | undefined;
   assetId: string | undefined;
   holders: FungibleTokenHolderList | undefined;
+  numFunctions: number | undefined;
 }
 
 const DEFAULT_TOKEN_ID_PAGE_DATA: TokenIdPageDataContextType = {
@@ -34,6 +35,7 @@ const DEFAULT_TOKEN_ID_PAGE_DATA: TokenIdPageDataContextType = {
   txId: undefined,
   assetId: undefined,
   holders: undefined,
+  numFunctions: undefined,
 };
 
 const TokenIdPageDataContext = createContext<TokenIdPageDataContextType>(
@@ -54,6 +56,7 @@ interface TokenIdPageDataProviderProps {
   txId: string | undefined;
   assetId: string | undefined;
   holders: FungibleTokenHolderList | undefined;
+  numFunctions: number | undefined;
 }
 
 export function TokenIdPageDataProvider({
@@ -68,6 +71,7 @@ export function TokenIdPageDataProvider({
   txId,
   assetId,
   holders,
+  numFunctions,
 }: TokenIdPageDataProviderProps) {
   const contextValue = {
     stxPrice,
@@ -80,6 +84,7 @@ export function TokenIdPageDataProvider({
     txId,
     assetId,
     holders,
+    numFunctions,
   };
 
   return (
