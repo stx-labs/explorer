@@ -140,13 +140,11 @@ const BalanceCard = () => {
           tokenBalanceUsdValue={totalBalanceUsdValue}
           tokenBalanceType="stx"
         />
-        {isSbtcBalanceDefined && (
-          <BalanceItem
-            tokenBalance={sbtcBalanceNumber}
-            tokenBalanceUsdValue={sbtcBalanceUsdValue}
-            tokenBalanceType="sbtc"
-          />
-        )}
+        <BalanceItem
+          tokenBalance={sbtcBalanceNumber}
+          tokenBalanceUsdValue={sbtcBalanceUsdValue}
+          tokenBalanceType="sbtc"
+        />
       </Stack>
     </Stack>
   );
@@ -183,13 +181,13 @@ export function TokenBalanceAndTokenBalanceUsdValueItem({
   const formattedTokenBalanceValue = new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
-    currencyDisplay: 'symbol',
+    currencyDisplay: 'narrowSymbol',
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(tokenBalanceUsdValue);
   return (
     <Flex gap={1} alignItems="center">
-      <Flex gap={2} alignItems="center">
+      <Flex gap={2} alignItems="center" flexWrap="nowrap">
         <Icon h={3.5} w={3.5} color="iconPrimary" {...iconProps}>
           {tokenIcon}
         </Icon>
@@ -197,14 +195,7 @@ export function TokenBalanceAndTokenBalanceUsdValueItem({
       </Flex>
       <RowCopyButton value={tokenBalance.toString()} ariaLabel={`copy ${tokenTicker} balance`} />
       <Flex gap={2} alignItems="center">
-        <SimpleTag
-          label={formattedTokenBalanceValue}
-          labelProps={{
-            textStyle: 'text-regular-sm',
-            color: 'textSecondary',
-            fontFamily: 'monospace',
-          }}
-        />
+        <SimpleTag label={formattedTokenBalanceValue} />
         <RowCopyButton
           value={tokenBalanceUsdValue.toString()}
           ariaLabel={`copy ${tokenTicker} balance USD value`}

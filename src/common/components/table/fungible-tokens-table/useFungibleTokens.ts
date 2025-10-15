@@ -16,6 +16,20 @@ type NftBalanceWithAssetId = NftBalance & { asset_identifier: string };
 
 type FungibleTokenWithMetadata = FtMetadataResponse & FtBalanceWithAssetId;
 
+const EMPTY_METADATA: FtMetadataResponse = {
+  name: undefined,
+  symbol: undefined,
+  decimals: undefined,
+  total_supply: undefined,
+  token_uri: undefined,
+  description: undefined,
+  image_uri: undefined,
+  image_canonical_uri: undefined,
+  tx_id: '',
+  sender_address: '',
+  metadata: undefined,
+};
+
 export function removeUndefinedFromBalances<T extends FtBalance | NftBalance>(
   balances: Record<string, T | undefined>
 ): Record<string, T> {
@@ -194,12 +208,10 @@ export function useFungibleTokensTableData(
       const metadata = ftMetadata.find(
         ft => ft && 'asset_identifier' in ft && ft.asset_identifier === assetId // There are instances where ftMetadata is missing
       );
-      if (balance && metadata) {
-        result.push({
-          ...balance,
-          ...metadata,
-        });
-      }
+      result.push({
+        ...balance,
+        ...(metadata ?? EMPTY_METADATA),
+      });
     });
     return result;
   }, [paginatedBalances, ftMetadata]);

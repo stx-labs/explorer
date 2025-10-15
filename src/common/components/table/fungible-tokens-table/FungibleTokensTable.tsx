@@ -14,7 +14,6 @@ import { useQueryClient } from '@tanstack/react-query';
 import { ColumnDef, PaginationState } from '@tanstack/react-table';
 import { useCallback, useMemo, useRef, useState } from 'react';
 
-import { useFilterAndSortState } from '../../../../features/txsFilterAndSort/useFilterAndSortState';
 import { TokenLink } from '../../ExplorerLinks';
 import { ScrollIndicator } from '../../ScrollIndicator';
 import { EllipsisText } from '../CommonTableCellRenderers';
@@ -54,6 +53,13 @@ export const defaultColumnDefinitions: ColumnDef<FungibleTokenTableData>[] = [
     enableSorting: false,
   },
   {
+    id: FungibleTokenTableColumns.Balance,
+    header: 'Balance',
+    accessorKey: FungibleTokenTableColumns.Balance,
+    cell: info => <EllipsisText fontSize="sm">{info.getValue() as string}</EllipsisText>,
+    enableSorting: false,
+  },
+  {
     id: FungibleTokenTableColumns.TokenId,
     header: 'ID',
     accessorKey: FungibleTokenTableColumns.TokenId,
@@ -71,13 +77,6 @@ export const defaultColumnDefinitions: ColumnDef<FungibleTokenTableData>[] = [
         </EllipsisText>
       </TokenLink>
     ),
-    enableSorting: false,
-  },
-  {
-    id: FungibleTokenTableColumns.Balance,
-    header: 'Balance',
-    accessorKey: FungibleTokenTableColumns.Balance,
-    cell: info => <EllipsisText fontSize="sm">{info.getValue() as string}</EllipsisText>,
     enableSorting: false,
   },
   {
@@ -193,8 +192,8 @@ export function FungibleTokensTable({
             tokenId,
             imageUrl,
           },
-          [FungibleTokenTableColumns.TokenId]: tokenId,
           [FungibleTokenTableColumns.Balance]: balance,
+          [FungibleTokenTableColumns.TokenId]: tokenId,
           [FungibleTokenTableColumns.Holding]: holding,
         };
       }) || []

@@ -61,16 +61,16 @@ export const AddressTabs = ({ principal }: { principal: string }) => {
             isActive={selectedTab === AddressIdPageTab.Overview}
             onClick={() => setSelectedTab(AddressIdPageTab.Overview)}
           />
-          <TxTabsTrigger
-            key={AddressIdPageTab.Transactions}
-            label={`Transactions`}
-            secondaryLabel={
-              totalAddressTransactions > 0 ? `(${totalAddressTransactions.toLocaleString()})` : ''
-            }
-            value={AddressIdPageTab.Transactions}
-            isActive={selectedTab === AddressIdPageTab.Transactions}
-            onClick={() => setSelectedTab(AddressIdPageTab.Transactions)}
-          />
+          {totalAddressTransactions > 0 && (
+            <TxTabsTrigger
+              key={AddressIdPageTab.Transactions}
+              label={`Transactions`}
+              secondaryLabel={`(${totalAddressTransactions.toLocaleString()})`}
+              value={AddressIdPageTab.Transactions}
+              isActive={selectedTab === AddressIdPageTab.Transactions}
+              onClick={() => setSelectedTab(AddressIdPageTab.Transactions)}
+            />
+          )}
           {totalAddressFungibleTokens > 0 && (
             <TxTabsTrigger
               key={AddressIdPageTab.Tokens}

@@ -1,11 +1,11 @@
 'use client';
 
+import { AddressLink } from '@/common/components/ExplorerLinks';
 import { useNftMetadata } from '@/common/queries/useNftMetadata';
 import { deriveTokenTickerFromAssetId } from '@/common/utils/fungible-token-utils';
 import { getAssetNameParts } from '@/common/utils/utils';
 import { Link } from '@/ui/Link';
-import { Text } from '@/ui/Text';
-import { Flex, Grid, Icon, Stack } from '@chakra-ui/react';
+import { Flex, Icon, Stack } from '@chakra-ui/react';
 import { ArrowUpRight } from '@phosphor-icons/react';
 
 import { useImageContentType } from '../TokenBalanceCard/useImageUrl';
@@ -23,6 +23,7 @@ export function CollectibleCard({
 }) {
   const { address, contract, asset } = getAssetNameParts(assetId);
   const contractId = `${address}.${contract}`;
+  console.log({ address, contract, asset });
 
   const { data: tokenMetadata } = useNftMetadata(
     { contractId, tokenId: tokenId?.toString() },
@@ -68,45 +69,38 @@ export function CollectibleCard({
         className="group"
       >
         {nftImage}
-        <Grid templateColumns="1fr 28px" gap={1} w="full">
-          <Stack gap={3} minW={0}>
-            <Text
+        <Stack gap={3} minW={0}>
+          <Flex alignItems="center" gap={1}>
+            <Link
+              href={`https://gamma.io/stacks/nfts/${contractId}_${tokenId}`}
+              target="_blank"
+              variant="tableLink"
+              _hover={{ color: 'textInteractiveHover' }}
               textStyle="text-medium-sm"
-              color="textPrimary"
               textDecoration="underline"
               whiteSpace="nowrap"
               overflow="hidden"
               textOverflow="ellipsis"
             >
               {asset}
-            </Text>
-            <Text
-              textStyle="text-regular-sm"
-              color="textSecondary"
-              textDecoration="underline"
-              whiteSpace="nowrap"
-              overflow="hidden"
-              textOverflow="ellipsis"
-            >
-              {ticker}
-            </Text>
-          </Stack>
-          <Stack h="full" justifyContent="flex-end">
-            <Flex
-              p={2}
-              borderRadius="full"
-              bg="surfaceFifth"
-              alignItems="center"
-              justifyContent="center"
-              visibility="hidden"
-              _groupHover={{ visibility: 'visible' }}
-            >
-              <Icon h={3} w={3} color="iconPrimary">
-                <ArrowUpRight weight="bold" />
-              </Icon>
-            </Flex>
-          </Stack>
-        </Grid>
+            </Link>
+            <Icon color="iconTertiary" h={4} w={4}>
+              <ArrowUpRight />
+            </Icon>
+          </Flex>
+          <AddressLink
+            principal={contractId}
+            color="textSecondary"
+            _hover={{ color: 'textInteractiveHover' }}
+            textStyle="text-regular-sm"
+            textDecoration="underline"
+            whiteSpace="nowrap"
+            overflow="hidden"
+            textOverflow="ellipsis"
+          >
+            {ticker}
+          </AddressLink>
+        </Stack>
       </Stack>
     </Link>
   );

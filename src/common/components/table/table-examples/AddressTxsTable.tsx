@@ -15,7 +15,8 @@ import {
   isConfirmedTx,
 } from '@/common/utils/transaction-utils';
 import { validateStacksContractId } from '@/common/utils/utils';
-import { Flex } from '@chakra-ui/react';
+import { Text } from '@/ui/Text';
+import { Flex, Stack } from '@chakra-ui/react';
 import { ArrowRight } from '@phosphor-icons/react';
 import { useQueryClient } from '@tanstack/react-query';
 import { ColumnDef, Header, PaginationState } from '@tanstack/react-table';
@@ -298,6 +299,13 @@ export function AddressTxsTable({
       }
       isLoading={isLoading}
       isFetching={isFetching}
+      emptyTableUi={
+        <Stack justifyContent="center" alignItems="center" h="full" w="full" flex={1} py={16}>
+          <Text textStyle="text-regular-sm" color="textTertiary">
+            This account has no transactions yet
+          </Text>
+        </Stack>
+      }
     />
   );
 }

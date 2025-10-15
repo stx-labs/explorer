@@ -140,6 +140,7 @@ export type TableProps<T> = {
   tableProps?: ChakraTableRootProps;
   emptyTableUi?: React.ReactElement;
   emptyFilteredTableUi?: React.ReactElement;
+  errorTableUi?: React.ReactElement;
 };
 
 const ErrorTable = ({ error }: { error: string }) => {
@@ -236,6 +237,7 @@ export function Table<T>({
   tableProps,
   emptyTableUi,
   emptyFilteredTableUi,
+  errorTableUi,
 }: TableProps<T>): JSX.Element {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [tableData, setTableData] = useState(data);
@@ -295,7 +297,7 @@ export function Table<T>({
   }, [data, isLoading, isFetching]);
 
   if (error) {
-    return tableContainerWrapper(<ErrorTable error={error} />);
+    return tableContainerWrapper(errorTableUi ?? <ErrorTable error={error} />);
   }
 
   if (isLoading || isFetching) {

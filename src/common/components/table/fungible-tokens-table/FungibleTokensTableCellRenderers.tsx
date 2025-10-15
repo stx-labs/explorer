@@ -41,7 +41,7 @@ export function FungibleTokenCellRenderer(value: FungibleTokenTableTokenColumnDa
         <TokenLink
           tokenId={tokenId}
           variant="tableLink"
-          textStyle="text-regular-sm"
+          textStyle="text-medium-sm"
           whiteSpace="nowrap"
           flexShrink={0}
         >
