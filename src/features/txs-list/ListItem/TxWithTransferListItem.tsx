@@ -1,3 +1,16 @@
+import { AddressArea } from '@/common/components/transaction-item';
+import { useInfiniteQueryResult } from '@/common/hooks/useInfiniteQueryResult';
+import { useAddressTransactionEventsInfinite } from '@/common/queries/useAddressConfirmedTxsWithTransfersInfinite';
+import { getTicker } from '@/common/utils/transaction-utils';
+import { getAssetNameParts, microToStacksFormatted } from '@/common/utils/utils';
+import {
+  AccordionItem,
+  AccordionItemContent,
+  AccordionItemTrigger,
+} from '@/components/ui/accordion';
+import { Button } from '@/ui/Button';
+import { Text } from '@/ui/Text';
+import { Caption } from '@/ui/typography';
 import { Box, Flex, HStack } from '@chakra-ui/react';
 import pluralize from 'pluralize';
 import { FC, memo } from 'react';
@@ -8,19 +21,6 @@ import {
   Transaction,
 } from '@stacks/stacks-blockchain-api-types';
 
-import { getTicker } from '../../../app/txid/[txId]/Events';
-import { AddressArea } from '../../../common/components/transaction-item';
-import { useInfiniteQueryResult } from '../../../common/hooks/useInfiniteQueryResult';
-import { useAddressTransactionEventsInfinite } from '../../../common/queries/useAddressConfirmedTxsWithTransfersInfinite';
-import { getAssetNameParts, microToStacksFormatted } from '../../../common/utils/utils';
-import {
-  AccordionItem,
-  AccordionItemContent,
-  AccordionItemTrigger,
-} from '../../../components/ui/accordion';
-import { Button } from '../../../ui/Button';
-import { Text } from '../../../ui/Text';
-import { Caption } from '../../../ui/typography';
 import { getTransactionTypeLabel } from '../utils';
 import { TransferListItem, TransferListItemWithMetaSymbol } from './TransferListItem';
 import { TxListItem } from './TxListItem';
