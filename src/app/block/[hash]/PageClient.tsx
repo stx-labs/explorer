@@ -40,9 +40,13 @@ export default function BlockPage({ hash }: { hash: string }) {
       <PageTitle>{title}</PageTitle>
       <TowColLayout>
         <Section title="Summary">
-          <KeyValueHorizontal label={'Hash'} value={<Value>{hash}</Value>} copyValue={hash} />
           {block && (
             <>
+              <KeyValueHorizontal
+                label={'Hash'}
+                value={<Value>{block.hash}</Value>}
+                copyValue={block.hash}
+              />
               <KeyValueHorizontal
                 label={'Block height'}
                 value={
