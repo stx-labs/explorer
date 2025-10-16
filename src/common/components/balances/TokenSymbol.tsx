@@ -1,10 +1,8 @@
 'use client';
 
-import React from 'react';
-
-import { getTicker } from '../../../app/txid/[txId]/Events';
-import { Caption } from '../../../ui/typography';
-import { useFtMetadata } from '../../queries/useFtMetadata';
+import { useFtMetadata } from '@/common/queries/useFtMetadata';
+import { getTicker } from '@/common/utils/transaction-utils';
+import { Caption } from '@/ui/typography';
 
 export function FtTokenSymbol({
   asset,

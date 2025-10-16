@@ -1,16 +1,15 @@
+import { Circle } from '@/common/components/Circle';
+import { TwoColsListItem } from '@/common/components/TwoColumnsListItem';
+import { PrincipalLink } from '@/common/components/transaction-item';
+import { useFtMetadata } from '@/common/queries/useFtMetadata';
+import { getTicker } from '@/common/utils/transaction-utils';
+import { ftDecimals, getAssetNameParts } from '@/common/utils/utils';
+import { Caption } from '@/ui/typography';
 import { HStack, Icon, useBreakpointValue } from '@chakra-ui/react';
 import { ArrowDown, ArrowUp } from '@phosphor-icons/react';
 import { FC, memo, useMemo } from 'react';
 
 import { AddressTransactionWithTransfers } from '@stacks/blockchain-api-client/lib/types';
-
-import { getTicker } from '../../../app/txid/[txId]/Events';
-import { Circle } from '../../../common/components/Circle';
-import { TwoColsListItem } from '../../../common/components/TwoColumnsListItem';
-import { PrincipalLink } from '../../../common/components/transaction-item';
-import { useFtMetadata } from '../../../common/queries/useFtMetadata';
-import { ftDecimals, getAssetNameParts } from '../../../common/utils/utils';
-import { Caption } from '../../../ui/typography';
 
 interface TransferListItemProps {
   title: string;
