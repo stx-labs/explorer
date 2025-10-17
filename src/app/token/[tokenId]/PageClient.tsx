@@ -1,6 +1,7 @@
 'use client';
 
 import { getHasSBTCInName, getIsSBTC } from '@/app/tokens/utils';
+import { useIsRedesignUrl } from '@/common/utils/url-utils';
 import { Link } from '@/ui/Link';
 import { Box, Flex, Icon, Image, Stack } from '@chakra-ui/react';
 import { SealCheck, Warning } from '@phosphor-icons/react';
@@ -11,6 +12,7 @@ import { Tag } from '../../../components/ui/tag';
 import { TagLabel } from '../../../ui/TagLabel';
 import { Text } from '../../../ui/Text';
 import { PageTitle } from '../../_components/PageTitle';
+import TokenIdPageRedesign from './PageClientRedesign';
 import { TokenTabs } from './Tabs';
 import { TokenInfo } from './TokenInfo';
 import { RISKY_TOKENS, VERIFIED_TOKENS, legitsBTCDerivatives } from './consts';
@@ -36,16 +38,19 @@ const WarningMessage = ({ text }: { text: string | ReactNode }) => {
   );
 };
 
-export default function PageClient({
+export default function TokenIdPage({
   tokenId,
   tokenInfo,
 }: {
   tokenId: string;
   tokenInfo: TokenInfoProps;
 }) {
-  if (!tokenInfo.basic) throw new Error('Could not find token info');
-  const { name, symbol, imageUri } = tokenInfo.basic;
-  const categories = tokenInfo.extended?.categories || [];
+  const isRedesignUrl = useIsRedesignUrl();
+
+  if (!tokenInfo?.basic) throw new Error('Could not find token info');
+
+  const { name, symbol, imageUri } = tokenInfo.basic || {};
+  const categories = tokenInfo?.extended?.categories || [];
   const hasSBTCInName = getHasSBTCInName(name ?? '', symbol ?? '');
   const isSBTC = getIsSBTC(tokenId);
   const isRisky = RISKY_TOKENS.includes(tokenId);
@@ -82,6 +87,10 @@ export default function PageClient({
     return null;
   }, [hasSBTCInName, isRisky, isSBTC, tokenId]);
 
+  if (isRedesignUrl) {
+    return <TokenIdPageRedesign />;
+  }
+
   return (
     <>
       <Stack gap={2}>
@@ -95,7 +104,7 @@ export default function PageClient({
           </Flex>
         )}
         <Flex alignItems={'center'} gap={2} flexWrap="wrap">
-          <Image src={imageUri} alt={name ?? ''} h={10} w={10} />
+          {imageUri && <Image src={imageUri} alt={name ?? ''} h={10} w={10} />}
           <PageTitle>
             {name} ({symbol})
           </PageTitle>
@@ -138,7 +147,9 @@ export default function PageClient({
       <TokenTabs
         tokenId={tokenId}
         developerData={
-          !!tokenInfo.extended?.links?.repos?.length ? tokenInfo.extended?.developerData : undefined
+          !!tokenInfo?.extended?.links?.repos?.length
+            ? tokenInfo.extended?.developerData
+            : undefined
         }
         tokenInfo={tokenInfo}
       />
