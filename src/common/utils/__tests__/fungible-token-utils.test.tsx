@@ -249,7 +249,7 @@ describe('formatHoldingPercentage', () => {
 
   it('should format zero percentage', () => {
     const result = formatHoldingPercentage(0);
-    expect(result).toBe('0.0000%');
+    expect(result).toBe('0%');
   });
 
   it('should format 100% correctly', () => {

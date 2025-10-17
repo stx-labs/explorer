@@ -44,5 +44,9 @@ export function calculateHoldingPercentage(
 
 export function formatHoldingPercentage(percentage: number | undefined): string {
   if (percentage == null) return '-';
-  return percentage < 0.0001 && percentage > 0 ? '<0.0001%' : `${percentage.toFixed(4)}%`;
+  return percentage === 0
+    ? '0%'
+    : percentage > 0 && percentage < 0.0001
+      ? '<0.0001%'
+      : `${percentage.toFixed(4)}%`;
 }
