@@ -3,12 +3,13 @@ import { CommonSearchParams } from '@/app/transactions/page';
 import { NetworkModes } from '@/common/types/network';
 import { logError } from '@/common/utils/error-utils';
 import { getApiUrl } from '@/common/utils/network-utils';
+import { validateStacksContractId } from '@/common/utils/utils';
 
 import { MempoolTransaction, Transaction } from '@stacks/stacks-blockchain-api-types';
 
 import TransactionIdPage from './PageClient';
 import { TxIdPageDataProvider } from './TxIdPageContext';
-import { fetchTxById } from './page-data';
+import { fetchContractById, fetchTxById } from './page-data';
 
 export interface TxIdPageSearchParams extends CommonSearchParams {
   startTime?: string;
@@ -41,9 +42,17 @@ export default async function Page(props: {
     btcPrice: 0,
   };
   let initialTxData: Transaction | MempoolTransaction | undefined;
+
+  const isContractId = validateStacksContractId(txId);
+
   try {
     tokenPrice = await getTokenPrice();
-    initialTxData = await fetchTxById(apiUrl, txId);
+    if (isContractId) {
+      const contractData = await fetchContractById(apiUrl, txId); // fetch contract data for tx_id
+      initialTxData = await fetchTxById(apiUrl, contractData.tx_id);
+    } else {
+      initialTxData = await fetchTxById(apiUrl, txId);
+    }
   } catch (error) {
     logError(
       error as Error,
