@@ -3,12 +3,14 @@ import { AddressLink } from '@/common/components/ExplorerLinks';
 import { formatBlockTime } from '@/common/utils/time-utils';
 import { isConfirmedTx } from '@/common/utils/transaction-utils';
 import { Badge, BlockHeightBadge, DefaultBadgeLabel } from '@/ui/Badge';
+import { Flex } from '@chakra-ui/react';
 
 import {
   MempoolSmartContractTransaction,
   SmartContractTransaction,
 } from '@stacks/stacks-blockchain-api-types';
 
+import { SponsorTag } from './SummaryItem';
 import { PriceSummaryItemValue, SummaryItem } from './SummaryItem';
 
 const SummaryItemAddressLink = ({ value }: { value: string }) => {
@@ -25,6 +27,9 @@ export const SmartContractTxSummaryItems = ({
   tx: SmartContractTransaction | MempoolSmartContractTransaction;
 }) => {
   const { stxPrice } = useTxIdPageData();
+  const isSponsored = tx.sponsored;
+  const sponsor = tx.sponsor_address;
+
   return (
     <>
       <SummaryItem
@@ -67,7 +72,12 @@ export const SmartContractTxSummaryItems = ({
       <SummaryItem
         label="Fee"
         value={tx.fee_rate}
-        valueRenderer={value => <PriceSummaryItemValue value={value} stxPrice={stxPrice} />}
+        valueRenderer={value => (
+          <Flex gap={2} alignItems="center">
+            <PriceSummaryItemValue value={value} stxPrice={stxPrice} />
+            <SponsorTag isSponsored={isSponsored} sponsor={sponsor} />
+          </Flex>
+        )}
       />
       <SummaryItem label="Nonce" value={tx.nonce?.toString() || ''} showCopyButton />
       {isConfirmedTx<SmartContractTransaction, MempoolSmartContractTransaction>(tx) && (

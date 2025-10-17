@@ -201,8 +201,6 @@ export function EventsTable({
     }
   );
 
-  console.log('events', data);
-
   // Reset pagination when filters change
   useEffect(() => {
     setPagination(prev => ({
