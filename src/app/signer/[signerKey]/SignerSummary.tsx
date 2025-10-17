@@ -36,13 +36,13 @@ export const SignerSummaryBase = ({ signerKey }: SignerSummaryProps) => {
       <Stack width="100%">
         <KeyValueHorizontal
           label={'Key'}
-          value={<Value>{signerKey}</Value>}
-          copyValue={signerKey}
+          value={<Value>{signerData?.signing_key}</Value>}
+          copyValue={signerData?.signing_key}
         />
         <KeyValueHorizontal
           label={'Entity'}
-          value={<Value>{getEntityName(signerKey)}</Value>}
-          copyValue={getEntityName(signerKey)}
+          value={<Value>{getEntityName(signerData?.signing_key)}</Value>}
+          copyValue={getEntityName(signerData?.signing_key)}
         />
         <KeyValueHorizontal
           label={'Voting Power'}
