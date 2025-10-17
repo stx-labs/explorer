@@ -3,7 +3,14 @@ import {
   ExtendedButtonProps,
   ExtendedIconProps,
 } from '@/common/components/CopyButton';
-import { microToStacks, microToStacksFormatted, usdFormatter } from '@/common/utils/utils';
+import { AddressLink } from '@/common/components/ExplorerLinks';
+import {
+  microToStacks,
+  microToStacksFormatted,
+  truncateStxAddress,
+  usdFormatter,
+} from '@/common/utils/utils';
+import { SimpleTag } from '@/ui/Badge';
 import { Text } from '@/ui/Text';
 import { Tooltip } from '@/ui/Tooltip';
 import StacksIconThin from '@/ui/icons/StacksIconThin';
@@ -22,6 +29,31 @@ export const DEFAULT_BUTTON_STYLING: ExtendedButtonProps = {
 export const DEFAULT_ICON_STYLING: ExtendedIconProps = {
   color: (copied: boolean) => (copied ? 'iconInvert !important' : 'iconSecondary'),
 };
+
+export function SponsorTag({ isSponsored, sponsor }: { isSponsored: boolean; sponsor?: string }) {
+  if (!isSponsored) return null;
+  const label = (
+    <Flex gap={1} alignItems="center">
+      <Text textStyle="text-regular-xs" color="textPrimary">
+        Sponsored {sponsor ? 'by' : ''}
+      </Text>
+      {sponsor && (
+        <AddressLink principal={sponsor} wordBreak="break-all" variant="tableLink">
+          {truncateStxAddress(sponsor)}
+        </AddressLink>
+      )}
+    </Flex>
+  );
+
+  return (
+    <SimpleTag
+      label={label}
+      _groupHover={{
+        bg: 'surfaceTertiary',
+      }}
+    />
+  );
+}
 
 export function RowCopyButton({ value, ariaLabel }: { value: string; ariaLabel: string }) {
   return (

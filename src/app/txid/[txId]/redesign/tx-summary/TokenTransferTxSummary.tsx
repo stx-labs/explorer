@@ -2,6 +2,7 @@ import { AddressLink } from '@/common/components/ExplorerLinks';
 import { formatBlockTime } from '@/common/utils/time-utils';
 import { getAmount, getToAddress, isConfirmedTx } from '@/common/utils/transaction-utils';
 import { Badge, BlockHeightBadge, DefaultBadgeLabel } from '@/ui/Badge';
+import { Flex } from '@chakra-ui/react';
 
 import {
   MempoolTokenTransferTransaction,
@@ -9,7 +10,7 @@ import {
 } from '@stacks/stacks-blockchain-api-types';
 
 import { useTxIdPageData } from '../../TxIdPageContext';
-import { PriceSummaryItemValue, SummaryItem } from './SummaryItem';
+import { PriceSummaryItemValue, SponsorTag, SummaryItem } from './SummaryItem';
 
 export function TokenTransferTxSummaryItems({
   tx,
@@ -17,6 +18,9 @@ export function TokenTransferTxSummaryItems({
   tx: TokenTransferTransaction | MempoolTokenTransferTransaction;
 }) {
   const { stxPrice } = useTxIdPageData();
+  const isSponsored = tx.sponsored;
+  const sponsor = tx.sponsor_address;
+
   return (
     <>
       <SummaryItem label="ID" value={tx.tx_id} showCopyButton />
@@ -68,7 +72,12 @@ export function TokenTransferTxSummaryItems({
       <SummaryItem
         label="Fee"
         value={tx.fee_rate}
-        valueRenderer={value => <PriceSummaryItemValue value={value} stxPrice={stxPrice} />}
+        valueRenderer={value => (
+          <Flex gap={2} alignItems="center">
+            <PriceSummaryItemValue value={value} stxPrice={stxPrice} />
+            <SponsorTag isSponsored={isSponsored} sponsor={sponsor} />
+          </Flex>
+        )}
       />
       <SummaryItem label="Memo" value={tx.token_transfer.memo} showCopyButton />
       <SummaryItem label="Nonce" value={tx.nonce?.toString() || ''} showCopyButton />

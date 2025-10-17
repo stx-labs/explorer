@@ -2,6 +2,7 @@ import { AddressLink, BlockLink } from '@/common/components/ExplorerLinks';
 import { formatBlockTime } from '@/common/utils/time-utils';
 import { isConfirmedTx } from '@/common/utils/transaction-utils';
 import { Badge, BlockHeightBadge, DefaultBadgeLabel } from '@/ui/Badge';
+import { Flex } from '@chakra-ui/react';
 
 import {
   CoinbaseTransaction,
@@ -9,7 +10,7 @@ import {
 } from '@stacks/stacks-blockchain-api-types';
 
 import { useTxIdPageData } from '../../TxIdPageContext';
-import { PriceSummaryItemValue, SummaryItem } from './SummaryItem';
+import { PriceSummaryItemValue, SponsorTag, SummaryItem } from './SummaryItem';
 
 export const CoinbaseTxSummaryItems = ({
   tx,
@@ -17,6 +18,9 @@ export const CoinbaseTxSummaryItems = ({
   tx: CoinbaseTransaction | MempoolCoinbaseTransaction;
 }) => {
   const { stxPrice } = useTxIdPageData();
+  const isSponsored = tx.sponsored;
+  const sponsor = tx.sponsor_address;
+
   return (
     <>
       <SummaryItem label="ID" value={tx.tx_id} showCopyButton />
@@ -64,7 +68,12 @@ export const CoinbaseTxSummaryItems = ({
       <SummaryItem
         label="Fee"
         value={tx.fee_rate}
-        valueRenderer={value => <PriceSummaryItemValue value={value} stxPrice={stxPrice} />}
+        valueRenderer={value => (
+          <Flex gap={2} alignItems="center">
+            <PriceSummaryItemValue value={value} stxPrice={stxPrice} />
+            <SponsorTag isSponsored={isSponsored} sponsor={sponsor} />
+          </Flex>
+        )}
       />
       <SummaryItem label="Nonce" value={tx.nonce?.toString() || ''} showCopyButton />
       {isConfirmedTx<CoinbaseTransaction, MempoolCoinbaseTransaction>(tx) && (

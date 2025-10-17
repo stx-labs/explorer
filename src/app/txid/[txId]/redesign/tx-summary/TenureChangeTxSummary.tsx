@@ -3,6 +3,7 @@ import { formatBlockTime } from '@/common/utils/time-utils';
 import { isConfirmedTx } from '@/common/utils/transaction-utils';
 import { capitalize } from '@/common/utils/utils';
 import { Badge, BlockHeightBadge, DefaultBadgeLabel } from '@/ui/Badge';
+import { Flex } from '@chakra-ui/react';
 
 import {
   MempoolTenureChangeTransaction,
@@ -10,7 +11,7 @@ import {
 } from '@stacks/stacks-blockchain-api-types';
 
 import { useTxIdPageData } from '../../TxIdPageContext';
-import { PriceSummaryItemValue, SummaryItem } from './SummaryItem';
+import { PriceSummaryItemValue, SponsorTag, SummaryItem } from './SummaryItem';
 
 export const TenureChangeTxSummaryItems = ({
   tx,
@@ -18,6 +19,9 @@ export const TenureChangeTxSummaryItems = ({
   tx: TenureChangeTransaction | MempoolTenureChangeTransaction;
 }) => {
   const { stxPrice } = useTxIdPageData();
+  const isSponsored = tx.sponsored;
+  const sponsor = tx.sponsor_address;
+
   return (
     <>
       <SummaryItem label="ID" value={tx.tx_id} showCopyButton />
@@ -52,7 +56,12 @@ export const TenureChangeTxSummaryItems = ({
       <SummaryItem
         label="Fee"
         value={tx.fee_rate}
-        valueRenderer={value => <PriceSummaryItemValue value={value} stxPrice={stxPrice} />}
+        valueRenderer={value => (
+          <Flex gap={2} alignItems="center">
+            <PriceSummaryItemValue value={value} stxPrice={stxPrice} />
+            <SponsorTag isSponsored={isSponsored} sponsor={sponsor} />
+          </Flex>
+        )}
       />
       <SummaryItem label="Nonce" value={tx.nonce?.toString() || ''} showCopyButton />
       <SummaryItem
