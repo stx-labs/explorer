@@ -11,20 +11,33 @@ export interface AlertProps extends Omit<ChakraAlert.RootProps, 'title'> {
   icon?: React.ReactElement;
   closable?: boolean;
   onClose?: () => void;
+  alertBg?: string;
+  alertIconColor?: string;
 }
 
 export const Alert = React.forwardRef<HTMLDivElement, AlertProps>(function Alert(props, ref) {
-  const { title, description, icon, closable, onClose, startElement, endElement, ...rest } = props;
+  const {
+    title,
+    description,
+    icon,
+    closable,
+    onClose,
+    startElement,
+    endElement,
+    alertBg,
+    alertIconColor,
+    ...rest
+  } = props;
   return (
     <ChakraAlert.Root ref={ref} {...rest}>
       {startElement || (
         <ChakraAlert.Indicator>
-          <Icon h={4} w={4}>
+          <Icon h={4} w={4} color={alertIconColor}>
             {icon}
           </Icon>
         </ChakraAlert.Indicator>
       )}
-      <ChakraAlert.Content>
+      <ChakraAlert.Content bg={alertBg}>
         {title && <ChakraAlert.Title>{title}</ChakraAlert.Title>}
         {description && <ChakraAlert.Description>{description}</ChakraAlert.Description>}
       </ChakraAlert.Content>

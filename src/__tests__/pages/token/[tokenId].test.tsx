@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom';
 
-import { getTokenInfo } from '../../../app/token/[tokenId]/getTokenInfo';
+import { getTokenInfo } from '../../../app/token/[tokenId]/page-data';
 
 global.fetch = jest.fn();
 const fetch = global.fetch as jest.MockedFunction<any>;

@@ -20,3 +20,26 @@ export interface LunarCrushCoin {
   };
   error?: string;
 }
+
+export interface LunarCrushCoinRedesign {
+  config?: { coin: string; generated: number };
+  data?: {
+    id: number;
+    name: string;
+    symbol: string;
+    price?: number;
+    price_btc?: number;
+    market_cap?: number;
+    percent_change_24h?: number;
+    percent_change_7d?: number;
+    volume_24h?: number;
+    max_supply?: number;
+    circulating_supply?: number;
+    close?: number;
+    galaxy_score?: number;
+    alt_rank?: number;
+    volatility?: number;
+    market_cap_rank?: number;
+  };
+  error?: string;
+}
