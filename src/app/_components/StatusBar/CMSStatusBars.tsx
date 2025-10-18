@@ -16,9 +16,10 @@ export function CMSStatusBars({ statusBarContent }: { statusBarContent: Incident
     ? []
     : statusBarContent?.items?.filter(
         alert =>
-          (alert.fields.showOnTestnet && isTestnet) ||
-          (alert.fields.showOnMainnet && !isTestnet) ||
-          networkUrl?.includes(alert.fields.networkUrlSubstring)
+          alert.fields.impact !== IncidentImpact.None &&
+          ((alert.fields.showOnTestnet && isTestnet) ||
+            (alert.fields.showOnMainnet && !isTestnet) ||
+            networkUrl?.includes(alert.fields.networkUrlSubstring))
       );
 
   return (

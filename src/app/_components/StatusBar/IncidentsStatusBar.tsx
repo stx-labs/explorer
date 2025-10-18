@@ -2,6 +2,7 @@ import { Flex, Stack, StackProps } from '@chakra-ui/react';
 import { QueryErrorResetBoundary } from '@tanstack/react-query';
 import { useRef } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
+import { IncidentImpact } from 'statuspage.io';
 
 import { useGlobalContext } from '../../../common/context/useGlobalContext';
 import { useUnresolvedIncidents } from '../../../common/queries/useUnresolvedIncidents';
@@ -16,13 +17,15 @@ function IncidentsStatusBarBase(props: StackProps) {
   const incidents = unresolvedIncidentsResponse?.incidents;
   const statusBarRef = useRef<HTMLDivElement | null>(null);
 
-  if (!incidents?.length) {
+  const incidentsToShow = incidents?.filter(incident => incident.impact !== IncidentImpact.None);
+
+  if (!incidentsToShow?.length) {
     return null;
   }
 
   return (
     <Stack {...props}>
-      {incidents?.map(({ name, impact }) => {
+      {incidentsToShow?.map(({ name, impact }) => {
         const isTestnetUpdate = name.includes('Testnet Update:');
         if (isTestnetUpdate && !isTestnet) return null;
         const icon = getIncidentImpactIcon(impact);
