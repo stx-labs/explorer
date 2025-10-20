@@ -13,9 +13,7 @@ import { useApiClient } from '../../api/useApiClient';
 import { DEFAULT_LIST_LIMIT } from '../constants/constants';
 import { useGlobalContext } from '../context/useGlobalContext';
 import { GenericResponseType } from '../hooks/useInfiniteQueryResult';
-import { NetworkModes } from '../types/network';
-import { getNextPageParam } from '../utils/utils';
-import { hasBnsExtension } from '../utils/utils';
+import { getNextPageParam, hasBnsExtension } from '../utils/utils';
 import { TWO_MINUTES } from './query-stale-time';
 import { searchByBnsName } from './useSearchQuery';
 

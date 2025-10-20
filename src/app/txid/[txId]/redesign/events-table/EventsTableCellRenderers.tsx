@@ -66,11 +66,15 @@ export const AmountCellRenderer = ({
   amount,
   event,
 }: {
-  amount: string | undefined;
+  amount: string;
   event: TransactionEvent;
 }) => {
   if (!amount) {
-    return <EllipsisText fontSize="sm">-</EllipsisText>;
+    return (
+      <EllipsisText fontSize="sm" color="textTertiary">
+        -
+      </EllipsisText>
+    );
   }
 
   if (event.event_type === 'stx_asset') {

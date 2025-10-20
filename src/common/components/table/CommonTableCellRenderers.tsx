@@ -60,6 +60,24 @@ export const AddressLinkCellRenderer = (value: AddressLinkCellRendererProps) => 
       <EllipsisText fontSize="sm">{truncateStxAddress(address)}</EllipsisText>
     </AddressLink>
   ) : (
-    <EllipsisText fontSize="sm">-</EllipsisText>
+    <EllipsisText fontSize="sm" color="textTertiary">
+      -
+    </EllipsisText>
+  );
+};
+
+export const StringRenderer = (value: string) => {
+  if (!value) {
+    return (
+      <EllipsisText textStyle="text-regular-sm" color="textTertiary">
+        -
+      </EllipsisText>
+    );
+  }
+
+  return (
+    <EllipsisText textStyle="text-regular-sm" color="textPrimary">
+      {value}
+    </EllipsisText>
   );
 };

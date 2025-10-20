@@ -7,6 +7,7 @@ import {
   TokenTransferTransaction,
   Transaction,
 } from '@stacks/stacks-blockchain-api-types';
+import { deserialize, prettyPrint } from '@stacks/transactions/dist/cl';
 
 export function getToAddress(tx: Transaction | MempoolTransaction): string {
   switch (tx.tx_type) {
@@ -224,3 +225,20 @@ export const getTicker = (name: string) => {
     return name;
   }
 };
+
+function formatValue(repr: string, hex: string) {
+  const value = deserialize(hex);
+  const formattedString = prettyPrint(value, 2);
+  return formattedString;
+}
+
+export function handleContractLogHex({ repr, hex }: { repr: string; hex: string }) {
+  if (repr?.startsWith('0x')) {
+    try {
+      return Buffer.from(repr.replace('0x', ''), 'hex').toString('utf8');
+    } catch (e) {
+      return formatValue(repr, hex);
+    }
+  }
+  return formatValue(repr, hex);
+}

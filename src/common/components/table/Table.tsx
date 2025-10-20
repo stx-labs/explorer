@@ -15,14 +15,16 @@ import {
   ColumnDef,
   ColumnPinningState,
   PaginationState,
+  Row,
   SortingState,
   flexRender,
   getCoreRowModel,
+  getExpandedRowModel,
   getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table';
-import React, { type JSX, useEffect, useMemo, useState } from 'react';
+import React, { Fragment, type JSX, ReactNode, useEffect, useMemo, useState } from 'react';
 
 import { ExplorerErrorBoundary } from '../../../app/_components/ErrorBoundary';
 import { DefaultTableColumnHeader } from './TableComponents';
@@ -141,6 +143,9 @@ export type TableProps<T> = {
   emptyTableUi?: React.ReactElement;
   emptyFilteredTableUi?: React.ReactElement;
   errorTableUi?: React.ReactElement;
+  renderSubComponent?: (props: { row: Row<T> }) => ReactNode;
+  getRowCanExpand?: (row: Row<T>) => boolean;
+  expandAllRowsByDefault?: boolean;
 };
 
 const ErrorTable = ({ error }: { error: string }) => {
@@ -238,6 +243,8 @@ export function Table<T>({
   emptyTableUi,
   emptyFilteredTableUi,
   errorTableUi,
+  expandAllRowsByDefault,
+  renderSubComponent,
 }: TableProps<T>): JSX.Element {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [tableData, setTableData] = useState(data);
@@ -258,6 +265,9 @@ export function Table<T>({
           pageSize: pagination.pageSize,
         },
       }),
+      expanded: expandAllRowsByDefault
+        ? data.reduce((acc, row, index) => ({ ...acc, [index]: true }), {})
+        : {},
     },
     onSortingChange: async updater => {
       if (typeof updater === 'function') {
@@ -272,6 +282,7 @@ export function Table<T>({
       }
     },
     getCoreRowModel: getCoreRowModel(),
+    getExpandedRowModel: getExpandedRowModel(),
     getSortedRowModel: getSortedRowModel(),
     manualPagination: pagination?.manualPagination ?? false,
     ...(pagination
@@ -422,64 +433,82 @@ export function Table<T>({
         {table.getRowModel().rows.map((row, rowIndex) => {
           const firstCell = row.getVisibleCells()[0];
           const isSpanRow = firstCell?.column.columnDef.meta?.isSpanRow?.(row.original) ?? false;
-
+          const subComponent = renderSubComponent?.({ row });
           return (
-            <ChakraTable.Row
-              key={row.id}
-              bg="transparent"
-              css={{
-                '& > td:first-of-type': {
-                  borderTopLeftRadius: 'redesign.md',
-                  borderBottomLeftRadius: 'redesign.md',
-                },
-                '& > td:last-of-type': {
-                  borderTopRightRadius: 'redesign.md',
-                  borderBottomRightRadius: 'redesign.md',
-                },
-              }}
-              className="group"
-              minH={13}
-            >
-              {row.getVisibleCells().map((cell, columnIndex) => {
-                if (isSpanRow && columnIndex > 0) {
-                  return null;
-                }
-                return (
-                  <ChakraTable.Cell
-                    key={cell.id}
-                    py={3}
-                    px={[2, 2, 2, `clamp(12px, calc(48px / ${columns.length}), 16px)`]}
-                    css={{ ...getCommonPinningStyles(cell.column) }}
-                    _groupHover={{
-                      bg: 'surfacePrimary',
-                    }}
-                    minW={
-                      cell.column.columnDef.minSize
-                        ? `${cell.column.columnDef.minSize}px`
-                        : undefined
-                    }
-                    maxW={
-                      cell.column.columnDef.maxSize
-                        ? `${cell.column.columnDef.maxSize}px`
-                        : undefined
-                    }
-                    w={
-                      cell.column.columnDef.size
-                        ? `${cell.column.columnDef.size}px`
-                        : isSpanRow
-                          ? 'auto !important'
+            <Fragment key={row.id}>
+              <ChakraTable.Row
+                // key={row.id}
+                bg="transparent"
+                css={{
+                  '& > td:first-of-type': {
+                    borderTopLeftRadius: 'redesign.md',
+                    borderBottomLeftRadius: 'redesign.md',
+                  },
+                  '& > td:last-of-type': {
+                    borderTopRightRadius: 'redesign.md',
+                    borderBottomRightRadius: 'redesign.md',
+                  },
+                }}
+                className="group"
+                minH={13}
+              >
+                {row.getVisibleCells().map((cell, columnIndex) => {
+                  if (isSpanRow && columnIndex > 0) {
+                    return null;
+                  }
+                  return (
+                    <ChakraTable.Cell
+                      key={cell.id}
+                      py={3}
+                      px={[2, 2, 2, `clamp(12px, calc(48px / ${columns.length}), 16px)`]}
+                      css={{ ...getCommonPinningStyles(cell.column) }}
+                      _groupHover={{
+                        bg: 'surfacePrimary',
+                      }}
+                      minW={
+                        cell.column.columnDef.minSize
+                          ? `${cell.column.columnDef.minSize}px`
                           : undefined
-                    }
-                    boxSizing="border-box"
-                    textAlign={cell.column.columnDef.meta?.textAlign}
-                    colSpan={isSpanRow ? columns.length : 1}
-                    bg={isSpanRow ? 'surfacePrimary' : undefined}
+                      }
+                      maxW={
+                        cell.column.columnDef.maxSize
+                          ? `${cell.column.columnDef.maxSize}px`
+                          : undefined
+                      }
+                      w={
+                        cell.column.columnDef.size
+                          ? `${cell.column.columnDef.size}px`
+                          : isSpanRow
+                            ? 'auto !important'
+                            : undefined
+                      }
+                      boxSizing="border-box"
+                      textAlign={cell.column.columnDef.meta?.textAlign}
+                      colSpan={isSpanRow ? columns.length : 1}
+                      bg={isSpanRow ? 'surfacePrimary' : undefined}
+                    >
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </ChakraTable.Cell>
+                  );
+                })}
+              </ChakraTable.Row>
+              {row.getIsExpanded() && subComponent && (
+                <ChakraTable.Row>
+                  {/* Empty first cell for indentation */}
+                  <ChakraTable.Cell bg="surfaceTertiary" pb={3} />
+                  {/* Content cell spanning remaining columns */}
+                  <ChakraTable.Cell
+                    colSpan={row.getVisibleCells().length - 1}
+                    bg="surfaceTertiary"
+                    pb={3}
+                    borderBottom="1px solid !important"
+                    borderBottomColor="redesignBorderSecondary !important"
                   >
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    {subComponent}
                   </ChakraTable.Cell>
-                );
-              })}
-            </ChakraTable.Row>
+                </ChakraTable.Row>
+              )}
+            </Fragment>
           );
         })}
       </ChakraTable.Body>

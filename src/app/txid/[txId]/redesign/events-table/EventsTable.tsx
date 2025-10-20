@@ -1,16 +1,22 @@
 'use client';
 
 import { ScrollIndicator } from '@/common/components/ScrollIndicator';
-import { AddressLinkCellRenderer } from '@/common/components/table/CommonTableCellRenderers';
+import {
+  AddressLinkCellRenderer,
+  StringRenderer,
+} from '@/common/components/table/CommonTableCellRenderers';
 import { Table } from '@/common/components/table/Table';
+import { TableContainer } from '@/common/components/table/TableContainer';
 import { GenericResponseType } from '@/common/hooks/useInfiniteQueryResult';
 import { THIRTY_SECONDS } from '@/common/queries/query-stale-time';
+import { useTxById } from '@/common/queries/useTxById';
 import { getTxEventsByIdQueryKey, useTxEventsById } from '@/common/queries/useTxEventsById';
+import { handleContractLogHex } from '@/common/utils/transaction-utils';
 import { validateStacksContractId } from '@/common/utils/utils';
-import { Icon } from '@chakra-ui/react';
+import { Box, Code, Icon } from '@chakra-ui/react';
 import { ArrowRight } from '@phosphor-icons/react';
 import { useQueryClient } from '@tanstack/react-query';
-import { ColumnDef, PaginationState } from '@tanstack/react-table';
+import { ColumnDef, PaginationState, Row } from '@tanstack/react-table';
 import { type JSX, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { TransactionEvent } from '@stacks/stacks-blockchain-api-types';
@@ -28,6 +34,7 @@ import {
   getAsset,
   getAssetEventType,
   getAssetType,
+  getContractLogPrintValue,
   getFromAddress,
   getToAddress,
 } from './utils';
@@ -47,6 +54,7 @@ export enum EventsTableColumns {
   From = 'from',
   ArrowRight = 'arrow-right',
   To = 'to',
+  PrintValue = 'print-value',
 }
 
 export interface EventsTableData {
@@ -58,6 +66,7 @@ export interface EventsTableData {
   [EventsTableColumns.From]: EventsTableAddressColumnData;
   [EventsTableColumns.ArrowRight]: JSX.Element;
   [EventsTableColumns.To]: EventsTableAddressColumnData;
+  [EventsTableColumns.PrintValue]: { repr: string; hex: string } | undefined;
 }
 
 export interface TxTableAddressColumnData {
@@ -66,7 +75,7 @@ export interface TxTableAddressColumnData {
 }
 
 export interface EventsTableAmountData {
-  amount: string | undefined;
+  amount: string;
   event: TransactionEvent;
 }
 
@@ -93,7 +102,7 @@ export const defaultColumnDefinitions: ColumnDef<EventsTableData>[] = [
     id: EventsTableColumns.Asset,
     header: 'Asset',
     accessorKey: EventsTableColumns.Asset,
-    cell: info => info.row.original[EventsTableColumns.Asset],
+    cell: info => StringRenderer(info.row.original[EventsTableColumns.Asset]),
     enableSorting: false,
   },
   {
@@ -189,6 +198,10 @@ export function EventsTable({
     isCacheSetWithInitialData.current = true;
   }
 
+  // There is a bug in the API where the tx events endpoint does not return total (total # events for the tx), which is causing pagination to not work correctly. So, we have to fetch the tx to get the total number of events
+  const { data: tx } = useTxById(txId);
+  const numTxEvents = tx && 'event_count' in tx ? tx.event_count : 0;
+
   // fetch data
   let { data, isFetching, isLoading } = useTxEventsById(
     pagination.pageSize,
@@ -209,51 +222,54 @@ export function EventsTable({
     }));
   }, [filters]);
 
-  const { total, results: events = [] } = data || {};
+  const { total = numTxEvents, events = [] } = data || {};
   const isTableFiltered = Object.values(filters).some(v => v != null && v !== '');
 
-  const rowData: EventsTableData[] = useMemo(
-    () =>
-      events.map((event, index) => {
-        const to = getToAddress(event);
-        const from = getFromAddress(event);
-        const amount = getAmount(event);
-        const assetEventType = getAssetEventType(event);
-        const asset = getAsset(event);
-        const assetType = getAssetType(event);
+  const rowData: EventsTableData[] = useMemo(() => {
+    const rows = events.map((event, index) => {
+      const to = getToAddress(event);
+      const from = getFromAddress(event);
+      const amount = getAmount(event);
+      const assetEventType = getAssetEventType(event);
+      const asset = getAsset(event);
+      const assetType = getAssetType(event);
+      const contractLogPrintValue = getContractLogPrintValue(event);
 
-        return {
-          [EventsTableColumns.Index]: index + 1,
-          [EventsTableColumns.AssetEventType]: assetEventType,
-          [EventsTableColumns.Asset]: asset,
-          [EventsTableColumns.AssetType]: assetType,
-          [EventsTableColumns.Amount]: {
-            event,
-            amount,
-          },
-          [EventsTableColumns.From]: {
-            address: from,
-            isContract: validateStacksContractId(from),
-          },
-          [EventsTableColumns.ArrowRight]: (
-            <Icon color="iconTertiary">
-              <ArrowRight />
-            </Icon>
-          ),
-          [EventsTableColumns.To]: {
-            address: to,
-            isContract: validateStacksContractId(to),
-          },
-        };
-      }),
-    [events]
-  );
+      return {
+        [EventsTableColumns.Index]: Math.abs(event.event_index - numTxEvents),
+        [EventsTableColumns.AssetEventType]: assetEventType,
+        [EventsTableColumns.Asset]: asset,
+        [EventsTableColumns.AssetType]: assetType,
+        [EventsTableColumns.Amount]: {
+          event,
+          amount,
+        },
+        [EventsTableColumns.From]: {
+          address: from,
+          isContract: validateStacksContractId(from),
+        },
+        [EventsTableColumns.ArrowRight]: (
+          <Icon color="iconTertiary">
+            <ArrowRight />
+          </Icon>
+        ),
+        [EventsTableColumns.To]: {
+          address: to,
+          isContract: validateStacksContractId(to),
+        },
+        [EventsTableColumns.PrintValue]:
+          assetEventType === 'print' ? contractLogPrintValue : undefined,
+      };
+    });
+    return rows;
+  }, [events, numTxEvents]);
 
   return (
     <Table
       data={rowData}
       columns={columnDefinitions ?? defaultColumnDefinitions}
       scrollIndicatorWrapper={table => <ScrollIndicator>{table}</ScrollIndicator>}
+      tableContainerWrapper={table => <TableContainer>{table}</TableContainer>}
       pagination={
         disablePagination
           ? undefined
@@ -268,6 +284,35 @@ export function EventsTable({
       isLoading={isLoading}
       isFetching={isFetching}
       isFiltered={isTableFiltered}
+      getRowCanExpand={() => true}
+      renderSubComponent={renderSubComponent}
+      expandAllRowsByDefault
     />
+  );
+}
+
+function renderSubComponent({ row }: { row: Row<EventsTableData> }) {
+  const printValue = row.original[EventsTableColumns.PrintValue];
+  if (!printValue) return null;
+
+  const rawContent = handleContractLogHex(printValue);
+  if (!rawContent) return null;
+
+  // Attempt to parse and format as JSON, fallback to raw content
+  const formattedContent = (() => {
+    try {
+      const parsedJson = JSON.parse(rawContent);
+      return JSON.stringify(parsedJson, null, 2);
+    } catch {
+      return rawContent;
+    }
+  })();
+
+  return (
+    <Box as="pre" fontFamily="matterMono" textStyle="text-regular-sm" whiteSpace="pre">
+      <Code bg="none" p={0}>
+        {formattedContent}
+      </Code>
+    </Box>
   );
 }

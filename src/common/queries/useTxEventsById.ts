@@ -75,12 +75,17 @@ export function useTxEventsById(
   txId: string,
   { address, type }: TxEventsQueryFilters = {},
   options: any = {}
-): UseQueryResult<GenericResponseType<TransactionEvent>> {
+): UseQueryResult<{
+  limit: number;
+  offset: number;
+  total: number;
+  events: TransactionEvent[];
+}> {
   const apiClient = useApiClient();
   return useQuery({
     queryKey: getTxEventsByIdQueryKey(limit, offset, txId, { address, type }),
-    queryFn: async ({ pageParam }: { pageParam?: number }) => {
-      const response = await callApiWithErrorHandling(apiClient, '/extended/v1/tx/events', {
+    queryFn: async () => {
+      return await callApiWithErrorHandling(apiClient, '/extended/v1/tx/events', {
         params: {
           query: {
             tx_id: txId,
@@ -91,15 +96,7 @@ export function useTxEventsById(
           },
         },
       });
-      return {
-        results: response.events,
-        total: response.limit,
-        limit: DEFAULT_TX_EVENTS_LIMIT,
-        offset: pageParam,
-      };
     },
-    staleTime: Infinity,
-    initialPageParam: 0,
     ...options,
   });
 }

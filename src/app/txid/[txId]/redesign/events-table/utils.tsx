@@ -15,22 +15,25 @@ export function getFromAddress(event: TransactionEvent): string {
   if (event.event_type === 'non_fungible_token_asset') {
     return event.asset.sender ?? EMPTY_VALUE;
   }
+  if (event.event_type === 'smart_contract_log') {
+    return '';
+  }
 
-  return 'uncovered case';
+  return '';
 }
 
-export function getAmount(event: TransactionEvent): string | undefined {
+export function getAmount(event: TransactionEvent): string {
   if (event.event_type === 'stx_asset') {
-    return event.asset.amount;
+    return event.asset.amount || '';
   }
   if (event.event_type === 'fungible_token_asset') {
-    return event.asset.amount;
+    return event.asset.amount || '';
   }
   if (event.event_type === 'non_fungible_token_asset') {
     return '1';
   }
 
-  return undefined;
+  return '';
 }
 
 export function getToAddress(event: TransactionEvent): string {
@@ -43,8 +46,11 @@ export function getToAddress(event: TransactionEvent): string {
   if (event.event_type === 'non_fungible_token_asset') {
     return event.asset.recipient ?? EMPTY_VALUE;
   }
+  if (event.event_type === 'smart_contract_log') {
+    return '';
+  }
 
-  return 'uncovered case';
+  return '';
 }
 
 export function getAssetType(event: TransactionEvent): string {
@@ -127,7 +133,7 @@ export function getAssetEventTypeIcon(
 
 export function getAsset(event: TransactionEvent): string {
   if (event.event_type === 'smart_contract_log') {
-    return EMPTY_VALUE; // could be the contract id
+    return ''; // could be the contract id
   }
   if (event.event_type === 'stx_asset') {
     return 'STX';
@@ -136,8 +142,20 @@ export function getAsset(event: TransactionEvent): string {
     return 'STX';
   }
   if ('asset' in event) {
-    return event.asset.asset_id ?? EMPTY_VALUE;
+    return event.asset.asset_id ?? '';
   }
 
-  return EMPTY_VALUE;
+  return '';
+}
+
+export function getContractLogPrintValue(event: TransactionEvent):
+  | {
+      hex: string;
+      repr: string;
+    }
+  | undefined {
+  if (event.event_type === 'smart_contract_log') {
+    return event.contract_log.value;
+  }
+  return undefined;
 }

@@ -155,6 +155,7 @@ export const TxTabs = ({ tx }: { tx: Transaction | MempoolTransaction }) => {
       rowGap={2}
       borderRadius="redesign.xl"
       w="full"
+      lazyMount
     >
       <Flex
         justifyContent={'space-between'}
