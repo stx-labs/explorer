@@ -6,6 +6,7 @@ import { logError } from '@/common/utils/error-utils';
 import {
   AddressBalanceResponse,
   AddressNonces,
+  AddressTransaction,
   AddressTransactionsListResponse,
   BnsNamesOwnByAddressResponse,
   BurnchainRewardsTotal,
@@ -137,7 +138,7 @@ export async function fetchRecentTransactions(
   principal: string
 ): Promise<AddressTransactionsListResponse> {
   const response = await stacksAPIFetch(
-    `${apiUrl}/extended/v1/address/${principal}/transactions?limit=${ADDRESS_RECENT_TRANSACTIONS_LIMIT}`,
+    `${apiUrl}/extended/v2/addresses/${principal}/transactions?limit=${ADDRESS_RECENT_TRANSACTIONS_LIMIT}`,
     {
       cache: 'default',
       next: {
@@ -147,7 +148,11 @@ export async function fetchRecentTransactions(
     }
   );
 
-  const recentTransactionsResponse: AddressTransactionsListResponse = await response.json();
+  const v2Response = await response.json();
+  const recentTransactionsResponse: AddressTransactionsListResponse = {
+    ...v2Response,
+    results: v2Response.results.map((item: AddressTransaction) => item.tx),
+  };
   return recentTransactionsResponse;
 }
 

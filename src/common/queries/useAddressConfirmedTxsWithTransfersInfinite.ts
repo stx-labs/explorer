@@ -42,12 +42,12 @@ export function useAddressTxs(
     queryKey: getAddressTxsQueryKey(principal, limit, offset),
     queryFn: async () => {
       if (!principal) return undefined;
-      return await callApiWithErrorHandling(
+      const v2Response = await callApiWithErrorHandling(
         apiClient,
-        '/extended/v1/address/{principal}/transactions',
+        '/extended/v2/addresses/{address}/transactions',
         {
           params: {
-            path: { principal },
+            path: { address: principal },
             query: {
               limit,
               offset,
@@ -55,6 +55,10 @@ export function useAddressTxs(
           },
         }
       );
+      return {
+        ...v2Response,
+        results: v2Response.results.map(item => item.tx),
+      } as AddressTransactionsListResponse;
     },
     enabled: !!principal,
     ...options,
