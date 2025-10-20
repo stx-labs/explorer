@@ -1,4 +1,4 @@
-import { sbtcContractAddress } from '@/app/token/[tokenId]/consts';
+import { SBTC_ASSET_ID, SBTC_DECIMALS } from '@/app/token/[tokenId]/consts';
 import { TabsContentContainer } from '@/app/txid/[txId]/redesign/TxTabs';
 import {
   PriceSummaryItemValue,
@@ -8,7 +8,7 @@ import {
 import { Circle } from '@/common/components/Circle';
 import { AddressTxsTable } from '@/common/components/table/table-examples/AddressTxsTable';
 import { ADDRESS_ID_PAGE_RECENT_ADDRESS_TXS_LIMIT } from '@/common/components/table/table-examples/consts';
-import { microToStacks } from '@/common/utils/utils';
+import { getFtDecimalAdjustedBalance, microToStacks } from '@/common/utils/utils';
 import { SimpleTag } from '@/ui/Badge';
 import { NextLink } from '@/ui/NextLink';
 import { Text } from '@/ui/Text';
@@ -114,9 +114,11 @@ const BalanceCard = () => {
   const totalBalanceUsdValue = isStxBalanceDefined ? totalBalanceStacks * stxPrice : 0;
 
   const fungibleTokenBalances = initialAddressBalancesData?.fungible_tokens;
-  const sbtcBalance = fungibleTokenBalances?.[sbtcContractAddress]?.balance;
+  const sbtcBalance = fungibleTokenBalances?.[SBTC_ASSET_ID]?.balance;
   const isSbtcBalanceDefined = sbtcBalance !== undefined && !isNaN(parseFloat(sbtcBalance));
-  const sbtcBalanceNumber = isSbtcBalanceDefined ? parseFloat(sbtcBalance) : 0;
+  const sbtcBalanceNumber = isSbtcBalanceDefined
+    ? getFtDecimalAdjustedBalance(sbtcBalance, SBTC_DECIMALS)
+    : 0;
   const sbtcBalanceUsdValue = isSbtcBalanceDefined ? sbtcBalanceNumber * btcPrice : 0;
 
   return (
