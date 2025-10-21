@@ -118,7 +118,7 @@ function getTxStatusIcon(status: TransactionStatus | MempoolTransactionStatus) {
 function getTxStatusIconColor(status: TransactionStatus | MempoolTransactionStatus) {
   switch (status) {
     case 'pending':
-      return 'transactionStatus.pending';
+      return 'feedback.bronze-600';
     case 'abort_by_post_condition':
       return 'feedback.red-600';
     case 'abort_by_response':
