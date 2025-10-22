@@ -95,7 +95,7 @@ export const StacksBlockRow = {
     <Flex alignItems="center" justifyContent="flex-end" w="full">
       {TimeStampCellRenderer(
         formatTimestampToRelativeTime(timestamp),
-        formatTimestamp(timestamp, 'HH:mm:ss', true)
+        formatTimestamp(timestamp, 'MMM dd, yyyy HH:mm:ss', true)
       )}
     </Flex>
   ),

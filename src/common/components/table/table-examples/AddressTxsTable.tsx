@@ -173,7 +173,7 @@ export const defaultColumnDefinitions: ColumnDef<AddressTxsTableData>[] = [
           ),
           formatTimestamp(
             info.row.original[AddressTxsTableColumns.BlockTime] as number,
-            'HH:mm:ss',
+            'MMM dd, yyyy HH:mm:ss',
             true
           )
         )}

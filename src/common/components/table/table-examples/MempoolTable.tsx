@@ -122,7 +122,7 @@ const defaultColumnDefinitions: ColumnDef<MempoolTableData>[] = [
       <Flex alignItems="center" justifyContent="flex-end" w="full">
         {TimeStampCellRenderer(
           formatTimestampToRelativeTime(info.getValue() as number),
-          formatTimestamp(info.getValue() as number, 'HH:mm:ss', true)
+          formatTimestamp(info.getValue() as number, 'MMM dd, yyyy HH:mm:ss', true)
         )}
       </Flex>
     ),
