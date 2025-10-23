@@ -28,7 +28,7 @@ export const CoinbaseTxSummaryItems = ({
         label="From"
         value={tx.sender_address}
         valueRenderer={value => (
-          <AddressLink principal={value} wordBreak="break-all" variant="tableLink">
+          <AddressLink address={value} wordBreak="break-all" variant="tableLink">
             {value}
           </AddressLink>
         )}
@@ -40,7 +40,7 @@ export const CoinbaseTxSummaryItems = ({
             label="Reward Recipient"
             value={tx.coinbase_payload?.alt_recipient}
             valueRenderer={value => (
-              <AddressLink principal={value} wordBreak="break-all" variant="tableLink">
+              <AddressLink address={value} wordBreak="break-all" variant="tableLink">
                 {value}
               </AddressLink>
             )}

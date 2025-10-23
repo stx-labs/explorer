@@ -1,4 +1,4 @@
-import { AddressLink } from '@/common/components/ExplorerLinks';
+import { AddressLink, TxLink } from '@/common/components/ExplorerLinks';
 import { getContractName, truncateStxAddress } from '@/common/utils/utils';
 import { Badge } from '@/ui/Badge';
 import { Text, TextProps } from '@/ui/Text';
@@ -41,7 +41,7 @@ export const AddressLinkCellRenderer = (value: AddressLinkCellRendererProps) => 
         <Icon h={3} w={3} color="iconPrimary">
           <ClarityIcon />
         </Icon>
-        <AddressLink principal={address} variant="tableLink">
+        <TxLink txId={address} variant="tableLink">
           <EllipsisText
             textStyle="text-regular-xs"
             color="textPrimary"
@@ -52,11 +52,11 @@ export const AddressLinkCellRenderer = (value: AddressLinkCellRendererProps) => 
           >
             {getContractName(address)}
           </EllipsisText>
-        </AddressLink>
+        </TxLink>
       </Flex>
     </Badge>
   ) : address && !isContract ? (
-    <AddressLink principal={address} variant="tableLink">
+    <AddressLink address={address} variant="tableLink">
       <EllipsisText fontSize="sm">{truncateStxAddress(address)}</EllipsisText>
     </AddressLink>
   ) : (

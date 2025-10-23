@@ -1,6 +1,6 @@
 'use client';
 
-import { AddressLink } from '@/common/components/ExplorerLinks';
+import { TxLink } from '@/common/components/ExplorerLinks';
 import { useNftMetadata } from '@/common/queries/useNftMetadata';
 import { deriveTokenTickerFromAssetId } from '@/common/utils/fungible-token-utils';
 import { getAssetNameParts } from '@/common/utils/utils';
@@ -88,8 +88,8 @@ export function CollectibleCard({
               <ArrowUpRight />
             </Icon>
           </Flex>
-          <AddressLink
-            principal={contractId}
+          <TxLink
+            txId={contractId}
             color="textSecondary"
             _hover={{ color: 'textInteractiveHover' }}
             textStyle="text-regular-sm"
@@ -99,7 +99,7 @@ export function CollectibleCard({
             textOverflow="ellipsis"
           >
             {ticker}
-          </AddressLink>
+          </TxLink>
         </Stack>
       </Stack>
     </Link>

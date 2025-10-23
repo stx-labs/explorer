@@ -1,4 +1,4 @@
-import { AddressLink, BlockLink } from '@/common/components/ExplorerLinks';
+import { AddressLink, BlockLink, TxLink } from '@/common/components/ExplorerLinks';
 import { formatBlockTime } from '@/common/utils/time-utils';
 import { isConfirmedTx } from '@/common/utils/transaction-utils';
 import { Badge, BlockHeightBadge, DefaultBadgeLabel } from '@/ui/Badge';
@@ -10,8 +10,7 @@ import {
 } from '@stacks/stacks-blockchain-api-types';
 
 import { useTxIdPageData } from '../../TxIdPageContext';
-import { PriceSummaryItemValue, SummaryItem } from './SummaryItem';
-import { SponsorTag } from './SummaryItem';
+import { PriceSummaryItemValue, SponsorTag, SummaryItem } from './SummaryItem';
 
 export const ContractCallTxSummaryItems = ({
   tx,
@@ -28,9 +27,9 @@ export const ContractCallTxSummaryItems = ({
         label="ID"
         value={tx.tx_id}
         valueRenderer={value => (
-          <AddressLink principal={value} wordBreak="break-all" variant="tableLink">
+          <TxLink txId={value} wordBreak="break-all" variant="tableLink">
             {value}
-          </AddressLink>
+          </TxLink>
         )}
         showCopyButton
       />
@@ -38,7 +37,7 @@ export const ContractCallTxSummaryItems = ({
         label="From"
         value={tx.sender_address}
         valueRenderer={value => (
-          <AddressLink principal={value} wordBreak="break-all" variant="tableLink">
+          <AddressLink address={value} wordBreak="break-all" variant="tableLink">
             {value}
           </AddressLink>
         )}
@@ -48,7 +47,7 @@ export const ContractCallTxSummaryItems = ({
         label="To"
         value={tx.contract_call?.contract_id}
         valueRenderer={value => (
-          <AddressLink principal={value} wordBreak="break-all" variant="tableLink">
+          <AddressLink address={value} wordBreak="break-all" variant="tableLink">
             {value}
           </AddressLink>
         )}

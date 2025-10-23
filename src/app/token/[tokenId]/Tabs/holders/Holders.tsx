@@ -138,7 +138,7 @@ const HolderTableRow = ({
       </Table.Cell>
 
       <Table.Cell py={3} px={6}>
-        <AddressLink principal={address} whiteSpace="nowrap" fontSize="sm" color="textSubdued">
+        <AddressLink address={address} whiteSpace="nowrap" fontSize="sm" color="textSubdued">
           {truncateMiddleDeprecated(address)}
         </AddressLink>
       </Table.Cell>

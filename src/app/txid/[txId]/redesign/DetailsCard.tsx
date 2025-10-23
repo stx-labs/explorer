@@ -1,9 +1,9 @@
-import { AddressLink, BlockLink } from '@/common/components/ExplorerLinks';
+import { AddressLink, BlockLink, TxLink } from '@/common/components/ExplorerLinks';
 import { EllipsisText } from '@/common/components/table/CommonTableCellRenderers';
 import { useGlobalContext } from '@/common/context/useGlobalContext';
 import { useContractById } from '@/common/queries/useContractById';
 import { truncateHex, truncateStxAddress } from '@/common/utils/utils';
-import { Badge, BlockHeightBadge, DefaultBadgeLabel, SimpleTag } from '@/ui/Badge';
+import { BlockHeightBadge, SimpleTag } from '@/ui/Badge';
 import { Link } from '@/ui/Link';
 import { Text } from '@/ui/Text';
 import ClarityIcon from '@/ui/icons/ClarityIcon';
@@ -163,7 +163,7 @@ function ContractCallDetailsCardItems({
             variant="solid"
             type="tag"
             label={
-              <AddressLink principal={value} variant="tableLink">
+              <TxLink txId={contractId} variant="tableLink">
                 <EllipsisText
                   textStyle="text-regular-xs"
                   color="textPrimary"
@@ -174,18 +174,18 @@ function ContractCallDetailsCardItems({
                 >
                   {value}
                 </EllipsisText>
-              </AddressLink>
+              </TxLink>
             }
             icon={<ClarityIcon />}
-          ></SimpleTag>
+          />
         )}
         showCopyButton={true}
       />
       <SummaryItem
-        label="Contract ID"
+        label="Contract Address"
         value={contractAddress}
         valueRenderer={value => (
-          <AddressLink principal={value} wordBreak="break-all" variant="tableLink">
+          <AddressLink address={value} wordBreak="break-all" variant="tableLink">
             {truncateStxAddress(value)}
           </AddressLink>
         )}
@@ -216,17 +216,33 @@ function SmartContractDetailsCardItems({
         label="Contract name"
         value={contractName}
         valueRenderer={value => (
-          <Badge variant="solid" type="tag">
-            <DefaultBadgeLabel label={value} fontFamily="matterMono" />
-          </Badge>
+          <SimpleTag
+            variant="solid"
+            type="tag"
+            label={
+              <TxLink txId={contractId} variant="tableLink">
+                <EllipsisText
+                  textStyle="text-regular-xs"
+                  color="textPrimary"
+                  _hover={{
+                    color: 'textInteractiveHover',
+                  }}
+                  fontFamily="var(--font-matter-mono)"
+                >
+                  {value}
+                </EllipsisText>
+              </TxLink>
+            }
+            icon={<ClarityIcon />}
+          />
         )}
         showCopyButton={true}
       />
       <SummaryItem
-        label="Contract ID"
+        label="Contract Address"
         value={contractAddress}
         valueRenderer={value => (
-          <AddressLink principal={value} wordBreak="break-all" variant="tableLink">
+          <AddressLink address={value} wordBreak="break-all" variant="tableLink">
             {truncateStxAddress(value)}
           </AddressLink>
         )}
