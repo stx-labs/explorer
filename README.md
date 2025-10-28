@@ -15,7 +15,7 @@ The [Stacks Explorer](https://explorer.hiro.so/) is an observability tool that h
 
 This README will guide you through the process of setting up and running the Stacks Explorer locally and how to contribute to the project.
 
-## Bugs and feature requests
+## Bugs and feature requests:
 
 If you encounter a bug or have a feature request for the Stacks Explorer, we encourage you to follow the steps below:
 
