@@ -2,6 +2,7 @@ import { AddressLink } from '@/common/components/ExplorerLinks';
 import {
   formatStacksAmount,
   getContractName,
+  getFtDecimalAdjustedBalance,
   microToStacksFormatted,
   truncateStxAddress,
 } from '@/common/utils/utils';
@@ -114,4 +115,66 @@ export const FeeCellRenderer = (value: string) => {
       </EllipsisText>
     </Flex>
   );
+};
+
+export enum AssetType {
+  STX = 'stx',
+  FUNGIBLE = 'fungible',
+  NON_FUNGIBLE = 'non_fungible',
+}
+
+export const AmountCellRenderer = ({
+  amount,
+  assetType,
+  assetName,
+  decimals,
+}: {
+  amount: string | number;
+  assetType: AssetType | undefined;
+  assetName: string | undefined;
+  decimals?: number;
+}) => {
+  if (!amount || !assetType) {
+    return (
+      <EllipsisText fontSize="sm" color="textTertiary">
+        -
+      </EllipsisText>
+    );
+  }
+
+  if (assetType === AssetType.STX) {
+    const stx = microToStacksFormatted(amount);
+    const microStx = formatStacksAmount(amount);
+    return (
+      <Flex alignItems="center" gap={1}>
+        <Icon h={3} w={3} color="textSecondary">
+          {stx.length > microStx.length ? <MicroStxIcon /> : <StacksIconThin />}
+        </Icon>
+        <EllipsisText fontSize="sm">
+          {stx.length > microStx.length ? `${microStx} µSTX` : `${stx} STX`}
+        </EllipsisText>
+      </Flex>
+    );
+  }
+  if (assetType === AssetType.FUNGIBLE) {
+    const adjustedAmount = getFtDecimalAdjustedBalance(amount, decimals || 0);
+    return (
+      <Flex alignItems="center" gap={1}>
+        <EllipsisText fontSize="sm">
+          {adjustedAmount} {assetName}
+        </EllipsisText>
+      </Flex>
+    );
+  }
+  if (assetType === AssetType.NON_FUNGIBLE) {
+    return (
+      <Flex alignItems="center" gap={1}>
+        <EllipsisText fontSize="sm">
+          {amount} {assetName}
+        </EllipsisText>
+      </Flex>
+    );
+  }
+
+  return <EllipsisText fontSize="sm">-</EllipsisText>;
 };

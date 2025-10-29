@@ -1,10 +1,16 @@
-import { EllipsisText } from '@/common/components/table/CommonTableCellRenderers';
+import {
+  AmountCellRenderer,
+  AssetType,
+  EllipsisText,
+} from '@/common/components/table/CommonTableCellRenderers';
+import { useFtMetadata } from '@/common/queries/useFtMetadata';
 import {
   formatStacksAmount,
   getAssetNameParts,
+  getFtDecimalAdjustedBalance,
   microToStacksFormatted,
 } from '@/common/utils/utils';
-import { DefaultBadge, DefaultBadgeIcon, DefaultBadgeLabel } from '@/ui/Badge';
+import { DefaultBadge, DefaultBadgeIcon, DefaultBadgeLabel, SimpleTag } from '@/ui/Badge';
 import { Tooltip } from '@/ui/Tooltip';
 import MicroStxIcon from '@/ui/icons/MicroStxIcon';
 import StacksIconThin from '@/ui/icons/StacksIconThin';
@@ -14,6 +20,7 @@ import { TransactionEvent } from '@stacks/stacks-blockchain-api-types';
 
 import {
   ExtendedTransactionEventAssetType,
+  getAmount,
   getAssetEventTypeIcon,
   getAssetEventTypeLabel,
 } from './utils';
@@ -37,57 +44,50 @@ export const AssetEventTypeCellRenderer = ({
   );
 };
 
-export const AmountCellRenderer = ({
-  amount,
-  event,
-}: {
-  amount: string;
-  event: TransactionEvent;
-}) => {
-  if (!amount) {
-    return (
-      <EllipsisText fontSize="sm" color="textTertiary">
-        -
-      </EllipsisText>
-    );
-  }
+export function useEventAmountCellData(event: TransactionEvent) {
+  const eventType = event.event_type;
+  const assetId = eventType === 'fungible_token_asset' ? event.asset.asset_id : undefined;
+  const { address, contract, asset } = assetId ? getAssetNameParts(assetId) : {};
+  const contractId = `${address}.${contract}`;
+  const shouldFetchMetadata = eventType === 'fungible_token_asset' && !!contractId;
+  const ftMetadata = useFtMetadata(contractId, {
+    enabled: shouldFetchMetadata,
+  });
+  const ftDecimals = ftMetadata.data?.decimals;
+  const amount = getAmount(event);
 
-  if (event.event_type === 'stx_asset') {
-    const stx = microToStacksFormatted(amount);
-    const microStx = formatStacksAmount(amount);
-    return (
-      <Flex alignItems="center" gap={1}>
-        <Icon h={3} w={3} color="textSecondary">
-          {stx.length > microStx.length ? <MicroStxIcon /> : <StacksIconThin />}
-        </Icon>
-        <EllipsisText fontSize="sm">
-          {stx.length > microStx.length ? `${microStx} µSTX` : `${stx} STX`}
-        </EllipsisText>
-      </Flex>
-    );
-  }
-  if (event.event_type === 'fungible_token_asset') {
-    const { asset } = getAssetNameParts(event.asset.asset_id);
-    return (
-      <Flex alignItems="center" gap={1}>
-        <EllipsisText fontSize="sm">
-          {amount} {asset}
-        </EllipsisText>
-      </Flex>
-    );
-  }
-  if (event.event_type === 'non_fungible_token_asset') {
-    const { asset } = getAssetNameParts(event.asset.asset_id);
-    return (
-      <Flex alignItems="center" gap={1}>
-        <EllipsisText fontSize="sm">
-          {amount} {asset}
-        </EllipsisText>
-      </Flex>
-    );
-  }
+  return {
+    amount,
+    assetType: getAssetTypeFromEventType(eventType),
+    assetName: asset,
+    decimals: ftDecimals,
+  };
+}
 
-  return <EllipsisText fontSize="sm">-</EllipsisText>;
+export function getAssetTypeFromEventType(eventType: TransactionEvent['event_type']) {
+  switch (eventType) {
+    case 'stx_asset':
+      return AssetType.STX;
+    case 'fungible_token_asset':
+      return AssetType.FUNGIBLE;
+    case 'non_fungible_token_asset':
+      return AssetType.NON_FUNGIBLE;
+    default:
+      return undefined;
+  }
+}
+
+export const EventAmountCellRenderer = (event: TransactionEvent) => {
+  const { amount, assetType, assetName, decimals } = useEventAmountCellData(event);
+
+  return (
+    <AmountCellRenderer
+      amount={amount}
+      assetType={assetType}
+      assetName={assetName}
+      decimals={decimals}
+    />
+  );
 };
 
 export const TimeStampCellRenderer = (value: string, tooltip?: string) => {

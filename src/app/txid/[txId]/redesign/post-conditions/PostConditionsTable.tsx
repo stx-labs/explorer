@@ -15,28 +15,26 @@ import {
   ContractCallTransaction,
   MempoolContractCallTransaction,
   MempoolSmartContractTransaction,
+  PostCondition,
   PostConditionFungibleConditionCode,
   PostConditionNonFungibleConditionCode,
   SmartContractTransaction,
 } from '@stacks/stacks-blockchain-api-types';
 
-import {
-  AmountAssetCellRenderer,
-  AmountAssetCellRendererProps,
-} from './PostConditionsTableCellRenderers';
+import { PostConditionAmountCellRenderer } from './PostConditionsTableCellRenderers';
 
 enum PostConditionsTableColumns {
   From = 'from',
   Condition = 'condition',
   AssetAmount = 'assetAmount',
-  To = 'to',
+  Principal = 'principal',
 }
 
 interface PostConditionsTableData {
   [PostConditionsTableColumns.From]: AddressLinkCellRendererProps;
   [PostConditionsTableColumns.Condition]: string;
-  [PostConditionsTableColumns.AssetAmount]: AmountAssetCellRendererProps;
-  [PostConditionsTableColumns.To]: AddressLinkCellRendererProps;
+  [PostConditionsTableColumns.AssetAmount]: PostCondition;
+  [PostConditionsTableColumns.Principal]: AddressLinkCellRendererProps;
 }
 
 const columnDefinitions: ColumnDef<PostConditionsTableData>[] = [
@@ -68,19 +66,19 @@ const columnDefinitions: ColumnDef<PostConditionsTableData>[] = [
     accessorKey: PostConditionsTableColumns.AssetAmount,
     cell: info => (
       <Flex alignItems="center" justifyContent="flex-end">
-        {AmountAssetCellRenderer(info.getValue() as AmountAssetCellRendererProps)}
+        {PostConditionAmountCellRenderer(info.getValue() as PostCondition)}
       </Flex>
     ),
     enableSorting: false,
   },
   {
-    id: PostConditionsTableColumns.To,
+    id: PostConditionsTableColumns.Principal,
     header: ({ header }: { header: Header<PostConditionsTableData, unknown> }) => (
       <Flex alignItems="center" justifyContent="flex-start" w="full">
-        <DefaultTableColumnHeader header={header}>To</DefaultTableColumnHeader>
+        <DefaultTableColumnHeader header={header}>Principal</DefaultTableColumnHeader>
       </Flex>
     ),
-    accessorKey: PostConditionsTableColumns.To,
+    accessorKey: PostConditionsTableColumns.Principal,
     cell: info => (
       <Flex alignItems="center" justifyContent="flex-start">
         {AddressLinkCellRenderer(info.getValue() as AddressLinkCellRendererProps)}
@@ -93,8 +91,8 @@ const columnDefinitions: ColumnDef<PostConditionsTableData>[] = [
 interface PostConditionTableData {
   from: AddressLinkCellRendererProps;
   condition: string;
-  assetAmount: AmountAssetCellRendererProps;
-  to: AddressLinkCellRendererProps;
+  assetAmount: PostCondition;
+  principal: AddressLinkCellRendererProps;
 }
 
 type PostConditionConditionCode =
@@ -140,7 +138,7 @@ function getRowData(
 
   return postConditions.map(postCondition => {
     const principal = postCondition.principal;
-    const to =
+    const principalAddress =
       principal.type_id === 'principal_origin'
         ? { address: from.address, isContract: from.isContract }
         : principal.type_id === 'principal_contract'
@@ -158,18 +156,8 @@ function getRowData(
       [PostConditionsTableColumns.Condition]: getPostConditionCellText(
         postCondition.condition_code
       ),
-      [PostConditionsTableColumns.AssetAmount]: {
-        amount:
-          postCondition.type === 'fungible' || postCondition.type === 'stx'
-            ? postCondition.amount.toLocaleString()
-            : '1',
-        asset:
-          postCondition.type === 'fungible' || postCondition.type === 'non_fungible'
-            ? postCondition.asset.asset_name
-            : 'STX',
-        assetType: postCondition.type,
-      },
-      [PostConditionsTableColumns.To]: to,
+      [PostConditionsTableColumns.AssetAmount]: postCondition,
+      [PostConditionsTableColumns.Principal]: principalAddress,
     };
   });
 }

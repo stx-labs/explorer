@@ -22,7 +22,7 @@ import { type JSX, useCallback, useEffect, useMemo, useRef, useState } from 'rea
 
 import { TransactionEvent } from '@stacks/stacks-blockchain-api-types';
 
-import { AmountCellRenderer, AssetEventTypeCellRenderer } from './EventsTableCellRenderers';
+import { AssetEventTypeCellRenderer, EventAmountCellRenderer } from './EventsTableCellRenderers';
 import { EVENTS_TABLE_PAGE_SIZE } from './consts';
 import { EventsTableFilters } from './filters/useEventsTableFilters';
 import {
@@ -59,7 +59,7 @@ export interface EventsTableData {
   [EventsTableColumns.AssetEventType]: ExtendedTransactionEventAssetType;
   [EventsTableColumns.Asset]: string;
   [EventsTableColumns.AssetType]: string;
-  [EventsTableColumns.Amount]: EventsTableAmountData;
+  [EventsTableColumns.Amount]: TransactionEvent;
   [EventsTableColumns.From]: EventsTableAddressColumnData;
   [EventsTableColumns.ArrowRight]: JSX.Element;
   [EventsTableColumns.To]: EventsTableAddressColumnData;
@@ -69,11 +69,6 @@ export interface EventsTableData {
 export interface TxTableAddressColumnData {
   address: string;
   isContract: boolean;
-}
-
-export interface EventsTableAmountData {
-  amount: string;
-  event: TransactionEvent;
 }
 
 export const defaultColumnDefinitions: ColumnDef<EventsTableData>[] = [
@@ -113,7 +108,7 @@ export const defaultColumnDefinitions: ColumnDef<EventsTableData>[] = [
     id: EventsTableColumns.Amount,
     header: 'Amount',
     accessorKey: EventsTableColumns.Amount,
-    cell: info => AmountCellRenderer(info.row.original[EventsTableColumns.Amount]),
+    cell: info => EventAmountCellRenderer(info.row.original[EventsTableColumns.Amount]),
     enableSorting: false,
   },
   {
@@ -237,10 +232,7 @@ export function EventsTable({
         [EventsTableColumns.AssetEventType]: assetEventType,
         [EventsTableColumns.Asset]: asset,
         [EventsTableColumns.AssetType]: assetType,
-        [EventsTableColumns.Amount]: {
-          event,
-          amount,
-        },
+        [EventsTableColumns.Amount]: event,
         [EventsTableColumns.From]: {
           address: from,
           isContract: validateStacksContractId(from),
