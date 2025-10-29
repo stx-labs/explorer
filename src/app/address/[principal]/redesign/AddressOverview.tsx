@@ -106,13 +106,14 @@ const BalanceItem = ({
 };
 
 const BalanceCard = () => {
-  const { initialAddressBalancesData, stxPrice, btcPrice } = useAddressIdPageData();
+  const { initialAddressBalancesData, stxPrice, btcPrice, initialBurnChainRewardsData } =
+    useAddressIdPageData();
 
-  const totalBalanceMicroStacks = initialAddressBalancesData?.stx.balance;
+  const totalBalanceMicroStx = initialAddressBalancesData?.stx.balance;
   const isStxBalanceDefined =
-    totalBalanceMicroStacks !== undefined && !isNaN(parseFloat(totalBalanceMicroStacks));
-  const totalBalanceStacks = isStxBalanceDefined ? microToStacks(totalBalanceMicroStacks) : 0;
-  const totalBalanceUsdValue = isStxBalanceDefined ? totalBalanceStacks * stxPrice : 0;
+    totalBalanceMicroStx !== undefined && !isNaN(parseFloat(totalBalanceMicroStx));
+  const totalBalanceStx = isStxBalanceDefined ? microToStacks(totalBalanceMicroStx) : 0;
+  const totalBalanceUsdValue = isStxBalanceDefined ? totalBalanceStx * stxPrice : 0;
 
   const fungibleTokenBalances = initialAddressBalancesData?.fungible_tokens;
   const sbtcBalance = fungibleTokenBalances?.[SBTC_ASSET_ID]?.balance;
@@ -121,6 +122,13 @@ const BalanceCard = () => {
     ? getFtDecimalAdjustedBalance(sbtcBalance, SBTC_DECIMALS)
     : 0;
   const sbtcBalanceUsdValue = isSbtcBalanceDefined ? sbtcBalanceNumber * btcPrice : 0;
+
+  const lockedSTX = initialAddressBalancesData?.stx.locked;
+  const hasLockedSTX = !lockedSTX || lockedSTX === '0';
+  const showAvailableSTX = hasLockedSTX;
+  const lockedSTXFormatted = microToStacks(lockedSTX || '0');
+
+  const availableSTX = totalBalanceStx - lockedSTXFormatted;
 
   return (
     <Stack
@@ -138,11 +146,26 @@ const BalanceCard = () => {
         Total balance
       </Text>
       <Stack gap={6}>
-        <BalanceItem
-          tokenBalance={totalBalanceStacks}
-          tokenBalanceUsdValue={totalBalanceUsdValue}
-          tokenBalanceType="stx"
-        />
+        <Stack gap={4.5}>
+          <BalanceItem
+            tokenBalance={totalBalanceStx}
+            tokenBalanceUsdValue={totalBalanceUsdValue}
+            tokenBalanceType="stx"
+          />
+          {showAvailableSTX && (
+            <StackingCardItem
+              label="Available"
+              value={
+                <TokenBalanceAndTokenBalanceUsdValueItem
+                  tokenBalance={availableSTX}
+                  tokenBalanceUsdValue={availableSTX * stxPrice}
+                  tokenIcon={<StacksIconThin />}
+                  tokenTicker="STX"
+                />
+              }
+            />
+          )}
+        </Stack>
         <BalanceItem
           tokenBalance={sbtcBalanceNumber}
           tokenBalanceUsdValue={sbtcBalanceUsdValue}
