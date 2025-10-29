@@ -7,7 +7,6 @@ import {
   getAddressTxsQueryKey,
   useAddressTxs,
 } from '@/common/queries/useAddressConfirmedTxsWithTransfersInfinite';
-import { formatTimestamp, formatTimestampToRelativeTime } from '@/common/utils/time-utils';
 import {
   CompressedTxAndMempoolTxTableData,
   getAmount,
@@ -29,6 +28,7 @@ import { AddressLinkCellRenderer, FeeCellRenderer } from '../CommonTableCellRend
 import { Table } from '../Table';
 import { DefaultTableColumnHeader } from '../TableComponents';
 import { TableContainer } from '../TableContainer';
+import { TimestampCell, TimestampColumnHeader, TimestampTableMeta } from '../TimestampColumnHeader';
 import { EventsCellRenderer, TransactionTitleCellRenderer } from './AddressTxsTaBleCellRenderers';
 import {
   IconCellRenderer,
@@ -158,30 +158,14 @@ export const defaultColumnDefinitions: ColumnDef<AddressTxsTableData>[] = [
   },
   {
     id: AddressTxsTableColumns.BlockTime,
-    header: ({ header }: { header: Header<AddressTxsTableData, unknown> }) => (
-      <Flex alignItems="center" justifyContent="flex-end" w="full">
-        <DefaultTableColumnHeader header={header}>Timestamp</DefaultTableColumnHeader>
-      </Flex>
+    header: ({ header, table }: { header: Header<AddressTxsTableData, unknown>; table: any }) => (
+      <TimestampColumnHeader header={header} table={table} />
     ),
     accessorKey: AddressTxsTableColumns.BlockTime,
-    cell: info => (
-      <Flex alignItems="center" justifyContent="flex-end" w="full">
-        {TimeStampCellRenderer(
-          formatTimestampToRelativeTime(
-            info.row.original[AddressTxsTableColumns.BlockTime] as number
-          ),
-          formatTimestamp(
-            info.row.original[AddressTxsTableColumns.BlockTime] as number,
-            'MMM dd, yyyy HH:mm:ss',
-            true
-          )
-        )}
-      </Flex>
+    cell: ({ getValue, table }: { getValue: () => unknown; table: any }) => (
+      <TimestampCell timestamp={getValue() as number} table={table} />
     ),
     enableSorting: false,
-    meta: {
-      tooltip: 'Timestamps are shown in your local timezone',
-    },
   },
 ];
 
@@ -203,6 +187,7 @@ export function AddressTxsTable({
   columnDefinitions,
   pageSize,
 }: AddressTxsTableProps) {
+  const [showAbsoluteTime, setShowAbsoluteTime] = useState(false);
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
     pageSize,
@@ -287,6 +272,14 @@ export function AddressTxsTable({
       columns={columnDefinitions ?? defaultColumnDefinitions}
       tableContainerWrapper={table => <TableContainer>{table}</TableContainer>}
       scrollIndicatorWrapper={table => <ScrollIndicator>{table}</ScrollIndicator>}
+      meta={
+        {
+          toggleTimestamp: {
+            showAbsolute: showAbsoluteTime,
+            toggle: () => setShowAbsoluteTime(!showAbsoluteTime),
+          },
+        } satisfies TimestampTableMeta
+      }
       pagination={
         disablePagination
           ? undefined

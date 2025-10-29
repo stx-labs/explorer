@@ -17,7 +17,7 @@ import {
 import { TxTableColumns } from '@/common/components/table/table-examples/types';
 import { useGlobalContext } from '@/common/context/useGlobalContext';
 import { buildUrl } from '@/common/utils/buildUrl';
-import { formatTimestamp, formatTimestampToRelativeTime } from '@/common/utils/time-utils';
+import { formatTimestampLocalized, formatTimestampToRelativeTime } from '@/common/utils/time-utils';
 import { ButtonLink } from '@/ui/ButtonLink';
 import { Text } from '@/ui/Text';
 import { Flex, Stack } from '@chakra-ui/react';
@@ -75,15 +75,12 @@ export const columnDefinitions: ColumnDef<TxTableData>[] = [
       <Flex alignItems="center" justifyContent="flex-end" w="full">
         {TimeStampCellRenderer(
           formatTimestampToRelativeTime(info.getValue() as number),
-          formatTimestamp(info.getValue() as number, 'MMM dd, yyyy HH:mm:ss', true)
+          formatTimestampLocalized(info.getValue() as number)
         )}
       </Flex>
     ),
     enableSorting: false,
     size: 150,
-    meta: {
-      tooltip: 'Timestamps are shown in your local timezone',
-    },
   },
 ];
 

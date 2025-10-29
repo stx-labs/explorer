@@ -1,5 +1,6 @@
 import {
   formatTimestamp,
+  formatTimestampLocalized,
   formatTimestampTo12HourTime,
   formatTimestampToRelativeTime,
 } from '../time-utils';
@@ -141,5 +142,35 @@ describe('formatTimestamp', () => {
   it('formats a timestamp to a custom format', () => {
     const timestamp = 1717248896;
     expect(formatTimestamp(timestamp, 'MM/dd/yyyy')).toBe('06/01/2024');
+  });
+
+  it('formats a timestamp with locale format using Intl.DateTimeFormat', () => {
+    const timestamp = 1717248896; // 2024-06-01 12:34:56 UTC
+    const result = formatTimestamp(timestamp, 'locale', true);
+
+    expect(result).toMatch(/\d{1,2}\/\d{1,2}\/\d{4}/); // numeric date
+    expect(result).toMatch(/\d{2}:\d{2}:\d{2}/); // time with colons
+    expect(result).toMatch(/[A-Z]{3,4}/); // timezone abbreviation
+  });
+
+  it('formats a timestamp with locale format without timezone', () => {
+    const timestamp = 1717248896;
+    const result = formatTimestamp(timestamp, 'locale', false);
+
+    expect(result).toMatch(/\d{1,2}\/\d{1,2}\/\d{4}/);
+    expect(result).toMatch(/\d{2}:\d{2}:\d{2}/);
+    expect(result).not.toMatch(/[A-Z]{3,4}$/);
+  });
+});
+
+describe('formatTimestampLocalized', () => {
+  it('returns numeric localized timestamp with timezone', () => {
+    const timestamp = 1717248896; // 2024-06-01 12:34:56 UTC
+    const result = formatTimestampLocalized(timestamp);
+
+    expect(result).not.toMatch(/Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec/);
+    expect(result).toMatch(/\d{1,2}\/\d{1,2}\/\d{4}/);
+    expect(result).toMatch(/\d{2}:\d{2}:\d{2}/);
+    expect(result).toMatch(/[A-Z]{3,4}/);
   });
 });

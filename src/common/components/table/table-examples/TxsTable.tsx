@@ -5,7 +5,6 @@ import { TxPageFilters } from '@/app/transactions/page';
 import { GenericResponseType } from '@/common/hooks/useInfiniteQueryResult';
 import { THIRTY_SECONDS } from '@/common/queries/query-stale-time';
 import { useConfirmedTransactions } from '@/common/queries/useConfirmedTransactionsInfinite';
-import { formatTimestamp, formatTimestampToRelativeTime } from '@/common/utils/time-utils';
 import { CompressedTxTableData } from '@/common/utils/transaction-utils';
 import { getAmount, getToAddress } from '@/common/utils/transaction-utils';
 import { validateStacksContractId } from '@/common/utils/utils';
@@ -23,6 +22,7 @@ import { AddressLinkCellRenderer, FeeCellRenderer } from '../CommonTableCellRend
 import { Table } from '../Table';
 import { DefaultTableColumnHeader } from '../TableComponents';
 import { TableContainer } from '../TableContainer';
+import { TimestampCell, TimestampColumnHeader, TimestampTableMeta } from '../TimestampColumnHeader';
 import { UpdateTableBannerRow } from '../UpdateTableBannerRow';
 import {
   IconCellRenderer,
@@ -115,24 +115,14 @@ export const defaultColumnDefinitions: ColumnDef<TxTableData>[] = [
   },
   {
     id: TxTableColumns.BlockTime,
-    header: ({ header }: { header: Header<TxTableData, unknown> }) => (
-      <Flex alignItems="center" justifyContent="flex-end" w="full">
-        <DefaultTableColumnHeader header={header}>Timestamp</DefaultTableColumnHeader>
-      </Flex>
+    header: ({ header, table }: { header: Header<TxTableData, unknown>; table: any }) => (
+      <TimestampColumnHeader header={header} table={table} />
     ),
     accessorKey: TxTableColumns.BlockTime,
-    cell: info => (
-      <Flex alignItems="center" justifyContent="flex-end" w="full">
-        {TimeStampCellRenderer(
-          formatTimestampToRelativeTime(info.getValue() as number),
-          formatTimestamp(info.getValue() as number, 'MMM dd, yyyy HH:mm:ss', true)
-        )}
-      </Flex>
+    cell: ({ getValue, table }: { getValue: () => unknown; table: any }) => (
+      <TimestampCell timestamp={getValue() as number} table={table} />
     ),
     enableSorting: false,
-    meta: {
-      tooltip: 'Timestamps are shown in your local timezone',
-    },
   },
 ];
 
@@ -170,6 +160,7 @@ export function TxsTable({
   disableBannerRow = false,
 }: TxsTableProps) {
   const { activeConfirmedTxsSort, activeConfirmedTxsOrder } = useFilterAndSortState();
+  const [showAbsoluteTime, setShowAbsoluteTime] = useState(false);
 
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
@@ -302,6 +293,14 @@ export function TxsTable({
       columns={columnDefinitions ?? defaultColumnDefinitions}
       tableContainerWrapper={tableContainer ? table => tableContainer(table) : undefined}
       scrollIndicatorWrapper={table => <ScrollIndicator>{table}</ScrollIndicator>}
+      meta={
+        {
+          toggleTimestamp: {
+            showAbsolute: showAbsoluteTime,
+            toggle: () => setShowAbsoluteTime(!showAbsoluteTime),
+          },
+        } satisfies TimestampTableMeta
+      }
       pagination={
         disablePagination
           ? undefined
