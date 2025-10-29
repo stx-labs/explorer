@@ -252,6 +252,39 @@ describe('Function Called Utils', () => {
       expect(cvToJSON).toHaveBeenCalled();
     });
 
+    it('removes single quote prefix from principal address', () => {
+      (hexToCV as jest.Mock).mockReturnValue({});
+      (cvToJSON as jest.Mock).mockReturnValue({ value: '' });
+
+      const result = formatClarityValue({
+        type: 'principal',
+        repr: "'SP1Y3FBARS8CVANS1GCYVN3B6NZFMA7H61Z6TP6RK",
+        hex: '0x1234',
+      });
+
+      expect(result).toEqual({
+        name: '',
+        value: 'SP1Y3FBARS8CVANS1GCYVN3B6NZFMA7H61Z6TP6RK',
+        type: 'Principal',
+      });
+
+      expect(hexToCV).toHaveBeenCalledWith('0x1234');
+      expect(cvToJSON).toHaveBeenCalled();
+    });
+
+    it('works normally for principal addresses without single quote prefix', () => {
+      const result = formatClarityValue({
+        type: 'principal',
+        repr: 'SP1Y3FBARS8CVANS1GCYVN3B6NZFMA7H61Z6TP6RK',
+      });
+
+      expect(result).toEqual({
+        name: '',
+        value: 'SP1Y3FBARS8CVANS1GCYVN3B6NZFMA7H61Z6TP6RK',
+        type: 'Principal',
+      });
+    });
+
     it('handles uint values correctly', () => {
       const result = formatClarityValue({
         type: 'uint',
