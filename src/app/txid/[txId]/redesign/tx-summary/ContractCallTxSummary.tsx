@@ -11,6 +11,7 @@ import {
 
 import { useTxIdPageData } from '../../TxIdPageContext';
 import { PriceSummaryItemValue, SponsorTag, SummaryItem } from './SummaryItem';
+import { TokensTransferred } from './TokensTransferred';
 
 export const ContractCallTxSummaryItems = ({
   tx,
@@ -20,6 +21,18 @@ export const ContractCallTxSummaryItems = ({
   const { stxPrice } = useTxIdPageData();
   const isSponsored = tx.sponsored;
   const sponsor = tx.sponsor_address;
+
+  const isConfirmed = isConfirmedTx<ContractCallTransaction, MempoolContractCallTransaction>(tx);
+  const txHasAllEvents = isConfirmed && tx.event_count <= 100;
+  const showTransfers =
+    txHasAllEvents &&
+    tx.events?.some(
+      event =>
+        ((event.event_type === 'fungible_token_asset' ||
+          event.event_type === 'non_fungible_token_asset') &&
+          event.asset.asset_event_type === 'transfer') ||
+        (event.event_type === 'stx_asset' && event.asset.asset_event_type === 'transfer')
+    );
 
   return (
     <>
@@ -44,7 +57,7 @@ export const ContractCallTxSummaryItems = ({
         showCopyButton
       />
       <SummaryItem
-        label="To"
+        label="Interacted with (To)"
         value={tx.contract_call?.contract_id}
         valueRenderer={value => (
           <AddressLink principal={value} wordBreak="break-all" variant="tableLink">
@@ -53,24 +66,30 @@ export const ContractCallTxSummaryItems = ({
         )}
         showCopyButton
       />
-      {isConfirmedTx<ContractCallTransaction, MempoolContractCallTransaction>(tx) &&
-        tx.block_time && (
-          <SummaryItem
-            label="Timestamp"
-            value={formatBlockTime(tx.block_time)}
-            valueRenderer={value => (
-              <Badge
-                variant="solid"
-                _groupHover={{
-                  bg: 'surfaceTertiary',
-                }}
-              >
-                <DefaultBadgeLabel label={value} fontFamily="matterMono" />
-              </Badge>
-            )}
-            showCopyButton
-          />
-        )}
+      {showTransfers && (
+        <SummaryItem
+          label="Tokens Transferred"
+          value=""
+          valueRenderer={() => <TokensTransferred events={isConfirmed ? tx.events || [] : []} />}
+        />
+      )}
+      {isConfirmed && tx.block_time && (
+        <SummaryItem
+          label="Timestamp"
+          value={formatBlockTime(tx.block_time)}
+          valueRenderer={value => (
+            <Badge
+              variant="solid"
+              _groupHover={{
+                bg: 'surfaceTertiary',
+              }}
+            >
+              <DefaultBadgeLabel label={value} fontFamily="matterMono" />
+            </Badge>
+          )}
+          showCopyButton
+        />
+      )}
       <SummaryItem
         label="Fee"
         value={tx.fee_rate}
@@ -82,7 +101,7 @@ export const ContractCallTxSummaryItems = ({
         )}
       />
       <SummaryItem label="Nonce" value={tx.nonce?.toString() || ''} showCopyButton />
-      {isConfirmedTx<ContractCallTransaction, MempoolContractCallTransaction>(tx) && (
+      {isConfirmed && (
         <SummaryItem
           label="Block height"
           value={tx.block_height?.toString() || ''}
@@ -98,36 +117,34 @@ export const ContractCallTxSummaryItems = ({
           )}
         />
       )}
-      {isConfirmedTx<ContractCallTransaction, MempoolContractCallTransaction>(tx) &&
-        tx.block_hash && (
-          <SummaryItem
-            label="Block hash"
-            value={tx.block_hash?.toString() || ''}
-            showCopyButton
-            valueRenderer={value => (
-              <BlockLink hash={value} wordBreak="break-all" variant="tableLink">
-                {value}
-              </BlockLink>
-            )}
-          />
-        )}
-      {isConfirmedTx<ContractCallTransaction, MempoolContractCallTransaction>(tx) &&
-        tx.burn_block_height && (
-          <SummaryItem
-            label="Bitcoin Anchor"
-            value={tx.burn_block_height?.toString() || ''}
-            showCopyButton
-            valueRenderer={value => (
-              <BlockHeightBadge
-                blockType="btc"
-                blockHeight={Number(value)}
-                _groupHover={{
-                  bg: 'surfaceTertiary',
-                }}
-              />
-            )}
-          />
-        )}
+      {isConfirmed && tx.block_hash && (
+        <SummaryItem
+          label="Block hash"
+          value={tx.block_hash?.toString() || ''}
+          showCopyButton
+          valueRenderer={value => (
+            <BlockLink hash={value} wordBreak="break-all" variant="tableLink">
+              {value}
+            </BlockLink>
+          )}
+        />
+      )}
+      {isConfirmed && tx.burn_block_height && (
+        <SummaryItem
+          label="Bitcoin Anchor"
+          value={tx.burn_block_height?.toString() || ''}
+          showCopyButton
+          valueRenderer={value => (
+            <BlockHeightBadge
+              blockType="btc"
+              blockHeight={Number(value)}
+              _groupHover={{
+                bg: 'surfaceTertiary',
+              }}
+            />
+          )}
+        />
+      )}
     </>
   );
 };
