@@ -1,3 +1,5 @@
+"use client";
+
 import { TokenImage } from '@/common/components/table/fungible-tokens-table/FungibleTokensTableCellRenderers';
 import { useIsInViewport } from '@/common/hooks/useIsInViewport';
 import {

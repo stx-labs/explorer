@@ -1,3 +1,5 @@
+"use client";
+
 import { TxTabsTrigger } from '@/app/txid/[txId]/redesign/TxTabs';
 import { AvailableFunctions } from '@/app/txid/[txId]/redesign/function-called/AvailableFunctions';
 import { Source } from '@/app/txid/[txId]/redesign/source/Source';
