@@ -96,12 +96,6 @@ export const TokenIdTabs = () => {
             onClick={() => setSelectedTab(TokenIdPageTab.Source)}
           />
           <TxTabsTrigger
-            label="Source code"
-            value={TokenIdPageTab.Source}
-            isActive={selectedTab === TokenIdPageTab.Source}
-            onClick={() => setSelectedTab(TokenIdPageTab.Source)}
-          />
-          <TxTabsTrigger
             label="Available functions"
             secondaryLabel={
               numFunctions && numFunctions > 0 ? `(${numFunctions.toLocaleString()})` : ''

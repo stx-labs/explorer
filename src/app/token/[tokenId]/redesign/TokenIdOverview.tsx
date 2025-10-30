@@ -72,6 +72,7 @@ const NO_DATA = (
 
 export function MarketDataCard() {
   const { tokenData, holders } = useTokenIdPageData();
+  console.log('MarketDataCard', { tokenData });
 
   const circulatingSupply =
     holders?.total_supply && tokenData?.decimals !== undefined

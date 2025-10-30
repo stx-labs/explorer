@@ -1,6 +1,6 @@
 'use client';
 
-import { getHoldersQueryKey, useHolders } from '@/app/token/[tokenId]/Tabs/data/useHolders';
+import { getHoldersQueryKey, useHolders } from '@/common/queries/useHolders';
 import { GenericResponseType } from '@/common/hooks/useInfiniteQueryResult';
 import { THIRTY_SECONDS } from '@/common/queries/query-stale-time';
 import {
