@@ -47,7 +47,7 @@ export const alertSlotRecipe = defineSlotRecipe({
       warning: {
         root: {
           backgroundColor: {
-            base: 'var(--stacks-colors-transactionStatus-pending)',
+            base: 'var(--stacks-colors-transaction-status-pending)',
             _dark: 'var(--stacks-colors-feedback-bronze-900)',
           },
         },

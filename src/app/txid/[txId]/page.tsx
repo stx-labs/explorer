@@ -1,3 +1,4 @@
+import { fetchContractInfo, fetchTx } from '@/api/data-fetchers';
 import { getTokenPrice } from '@/app/getTokenPriceInfo';
 import { CommonSearchParams } from '@/app/transactions/page';
 import { NetworkModes } from '@/common/types/network';
@@ -5,11 +6,14 @@ import { logError } from '@/common/utils/error-utils';
 import { getApiUrl } from '@/common/utils/network-utils';
 import { validateStacksContractId } from '@/common/utils/utils';
 
-import { MempoolTransaction, Transaction } from '@stacks/stacks-blockchain-api-types';
+import {
+  ContractInterfaceResponse,
+  MempoolTransaction,
+  Transaction,
+} from '@stacks/stacks-blockchain-api-types';
 
 import TransactionIdPage from './PageClient';
 import { TxIdPageDataProvider } from './TxIdPageContext';
-import { fetchContractById, fetchTxById } from './page-data';
 
 export interface TxIdPageSearchParams extends CommonSearchParams {
   startTime?: string;
@@ -42,16 +46,21 @@ export default async function Page(props: {
     btcPrice: 0,
   };
   let initialTxData: Transaction | MempoolTransaction | undefined;
+  let numFunctions: number | undefined;
 
   const isContractId = validateStacksContractId(txId);
 
   try {
     tokenPrice = await getTokenPrice();
     if (isContractId) {
-      const contractData = await fetchContractById(apiUrl, txId); // fetch contract data for tx_id
-      initialTxData = await fetchTxById(apiUrl, contractData.tx_id);
+      const contractData = await fetchContractInfo(apiUrl, txId); // fetch contract data for tx_id
+      const abi: ContractInterfaceResponse = contractData
+        ? JSON.parse(contractData?.abi)
+        : undefined;
+      numFunctions = abi.functions.length;
+      initialTxData = await fetchTx(apiUrl, contractData.tx_id);
     } else {
-      initialTxData = await fetchTxById(apiUrl, txId);
+      initialTxData = await fetchTx(apiUrl, txId);
     }
   } catch (error) {
     logError(
@@ -67,6 +76,7 @@ export default async function Page(props: {
       stxPrice={tokenPrice.stxPrice}
       initialTxData={initialTxData}
       txId={txId}
+      numFunctions={numFunctions}
       filters={{
         fromAddress: fromAddress || '',
         toAddress: toAddress || '',

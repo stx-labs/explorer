@@ -121,7 +121,8 @@ export default async function (props: {
 
       tokenData = mergeTokenData(tokenDataFromStacksApi, tokenDataFromLunarCrush, holders, tokenId);
 
-      txBlockTime = tx?.block_time;
+      txBlockTime =
+        tx && isConfirmedTx<Transaction, MempoolTransaction>(tx) ? tx.block_time : undefined;
 
       const compressedRecentAddressTransactions = recentAddressTransactions
         ? {

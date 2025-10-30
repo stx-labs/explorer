@@ -12,6 +12,7 @@ import {
   Transaction,
 } from '@stacks/stacks-blockchain-api-types';
 
+import { useTxIdPageData } from '../TxIdPageContext';
 import { getTxAlert } from './Alert';
 import { DetailsCard } from './DetailsCard';
 import { Events } from './Events';
@@ -57,6 +58,7 @@ export function SmartContractTabTrigger({
       enabled: 'smart_contract' in tx && !!tx.smart_contract?.contract_id, // Disabling this query if tx is not a smart contract tx
     }
   );
+  const { numFunctions } = useTxIdPageData();
   const txCount = data?.total || 0;
   const numPostConditions = tx.post_conditions.length || 0;
 
@@ -72,6 +74,7 @@ export function SmartContractTabTrigger({
       <TxTabsTrigger
         key={TransactionIdPageTab.AvailableFunctions}
         label={'Available functions'}
+        secondaryLabel={numFunctions ? `(${numFunctions})` : ''}
         value={TransactionIdPageTab.AvailableFunctions}
         isActive={selectedTab === TransactionIdPageTab.AvailableFunctions}
         onClick={() => setSelectedTab(TransactionIdPageTab.AvailableFunctions)}

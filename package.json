@@ -27,7 +27,7 @@
   "author": "Hiro Systems PBC (formerly Blockstack PBC)",
   "dependencies": {
     "@ark-ui/react": "5.3.1",
-    "@chakra-ui/react": "3.24.2",
+    "@chakra-ui/react": "3.28.0",
     "@contentful/rich-text-react-renderer": "16.0.1",
     "@contentful/rich-text-types": "17.0.0",
     "@date-fns/utc": "2.1.0",
