@@ -120,7 +120,7 @@ export const FunctionCallForm: FC<FunctionCallFormProps> = ({
             await handlePublicFunctionCall(processedFunctionParams, postConditionParams, {
               contractId,
               fnAbi,
-              network,
+              network: network.url,
               queryClient,
             });
           } else {
@@ -175,7 +175,7 @@ export const FunctionCallForm: FC<FunctionCallFormProps> = ({
             )}
             <Form onSubmit={handleSubmit}>
               <Stack gap={4}>
-                {fnAbi.args.length && (
+                {fnAbi.args.length > 0 && (
                   <>
                     {fnAbi.args.map(({ name, type }) => (
                       <Argument
