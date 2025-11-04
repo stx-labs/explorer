@@ -6,6 +6,7 @@ import {
   SummaryItem,
 } from '@/app/txid/[txId]/redesign/tx-summary/SummaryItem';
 import { Circle } from '@/common/components/Circle';
+import { BurnBlockLink } from '@/common/components/ExplorerLinks';
 import { StackingCardItem } from '@/common/components/id-pages/Overview';
 import { AddressTxsTable } from '@/common/components/table/table-examples/AddressTxsTable';
 import { DEFAULT_RECENT_ADDRESS_TXS_LIMIT } from '@/common/components/table/table-examples/consts';
@@ -13,6 +14,7 @@ import { getFtDecimalAdjustedBalance, microToStacks } from '@/common/utils/utils
 import { SimpleTag } from '@/ui/Badge';
 import { NextLink } from '@/ui/NextLink';
 import { Text } from '@/ui/Text';
+import BitcoinCircleIcon from '@/ui/icons/BitcoinCircleIcon';
 import BitcoinIcon from '@/ui/icons/BitcoinIcon';
 import StacksIconThin from '@/ui/icons/StacksIconThin';
 import SBTCIcon from '@/ui/icons/sBTCIcon';
@@ -317,17 +319,38 @@ const StackingCard = () => {
         <StackingCardItem
           label="BTC lock height"
           value={
-            <Text textStyle="text-regular-sm" color="textPrimary">
-              {burnChainLockHeight}
-            </Text>
+            <SimpleTag
+              label={
+                <BurnBlockLink
+                  heightOrHash={burnChainLockHeight?.toString() || ''}
+                  variant="tableLink"
+                >
+                  <Text textStyle="text-regular-sm">{burnChainLockHeight}</Text>
+                </BurnBlockLink>
+              }
+              icon={<BitcoinCircleIcon />}
+              iconProps={{
+                h: 4,
+                w: 4,
+                color: 'iconTertiary',
+              }}
+              w="fit-content"
+            />
           }
         />
         <StackingCardItem
           label="BTC unlock height"
           value={
-            <Text textStyle="text-regular-sm" color="textPrimary">
-              {burnChainUnlockHeight}
-            </Text>
+            <SimpleTag
+              label={<Text textStyle="text-regular-sm">{burnChainUnlockHeight}</Text>}
+              icon={<BitcoinCircleIcon />}
+              iconProps={{
+                h: 4,
+                w: 4,
+                color: 'iconTertiary',
+              }}
+              w="fit-content"
+            />
           }
         />
       </Stack>

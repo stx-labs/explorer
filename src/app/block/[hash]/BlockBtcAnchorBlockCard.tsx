@@ -1,6 +1,6 @@
 'use client';
 
-import { useBlockByHash } from '../../../common/queries/useBlockByHash';
+import { useBlockByHash } from '../../../common/queries/useBlockByHeightOrHash';
 import { BtcAnchorBlockCardBase } from '../../_components/BtcAnchorBlockCard';
 import { ExplorerErrorBoundary } from '../../_components/ErrorBoundary';
 import { useParamsBlockHash } from './useParamsBlockHash';

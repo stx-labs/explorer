@@ -7,7 +7,7 @@ import { useParamsBlockHash } from '../../../app/block/[hash]/useParamsBlockHash
 import { KeyValueVertical } from '../../../common/components/KeyValueVertical';
 import { Section } from '../../../common/components/Section';
 import { useGlobalContext } from '../../../common/context/useGlobalContext';
-import { useBlockByHash } from '../../../common/queries/useBlockByHash';
+import { useBlockByHash } from '../../../common/queries/useBlockByHeightOrHash';
 import { useSuspenseBurnBlock } from '../../../common/queries/useBurnBlock';
 import { toRelativeTime, truncateMiddleDeprecated } from '../../../common/utils/utils';
 import { Link } from '../../../ui/Link';
