@@ -1,14 +1,19 @@
+import { FtBasicMetadataResponse } from '@hirosystems/token-metadata-api-client';
+
 import { sbtcContractAddress } from '../token/[tokenId]/consts';
 
-export const getHasSBTCInName = (name: string, symbol: string) => {
-  if (!name || !symbol) {
+export const referencesSBTC = (
+  tokenName: FtBasicMetadataResponse['name'],
+  tokenSymbol: FtBasicMetadataResponse['symbol']
+) => {
+  if (!tokenName || !tokenSymbol) {
     return false;
   }
-  return name.toLowerCase().includes('sbtc') || symbol.toLowerCase().includes('sbtc');
+  return tokenName.toLowerCase().includes('sbtc') || tokenSymbol.toLowerCase().includes('sbtc');
 };
-export const getIsSBTC = (contractPrincipal: string) => {
-  if (!contractPrincipal) {
+export const isSBTC = (contractId: string) => {
+  if (!contractId) {
     return false;
   }
-  return contractPrincipal === sbtcContractAddress;
+  return contractId === sbtcContractAddress;
 };

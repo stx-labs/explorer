@@ -1,3 +1,5 @@
+"use client";
+
 import { TransactionStatus as TransactionStatusEnum } from '@/common/constants/constants';
 import { getTransactionStatus } from '@/common/utils/transactions';
 import { Alert } from '@/components/ui/alert';
@@ -174,7 +176,7 @@ export function getTxAlert(tx: Transaction | MempoolTransaction) {
   return alertContent;
 }
 
-export function SuspiciousTokenAlert() {
+export function UnknownOrNewlyIssuedTokenAlert() {
   return (
     <AlertWrapper
       status="error"
@@ -192,7 +194,54 @@ export function SimilarTokenAlert() {
       status="error"
       title="Unknown or newly issued token"
       description={
-        'This token appears to be a misrepresentation or is associated with suspicious activity. Investing in unknown or new crypto tokens carries high risk and may result in total loss. Do your own research, as these tokens can be volatile and lack transparency. Ensure you fully trust the token or entity before interacting with it.'
+        "Be cautious of tokens with names similar to well-known projects, as they may be duplicates or imitations. Verify the token's official contract address and confirm its legitimacy before any interaction."
+      }
+      alertBg="colors.feedback.yellow-200"
+      alertIconColor="colors.feedback.yellow-700"
+    />
+  );
+}
+
+export function RiskyTokenAlert() {
+  return (
+    <Alert
+      status="error"
+      description={
+        'This token may be a scam. Engaging with unverified tokens could result in loss of funds.'
+      }
+      alertBg="colors.feedback.yellow-200"
+      alertIconColor="colors.feedback.yellow-700"
+    />
+  );
+}
+
+export function NotSBTCTokenAlert() {
+  return (
+    <Alert
+      status="error"
+      description={
+        <Text>
+          This is not{' '}
+          <Link
+            href="https://explorer.hiro.so/token/SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token?chain=mainnet"
+            color="black"
+          >
+            the official sBTC token
+          </Link>{' '}
+          and may be a scam. Engaging with unverified tokens could result in loss of funds.
+        </Text>
+      }
+      alertBg="colors.feedback.yellow-200"
+      alertIconColor="colors.feedback.yellow-700"
+    />
+  );
+}
+
+export function Sip10Alert() {
+  return (
+    <Alert
+      status="error"
+      description={"SIP-10 data"
       }
     />
   );
