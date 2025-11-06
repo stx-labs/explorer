@@ -142,17 +142,6 @@ export default async function (props: {
     }
   }
 
-  console.log({
-    tokenData,
-    tokenPrice,
-    initialAddressRecentTransactionsData,
-    txBlockTime,
-    txId,
-    assetId,
-    holders,
-    numFunctions,
-  })
-
   return (
     <TokenIdPageDataProvider
       tokenId={tokenId}

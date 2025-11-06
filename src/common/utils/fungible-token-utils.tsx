@@ -53,7 +53,9 @@ export function calculateHoldingPercentage(
     if (t <= BigInt(0) || b < BigInt(0)) return undefined;
 
     // Multiply before dividing to preserve precision, then convert to number
-    const percentage = Number((b * bigintPow(BigInt(10), precision)) / t) / 100; // 2 decimals by default
+    const scale = bigintPow(BigInt(10), precision);
+    const percentageScaled = (b * BigInt(100) * scale) / t;
+    const percentage = Number(percentageScaled) / Number(scale);
     return parseFloat(percentage.toFixed(precision));
   } catch {
     // Fallback for cases where balance/totalSupply aren't integer-like

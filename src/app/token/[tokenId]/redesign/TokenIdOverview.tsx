@@ -26,7 +26,14 @@ export const TokenIdOverviewTable = () => {
         <SummaryItem
           label="Ticker"
           value={tokenSymbol}
-          valueRenderer={value => <SimpleTag label={value} />}
+          valueRenderer={value => (
+            <SimpleTag
+              label={value}
+              _groupHover={{
+                bg: 'surfaceTertiary',
+              }}
+            />
+          )}
           showCopyButton
         />
         <SummaryItem
@@ -44,7 +51,7 @@ export const TokenIdOverviewTable = () => {
             label="Contract deploy transaction"
             value={txId}
             valueRenderer={value => (
-              <TxLink txId={value}>
+              <TxLink txId={value} variant="tableLink">
                 <Text textStyle="text-regular-sm">{value}</Text>
               </TxLink>
             )}
@@ -55,7 +62,14 @@ export const TokenIdOverviewTable = () => {
           <SummaryItem
             label="Created on"
             value={tokenTxTimestamp}
-            valueRenderer={value => <SimpleTag label={value} />}
+            valueRenderer={value => (
+              <SimpleTag
+                label={value}
+                _groupHover={{
+                  bg: 'surfaceTertiary',
+                }}
+              />
+            )}
             showCopyButton
           />
         )}
@@ -65,14 +79,13 @@ export const TokenIdOverviewTable = () => {
 };
 
 const NO_DATA = (
-  <Text textStyle="text-regular-sm" fontStyle="italic">
+  <Text textStyle="text-regular-sm" fontStyle="italic" color="textSecondary">
     No data available
   </Text>
 );
 
 export function MarketDataCard() {
   const { tokenData, holders } = useTokenIdPageData();
-  console.log('MarketDataCard', { tokenData });
 
   const circulatingSupply =
     holders?.total_supply && tokenData?.decimals !== undefined
@@ -81,7 +94,7 @@ export function MarketDataCard() {
           0,
           tokenData?.decimals
         )
-      : NO_DATA;
+      : undefined;
   const totalSupply =
     tokenData?.totalSupply && tokenData?.decimals !== undefined
       ? formatNumber(
@@ -89,13 +102,13 @@ export function MarketDataCard() {
           0,
           tokenData?.decimals
         )
-      : NO_DATA;
-  const totalHolders = holders?.total ? formatNumber(holders.total) : NO_DATA;
-  const price = tokenData?.currentPrice ? formatUsdValue(tokenData.currentPrice) : NO_DATA;
-  const marketCap = tokenData?.marketCap ? formatUsdValue(tokenData?.marketCap) : NO_DATA;
+      : undefined;
+  const totalHolders = holders?.total ? formatNumber(holders.total) : undefined;
+  const price = tokenData?.currentPrice ? formatUsdValue(tokenData.currentPrice) : undefined;
+  const marketCap = tokenData?.marketCap ? formatUsdValue(tokenData?.marketCap) : undefined;
   const volume = tokenData?.tradingVolume24h
     ? formatUsdValue(tokenData?.tradingVolume24h)
-    : NO_DATA;
+    : undefined;
 
   return (
     <Stack
@@ -110,12 +123,24 @@ export function MarketDataCard() {
       <Text textStyle="text-medium-sm" color="textPrimary">
         Market data
       </Text>
-      <StackingCardItem label="Circulating supply" value={circulatingSupply} />
-      <StackingCardItem label="Total supply" value={totalSupply} />
-      <StackingCardItem label="Total holders" value={totalHolders} />
-      <StackingCardItem label="Price" value={price} />
-      <StackingCardItem label="Market cap" value={marketCap} />
-      <StackingCardItem label="Volume" value={volume} />
+      <StackingCardItem
+        label="Circulating supply"
+        value={circulatingSupply ?? NO_DATA}
+        copyValue={circulatingSupply}
+      />
+      <StackingCardItem
+        label="Total supply"
+        value={totalSupply ?? NO_DATA}
+        copyValue={totalSupply}
+      />
+      <StackingCardItem
+        label="Total holders"
+        value={totalHolders ?? NO_DATA}
+        copyValue={totalHolders}
+      />
+      <StackingCardItem label="Price" value={price ?? NO_DATA} copyValue={price} />
+      <StackingCardItem label="Market cap" value={marketCap ?? NO_DATA} copyValue={marketCap} />
+      <StackingCardItem label="Volume" value={volume ?? NO_DATA} copyValue={volume} />
     </Stack>
   );
 }
@@ -126,37 +151,42 @@ export const TokenIdOverview = () => {
   return (
     <Grid
       templateColumns={{ base: '1fr', lg: '75% 25%' }}
-      templateRows={{ base: 'auto auto', lg: 'auto' }}
+      templateRows={{ base: 'auto auto auto', lg: 'auto auto' }}
       gap={2}
     >
       <Stack
         gap={8}
         gridColumn={{ base: '1', lg: '1' }}
-        gridRow={{ base: '2', lg: '1' }}
-        order={{ base: 2, lg: 1 }}
+        gridRow={{ base: '1', lg: '1' }}
+        order={{ base: 1, lg: 1 }}
       >
         <TabsContentContainer h="fit-content">
           <TokenIdOverviewTable />
         </TabsContentContainer>
-        <Stack gap={3}>
-          <Text textStyle="heading-xs" color="textPrimary">
-            Recent transactions
-          </Text>
-          <AddressTxsTable
-            principal={tokenId}
-            initialData={initialAddressRecentTransactionsData}
-            pageSize={DEFAULT_OVERVIEW_TAB_TABLE_PAGE_SIZE}
-            disablePagination
-          />
-        </Stack>
       </Stack>
       <Stack
         gap={2}
         gridColumn={{ base: '1', lg: '2' }}
-        gridRow={{ base: '1', lg: '1' }}
-        order={{ base: 1, lg: 2 }}
+        gridRow={{ base: '2', lg: '1' }}
+        order={{ base: 2, lg: 2 }}
       >
         <MarketDataCard />
+      </Stack>
+      <Stack
+        gap={3}
+        gridColumn={{ base: '1', lg: '1' }}
+        gridRow={{ base: '3', lg: '2' }}
+        order={{ base: 3, lg: 3 }}
+      >
+        <Text textStyle="heading-xs" color="textPrimary">
+          Recent transactions
+        </Text>
+        <AddressTxsTable
+          principal={tokenId}
+          initialData={initialAddressRecentTransactionsData}
+          pageSize={DEFAULT_OVERVIEW_TAB_TABLE_PAGE_SIZE}
+          disablePagination
+        />
       </Stack>
     </Grid>
   );

@@ -1,3 +1,4 @@
+import { Sip10Alert } from '@/app/txid/[txId]/redesign/Alert';
 import { Stack } from '@chakra-ui/react';
 
 import { TokenAlert } from './redesign/TokenAlert';
@@ -10,7 +11,7 @@ export default function TokenIdPageRedesign() {
       <TokenIdHeader />
       <TokenAlert />
       <TokenIdTabs />
+      <Sip10Alert />
     </Stack>
   );
 }
- 

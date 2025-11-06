@@ -1,8 +1,8 @@
 'use client';
 
-import { getHoldersQueryKey, useHolders } from '@/common/queries/useHolders';
 import { GenericResponseType } from '@/common/hooks/useInfiniteQueryResult';
 import { THIRTY_SECONDS } from '@/common/queries/query-stale-time';
+import { getHoldersQueryKey, useHolders } from '@/common/queries/useHolders';
 import {
   calculateHoldingPercentage,
   formatHoldingPercentage,

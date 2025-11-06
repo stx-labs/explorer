@@ -1,4 +1,4 @@
-import { Alert as ChakraAlert, Icon } from '@chakra-ui/react';
+import { Alert as ChakraAlert, Icon, Stack } from '@chakra-ui/react';
 import * as React from 'react';
 
 import { CloseButton } from './close-button';
@@ -30,7 +30,7 @@ export const Alert = React.forwardRef<HTMLDivElement, AlertProps>(function Alert
     ...rest
   } = props;
   return (
-    <ChakraAlert.Root ref={ref} status={status} {...rest}>
+    <ChakraAlert.Root ref={ref} status={status} alignItems="center" {...rest}>
       {startElement}
       {icon && (
         <ChakraAlert.Indicator>
@@ -40,8 +40,10 @@ export const Alert = React.forwardRef<HTMLDivElement, AlertProps>(function Alert
         </ChakraAlert.Indicator>
       )}
       <ChakraAlert.Content bg={alertBg}>
-        {title && <ChakraAlert.Title>{title}</ChakraAlert.Title>}
-        {description && <ChakraAlert.Description>{description}</ChakraAlert.Description>}
+        <Stack justifyContent="center">
+          {title && <ChakraAlert.Title>{title}</ChakraAlert.Title>}
+          {description && <ChakraAlert.Description>{description}</ChakraAlert.Description>}
+        </Stack>
       </ChakraAlert.Content>
       {endElement}
       {closable && (
