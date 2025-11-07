@@ -39,7 +39,7 @@ export function getTokenImageUrlFromTokenMetadata(tokenMetadata: Metadata): stri
 export function calculateHoldingPercentage(
   balance: string | number | bigint | undefined,
   totalSupply: string | number | bigint | undefined,
-  precision: number = 4
+  precision: number = 100
 ): number | undefined {
   if (balance === undefined || totalSupply === undefined) {
     return undefined;

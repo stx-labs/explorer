@@ -142,7 +142,7 @@ export function HoldersTable({
       const adjustedBalance = getFtDecimalAdjustedBalance(holder.balance, decimals);
       const adjustedTotalSupply = getFtDecimalAdjustedBalance(totalSupply, decimals);
       const formattedBalance = formatNumber(adjustedBalance, 0, decimals);
-      const holdingPercentage = calculateHoldingPercentage(adjustedBalance, adjustedTotalSupply, 6);
+      const holdingPercentage = calculateHoldingPercentage(adjustedBalance, adjustedTotalSupply);
       const formattedHoldingPercentage = holdingPercentage
         ? formatHoldingPercentage(holdingPercentage)
         : undefined;

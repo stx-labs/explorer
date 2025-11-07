@@ -30,16 +30,16 @@ export const Alert = React.forwardRef<HTMLDivElement, AlertProps>(function Alert
     ...rest
   } = props;
   return (
-    <ChakraAlert.Root ref={ref} status={status} alignItems="center" {...rest}>
+    <ChakraAlert.Root ref={ref} status={status} alignItems="stretch" {...rest}>
       {startElement}
       {icon && (
-        <ChakraAlert.Indicator>
+        <ChakraAlert.Indicator alignSelf="stretch" display="flex" alignItems="center">
           <Icon h={4} w={4} color={alertIconColor}>
             {icon}
           </Icon>
         </ChakraAlert.Indicator>
       )}
-      <ChakraAlert.Content bg={alertBg}>
+      <ChakraAlert.Content bg={alertBg} alignSelf="stretch" flex={1}>
         <Stack justifyContent="center">
           {title && <ChakraAlert.Title>{title}</ChakraAlert.Title>}
           {description && <ChakraAlert.Description>{description}</ChakraAlert.Description>}

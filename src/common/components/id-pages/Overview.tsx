@@ -18,7 +18,7 @@ export const StackingCardItem = ({
 }) => {
   return (
     <Stack gap={0.5}>
-      <Text textStyle="text-medium-sm" color="textSecondary">
+      <Text textStyle="text-medium-sm" color="textSecondary" whiteSpace="wrap">
         {label}
       </Text>
       <Flex gap={1} alignItems="center">

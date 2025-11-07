@@ -5,7 +5,7 @@ import { getTransactionStatus } from '@/common/utils/transactions';
 import { Alert } from '@/components/ui/alert';
 import { Link } from '@/ui/Link';
 import { Text } from '@/ui/Text';
-import { Flex, Stack } from '@chakra-ui/react';
+import { Stack } from '@chakra-ui/react';
 import { Clock, Question, Warning, WarningDiamond, XCircle } from '@phosphor-icons/react';
 
 import { MempoolTransaction, Transaction } from '@stacks/stacks-blockchain-api-types';
@@ -219,22 +219,19 @@ export function NotSBTCTokenAlert() {
     <Alert
       status="info"
       description={
-        <Flex alignItems="center" gap={1}>
-          <Text textStyle="text-regular-xs" color="textPrimary">
-            This is not
-          </Text>
+        <Text textStyle="text-regular-xs" color="textPrimary">
+          This is not&nbsp;
           <Link
             href="https://explorer.hiro.so/token/SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token?chain=mainnet"
             color="black"
+            textDecoration="underline"
           >
-            <Text textStyle="text-regular-xs" color="textPrimary">
+            <Text textStyle="text-regular-xs" color="textPrimary" whiteSpace="nowrap">
               the official sBTC token
             </Text>
           </Link>
-          <Text textStyle="text-regular-xs" color="textPrimary">
-            and may be a scam. Engaging with unverified tokens could result in loss of funds.
-          </Text>
-        </Flex>
+          &nbsp; and may be a scam. Engaging with unverified tokens could result in loss of funds.
+        </Text>
       }
       icon={<Warning weight="bold" />}
       alertIconColor="iconError"

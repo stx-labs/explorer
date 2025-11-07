@@ -41,7 +41,9 @@ export const TokenIdOverviewTable = () => {
           value={tokenId}
           valueRenderer={value => (
             <TokenLink tokenId={value} variant="tableLink">
-              <Text textStyle="text-regular-sm">{value}</Text>
+              <Text textStyle="text-regular-sm" wordBreak="break-all">
+                {value}
+              </Text>
             </TokenLink>
           )}
           showCopyButton
@@ -52,7 +54,9 @@ export const TokenIdOverviewTable = () => {
             value={txId}
             valueRenderer={value => (
               <TxLink txId={value} variant="tableLink">
-                <Text textStyle="text-regular-sm">{value}</Text>
+                <Text textStyle="text-regular-sm" wordBreak="break-all">
+                  {value}
+                </Text>
               </TxLink>
             )}
             showCopyButton
@@ -145,33 +149,15 @@ export function MarketDataCard() {
   );
 }
 
-export const TokenIdOverview = () => {
+function MobileTokenIdOverview() {
   const { initialAddressRecentTransactionsData, tokenId } = useTokenIdPageData();
 
   return (
-    <Grid
-      templateColumns={{ base: '1fr', lg: '75% 25%' }}
-      templateRows={{ base: 'auto auto auto', lg: 'auto auto' }}
-      gap={2}
-    >
-      <Stack
-        gap={8}
-        gridColumn={{ base: '1', lg: '1' }}
-        gridRow={{ base: '1', lg: '1' }}
-        order={{ base: 1, lg: 1 }}
-      >
-        <TabsContentContainer h="fit-content">
-          <TokenIdOverviewTable />
-        </TabsContentContainer>
-      </Stack>
-      <Stack
-        gap={2}
-        gridColumn={{ base: '1', lg: '2' }}
-        gridRow={{ base: '2', lg: '1' }}
-        order={{ base: 2, lg: 2 }}
-      >
-        <MarketDataCard />
-      </Stack>
+    <Stack gap={8} hideFrom="lg" className="mobile-token-id-overview">
+      <TabsContentContainer h="fit-content">
+        <TokenIdOverviewTable />
+      </TabsContentContainer>
+      <MarketDataCard />
       <Stack
         gap={3}
         gridColumn={{ base: '1', lg: '1' }}
@@ -188,6 +174,48 @@ export const TokenIdOverview = () => {
           disablePagination
         />
       </Stack>
+    </Stack>
+  );
+}
+
+function DesktopTokenIdOverview() {
+  const { initialAddressRecentTransactionsData, tokenId } = useTokenIdPageData();
+
+  return (
+    <Grid
+      templateColumns={'75% 25%'}
+      templateRows={'auto auto'}
+      columnGap={2.5}
+      hideBelow="lg"
+      className="desktop-token-id-overview"
+    >
+      <Stack gap={8}>
+        <TabsContentContainer h="fit-content">
+          <TokenIdOverviewTable />
+        </TabsContentContainer>
+        <Stack gap={3}>
+          <Text textStyle="heading-xs" color="textPrimary">
+            Recent transactions
+          </Text>
+          <AddressTxsTable
+            principal={tokenId}
+            initialData={initialAddressRecentTransactionsData}
+            pageSize={DEFAULT_OVERVIEW_TAB_TABLE_PAGE_SIZE}
+            disablePagination
+          />
+        </Stack>
+      </Stack>
+
+      <MarketDataCard />
     </Grid>
+  );
+}
+
+export const TokenIdOverview = () => {
+  return (
+    <>
+      <MobileTokenIdOverview />
+      <DesktopTokenIdOverview />
+    </>
   );
 };
