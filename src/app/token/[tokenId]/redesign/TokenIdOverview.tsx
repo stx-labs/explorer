@@ -186,6 +186,7 @@ function DesktopTokenIdOverview() {
       templateColumns={'75% 25%'}
       templateRows={'auto auto'}
       columnGap={2.5}
+      alignItems="start"
       hideBelow="lg"
       className="desktop-token-id-overview"
     >
