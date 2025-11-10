@@ -3,7 +3,6 @@ import { ScrollIndicator } from '@/common/components/ScrollIndicator';
 import { FungibleTokensTableWithFilters } from '@/common/components/table/fungible-tokens-table/FungibleTokensTableWithFilters';
 import {
   AddressTxsTable,
-  EVENTS_COLUMN_DEFINITION,
   columnDefinitionsWithEvents,
 } from '@/common/components/table/table-examples/AddressTxsTable';
 import {
@@ -34,7 +33,7 @@ export const AddressTabs = ({ principal }: { principal: string }) => {
   ).length;
   const totalAddressNonFungibleTokens = Object.entries(
     initialAddressBalancesData?.non_fungible_tokens || {}
-  ).length;
+  ).reduce((acc, [_, nft]) => acc + (Number(nft?.count) || 0), 0);
 
   return (
     <TabsRoot
