@@ -91,7 +91,7 @@ export function NFTTable() {
   return (
     <Box>
       <Card h="full" w="full" p={3} borderColor="redesignBorderSecondary" bg="transparent">
-        <Grid templateColumns="repeat(auto-fill, 162px);" gap={4} p={4}>
+        <Grid templateColumns="repeat(auto-fill, minmax(162px, 1fr));" gap={4} p={4}>
           {formattedBalances.map(item => {
             const holdings = nftHoldings?.results.filter(
               nftHolding => nftHolding.asset_identifier === item.asset_identifier

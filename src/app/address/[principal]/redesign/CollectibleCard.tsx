@@ -5,14 +5,14 @@ import { useNftMetadata } from '@/common/queries/useNftMetadata';
 import { deriveTokenTickerFromAssetId } from '@/common/utils/fungible-token-utils';
 import { getAssetNameParts } from '@/common/utils/utils';
 import { Link } from '@/ui/Link';
-import { Flex, Icon, Stack } from '@chakra-ui/react';
+import { Box, Flex, Icon, Stack } from '@chakra-ui/react';
 import { ArrowUpRight } from '@phosphor-icons/react';
 
 import { useImageContentType } from '../TokenBalanceCard/useImageUrl';
 import { DefaultTokenImage, TokenImage } from './TokenImage';
 
-const COLLECTIBLE_CARD_IMAGE_HEIGHT = 136;
-const COLLECTIBLE_CARD_IMAGE_WIDTH = 136;
+const COLLECTIBLE_CARD_IMAGE_HEIGHT = 'full';
+const COLLECTIBLE_CARD_IMAGE_WIDTH = 'full';
 
 export function CollectibleCard({
   assetId,
@@ -31,22 +31,6 @@ export function CollectibleCard({
 
   const { url, contentType } = useImageContentType(tokenMetadata?.metadata?.cached_image);
 
-  const nftImage = url ? (
-    <TokenImage
-      url={url}
-      alt={asset}
-      height={COLLECTIBLE_CARD_IMAGE_HEIGHT}
-      width={COLLECTIBLE_CARD_IMAGE_WIDTH}
-      addGlow
-    ></TokenImage>
-  ) : (
-    <DefaultTokenImage
-      asset={asset}
-      height={COLLECTIBLE_CARD_IMAGE_HEIGHT}
-      width={COLLECTIBLE_CARD_IMAGE_WIDTH}
-    />
-  );
-
   const ticker = deriveTokenTickerFromAssetId(asset);
 
   return (
@@ -63,13 +47,36 @@ export function CollectibleCard({
         border="1px solid"
         borderColor="redesignBorderSecondary"
         borderRadius="redesign.xl"
-        w="fit-content"
+        w="full"
         _hover={{ bg: 'surfacePrimary' }}
         className="group"
       >
-        {nftImage}
+        <Box
+          w="full"
+          h="full"
+          overflow="hidden"
+          borderRadius="redesign.xl"
+          flexGrow={1}
+          aspectRatio="1 / 1"
+        >
+          {url ? (
+            <TokenImage
+              url={url}
+              alt={asset}
+              height={COLLECTIBLE_CARD_IMAGE_HEIGHT}
+              width={COLLECTIBLE_CARD_IMAGE_WIDTH}
+              addGlow
+            ></TokenImage>
+          ) : (
+            <DefaultTokenImage
+              asset={asset}
+              height={COLLECTIBLE_CARD_IMAGE_HEIGHT}
+              width={COLLECTIBLE_CARD_IMAGE_WIDTH}
+            />
+          )}
+        </Box>
         <Stack gap={3} minW={0}>
-          <Flex alignItems="center" gap={1}>
+          <Flex alignItems="center" gap={1} minW={0}>
             <Link
               href={`https://gamma.io/stacks/nfts/${contractId}_${tokenId}`}
               target="_blank"
@@ -80,6 +87,9 @@ export function CollectibleCard({
               whiteSpace="nowrap"
               overflow="hidden"
               textOverflow="ellipsis"
+              minW={0}
+              maxW="full"
+              display="inline-block"
             >
               {asset}
             </Link>
