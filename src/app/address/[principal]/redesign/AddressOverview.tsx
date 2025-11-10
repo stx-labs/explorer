@@ -9,7 +9,7 @@ import { Circle } from '@/common/components/Circle';
 import { BurnBlockLink } from '@/common/components/ExplorerLinks';
 import { StackingCardItem } from '@/common/components/id-pages/Overview';
 import { AddressTxsTable } from '@/common/components/table/table-examples/AddressTxsTable';
-import { DEFAULT_RECENT_ADDRESS_TXS_LIMIT } from '@/common/components/table/table-examples/consts';
+import { ADDRESS_ID_PAGE_RECENT_ADDRESS_TXS_LIMIT } from '@/common/components/table/table-examples/consts';
 import { getFtDecimalAdjustedBalance, microToStacks } from '@/common/utils/utils';
 import { SimpleTag } from '@/ui/Badge';
 import { NextLink } from '@/ui/NextLink';
@@ -414,7 +414,7 @@ export const AddressOverview = () => {
             principal={principal}
             initialData={initialAddressRecentTransactionsData}
             disablePagination
-            pageSize={DEFAULT_RECENT_ADDRESS_TXS_LIMIT}
+            pageSize={ADDRESS_ID_PAGE_RECENT_ADDRESS_TXS_LIMIT}
           />
         </Stack>
       </Stack>
