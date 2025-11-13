@@ -1,7 +1,7 @@
-import { TxTabsTrigger } from '@/app/txid/[txId]/redesign/TxTabs';
 import { AvailableFunctions } from '@/app/txid/[txId]/redesign/function-called/AvailableFunctions';
 import { Source } from '@/app/txid/[txId]/redesign/source/Source';
 import { ScrollIndicator } from '@/common/components/ScrollIndicator';
+import { SectionTabsTrigger } from '@/common/components/SectionTabs';
 import {
   AddressTxsTable,
   columnDefinitionsWithEvents,
@@ -63,13 +63,13 @@ export const TokenIdTabs = () => {
     >
       <ScrollIndicator>
         <TabsList>
-          <TxTabsTrigger
+          <SectionTabsTrigger
             label="Overview"
             value={TokenIdPageTab.Overview}
             isActive={selectedTab === TokenIdPageTab.Overview}
             onClick={() => setSelectedTab(TokenIdPageTab.Overview)}
           />
-          <TxTabsTrigger
+          <SectionTabsTrigger
             label="Transactions"
             secondaryLabel={
               totalAddressTransactions > 0 ? `(${totalAddressTransactions.toLocaleString()})` : ''
@@ -79,7 +79,7 @@ export const TokenIdTabs = () => {
             onClick={() => setSelectedTab(TokenIdPageTab.Transactions)}
           />
           {showHoldersTab && (
-            <TxTabsTrigger
+            <SectionTabsTrigger
               label="Holders"
               secondaryLabel={totalHolders > 0 ? `(${totalHolders.toLocaleString()})` : ''}
               value={TokenIdPageTab.Holders}
@@ -87,19 +87,19 @@ export const TokenIdTabs = () => {
               onClick={() => setSelectedTab(TokenIdPageTab.Holders)}
             />
           )}
-          <TxTabsTrigger
+          <SectionTabsTrigger
             label="Source code"
             value={TokenIdPageTab.Source}
             isActive={selectedTab === TokenIdPageTab.Source}
             onClick={() => setSelectedTab(TokenIdPageTab.Source)}
           />
-          <TxTabsTrigger
+          <SectionTabsTrigger
             label="Source code"
             value={TokenIdPageTab.Source}
             isActive={selectedTab === TokenIdPageTab.Source}
             onClick={() => setSelectedTab(TokenIdPageTab.Source)}
           />
-          <TxTabsTrigger
+          <SectionTabsTrigger
             label="Available functions"
             secondaryLabel={
               numFunctions && numFunctions > 0 ? `(${numFunctions.toLocaleString()})` : ''

@@ -1,5 +1,4 @@
 import { SBTC_ASSET_ID, SBTC_DECIMALS } from '@/app/token/[tokenId]/consts';
-import { TabsContentContainer } from '@/app/txid/[txId]/redesign/TxTabs';
 import {
   PriceSummaryItemValue,
   RowCopyButton,
@@ -7,6 +6,7 @@ import {
 } from '@/app/txid/[txId]/redesign/tx-summary/SummaryItem';
 import { Circle } from '@/common/components/Circle';
 import { BurnBlockLink } from '@/common/components/ExplorerLinks';
+import { SectionTabsContentContainer } from '@/common/components/SectionTabs';
 import { StackingCardItem } from '@/common/components/id-pages/Overview';
 import { AddressTxsTable } from '@/common/components/table/table-examples/AddressTxsTable';
 import { ADDRESS_ID_PAGE_RECENT_ADDRESS_TXS_LIMIT } from '@/common/components/table/table-examples/consts';
@@ -403,9 +403,9 @@ export const AddressOverview = () => {
         <MinerCard />
       </Stack>
       <Stack gap={8}>
-        <TabsContentContainer h="fit-content">
+        <SectionTabsContentContainer h="fit-content">
           <AddressOverviewTable />
-        </TabsContentContainer>
+        </SectionTabsContentContainer>
         <Stack gap={3}>
           <Text textStyle="heading-xs" color="textPrimary">
             Recent transactions

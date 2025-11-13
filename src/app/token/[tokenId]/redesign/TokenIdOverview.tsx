@@ -1,6 +1,6 @@
-import { TabsContentContainer } from '@/app/txid/[txId]/redesign/TxTabs';
 import { SummaryItem } from '@/app/txid/[txId]/redesign/tx-summary/SummaryItem';
 import { TokenLink, TxLink } from '@/common/components/ExplorerLinks';
+import { SectionTabsContentContainer } from '@/common/components/SectionTabs';
 import { StackingCardItem } from '@/common/components/id-pages/Overview';
 import { AddressTxsTable } from '@/common/components/table/table-examples/AddressTxsTable';
 import { DEFAULT_OVERVIEW_TAB_TABLE_PAGE_SIZE } from '@/common/components/table/table-examples/consts';
@@ -134,9 +134,9 @@ export const TokenIdOverview = () => {
         gridRow={{ base: '2', lg: '1' }}
         order={{ base: 2, lg: 1 }}
       >
-        <TabsContentContainer h="fit-content">
+        <SectionTabsContentContainer h="fit-content">
           <TokenIdOverviewTable />
-        </TabsContentContainer>
+        </SectionTabsContentContainer>
         <Stack gap={3}>
           <Text textStyle="heading-xs" color="textPrimary">
             Recent transactions

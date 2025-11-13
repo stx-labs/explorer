@@ -1,7 +1,7 @@
 import { useUser } from '@/app/sandbox/hooks/useUser';
+import { SectionTabsContentContainer } from '@/common/components/SectionTabs';
 import { Button } from '@/ui/Button';
 
-import { TabsContentContainer } from '../TxTabs';
 import { FunctionList } from './FunctionList';
 
 export const AvailableFunctions = ({ contractId }: { contractId: string }) => {
@@ -10,10 +10,10 @@ export const AvailableFunctions = ({ contractId }: { contractId: string }) => {
   return isConnected ? (
     <FunctionList contractId={contractId} />
   ) : (
-    <TabsContentContainer alignItems="center">
+    <SectionTabsContentContainer alignItems="center">
       <Button variant="redesignPrimary" onClick={connect} w="fit-content">
         Connect Stacks Wallet
       </Button>
-    </TabsContentContainer>
+    </SectionTabsContentContainer>
   );
 };

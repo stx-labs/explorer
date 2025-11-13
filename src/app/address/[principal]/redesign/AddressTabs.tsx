@@ -1,5 +1,9 @@
-import { TxTabsTrigger } from '@/app/txid/[txId]/redesign/TxTabs';
 import { ScrollIndicator } from '@/common/components/ScrollIndicator';
+import {
+  SectionTabsTrigger,
+  mapTabParamToEnum,
+  useDeepLinkTabOnValueChange,
+} from '@/common/components/SectionTabs';
 import { FungibleTokensTableWithFilters } from '@/common/components/table/fungible-tokens-table/FungibleTokensTableWithFilters';
 import {
   AddressTxsTable,
@@ -10,7 +14,8 @@ import {
   ADDRESS_ID_PAGE_FUNGIBLE_TOKENS_LIMIT,
 } from '@/common/components/table/table-examples/consts';
 import { TabsContent, TabsList, TabsRoot } from '@/ui/Tabs';
-import { useState } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { useMemo, useState } from 'react';
 
 import { useAddressIdPageData } from '../AddressIdPageContext';
 import { AddressOverview } from './AddressOverview';
@@ -24,7 +29,6 @@ enum AddressIdPageTab {
 }
 
 export const AddressTabs = ({ principal }: { principal: string }) => {
-  const [selectedTab, setSelectedTab] = useState(AddressIdPageTab.Overview);
   const { initialAddressRecentTransactionsData, initialAddressBalancesData } =
     useAddressIdPageData();
   const totalAddressTransactions = initialAddressRecentTransactionsData?.total || 0;
@@ -35,54 +39,69 @@ export const AddressTabs = ({ principal }: { principal: string }) => {
     initialAddressBalancesData?.non_fungible_tokens || {}
   ).reduce((acc, [_, nft]) => acc + (Number(nft?.count) || 0), 0);
 
+  const searchParams = useSearchParams();
+  const tabParam = searchParams.get('tab');
+  const initialTab = useMemo(
+    () =>
+      mapTabParamToEnum<AddressIdPageTab>(
+        tabParam,
+        Object.values(AddressIdPageTab) as readonly AddressIdPageTab[],
+        AddressIdPageTab.Overview
+      ),
+    []
+  );
+  const [selectedTab, setSelectedTab] = useState(initialTab);
+  const deepLinkTabOnValueChange = useDeepLinkTabOnValueChange<AddressIdPageTab>({
+    setSelectedTab,
+  });
+
   return (
     <TabsRoot
       variant="primary"
       size="redesignMd"
-      defaultValue={AddressIdPageTab.Overview}
       gap={2}
       rowGap={2}
       borderRadius="redesign.xl"
       w="full"
-      lazyMount // needed to reduce the number of requests made to the API
+      lazyMount
+      value={selectedTab}
+      onValueChange={({ value }) => {
+        deepLinkTabOnValueChange(value as AddressIdPageTab);
+      }}
     >
       <ScrollIndicator>
         <TabsList>
-          <TxTabsTrigger
+          <SectionTabsTrigger
             key={AddressIdPageTab.Overview}
             label="Overview"
             value={AddressIdPageTab.Overview}
             isActive={selectedTab === AddressIdPageTab.Overview}
-            onClick={() => setSelectedTab(AddressIdPageTab.Overview)}
           />
           {totalAddressTransactions > 0 && (
-            <TxTabsTrigger
+            <SectionTabsTrigger
               key={AddressIdPageTab.Transactions}
               label={`Transactions`}
               secondaryLabel={`(${totalAddressTransactions.toLocaleString()})`}
               value={AddressIdPageTab.Transactions}
               isActive={selectedTab === AddressIdPageTab.Transactions}
-              onClick={() => setSelectedTab(AddressIdPageTab.Transactions)}
             />
           )}
           {totalAddressFungibleTokens > 0 && (
-            <TxTabsTrigger
+            <SectionTabsTrigger
               key={AddressIdPageTab.Tokens}
               label={`Tokens`}
               secondaryLabel={`(${totalAddressFungibleTokens.toLocaleString()})`}
               value={AddressIdPageTab.Tokens}
               isActive={selectedTab === AddressIdPageTab.Tokens}
-              onClick={() => setSelectedTab(AddressIdPageTab.Tokens)}
             />
           )}
           {totalAddressNonFungibleTokens > 0 && (
-            <TxTabsTrigger
+            <SectionTabsTrigger
               key={AddressIdPageTab.Collectibles}
               label={`Collectibles`}
               secondaryLabel={`(${totalAddressNonFungibleTokens.toLocaleString()})`}
               value={AddressIdPageTab.Collectibles}
               isActive={selectedTab === AddressIdPageTab.Collectibles}
-              onClick={() => setSelectedTab(AddressIdPageTab.Collectibles)}
             />
           )}
         </TabsList>
