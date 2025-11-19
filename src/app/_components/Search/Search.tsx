@@ -7,6 +7,7 @@ import {
   Icon,
   IconButton,
   Link,
+  Spinner,
   Stack,
   StackProps,
 } from '@chakra-ui/react';
@@ -72,7 +73,7 @@ export function SearchResultsWrapper({
     <Stack
       zIndex={-1}
       position={'absolute'}
-      background={'surfaceSecondary'}
+      bg={'surfaceSecondary'}
       left={-3}
       right={-3}
       top={-3}
@@ -316,6 +317,7 @@ function HiddenSearchField(props: InputProps) {
   const dispatch = useAppDispatch();
   const inputRef = React.useRef<HTMLInputElement>(null);
   const isSearchFieldFocused = useAppSelector(selectIsSearchFieldFocused);
+
   useEffect(() => {
     if (isSearchFieldFocused) {
       inputRef.current?.focus();
@@ -337,6 +339,7 @@ function HiddenSearchField(props: InputProps) {
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, [dispatch]);
+
   return (
     <Input
       ref={inputRef}
@@ -499,13 +502,14 @@ function SearchInput({
   const isSearchFieldFocused = useAppSelector(selectIsSearchFieldFocused);
   const router = useRouter();
   const network = useGlobalContext().activeNetwork;
-  const searchPageUrl = getSearchPageUrl(tempSearchTerm, network);
-  const isAdvancedSearch = advancedSearchKeywords.some(term => tempSearchTerm.includes(term));
+  // const searchPageUrl = getSearchPageUrl(tempSearchTerm, network);
+  // const isAdvancedSearch = advancedSearchKeywords.some(term => tempSearchTerm.includes(term));
   const quickNavUrl = useAppSelector(selectQuickNavUrl);
 
   const searchResponse = useSearchQuery(searchTerm, true);
   const searchEntityUrl = getSearchEntityUrl(network, searchResponse.data);
 
+  // Set temp search term from query params
   useEffect(() => {
     dispatch(setTempSearchTerm(searchTermFromQueryParams));
   }, [searchTermFromQueryParams, dispatch]);
@@ -513,6 +517,7 @@ function SearchInput({
   const handleSearch = useCallback(() => {
     if (!!quickNavUrl && quickNavUrl === searchEntityUrl) {
       router.push(searchEntityUrl);
+      dispatch(setSearchTerm(''));
       dispatch(blur());
     } else {
       dispatch(focus());
@@ -582,7 +587,7 @@ export function Search({ fullScreen = false }: { fullScreen?: boolean }) {
             left={3}
             right={3}
             zIndex={2}
-            background={'surfaceTertiary'}
+            bg={'surfaceTertiary'}
           >
             {children}
             {isSearchFieldFocused && (
@@ -627,7 +632,11 @@ export function Search({ fullScreen = false }: { fullScreen?: boolean }) {
         />
         {isSearchFieldFocused && (
           <SearchResultsWrapper height={fullScreen ? '100vh' : 'auto'}>
-            {isLoading ? null : searchResponse && searchResponse.data ? (
+            {isLoading ? (
+              <Flex pt={18} pb={3} px={4} justifyContent={'center'}>
+                <Spinner size="md" color="iconSecondary" borderWidth="1px" />
+              </Flex>
+            ) : searchResponse && searchResponse.data ? (
               !searchResponse.data.found ? (
                 <Flex pt={18} pb={3} px={4}>
                   <Stack px={4} py={3} bg="surfacePrimary" borderRadius={'redesign.lg'}>
