@@ -38,12 +38,14 @@ export const TokenImage = ({
   height,
   width,
   addGlow,
+  borderRadius,
 }: {
   url: string;
   alt: string;
   height: number;
   width: number;
   addGlow?: boolean;
+  borderRadius?: string;
 }) => {
   const [imageUrl, setImageUrl] = useState<string>(encodeURI(decodeURI(url)));
   const [badImage, setBadImage] = useState<boolean>(false);
@@ -69,7 +71,7 @@ export const TokenImage = ({
         alt={alt}
         style={{
           filter: 'blur(9px)',
-          borderRadius: '16px',
+          borderRadius: borderRadius || '16px',
           objectFit: 'cover', // ensures the image maintains its aspect ratio while covering the entire container, cropping if necessary to maintain the 1:1 ratio
         }}
       />
@@ -96,7 +98,7 @@ export const TokenImage = ({
           }}
           alt={alt}
           style={{
-            borderRadius: '16px',
+            borderRadius: borderRadius || '16px',
           }}
         />
       </Box>

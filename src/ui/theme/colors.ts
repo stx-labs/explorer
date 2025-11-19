@@ -106,7 +106,7 @@ export const NEW_COLORS = {
     'stacks-200': { value: '#FFC2A8' },
     'stacks-300': { value: '#FFA57F' },
     'stacks-400': { value: '#FF8761' },
-    'stacks-500': { value: '#FC6432' },
+    'stacks-500': { value: 'color(display-p3 0.99 0.39 0.20)' },
     'stacks-600': { value: '#CC4900' },
     'stacks-700': { value: '#9C310D' },
     'bitcoin-100': { value: '#FFDFC1' },

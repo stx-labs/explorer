@@ -5,8 +5,7 @@ import { TxPageFilters } from '@/app/transactions/page';
 import { GenericResponseType } from '@/common/hooks/useInfiniteQueryResult';
 import { THIRTY_SECONDS } from '@/common/queries/query-stale-time';
 import { useConfirmedTransactions } from '@/common/queries/useConfirmedTransactionsInfinite';
-import { CompressedTxTableData } from '@/common/utils/transaction-utils';
-import { getAmount, getToAddress } from '@/common/utils/transaction-utils';
+import { CompressedTxTableData, getAmount, getToAddress } from '@/common/utils/transaction-utils';
 import { validateStacksContractId } from '@/common/utils/utils';
 import { Flex, Icon } from '@chakra-ui/react';
 import { ArrowRight } from '@phosphor-icons/react';
@@ -26,7 +25,6 @@ import { TimestampCell, TimestampColumnHeader, TimestampTableMeta } from '../Tim
 import { UpdateTableBannerRow } from '../UpdateTableBannerRow';
 import {
   IconCellRenderer,
-  TimeStampCellRenderer,
   TransactionTitleCellRenderer,
   TxLinkCellRenderer,
   TxTypeCellRenderer,

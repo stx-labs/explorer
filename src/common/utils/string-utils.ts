@@ -47,6 +47,7 @@ export function formatUsdValue(
   return new Intl.NumberFormat(undefined, {
     style: 'currency',
     currency: 'USD',
+    currencyDisplay: 'narrowSymbol',
     minimumFractionDigits,
     maximumFractionDigits,
   }).format(value);

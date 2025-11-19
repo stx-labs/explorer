@@ -24,6 +24,8 @@ export interface LunarCrushCoin {
 export interface LunarCrushCoinRedesign {
   config?: { coin: string; generated: number };
   data?: {
+    alt_rank?: number;
+    galaxy_score?: number;
     id: number;
     name: string;
     symbol: string;
@@ -32,12 +34,11 @@ export interface LunarCrushCoinRedesign {
     market_cap?: number;
     percent_change_24h?: number;
     percent_change_7d?: number;
+    percent_change_30d?: number;
     volume_24h?: number;
     max_supply?: number;
     circulating_supply?: number;
     close?: number;
-    galaxy_score?: number;
-    alt_rank?: number;
     volatility?: number;
     market_cap_rank?: number;
   };

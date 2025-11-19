@@ -11,6 +11,7 @@ import { FONT_WEIGHTS } from './fontWeights';
 import { FONTS } from './fonts';
 import { LETTER_SPACINGS } from './letterSpacings';
 import { LINEHEIGHTS } from './lineHeights';
+import { accordionSlotRecipe } from './recipes/AccordionRecipe';
 import { alertSlotRecipe } from './recipes/AlertRecipe';
 import { badgeRecipe } from './recipes/BadgeRecipe';
 import { buttonRecipe } from './recipes/ButtonRecipe';
@@ -62,6 +63,7 @@ const themeConfig = {
       popover: popoverSlotRecipe,
       alert: alertSlotRecipe,
       select: selectSlotRecipe,
+      accordion: accordionSlotRecipe,
     },
     tokens: {
       colors: { ...COLORS, ...NEW_COLORS },

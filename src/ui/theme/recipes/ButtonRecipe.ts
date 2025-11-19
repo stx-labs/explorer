@@ -148,6 +148,27 @@ export const buttonRecipe = defineRecipe({
           },
         },
       },
+      redesignStacks: {
+        borderRadius: 'redesign.md',
+        color: 'textPrimary',
+        bg: {
+          base: '{colors.accent.stacks-500}',
+          _dark: '{colors.accent.stacks-500}',
+        },
+        _hover: {
+          bg: '{colors.accent.stacks-600}',
+        },
+        _disabled: {
+          color: {
+            base: '{colors.neutral.sand-500}',
+            _dark: '{colors.neutral.sand-300}',
+          },
+          bg: {
+            base: '{colors.accent.stacks-300}',
+            _dark: '{colors.accent.stacks-600}',
+          },
+        },
+      },
       unstyled: {
         border: 'none',
         bg: 'none',
