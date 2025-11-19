@@ -507,6 +507,7 @@ function SearchInput({
   const quickNavUrl = useAppSelector(selectQuickNavUrl);
 
   const searchResponse = useSearchQuery(searchTerm, true);
+
   const searchEntityUrl = getSearchEntityUrl(network, searchResponse.data);
 
   // Set temp search term from query params
@@ -518,6 +519,7 @@ function SearchInput({
     if (!!quickNavUrl && quickNavUrl === searchEntityUrl) {
       router.push(searchEntityUrl);
       dispatch(setSearchTerm(''));
+      dispatch(setTempSearchTerm(''));
       dispatch(blur());
     } else {
       dispatch(focus());
