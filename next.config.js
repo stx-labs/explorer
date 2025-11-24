@@ -29,6 +29,11 @@ const nextConfig = {
         destination: '/',
         permanent: true,
       },
+      {
+        source: '/sbtc',
+        destination: '/token/SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token?chain=mainnet',
+        permanent: true,
+      },
     ];
   },
   experimental: {

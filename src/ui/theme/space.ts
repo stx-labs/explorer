@@ -48,14 +48,28 @@ export const NEW_SPACE = {
   4.5: { value: '1.125rem' },
   5: { value: '1.25rem' }, // 20px
   6: { value: '1.5rem' }, // 24px
+  7: { value: '1.75rem' }, // 28px
+  7.5: { value: '1.875rem' }, // 30px
   8: { value: '2rem' }, // 32px
+  8.5: { value: '2.125rem' }, // 34px
+  9: { value: '2.25rem' }, // 36px
   10: { value: '2.5rem' }, // 40px
+  11: { value: '2.75rem' }, // 44px
+  11.25: { value: '2.875rem' }, // 46px
+  11.5: { value: '2.875rem' }, // 46px
   12: { value: '3rem' }, // 48px
+  13: { value: '3.25rem' }, // 52px
+  14: { value: '3.5rem' }, // 56px
   15: { value: '3.75rem' }, // 60px
   16: { value: '4rem' }, // 64px
+  17: { value: '4.25rem' }, // 68px
   18: { value: '4.5rem' }, // 72px
   20: { value: '5rem' }, // 80px
   24: { value: '6rem' }, // 96px
+  25: { value: '6.25rem' }, // 100px
+  26: { value: '6.5rem' }, // 104px
+  27: { value: '6.75rem' }, // 108px
+  27.5: { value: '6.875rem' }, // 108px
   28: { value: '7rem' }, // 112px
   32: { value: '8rem' }, // 128px
   36: { value: '9rem' }, // 144px

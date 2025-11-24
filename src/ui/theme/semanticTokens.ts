@@ -262,6 +262,14 @@ export const CURRENT_SEMANTIC_TOKENS = {
     stacksNameAndLogo: {
       value: { base: '{colors.neutral.sand-1000}', _dark: '{colors.neutral.sand-50}' },
     },
+    sbtcToken: {
+      stopColor: {
+        value: {
+          base: 'color(display-p3 0.988 0.392 0.196)',
+          _dark: 'color(display-p3 0.349 0.341 0.329)',
+        },
+      },
+    },
   },
 };
 

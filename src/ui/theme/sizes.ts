@@ -22,7 +22,15 @@ export const CURRENT_SIZES = {
   3.5: { value: '0.875rem' }, // 14px
   4.5: { value: '1.125rem' }, // 18px
   5.5: { value: '1.375rem' }, // 22px
+  6: { value: '1.5rem' }, // 24px
+  7: { value: '1.75rem' }, // 28px
+  8: { value: '2rem' }, // 32px
+  8.5: { value: '2.125rem' }, // 34px
+  9: { value: '2.25rem' }, // 36px
+  10: { value: '2.5rem' }, // 40px
   10.5: { value: '2.625rem' }, // 42px
+  11: { value: '2.75rem' }, // 44px
+  12: { value: '3rem' }, // 48px
   13: { value: '3.25rem' }, // 52px
   13.5: { value: '3.375rem' }, // 54px
   14: { value: '3.5rem' }, // 56px

@@ -379,6 +379,7 @@ export function getTxContractId(tx: Transaction | MempoolTransaction) {
 export const usdFormatter = new Intl.NumberFormat('en-US', {
   style: 'currency',
   currency: 'USD',
+  currencyDisplay: 'narrowSymbol',
 });
 
 export function isNumeric(value: string): boolean {

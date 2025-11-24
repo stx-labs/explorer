@@ -105,7 +105,7 @@ export async function getTokenDataFromLunarCrush(
 
     return tokenData;
   } catch (error) {
-    logError(error as Error, 'getTokenInfoFromLunarCrush', { tokenId });
+    logError(error as Error, 'getTokenDataFromLunarCrush', { tokenId });
     return undefined;
   }
 }

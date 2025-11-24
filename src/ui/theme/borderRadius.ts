@@ -25,6 +25,8 @@ export const NEW_BORDER_RADIUS = {
     xl: { value: '16px' },
     xxl: { value: '18px' },
     '2xl': { value: '20px' },
+    '3xl': { value: '24px' },
+    '4xl': { value: '32px' },
   },
 };
 
