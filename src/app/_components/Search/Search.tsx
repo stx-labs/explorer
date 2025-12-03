@@ -31,9 +31,15 @@ import {
   BlockSearchResult,
   BnsSearchResult,
   ContractSearchResult,
+  FoundResult,
   SearchResult,
   SearchResultType,
 } from '../../../common/types/search-results';
+import {
+  validateStacksAddress,
+  validateStacksContractId,
+  validateTxId,
+} from '../../../common/utils/utils';
 import { getSearchEntityUrl } from '../../../features/search/dropdown/search-results-card';
 import {
   blur,
@@ -64,6 +70,48 @@ import {
   TokenTransferResultItem,
 } from './ResultItem';
 import { SearchDoubleGradientBorderWrapper } from './SearchDoubleGradientBorderWrapper';
+
+/**
+ * checks if the input matches the format of a txid, address, or contract ID.
+ * If it does, returns a synthetic FoundResult that can be displayed immediately.
+ */
+function getInstantSearchResult(input: string): FoundResult | null {
+  if (!input || input.trim() === '') return null;
+
+  const trimmedInput = input.trim();
+
+  if (validateTxId(trimmedInput)) {
+    return {
+      found: true,
+      result: {
+        entity_type: SearchResultType.TxId,
+        entity_id: trimmedInput,
+      },
+    } as FoundResult;
+  }
+
+  if (validateStacksContractId(trimmedInput)) {
+    return {
+      found: true,
+      result: {
+        entity_type: SearchResultType.ContractAddress,
+        entity_id: trimmedInput,
+      },
+    } as FoundResult;
+  }
+
+  if (validateStacksAddress(trimmedInput)) {
+    return {
+      found: true,
+      result: {
+        entity_type: SearchResultType.StandardAddress,
+        entity_id: trimmedInput,
+      },
+    } as FoundResult;
+  }
+
+  return null;
+}
 
 export function SearchResultsWrapper({
   children,
@@ -228,6 +276,17 @@ function ResultItems({
           }
           if (recentResultItem.result.entity_type === SearchResultType.ContractAddress) {
             const contractResult = recentResultItem.result as ContractSearchResult;
+            // If no metadata (instant search result), show simple result item with contract ID
+            if (!contractResult.metadata) {
+              return (
+                <ResultItem
+                  key={index}
+                  value={contractResult.entity_id}
+                  iconType={iconType}
+                  url={searchEntityUrl}
+                />
+              );
+            }
             return (
               <ContractDeployResultItem
                 key={index}
@@ -238,6 +297,17 @@ function ResultItems({
           }
           if (recentResultItem.result.entity_type === SearchResultType.TxId) {
             const txType = recentResultItem.result.metadata?.tx_type;
+            // If no metadata (instant search result), show simple result item with tx ID
+            if (!txType) {
+              return (
+                <ResultItem
+                  key={index}
+                  value={recentResultItem.result.entity_id}
+                  iconType={iconType}
+                  url={searchEntityUrl}
+                />
+              );
+            }
             switch (txType) {
               case 'token_transfer':
                 return (
@@ -508,7 +578,23 @@ function SearchInput({
 
   const searchResponse = useSearchQuery(searchTerm, true);
 
+  const instantSearchResult = React.useMemo(
+    () => getInstantSearchResult(tempSearchTerm),
+    [tempSearchTerm]
+  );
+
+  const instantSearchUrl = React.useMemo(
+    () => getSearchEntityUrl(network, instantSearchResult),
+    [network, instantSearchResult]
+  );
+
   const searchEntityUrl = getSearchEntityUrl(network, searchResponse.data);
+
+  useEffect(() => {
+    if (instantSearchUrl) {
+      dispatch(setQuickNavUrl(instantSearchUrl));
+    }
+  }, [instantSearchUrl, dispatch]);
 
   // Set temp search term from query params
   useEffect(() => {
@@ -516,6 +602,14 @@ function SearchInput({
   }, [searchTermFromQueryParams, dispatch]);
 
   const handleSearch = useCallback(() => {
+    if (instantSearchUrl) {
+      router.push(instantSearchUrl);
+      dispatch(setSearchTerm(''));
+      dispatch(setTempSearchTerm(''));
+      dispatch(blur());
+      return;
+    }
+
     if (!!quickNavUrl && quickNavUrl === searchEntityUrl) {
       router.push(searchEntityUrl);
       dispatch(setSearchTerm(''));
@@ -525,7 +619,7 @@ function SearchInput({
       dispatch(focus());
       dispatch(setSearchTerm(tempSearchTerm));
     }
-  }, [dispatch, quickNavUrl, router, searchEntityUrl, tempSearchTerm]);
+  }, [dispatch, quickNavUrl, router, searchEntityUrl, tempSearchTerm, instantSearchUrl]);
 
   return (
     <SearchDoubleGradientBorderWrapper {...flexProps}>
@@ -576,8 +670,14 @@ export function Search({ fullScreen = false }: { fullScreen?: boolean }) {
 
   const isSearchFieldFocused = useAppSelector(selectIsSearchFieldFocused);
   const searchTerm = useAppSelector(selectSearchTerm);
+  const tempSearchTerm = useAppSelector(selectTempSearchTerm);
   const searchResponse = useSearchQuery(searchTerm, true);
   const isLoading = searchResponse.isLoading;
+
+  const instantSearchResult = React.useMemo(
+    () => getInstantSearchResult(tempSearchTerm),
+    [tempSearchTerm]
+  );
 
   const Wrapper = useCallback(
     function Wrapper({ children }: { children: ReactNode }) {
@@ -638,6 +738,16 @@ export function Search({ fullScreen = false }: { fullScreen?: boolean }) {
               <Flex pt={18} pb={3} px={4} justifyContent={'center'}>
                 <Spinner size="md" color="iconSecondary" borderWidth="1px" />
               </Flex>
+            ) : instantSearchResult ? (
+              <Stack pt={18}>
+                <ResultItems
+                  recentResults={[instantSearchResult]}
+                  iconType={'enter'}
+                  px={3}
+                  pb={4}
+                  type={ResultItemsType.SearchResults}
+                />
+              </Stack>
             ) : searchResponse && searchResponse.data ? (
               !searchResponse.data.found ? (
                 <Flex pt={18} pb={3} px={4}>

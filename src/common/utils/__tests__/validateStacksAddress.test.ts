@@ -1,4 +1,4 @@
-import { validateStacksAddress, validateStacksContractId } from '../utils';
+import { validateStacksAddress, validateStacksContractId, validateTxId } from '../utils';
 
 describe('validateStacksAddress', () => {
   it('returns true for valid mainnet addresses', () => {
@@ -71,6 +71,41 @@ describe('validateStacksContractId', () => {
 
     invalidContractIds.forEach(contractId => {
       expect(validateStacksContractId(contractId)).toBe(false);
+    });
+  });
+});
+
+describe('validateTxId', () => {
+  it('returns true for valid transaction IDs', () => {
+    const validTxIds = [
+      '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
+      '0xABCDEF1234567890ABCDEF1234567890ABCDEF1234567890ABCDEF1234567890',
+      '0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890',
+      '0x0000000000000000000000000000000000000000000000000000000000000000',
+      '0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff',
+    ];
+
+    validTxIds.forEach(txId => {
+      expect(validateTxId(txId)).toBe(true);
+    });
+  });
+
+  it('returns false for invalid transaction IDs', () => {
+    const invalidTxIds = [
+      '', // empty string
+      '0x', // only prefix
+      '0x123', // too short
+      '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcde', // 63 hex chars (too short)
+      '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef0', // 65 hex chars (too long)
+      '1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef', // missing 0x prefix
+      '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdeg', // invalid hex char 'g'
+      undefined, // undefined
+      'SP2J6ZY48GV1EZ5V2V5RB9MP66SW86PYKKNRV9EJ7', // stacks address
+      'SP2J6ZY48GV1EZ5V2V5RB9MP66SW86PYKKNRV9EJ7.contract-name', // contract id
+    ];
+
+    invalidTxIds.forEach(txId => {
+      expect(validateTxId(txId)).toBe(false);
     });
   });
 });
