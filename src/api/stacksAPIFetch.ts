@@ -1,10 +1,21 @@
 export async function stacksAPIFetch(url: string, options: RequestInit = {}) {
-  const headers = new Headers(options.headers || {});
+  const reqHeaders = new Headers(options.headers || {});
 
-  headers.set('x-api-key', process.env.EXPLORER_STACKS_API_KEY || '');
+  reqHeaders.set('x-api-key', process.env.EXPLORER_STACKS_API_KEY || '');
+
+  try {
+    // Dynamic import to avoid breaking pages/ directory which doesn't support next/headers
+    const { headers: getHeaders } = await import('next/headers');
+    const incomingHeaders = await getHeaders();
+    const referrer =
+      incomingHeaders.get('referer') || incomingHeaders.get('x-forwarded-for') || undefined;
+    if (referrer) {
+      reqHeaders.set('Referer', referrer);
+    }
+  } catch {}
 
   return fetch(url, {
     ...options,
-    headers,
+    headers: reqHeaders,
   });
 }

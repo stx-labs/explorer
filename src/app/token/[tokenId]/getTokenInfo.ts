@@ -1,3 +1,5 @@
+import { stacksAPIFetch } from '@/api/stacksAPIFetch';
+import { ExplorerError } from '@/common/types/Error';
 import { ContractResponse } from '@/common/types/tx';
 import { FtMetadataResponse } from '@hirosystems/token-metadata-api-client';
 
@@ -9,6 +11,14 @@ import { LunarCrushCoin } from '../../../common/types/lunarCrush';
 import { getApiUrl } from '../../../common/utils/network-utils';
 import { getFtDecimalAdjustedBalance } from '../../../common/utils/utils';
 import { BasicTokenInfo, DeveloperData, TokenInfoProps, TokenLinks } from './types';
+
+function createExplorerError(message: string, status?: number): ExplorerError {
+  const error = new Error(message) as ExplorerError;
+  if (status) {
+    error.status = status;
+  }
+  return error;
+}
 
 async function getTokenInfoFromLunarCrush(tokenId: string): Promise<LunarCrushCoin | undefined> {
   try {
@@ -27,7 +37,7 @@ async function getTokenInfoFromLunarCrush(tokenId: string): Promise<LunarCrushCo
 }
 
 async function getCirculatingSupplyFromHoldersEndpoint(apiUrl: string, tokenId: string) {
-  const contractInfoResponse = await fetch(`${apiUrl}/extended/v1/contract/${tokenId}`);
+  const contractInfoResponse = await stacksAPIFetch(`${apiUrl}/extended/v1/contract/${tokenId}`);
   if (!contractInfoResponse.ok) {
     console.error('Failed to fetch contract info');
     return null;
@@ -44,7 +54,7 @@ async function getCirculatingSupplyFromHoldersEndpoint(apiUrl: string, tokenId: 
   }
   const ftName = abi.fungible_tokens[0].name;
   const fullyQualifiedTokenId = `${tokenId}::${ftName}`;
-  const holdersResponse = await fetch(
+  const holdersResponse = await stacksAPIFetch(
     `${apiUrl}/extended/v1/tokens/ft/${fullyQualifiedTokenId}/holders`
   );
   if (!holdersResponse.ok) {
@@ -64,43 +74,48 @@ async function getBasicTokenInfoFromStacksApi(
   tokenId: string,
   chain: string,
   api?: string
-): Promise<BasicTokenInfo | undefined> {
+): Promise<BasicTokenInfo> {
   const isCustomApi = !!api;
 
-  try {
-    const apiUrl = isCustomApi ? api : getApiUrl(chain);
-    if (!tokenId || !apiUrl || isCustomApi) {
-      throw new Error('Unable to fetch token info for this request');
-    }
-
-    const tokenMetadataResponse = await fetch(`${apiUrl}/metadata/v1/ft/${tokenId}`);
-    const tokenMetadata: FtMetadataResponse = await tokenMetadataResponse.json();
-
-    const tokenName = tokenMetadata?.name;
-    const tokenSymbol = tokenMetadata?.symbol;
-    const tokenDecimals = tokenMetadata?.decimals;
-
-    if (!tokenName || !tokenSymbol) {
-      throw new Error('token not found');
-    }
-
-    const holdersCirculatingSupply = await getCirculatingSupplyFromHoldersEndpoint(apiUrl, tokenId);
-
-    return {
-      name: tokenMetadata?.metadata?.name || tokenName,
-      symbol: tokenSymbol,
-      totalSupply:
-        tokenMetadata?.total_supply && tokenDecimals
-          ? getFtDecimalAdjustedBalance(tokenMetadata?.total_supply, tokenDecimals)
-          : null,
-      circulatingSupply: holdersCirculatingSupply
-        ? getFtDecimalAdjustedBalance(holdersCirculatingSupply, tokenDecimals || 0)
-        : null,
-      imageUri: tokenMetadata?.image_uri,
-    };
-  } catch (error) {
-    console.error(error);
+  const apiUrl = isCustomApi ? api : getApiUrl(chain);
+  if (!tokenId || !apiUrl || isCustomApi) {
+    throw createExplorerError('Unable to fetch token info for this request');
   }
+
+  const tokenMetadataUrl = `${apiUrl}/metadata/v1/ft/${tokenId}`;
+  const tokenMetadataResponse = await stacksAPIFetch(tokenMetadataUrl);
+
+  if (!tokenMetadataResponse.ok) {
+    throw createExplorerError(
+      `Failed to fetch token metadata: ${tokenMetadataResponse.statusText}`,
+      tokenMetadataResponse.status
+    );
+  }
+
+  const tokenMetadata: FtMetadataResponse = await tokenMetadataResponse.json();
+
+  const tokenName = tokenMetadata?.name;
+  const tokenSymbol = tokenMetadata?.symbol;
+  const tokenDecimals = tokenMetadata?.decimals;
+
+  if (!tokenName || !tokenSymbol) {
+    throw createExplorerError('Token not found', 404);
+  }
+
+  const holdersCirculatingSupply = await getCirculatingSupplyFromHoldersEndpoint(apiUrl, tokenId);
+
+  return {
+    name: tokenMetadata?.metadata?.name || tokenName,
+    symbol: tokenSymbol,
+    totalSupply:
+      tokenMetadata?.total_supply && tokenDecimals
+        ? getFtDecimalAdjustedBalance(tokenMetadata?.total_supply, tokenDecimals)
+        : null,
+    circulatingSupply: holdersCirculatingSupply
+      ? getFtDecimalAdjustedBalance(holdersCirculatingSupply, tokenDecimals || 0)
+      : null,
+    imageUri: tokenMetadata?.image_uri,
+  };
 }
 
 async function getDetailedTokenInfoFromLunarCrush(tokenId: string, basicTokenInfo: BasicTokenInfo) {
@@ -204,21 +219,11 @@ export async function getTokenInfo(
 ): Promise<TokenInfoProps> {
   const isCustomApi = !!api;
 
-  try {
-    if (!tokenId || isCustomApi) {
-      throw new Error('cannot fetch token info for this request');
-    }
-
-    const basicTokenInfo = await getBasicTokenInfoFromStacksApi(tokenId, chain, api);
-    if (!basicTokenInfo) {
-      console.error('token not found in Stacks API', tokenId, chain, api);
-      return {};
-    }
-
-    const detailedTokenInfo = await getDetailedTokenInfoFromLunarCrush(tokenId, basicTokenInfo);
-    return detailedTokenInfo;
-  } catch (error) {
-    console.error(error);
-    return {};
+  if (!tokenId || isCustomApi) {
+    throw createExplorerError('Cannot fetch token info for this request');
   }
+
+  const basicTokenInfo = await getBasicTokenInfoFromStacksApi(tokenId, chain, api);
+  const detailedTokenInfo = await getDetailedTokenInfoFromLunarCrush(tokenId, basicTokenInfo);
+  return detailedTokenInfo;
 }

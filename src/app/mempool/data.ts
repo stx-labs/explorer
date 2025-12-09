@@ -23,7 +23,7 @@ export async function fetchMempoolTransactions(
     ...(toAddress && { recipient_address: toAddress }),
   });
 
-  const response = await fetch(`${apiUrl}/extended/v1/tx/mempool?${params.toString()}`, {
+  const response = await stacksAPIFetch(`${apiUrl}/extended/v1/tx/mempool?${params.toString()}`, {
     cache: 'default',
     next: {
       revalidate: 10, // 10 seconds
