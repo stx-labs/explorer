@@ -52,7 +52,7 @@ dependencies:
     version: 4.7.0(monaco-editor@0.52.2)(react-dom@19.0.0)(react@19.0.0)
   '@next/third-parties':
     specifier: 15.2.4
-    version: 15.2.4(next@15.4.8)(react@19.0.0)
+    version: 15.2.4(next@15.4.9)(react@19.0.0)
   '@phosphor-icons/react':
     specifier: 2.1.7
     version: 2.1.7(react-dom@19.0.0)(react@19.0.0)
@@ -61,7 +61,7 @@ dependencies:
     version: 1.9.7(react-redux@9.2.0)(react@19.0.0)
   '@sentry/nextjs':
     specifier: 9.32.0
-    version: 9.32.0(@opentelemetry/context-async-hooks@2.2.0)(@opentelemetry/core@2.2.0)(@opentelemetry/instrumentation@0.200.0)(@opentelemetry/sdk-trace-base@2.2.0)(next@15.4.8)(react@19.0.0)(webpack@5.103.0)
+    version: 9.32.0(@opentelemetry/context-async-hooks@2.2.0)(@opentelemetry/core@2.2.0)(@opentelemetry/instrumentation@0.200.0)(@opentelemetry/sdk-trace-base@2.2.0)(next@15.4.9)(react@19.0.0)(webpack@5.103.0)
   '@sentry/profiling-node':
     specifier: 9.32.0
     version: 9.32.0
@@ -144,8 +144,8 @@ dependencies:
     specifier: 12.6.0
     version: 12.6.0(react-dom@19.0.0)(react@19.0.0)
   next:
-    specifier: 15.4.8
-    version: 15.4.8(@babel/core@7.28.0)(@opentelemetry/api@1.9.0)(@playwright/test@1.51.1)(react-dom@19.0.0)(react@19.0.0)
+    specifier: 15.4.9
+    version: 15.4.9(@babel/core@7.28.0)(@opentelemetry/api@1.9.0)(@playwright/test@1.51.1)(react-dom@19.0.0)(react@19.0.0)
   next-themes:
     specifier: 0.4.6
     version: 0.4.6(react-dom@19.0.0)(react@19.0.0)
@@ -258,10 +258,10 @@ devDependencies:
     version: 8.6.9(react-dom@19.0.0)(react@19.0.0)(storybook@8.6.9)
   '@storybook/experimental-nextjs-vite':
     specifier: 8.6.9
-    version: 8.6.9(@babel/core@7.28.0)(@storybook/test@8.6.9)(next@15.4.8)(react-dom@19.0.0)(react@19.0.0)(storybook@8.6.9)(typescript@5.8.2)(vite@6.4.1)
+    version: 8.6.9(@babel/core@7.28.0)(@storybook/test@8.6.9)(next@15.4.9)(react-dom@19.0.0)(react@19.0.0)(storybook@8.6.9)(typescript@5.8.2)(vite@6.4.1)
   '@storybook/nextjs':
     specifier: 8.6.9
-    version: 8.6.9(esbuild@0.25.8)(next@15.4.8)(react-dom@19.0.0)(react@19.0.0)(storybook@8.6.9)(typescript@5.8.2)(webpack@5.103.0)
+    version: 8.6.9(esbuild@0.25.8)(next@15.4.9)(react-dom@19.0.0)(react@19.0.0)(storybook@8.6.9)(typescript@5.8.2)(webpack@5.103.0)
   '@storybook/react':
     specifier: 8.6.9
     version: 8.6.9(@storybook/test@8.6.9)(react-dom@19.0.0)(react@19.0.0)(storybook@8.6.9)(typescript@5.8.2)
@@ -366,7 +366,7 @@ devDependencies:
     version: 8.6.9(prettier@3.5.3)
   storybook-addon-next-router:
     specifier: 4.0.2
-    version: 4.0.2(@storybook/addon-actions@6.5.16)(@storybook/addons@6.5.16)(@storybook/client-api@6.5.16)(next@15.4.8)(react-dom@19.0.0)(react@19.0.0)
+    version: 4.0.2(@storybook/addon-actions@6.5.16)(@storybook/addons@6.5.16)(@storybook/client-api@6.5.16)(next@15.4.9)(react-dom@19.0.0)(react@19.0.0)
   ts-unused-exports:
     specifier: 11.0.1
     version: 11.0.1(typescript@5.8.2)
@@ -3519,6 +3519,12 @@ packages:
       '@jridgewell/sourcemap-codec': 1.5.4
       '@jridgewell/trace-mapping': 0.3.29
 
+  /@jridgewell/gen-mapping@0.3.13:
+    resolution: {integrity: sha512-2kkt/7niJ6MgEPxF0bYdQ6etZaA+fQvDcLKckhy1yIQOzaoKjBBjSj63/aLVjYE3qhRt5dvM+uUyfCg6UKCBbA==}
+    dependencies:
+      '@jridgewell/sourcemap-codec': 1.5.5
+      '@jridgewell/trace-mapping': 0.3.31
+
   /@jridgewell/resolve-uri@3.1.2:
     resolution: {integrity: sha512-bRISgCIjP20/tbWSPWMEi54QVPRZExkuD9lJL+UIxUKtwVJA8wW1Trb1jMs1RFXo1CBTNZ/5hpC9QvmKWdopKw==}
     engines: {node: '>=6.0.0'}
@@ -3528,15 +3534,31 @@ packages:
     dependencies:
       '@jridgewell/gen-mapping': 0.3.12
       '@jridgewell/trace-mapping': 0.3.29
+    dev: true
+
+  /@jridgewell/source-map@0.3.11:
+    resolution: {integrity: sha512-ZMp1V8ZFcPG5dIWnQLr3NSI1MiCU7UETdS/A0G8V/XWHvJv3ZsFqutJn1Y5RPmAPX6F3BiE397OqveU/9NCuIA==}
+    dependencies:
+      '@jridgewell/gen-mapping': 0.3.13
+      '@jridgewell/trace-mapping': 0.3.31
 
   /@jridgewell/sourcemap-codec@1.5.4:
     resolution: {integrity: sha512-VT2+G1VQs/9oz078bLrYbecdZKs912zQlkelYpuf+SXF+QvZDYJlbx/LSx+meSAwdDFnF8FVXW92AVjjkVmgFw==}
+
+  /@jridgewell/sourcemap-codec@1.5.5:
+    resolution: {integrity: sha512-cYQ9310grqxueWbl+WuIUIaiUaDcj7WOq5fVhEljNVgRfOUhY9fy2zTvfoqWsnebh8Sl70VScFbICvJnLKB0Og==}
 
   /@jridgewell/trace-mapping@0.3.29:
     resolution: {integrity: sha512-uw6guiW/gcAGPDhLmd77/6lW8QLeiV5RUTsAX46Db6oLhGaVj4lhnPwb184s1bkc8kdVg/+h988dro8GRDpmYQ==}
     dependencies:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.4
+
+  /@jridgewell/trace-mapping@0.3.31:
+    resolution: {integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==}
+    dependencies:
+      '@jridgewell/resolve-uri': 3.1.2
+      '@jridgewell/sourcemap-codec': 1.5.5
 
   /@leather.io/bitcoin@0.24.2:
     resolution: {integrity: sha512-elFi2WxBoNZrgX4ImHxoEHGpgUAF1VkEGCSHQJcIZTEXDeOHbdxtDXfO4KUhpmsEuqmqFsv3DSrJHsehgXh2eg==}
@@ -3781,11 +3803,11 @@ packages:
       - utf-8-validate
     dev: true
 
-  /@next/env@15.4.8:
-    resolution: {integrity: sha512-LydLa2MDI1NMrOFSkO54mTc8iIHSttj6R6dthITky9ylXV2gCGi0bHQjVCtLGRshdRPjyh2kXbxJukDtBWQZtQ==}
+  /@next/env@15.4.9:
+    resolution: {integrity: sha512-OYR0RulK5phnbxxzcLE4/ECgfx1PL3EHrDbjyelJ7jauaO+/Qvj5gG8JPMltB51CygC2KrZ0aAfYLjPYjYY17A==}
 
-  /@next/env@15.5.7:
-    resolution: {integrity: sha512-4h6Y2NyEkIEN7Z8YxkA27pq6zTkS09bUSYC0xjd0NpwFxjnIKeZEeH591o5WECSmjpUhLn3H2QLJcDye3Uzcvg==}
+  /@next/env@15.5.9:
+    resolution: {integrity: sha512-4GlTZ+EJM7WaW2HEZcyU317tIQDjkQIyENDLxYJfSWlfqguN+dHkZgyQTV/7ykvobU7yEH5gKvreNrH4B6QgIg==}
     dev: true
 
   /@next/eslint-plugin-next@15.2.4:
@@ -3858,13 +3880,13 @@ packages:
     requiresBuild: true
     optional: true
 
-  /@next/third-parties@15.2.4(next@15.4.8)(react@19.0.0):
+  /@next/third-parties@15.2.4(next@15.4.9)(react@19.0.0):
     resolution: {integrity: sha512-a8GlPnMmPymxyLOiSnh5InUsG/hw7wjU3munGoHNB+oLCPruAeoplBa9Uf/xE83WMyutyK4cbi5Ixu4uyh96Mw==}
     peerDependencies:
       next: ^13.0.0 || ^14.0.0 || ^15.0.0
       react: ^18.2.0 || 19.0.0-rc-de68d2f4-20241204 || ^19.0.0
     dependencies:
-      next: 15.4.8(@babel/core@7.28.0)(@opentelemetry/api@1.9.0)(@playwright/test@1.51.1)(react-dom@19.0.0)(react@19.0.0)
+      next: 15.4.9(@babel/core@7.28.0)(@opentelemetry/api@1.9.0)(@playwright/test@1.51.1)(react-dom@19.0.0)(react@19.0.0)
       react: 19.0.0
       third-party-capital: 1.0.20
     dev: false
@@ -5088,7 +5110,7 @@ packages:
     engines: {node: '>=18'}
     dev: false
 
-  /@sentry/nextjs@9.32.0(@opentelemetry/context-async-hooks@2.2.0)(@opentelemetry/core@2.2.0)(@opentelemetry/instrumentation@0.200.0)(@opentelemetry/sdk-trace-base@2.2.0)(next@15.4.8)(react@19.0.0)(webpack@5.103.0):
+  /@sentry/nextjs@9.32.0(@opentelemetry/context-async-hooks@2.2.0)(@opentelemetry/core@2.2.0)(@opentelemetry/instrumentation@0.200.0)(@opentelemetry/sdk-trace-base@2.2.0)(next@15.4.9)(react@19.0.0)(webpack@5.103.0):
     resolution: {integrity: sha512-e6uWG7STMK5r5yxLJ1u2cGRSejZEK5ing8SCWyeQclJJzpM2ehaqqiPxM7gibux5jPOOnDTsGD7okUOolWxLoA==}
     engines: {node: '>=18'}
     peerDependencies:
@@ -5105,7 +5127,7 @@ packages:
       '@sentry/vercel-edge': 9.32.0
       '@sentry/webpack-plugin': 3.6.1(webpack@5.103.0)
       chalk: 3.0.0
-      next: 15.4.8(@babel/core@7.28.0)(@opentelemetry/api@1.9.0)(@playwright/test@1.51.1)(react-dom@19.0.0)(react@19.0.0)
+      next: 15.4.9(@babel/core@7.28.0)(@opentelemetry/api@1.9.0)(@playwright/test@1.51.1)(react-dom@19.0.0)(react@19.0.0)
       resolve: 1.22.8
       rollup: 4.35.0
       stacktrace-parser: 0.1.11
@@ -5965,7 +5987,7 @@ packages:
       type-fest: 2.19.0
     dev: true
 
-  /@storybook/experimental-nextjs-vite@8.6.9(@babel/core@7.28.0)(@storybook/test@8.6.9)(next@15.4.8)(react-dom@19.0.0)(react@19.0.0)(storybook@8.6.9)(typescript@5.8.2)(vite@6.4.1):
+  /@storybook/experimental-nextjs-vite@8.6.9(@babel/core@7.28.0)(@storybook/test@8.6.9)(next@15.4.9)(react-dom@19.0.0)(react@19.0.0)(storybook@8.6.9)(typescript@5.8.2)(vite@6.4.1):
     resolution: {integrity: sha512-sjDEoFgRCeFvYclMgUa8A5UoiMx1n1r1CUb5XCrR7v6XjWbBB8Yb4TMrV8WjhAjVt3UTvrTF9FxkAluJeCnLXg==}
     engines: {node: '>=18.0.0'}
     peerDependencies:
@@ -5984,14 +6006,14 @@ packages:
       '@storybook/react': 8.6.9(@storybook/test@8.6.9)(react-dom@19.0.0)(react@19.0.0)(storybook@8.6.9)(typescript@5.8.2)
       '@storybook/react-vite': 8.6.9(@storybook/test@8.6.9)(react-dom@19.0.0)(react@19.0.0)(storybook@8.6.9)(typescript@5.8.2)(vite@6.4.1)
       '@storybook/test': 8.6.9(storybook@8.6.9)
-      next: 15.4.8(@babel/core@7.28.0)(@opentelemetry/api@1.9.0)(@playwright/test@1.51.1)(react-dom@19.0.0)(react@19.0.0)
+      next: 15.4.9(@babel/core@7.28.0)(@opentelemetry/api@1.9.0)(@playwright/test@1.51.1)(react-dom@19.0.0)(react@19.0.0)
       react: 19.0.0
       react-dom: 19.0.0(react@19.0.0)
       storybook: 8.6.9(prettier@3.5.3)
       styled-jsx: 5.1.6(@babel/core@7.28.0)(react@19.0.0)
       typescript: 5.8.2
       vite: 6.4.1(@types/node@22.13.13)
-      vite-plugin-storybook-nextjs: 1.1.5(@storybook/test@8.6.9)(next@15.4.8)(storybook@8.6.9)(vite@6.4.1)
+      vite-plugin-storybook-nextjs: 1.1.5(@storybook/test@8.6.9)(next@15.4.9)(storybook@8.6.9)(vite@6.4.1)
     optionalDependencies:
       sharp: 0.33.5
     transitivePeerDependencies:
@@ -6034,7 +6056,7 @@ packages:
       storybook: 8.6.9(prettier@3.5.3)
     dev: true
 
-  /@storybook/nextjs@8.6.9(esbuild@0.25.8)(next@15.4.8)(react-dom@19.0.0)(react@19.0.0)(storybook@8.6.9)(typescript@5.8.2)(webpack@5.103.0):
+  /@storybook/nextjs@8.6.9(esbuild@0.25.8)(next@15.4.9)(react-dom@19.0.0)(react@19.0.0)(storybook@8.6.9)(typescript@5.8.2)(webpack@5.103.0):
     resolution: {integrity: sha512-b+QmjpZQJw1VM5MB5hZEE185SKicqotlJ97AFV5/oLtRxyx7ww2xCB5k2nlOaME0LC7LGQxPy3pQrf1f4zrwhA==}
     engines: {node: '>=18.0.0'}
     peerDependencies:
@@ -6074,7 +6096,7 @@ packages:
       find-up: 5.0.0
       image-size: 1.2.1
       loader-utils: 3.3.1
-      next: 15.4.8(@babel/core@7.28.0)(@opentelemetry/api@1.9.0)(@playwright/test@1.51.1)(react-dom@19.0.0)(react@19.0.0)
+      next: 15.4.9(@babel/core@7.28.0)(@opentelemetry/api@1.9.0)(@playwright/test@1.51.1)(react-dom@19.0.0)(react@19.0.0)
       node-polyfill-webpack-plugin: 2.0.1(webpack@5.103.0)
       pnp-webpack-plugin: 1.7.0(typescript@5.8.2)
       postcss: 8.5.6
@@ -9133,8 +9155,8 @@ packages:
   /base64-js@1.5.1:
     resolution: {integrity: sha512-AKpaYlHn8t4SVbOHCy+b5+KKgvR4vrsD8vbvrbiQJps7fKDTkjkDry6ji0rUJjC0kzbNePLwzxq8iypo41qeWA==}
 
-  /baseline-browser-mapping@2.9.0:
-    resolution: {integrity: sha512-Mh++g+2LPfzZToywfE1BUzvZbfOY52Nil0rn9H1CPC5DJ7fX+Vir7nToBeoiSbB1zTNeGYbELEvJESujgGrzXw==}
+  /baseline-browser-mapping@2.9.6:
+    resolution: {integrity: sha512-v9BVVpOTLB59C9E7aSnmIF8h7qRsFpx+A2nugVMTszEOMcfjlZMsXRm4LF23I3Z9AJxc8ANpIvzbzONoX9VJlg==}
     hasBin: true
 
   /bech32@2.0.0:
@@ -9304,7 +9326,7 @@ packages:
     engines: {node: ^6 || ^7 || ^8 || ^9 || ^10 || ^11 || ^12 || >=13.7}
     hasBin: true
     dependencies:
-      caniuse-lite: 1.0.30001759
+      caniuse-lite: 1.0.30001760
       electron-to-chromium: 1.5.197
       node-releases: 2.0.19
       update-browserslist-db: 1.1.3(browserslist@4.25.1)
@@ -9314,11 +9336,11 @@ packages:
     engines: {node: ^6 || ^7 || ^8 || ^9 || ^10 || ^11 || ^12 || >=13.7}
     hasBin: true
     dependencies:
-      baseline-browser-mapping: 2.9.0
-      caniuse-lite: 1.0.30001759
-      electron-to-chromium: 1.5.263
+      baseline-browser-mapping: 2.9.6
+      caniuse-lite: 1.0.30001760
+      electron-to-chromium: 1.5.267
       node-releases: 2.0.27
-      update-browserslist-db: 1.2.0(browserslist@4.28.1)
+      update-browserslist-db: 1.2.2(browserslist@4.28.1)
 
   /bs58@4.0.1:
     resolution: {integrity: sha512-Ok3Wdf5vOIlBrgCvTq96gBkJw+JUEzdBgyaza5HLtPm7yTHkjRy8+JzNyHF7BHa0bNWOQIp3m5YF0nnFcOIKLw==}
@@ -9430,8 +9452,8 @@ packages:
     engines: {node: '>=10'}
     dev: true
 
-  /caniuse-lite@1.0.30001759:
-    resolution: {integrity: sha512-Pzfx9fOKoKvevQf8oCXoyNRQ5QyxJj+3O0Rqx2V5oxT61KGx8+n6hV/IUyJeifUci2clnmmKVpvtiqRzgiWjSw==}
+  /caniuse-lite@1.0.30001760:
+    resolution: {integrity: sha512-7AAMPcueWELt1p3mi13HR/LHH0TJLT11cnwDJEs3xA4+CK/PLKeO9Kl1oru24htkyUKtkGCvAx4ohB0Ttry8Dw==}
 
   /case-sensitive-paths-webpack-plugin@2.4.0:
     resolution: {integrity: sha512-roIFONhcxog0JSSWbvVAh3OocukmSgpqOH6YpMkCvav/ySIV3JKg4Dc8vYtQjYi/UxpNE36r/9v+VqTQqgkYmw==}
@@ -10425,8 +10447,8 @@ packages:
   /electron-to-chromium@1.5.197:
     resolution: {integrity: sha512-m1xWB3g7vJ6asIFz+2pBUbq3uGmfmln1M9SSvBe4QIFWYrRHylP73zL/3nMjDmwz8V+1xAXQDfBd6+HPW0WvDQ==}
 
-  /electron-to-chromium@1.5.263:
-    resolution: {integrity: sha512-DrqJ11Knd+lo+dv+lltvfMDLU27g14LMdH2b0O3Pio4uk0x+z7OR+JrmyacTPN2M8w3BrZ7/RTwG3R9B7irPlg==}
+  /electron-to-chromium@1.5.267:
+    resolution: {integrity: sha512-0Drusm6MVRXSOJpGbaSVgcQsuB4hEkMpHXaVstcPmhu5LIedxs1xNK/nIxmQIU/RPC0+1/o0AVZfBTkTNJOdUw==}
 
   /elliptic@6.6.1:
     resolution: {integrity: sha512-RaddvvMatK2LJHqFJ+YA4WysVN5Ita9E35botqIYspQ4TkRAlCicdzKOjlyv/1Za5RyTNn7di//eEV0uTAfe3g==}
@@ -10494,6 +10516,14 @@ packages:
     dependencies:
       graceful-fs: 4.2.11
       tapable: 2.2.2
+    dev: true
+
+  /enhanced-resolve@5.18.4:
+    resolution: {integrity: sha512-LgQMM4WXU3QI+SYgEc2liRgznaD5ojbmY3sb8LxyguVkIg5FxdpTkvk72te2R38/TGKxH634oLxXRGY6d7AP+Q==}
+    engines: {node: '>=10.13.0'}
+    dependencies:
+      graceful-fs: 4.2.11
+      tapable: 2.3.0
 
   /entities@2.2.0:
     resolution: {integrity: sha512-p92if5Nz619I0w+akJrLZH0MX0Pb5DX39XOwQTtXSdQQOaYH03S1uIQp4mhOZtAXrxq4ViO67YTiLBo2638o9A==}
@@ -13610,8 +13640,8 @@ packages:
       react-dom: 19.0.0(react@19.0.0)
     dev: false
 
-  /next@15.4.8(@babel/core@7.28.0)(@opentelemetry/api@1.9.0)(@playwright/test@1.51.1)(react-dom@19.0.0)(react@19.0.0):
-    resolution: {integrity: sha512-jwOXTz/bo0Pvlf20FSb6VXVeWRssA2vbvq9SdrOPEg9x8E1B27C2rQtvriAn600o9hH61kjrVRexEffv3JybuA==}
+  /next@15.4.9(@babel/core@7.28.0)(@opentelemetry/api@1.9.0)(@playwright/test@1.51.1)(react-dom@19.0.0)(react@19.0.0):
+    resolution: {integrity: sha512-/NedNmbiH4Umt/7SohT9VKxEdBt02Lj33xHrukE7d8Li6juT+75sEq4a4U06jggrvdbklKgr78OZEyWZ8XRrtw==}
     engines: {node: ^18.18.0 || ^19.8.0 || >= 20.0.0}
     hasBin: true
     peerDependencies:
@@ -13631,11 +13661,11 @@ packages:
       sass:
         optional: true
     dependencies:
-      '@next/env': 15.4.8
+      '@next/env': 15.4.9
       '@opentelemetry/api': 1.9.0
       '@playwright/test': 1.51.1
       '@swc/helpers': 0.5.15
-      caniuse-lite: 1.0.30001759
+      caniuse-lite: 1.0.30001760
       postcss: 8.4.31
       react: 19.0.0
       react-dom: 19.0.0(react@19.0.0)
@@ -15196,6 +15226,7 @@ packages:
       ajv: 8.17.1
       ajv-formats: 2.1.1(ajv@8.17.1)
       ajv-keywords: 5.1.0(ajv@8.17.1)
+    dev: true
 
   /schema-utils@4.3.3:
     resolution: {integrity: sha512-eflK8wEtyOE6+hsaRVPxvUKYCpRgzLqDTb8krvAsRIwOGlHoSgYLgBXoubGgLd2fT41/OUYdb48v4k4WWHQurA==}
@@ -15575,7 +15606,7 @@ packages:
     resolution: {integrity: sha512-srTItn1GOvyvOycgxjAnPA63FZNwy0PTyUBFMHRM+hVFltAeoh0LmNBz9SZqUS9mMqGk8rfyWyXn3GH5ReJ8Zw==}
     dev: true
 
-  /storybook-addon-next-router@4.0.2(@storybook/addon-actions@6.5.16)(@storybook/addons@6.5.16)(@storybook/client-api@6.5.16)(next@15.4.8)(react-dom@19.0.0)(react@19.0.0):
+  /storybook-addon-next-router@4.0.2(@storybook/addon-actions@6.5.16)(@storybook/addons@6.5.16)(@storybook/client-api@6.5.16)(next@15.4.9)(react-dom@19.0.0)(react@19.0.0):
     resolution: {integrity: sha512-0rjGAl7HziW4ecDq+VU03H1dwkw5f6phqA+PMquPzdowNVl29ejVwVadLMGlovG6x2snaxMGxtySR2c5bwegSw==}
     engines: {node: '>=10'}
     peerDependencies:
@@ -15589,7 +15620,7 @@ packages:
       '@storybook/addon-actions': 6.5.16(react-dom@19.0.0)(react@19.0.0)
       '@storybook/addons': 6.5.16(react-dom@19.0.0)(react@19.0.0)
       '@storybook/client-api': 6.5.16(react-dom@19.0.0)(react@19.0.0)
-      next: 15.4.8(@babel/core@7.28.0)(@opentelemetry/api@1.9.0)(@playwright/test@1.51.1)(react-dom@19.0.0)(react@19.0.0)
+      next: 15.4.9(@babel/core@7.28.0)(@opentelemetry/api@1.9.0)(@playwright/test@1.51.1)(react-dom@19.0.0)(react@19.0.0)
       react: 19.0.0
       react-dom: 19.0.0(react@19.0.0)
       tslib: 2.4.0
@@ -15906,6 +15937,7 @@ packages:
   /tapable@2.2.2:
     resolution: {integrity: sha512-Re10+NauLTMCudc7T5WLFLAwDhQ0JWdrMK+9B2M8zR5hRExKmsRDCBA7/aV/pNJFltmBFO5BAMlQFi/vq3nKOg==}
     engines: {node: '>=6'}
+    dev: true
 
   /tapable@2.3.0:
     resolution: {integrity: sha512-g9ljZiwki/LfxmQADO3dEY1CbpmXT5Hm2fJ+QaGKwSXUylMybePR7/67YW7jOrrvjEgL1Fmz5kzyAjWVWLlucg==}
@@ -15949,8 +15981,8 @@ packages:
       webpack: 5.101.0(esbuild@0.25.8)
     dev: true
 
-  /terser-webpack-plugin@5.3.14(esbuild@0.25.8)(webpack@5.103.0):
-    resolution: {integrity: sha512-vkZjpUjb6OMS7dhV+tILUW6BhpDR7P2L/aQSAv+Uwk+m8KATX9EccViHTJR2qDtACKPIYndLGCyl3FMo+r2LMw==}
+  /terser-webpack-plugin@5.3.16(esbuild@0.25.8)(webpack@5.103.0):
+    resolution: {integrity: sha512-h9oBFCWrq78NyWWVcSwZarJkZ01c2AyGrzs1crmHZO3QUg9D61Wu4NPjBy69n7JqylFF5y+CsUZYmYEIZ3mR+Q==}
     engines: {node: '>= 10.13.0'}
     peerDependencies:
       '@swc/core': '*'
@@ -15965,12 +15997,12 @@ packages:
       uglify-js:
         optional: true
     dependencies:
-      '@jridgewell/trace-mapping': 0.3.29
+      '@jridgewell/trace-mapping': 0.3.31
       esbuild: 0.25.8
       jest-worker: 27.5.1
-      schema-utils: 4.3.2
+      schema-utils: 4.3.3
       serialize-javascript: 6.0.2
-      terser: 5.43.1
+      terser: 5.44.1
       webpack: 5.103.0(esbuild@0.25.8)
 
   /terser@5.43.1:
@@ -15979,6 +16011,17 @@ packages:
     hasBin: true
     dependencies:
       '@jridgewell/source-map': 0.3.10
+      acorn: 8.15.0
+      commander: 2.20.3
+      source-map-support: 0.5.21
+    dev: true
+
+  /terser@5.44.1:
+    resolution: {integrity: sha512-t/R3R/n0MSwnnazuPpPNVO60LX0SKL45pyl9YlvxIdkH0Of7D5qM2EVe+yASRIlY5pZ73nclYJfNANGWPwFDZw==}
+    engines: {node: '>=10'}
+    hasBin: true
+    dependencies:
+      '@jridgewell/source-map': 0.3.11
       acorn: 8.15.0
       commander: 2.20.3
       source-map-support: 0.5.21
@@ -16411,8 +16454,8 @@ packages:
       escalade: 3.2.0
       picocolors: 1.1.1
 
-  /update-browserslist-db@1.2.0(browserslist@4.28.1):
-    resolution: {integrity: sha512-Dn+NlSF/7+0lVSEZ57SYQg6/E44arLzsVOGgrElBn/BlG1B8WKdbLppOocFrXwRNTkNlgdGNaBgH1o0lggDPiw==}
+  /update-browserslist-db@1.2.2(browserslist@4.28.1):
+    resolution: {integrity: sha512-E85pfNzMQ9jpKkA7+TJAi4TJN+tBCuWh5rUcS/sv6cFi+1q9LYDwDI5dpUL0u/73EElyQ8d3TEaeW4sPedBqYA==}
     hasBin: true
     peerDependencies:
       browserslist: '>= 4.21.0'
@@ -16527,7 +16570,7 @@ packages:
       d3-timer: 3.0.1
     dev: false
 
-  /vite-plugin-storybook-nextjs@1.1.5(@storybook/test@8.6.9)(next@15.4.8)(storybook@8.6.9)(vite@6.4.1):
+  /vite-plugin-storybook-nextjs@1.1.5(@storybook/test@8.6.9)(next@15.4.9)(storybook@8.6.9)(vite@6.4.1):
     resolution: {integrity: sha512-doFAXLvfEtIgMbDA+0VzyanoWoAUAwMLMfTpFnv3rxaN/tGHtWAwyhK73OA3UJzyXrp6rDPTqbjWUYJ6noxNww==}
     peerDependencies:
       '@storybook/test': ^8.3.0
@@ -16535,12 +16578,12 @@ packages:
       storybook: ^8.3.0
       vite: ^5.0.0 || ^6.0.0
     dependencies:
-      '@next/env': 15.5.7
+      '@next/env': 15.5.9
       '@storybook/test': 8.6.9(storybook@8.6.9)
       image-size: 2.0.2
       magic-string: 0.30.17
       module-alias: 2.2.3
-      next: 15.4.8(@babel/core@7.28.0)(@opentelemetry/api@1.9.0)(@playwright/test@1.51.1)(react-dom@19.0.0)(react@19.0.0)
+      next: 15.4.9(@babel/core@7.28.0)(@opentelemetry/api@1.9.0)(@playwright/test@1.51.1)(react-dom@19.0.0)(react@19.0.0)
       storybook: 8.6.9(prettier@3.5.3)
       ts-dedent: 2.2.0
       vite: 6.4.1(@types/node@22.13.13)
@@ -16756,7 +16799,7 @@ packages:
       acorn-import-phases: 1.0.4(acorn@8.15.0)
       browserslist: 4.28.1
       chrome-trace-event: 1.0.4
-      enhanced-resolve: 5.18.3
+      enhanced-resolve: 5.18.4
       es-module-lexer: 1.7.0
       eslint-scope: 5.1.1
       events: 3.3.0
@@ -16768,7 +16811,7 @@ packages:
       neo-async: 2.6.2
       schema-utils: 4.3.3
       tapable: 2.3.0
-      terser-webpack-plugin: 5.3.14(esbuild@0.25.8)(webpack@5.103.0)
+      terser-webpack-plugin: 5.3.16(esbuild@0.25.8)(webpack@5.103.0)
       watchpack: 2.4.4
       webpack-sources: 3.3.3
     transitivePeerDependencies:
