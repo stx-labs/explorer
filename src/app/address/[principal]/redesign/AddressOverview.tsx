@@ -393,7 +393,9 @@ export function MinerCard() {
 }
 
 export const AddressOverview = () => {
-  const { initialAddressRecentTransactionsData, principal } = useAddressIdPageData();
+  // TODO: Temporarily disabled - re-enable when API performance is fixed
+  // const { initialAddressRecentTransactionsData, principal } = useAddressIdPageData();
+  const { principal } = useAddressIdPageData();
 
   return (
     <Grid templateColumns={{ base: '100%', lg: '75% 25%' }} gap={2} w="full" minW={0}>
@@ -412,7 +414,8 @@ export const AddressOverview = () => {
           </Text>
           <AddressTxsTable
             principal={principal}
-            initialData={initialAddressRecentTransactionsData}
+            // TODO: Temporarily disabled - re-enable when API performance is fixed
+            // initialData={initialAddressRecentTransactionsData}
             disablePagination
             pageSize={ADDRESS_ID_PAGE_RECENT_ADDRESS_TXS_LIMIT}
           />

@@ -4,7 +4,6 @@ export async function stacksAPIFetch(url: string, options: RequestInit = {}) {
   reqHeaders.set('x-api-key', process.env.EXPLORER_STACKS_API_KEY || '');
 
   try {
-    // Dynamic import to avoid breaking pages/ directory which doesn't support next/headers
     const { headers: getHeaders } = await import('next/headers');
     const incomingHeaders = await getHeaders();
     const referrer =

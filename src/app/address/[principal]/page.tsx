@@ -1,23 +1,27 @@
 import { getTokenPrice } from '@/app/getTokenPriceInfo';
 import { CommonSearchParams } from '@/app/transactions/page';
 import { DEFAULT_MAINNET_SERVER, DEFAULT_TESTNET_SERVER } from '@/common/constants/env';
-import { GenericResponseType } from '@/common/hooks/useInfiniteQueryResult';
+// TODO: Temporarily disabled - re-enable when API performance is fixed
+// import { GenericResponseType } from '@/common/hooks/useInfiniteQueryResult';
 import { NetworkModes } from '@/common/types/network';
 import { logError } from '@/common/utils/error-utils';
 import { getApiUrl } from '@/common/utils/network-utils';
-import {
-  CompressedTxAndMempoolTxTableData,
-  compressMempoolTransaction,
-  compressTransaction,
-} from '@/common/utils/transaction-utils';
+
+// TODO: Temporarily disabled - re-enable when API performance is fixed
+// import {
+//   CompressedTxAndMempoolTxTableData,
+//   compressMempoolTransaction,
+//   compressTransaction,
+// } from '@/common/utils/transaction-utils';
 
 import {
   AddressBalanceResponse,
   AddressNonces,
   BnsNamesOwnByAddressResponse,
   BurnchainRewardsTotal,
-  MempoolTransaction,
-  Transaction,
+  // TODO: Temporarily disabled - re-enable when API performance is fixed
+  // MempoolTransaction,
+  // Transaction,
 } from '@stacks/stacks-blockchain-api-types';
 
 import { AddressIdPageDataProvider } from './AddressIdPageContext';
@@ -30,13 +34,15 @@ import {
   fetchAddressBurnChainRewards,
   fetchAddressLatestNonce,
   fetchPoxInfoRaw,
-  fetchRecentTransactions,
+  // TODO: Temporarily disabled - re-enable when API performance is fixed
+  // fetchRecentTransactions,
   handleSettledResult,
 } from './page-data';
 
-function isConfirmedTx<T extends Transaction, U extends MempoolTransaction>(tx: T | U): tx is T {
-  return 'block_height' in tx && tx.block_height !== undefined;
-}
+// TODO: Temporarily disabled - re-enable when API performance is fixed
+// function isConfirmedTx<T extends Transaction, U extends MempoolTransaction>(tx: T | U): tx is T {
+//   return 'block_height' in tx && tx.block_height !== undefined;
+// }
 
 export default async function Page(props: {
   params: Promise<{ principal: string }>;
@@ -61,9 +67,10 @@ export default async function Page(props: {
   let initialAddressBNSNamesData: BnsNamesOwnByAddressResponse | undefined;
   let initialBurnChainRewardsData: BurnchainRewardsTotal | undefined;
   let initialPoxInfoData: CompressedPoxInfo | undefined;
-  let initialAddressRecentTransactionsData:
-    | GenericResponseType<CompressedTxAndMempoolTxTableData>
-    | undefined;
+  // TODO: Temporarily disabled - re-enable when API performance is fixed
+  // let initialAddressRecentTransactionsData:
+  //   | GenericResponseType<CompressedTxAndMempoolTxTableData>
+  //   | undefined;
 
   if (!isSSRDisabled) {
     try {
@@ -74,7 +81,8 @@ export default async function Page(props: {
         addressBNSNamesResult,
         burnChainRewardsResult,
         poxInfoResult,
-        recentTransactionsResult,
+        // TODO: Temporarily disabled - re-enable when API performance is fixed
+        // recentTransactionsResult,
       ] = await Promise.allSettled([
         getTokenPrice(),
         fetchAddressBalances(apiUrl, principal),
@@ -82,7 +90,8 @@ export default async function Page(props: {
         fetchAddressBNSNames(apiUrl, principal),
         fetchAddressBurnChainRewards(apiUrl, principal),
         fetchPoxInfoRaw(apiUrl),
-        fetchRecentTransactions(apiUrl, principal),
+        // TODO: Temporarily disabled - re-enable when API performance is fixed
+        // fetchRecentTransactions(apiUrl, principal),
       ]);
 
       tokenPrice = handleSettledResult(tokenPriceResult, 'Failed to fetch token price') || {
@@ -107,26 +116,27 @@ export default async function Page(props: {
       );
       const handledPoxInfoResult = handleSettledResult(poxInfoResult, 'Failed to fetch Pox info');
       initialPoxInfoData = handledPoxInfoResult ? compressPoxInfo(handledPoxInfoResult) : undefined;
-      initialAddressRecentTransactionsData = handleSettledResult(
-        recentTransactionsResult,
-        'Failed to fetch recent transactions'
-      );
-      const recentAddressTransactions = handleSettledResult(
-        recentTransactionsResult,
-        'Failed to fetch recent transactions'
-      );
-      const compressedRecentAddressTransactions = recentAddressTransactions
-        ? {
-            ...recentAddressTransactions,
-            results: recentAddressTransactions.results.map(tx => {
-              if (isConfirmedTx<Transaction, MempoolTransaction>(tx)) {
-                return compressTransaction(tx);
-              }
-              return compressMempoolTransaction(tx);
-            }),
-          }
-        : undefined;
-      initialAddressRecentTransactionsData = compressedRecentAddressTransactions;
+      // TODO: Temporarily disabled - re-enable when API performance is fixed
+      // initialAddressRecentTransactionsData = handleSettledResult(
+      //   recentTransactionsResult,
+      //   'Failed to fetch recent transactions'
+      // );
+      // const recentAddressTransactions = handleSettledResult(
+      //   recentTransactionsResult,
+      //   'Failed to fetch recent transactions'
+      // );
+      // const compressedRecentAddressTransactions = recentAddressTransactions
+      //   ? {
+      //       ...recentAddressTransactions,
+      //       results: recentAddressTransactions.results.map(tx => {
+      //         if (isConfirmedTx<Transaction, MempoolTransaction>(tx)) {
+      //           return compressTransaction(tx);
+      //         }
+      //         return compressMempoolTransaction(tx);
+      //       }),
+      //     }
+      //   : undefined;
+      // initialAddressRecentTransactionsData = compressedRecentAddressTransactions;
     } catch (error) {
       logError(
         error as Error,
@@ -146,7 +156,8 @@ export default async function Page(props: {
       initialAddressBNSNamesData={initialAddressBNSNamesData}
       initialBurnChainRewardsData={initialBurnChainRewardsData}
       initialPoxInfoData={initialPoxInfoData}
-      initialAddressRecentTransactionsData={initialAddressRecentTransactionsData}
+      // TODO: Temporarily disabled - re-enable when API performance is fixed
+      // initialAddressRecentTransactionsData={initialAddressRecentTransactionsData}
       principal={principal}
     >
       <AddressPage principal={principal} />

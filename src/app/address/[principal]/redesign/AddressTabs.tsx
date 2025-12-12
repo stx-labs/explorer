@@ -13,6 +13,7 @@ import {
   ADDRESS_ID_PAGE_ADDRESS_TXS_LIMIT,
   ADDRESS_ID_PAGE_FUNGIBLE_TOKENS_LIMIT,
 } from '@/common/components/table/table-examples/consts';
+import { useAddressTxs } from '@/common/queries/useAddressConfirmedTxsWithTransfersInfinite';
 import { TabsContent, TabsList, TabsRoot } from '@/ui/Tabs';
 import { useSearchParams } from 'next/navigation';
 import { useMemo, useState } from 'react';
@@ -29,9 +30,16 @@ enum AddressIdPageTab {
 }
 
 export const AddressTabs = ({ principal }: { principal: string }) => {
-  const { initialAddressRecentTransactionsData, initialAddressBalancesData } =
-    useAddressIdPageData();
-  const totalAddressTransactions = initialAddressRecentTransactionsData?.total || 0;
+  // TODO: Temporarily disabled - re-enable when API performance is fixed
+  // const { initialAddressRecentTransactionsData, initialAddressBalancesData } =
+  //   useAddressIdPageData();
+  // const totalAddressTransactions = initialAddressRecentTransactionsData?.total || 0;
+  const { initialAddressBalancesData } = useAddressIdPageData();
+
+  // TODO: Temporarily fetching client-side - re-enable SSR when API performance is fixed
+  const { data: transactionsData } = useAddressTxs(principal, 1, 0);
+  const totalAddressTransactions = transactionsData?.total || 0;
+
   const totalAddressFungibleTokens = Object.entries(
     initialAddressBalancesData?.fungible_tokens || {}
   ).length;

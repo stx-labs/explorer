@@ -220,8 +220,8 @@ export function AddressTxsTable({
     isCacheSetWithInitialData.current = true;
   }
 
-  // fetch data
-  let { data, isFetching, isLoading } = useAddressTxs(
+  // TODO: Temporarily fetching client-side - re-enable SSR initialData when API performance is fixed
+  let { data, isFetching, isLoading, isError, error } = useAddressTxs(
     principal,
     pagination.pageSize,
     pagination.pageIndex * pagination.pageSize,
@@ -293,6 +293,7 @@ export function AddressTxsTable({
       }
       isLoading={isLoading}
       isFetching={isFetching}
+      error={isError ? (error?.message ?? 'Failed to load transactions') : undefined}
       emptyTableUi={
         <Stack justifyContent="center" alignItems="center" h="full" w="full" flex={1} py={16}>
           <Text textStyle="text-regular-sm" color="textTertiary">
