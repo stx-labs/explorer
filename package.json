@@ -143,7 +143,7 @@
     "lint-staged": "15.5.0",
     "prettier": "3.5.3",
     "react-test-renderer": "19.0.0",
-    "storybook": "8.6.9",
+    "storybook": "8.6.15",
     "storybook-addon-next-router": "4.0.2",
     "ts-unused-exports": "11.0.1",
     "typescript": "5.8.2",
