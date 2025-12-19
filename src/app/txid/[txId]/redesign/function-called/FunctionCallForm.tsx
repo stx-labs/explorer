@@ -120,7 +120,7 @@ export const FunctionCallForm: FC<FunctionCallFormProps> = ({
             await handlePublicFunctionCall(processedFunctionParams, postConditionParams, {
               contractId,
               fnAbi,
-              network: network.url,
+              network: network.mode,
               queryClient,
             });
           } else {
