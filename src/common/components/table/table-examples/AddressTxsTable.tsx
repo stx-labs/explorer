@@ -237,9 +237,9 @@ export function AddressTxsTable({
     () =>
       txs.map(tx => {
         const isConfirmed = isConfirmedTx(tx);
+        const events = isConfirmed ? tx.events || [] : [];
         const to = getToAddress(tx);
         const amount = getAmount(tx);
-        const events = isConfirmed ? tx.events || [] : [];
 
         return {
           [AddressTxsTableColumns.Transaction]: { principal, tx },
