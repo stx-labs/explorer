@@ -20,29 +20,27 @@ describe('getTokenInfo', () => {
     jest.clearAllMocks();
   });
 
-  it('skips fetching token for custom api', async () => {
+  it('throws error for custom api', async () => {
     const tokenId = 'token1';
     const chain = 'mainnet';
     const api = 'custom';
 
-    const result = await getTokenInfo(tokenId, chain, api);
-
-    expect(result).toEqual({});
-    expect(console.error).toBeCalledWith(new Error('cannot fetch token info for this request'));
+    await expect(getTokenInfo(tokenId, chain, api)).rejects.toThrow(
+      'Cannot fetch token info for this request'
+    );
   });
 
-  it('skips fetching token if missing from tokenMetadataApi', async () => {
+  it('throws error if token metadata fetch fails', async () => {
     const tokenId = 'token1';
     const chain = 'mainnet';
 
     fetch.mockResolvedValueOnce({
-      json: jest.fn().mockResolvedValueOnce({ name: null, symbol: 'SYMBOL' }),
+      ok: false,
+      statusText: 'Not Found',
+      status: 404,
     });
 
-    const result = await getTokenInfo(tokenId, chain);
-
-    expect(result).toEqual({});
-    expect(console.error).toBeCalledWith(new Error('token not found'));
+    await expect(getTokenInfo(tokenId, chain)).rejects.toThrow('Failed to fetch token metadata');
   });
 
   it('returns token info', async () => {
@@ -50,14 +48,19 @@ describe('getTokenInfo', () => {
     const chain = 'mainnet';
 
     fetch
+      // Token metadata response
       .mockResolvedValueOnce({
+        ok: true,
         json: jest.fn().mockResolvedValueOnce({ name: 'NAME', symbol: 'SYMBOL' }),
       })
+      // Contract info response (for circulating supply)
       .mockResolvedValueOnce({
-        json: jest.fn().mockResolvedValueOnce({ coins: [{ id: 'ID', symbol: 'SYMBOL' }] }),
+        ok: false, // Skip circulating supply fetch
       })
+      // LunarCrush response
       .mockResolvedValueOnce({
-        json: jest.fn().mockResolvedValueOnce({ name: 'NAME', symbol: 'SYMBOL' }),
+        ok: true,
+        json: jest.fn().mockResolvedValueOnce({ data: { name: 'NAME', symbol: 'SYMBOL' } }),
       });
 
     const result = await getTokenInfo(tokenId, chain);
@@ -68,6 +71,7 @@ describe('getTokenInfo', () => {
         symbol: 'SYMBOL',
         totalSupply: null,
         circulatingSupply: null,
+        imageUri: undefined,
       },
       extended: {
         categories: [],
