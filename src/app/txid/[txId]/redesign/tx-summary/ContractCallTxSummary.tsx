@@ -10,6 +10,7 @@ import {
 } from '@stacks/stacks-blockchain-api-types';
 
 import { useTxIdPageData } from '../../TxIdPageContext';
+import { ExecutionCostItem } from './ExecutionCost';
 import { PriceSummaryItemValue, SponsorTag, SummaryItem } from './SummaryItem';
 import { TokensTransferred } from './TokensTransferred';
 
@@ -145,6 +146,7 @@ export const ContractCallTxSummaryItems = ({
           )}
         />
       )}
+      {isConfirmed && <ExecutionCostItem tx={tx} />}
     </>
   );
 };

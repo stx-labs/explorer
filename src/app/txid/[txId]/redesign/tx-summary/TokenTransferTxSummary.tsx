@@ -10,6 +10,7 @@ import {
 } from '@stacks/stacks-blockchain-api-types';
 
 import { useTxIdPageData } from '../../TxIdPageContext';
+import { ExecutionCostItem } from './ExecutionCost';
 import { PriceSummaryItemValue, SponsorTag, SummaryItem } from './SummaryItem';
 
 export function TokenTransferTxSummaryItems({
@@ -112,6 +113,9 @@ export function TokenTransferTxSummaryItems({
             />
           )}
         />
+      )}
+      {isConfirmedTx<TokenTransferTransaction, MempoolTokenTransferTransaction>(tx) && (
+        <ExecutionCostItem tx={tx} />
       )}
     </>
   );
