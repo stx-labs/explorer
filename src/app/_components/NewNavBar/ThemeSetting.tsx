@@ -3,7 +3,7 @@
 import { useColorMode } from '@/components/ui/color-mode';
 import { Text } from '@/ui/Text';
 import { Box, ClientOnly, Flex, Icon } from '@chakra-ui/react';
-import { Moon, SunDim, Monitor } from '@phosphor-icons/react';
+import { Monitor, Moon, SunDim } from '@phosphor-icons/react';
 import { useTheme } from 'next-themes';
 
 import { OptionPicker, OptionPickerOption } from './OptionPicker';
@@ -44,7 +44,6 @@ const options: OptionPickerOption[] = [
 export const ThemeSettingBase = () => {
   const { theme } = useTheme();
   const { setColorMode } = useColorMode();
-
 
   return (
     // A `minWidth` is set so that the size doesn't change when
