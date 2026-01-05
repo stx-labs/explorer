@@ -45,7 +45,7 @@ export const SmartContractTxSummaryItems = ({
         showCopyButton
       />
       <SummaryItem
-        label="From"
+        label="By"
         value={tx.sender_address}
         valueRenderer={value => <SummaryItemAddressLink value={value} />}
         showCopyButton

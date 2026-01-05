@@ -40,7 +40,7 @@ interface PostConditionsTableData {
 const columnDefinitions: ColumnDef<PostConditionsTableData>[] = [
   {
     id: PostConditionsTableColumns.From,
-    header: 'From',
+    header: 'By',
     accessorKey: PostConditionsTableColumns.From,
     cell: info => AddressLinkCellRenderer(info.getValue() as AddressLinkCellRendererProps),
     enableSorting: false,

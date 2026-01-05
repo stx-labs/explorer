@@ -76,7 +76,7 @@ export const defaultColumnDefinitions: ColumnDef<TxTableData>[] = [
   },
   {
     id: TxTableColumns.From,
-    header: 'From',
+    header: 'By',
     accessorKey: TxTableColumns.From,
     cell: info => AddressLinkCellRenderer(info.getValue() as TxTableAddressColumnData),
     enableSorting: false,
@@ -93,7 +93,7 @@ export const defaultColumnDefinitions: ColumnDef<TxTableData>[] = [
   },
   {
     id: TxTableColumns.To,
-    header: 'To',
+    header: 'Target',
     accessorKey: TxTableColumns.To,
     cell: info => AddressLinkCellRenderer(info.getValue() as TxTableAddressColumnData),
     enableSorting: false,

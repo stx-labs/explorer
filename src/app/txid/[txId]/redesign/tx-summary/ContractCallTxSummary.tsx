@@ -47,7 +47,7 @@ export const ContractCallTxSummaryItems = ({
         showCopyButton
       />
       <SummaryItem
-        label="From"
+        label="By"
         value={tx.sender_address}
         valueRenderer={value => (
           <AddressLink principal={value} wordBreak="break-all" variant="tableLink">

@@ -119,7 +119,7 @@ export const defaultColumnDefinitions: ColumnDef<AddressTxsTableData>[] = [
   },
   {
     id: AddressTxsTableColumns.From,
-    header: 'From',
+    header: 'By',
     accessorKey: AddressTxsTableColumns.From,
     cell: info => AddressLinkCellRenderer(info.row.original[AddressTxsTableColumns.From]),
     enableSorting: false,
@@ -136,7 +136,7 @@ export const defaultColumnDefinitions: ColumnDef<AddressTxsTableData>[] = [
   },
   {
     id: AddressTxsTableColumns.To,
-    header: 'To',
+    header: 'Target',
     accessorKey: AddressTxsTableColumns.To,
     cell: info => AddressLinkCellRenderer(info.row.original[AddressTxsTableColumns.To]),
     enableSorting: false,

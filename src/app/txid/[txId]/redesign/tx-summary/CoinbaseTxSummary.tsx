@@ -25,7 +25,7 @@ export const CoinbaseTxSummaryItems = ({
     <>
       <SummaryItem label="ID" value={tx.tx_id} showCopyButton />
       <SummaryItem
-        label="From"
+        label="By"
         value={tx.sender_address}
         valueRenderer={value => (
           <AddressLink principal={value} wordBreak="break-all" variant="tableLink">
