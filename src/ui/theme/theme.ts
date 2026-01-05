@@ -37,7 +37,6 @@ import { Z_INDEX } from './zIndex';
 const explorerConfig = defineConfig({
   cssVarsPrefix: 'stacks',
   // strictTokens: true, // enforces the usage of only design tokens
-  // useSystemColorMode: false,
 });
 
 const themeConfig = {
