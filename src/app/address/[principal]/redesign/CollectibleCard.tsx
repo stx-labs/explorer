@@ -19,7 +19,7 @@ export function CollectibleCard({
   tokenId,
 }: {
   assetId: string;
-  tokenId?: bigint | undefined;
+  tokenId?: bigint | string | undefined;
 }) {
   const { address, contract, asset } = getAssetNameParts(assetId);
   const contractId = `${address}.${contract}`;

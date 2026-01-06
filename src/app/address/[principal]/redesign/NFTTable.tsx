@@ -52,12 +52,13 @@ export function NFTTable() {
             const cv = hexToCV(hex);
             const json = cvToJSON(cv);
             const value = json.value;
-            const firstNftValue = typeof value === 'string' ? BigInt(value) : value;
+            const isNumericString = typeof value === 'string' && /^\d+$/.test(value);
+            const tokenId = isNumericString ? BigInt(value) : value;
             return (
               <CollectibleCard
-                key={`${nft.asset_identifier}-${firstNftValue}`}
+                key={`${nft.asset_identifier}-${tokenId}`}
                 assetId={nft.asset_identifier}
-                tokenId={firstNftValue}
+                tokenId={tokenId}
                 {...nft}
               />
             );
