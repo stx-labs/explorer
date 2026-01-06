@@ -83,8 +83,8 @@ export function getAssetEventType(event: TransactionEvent): ExtendedTransactionE
     // covers TransactionEventSmartContractLog
     return event.contract_log.topic as 'print';
   }
-  if ('stx_lock' in event) {
-    // covers TransactionEventSTXLock
+  if ('stx_lock_event' in event) {
+    // covers TransactionEventStxLock
     return 'stx_lock';
   }
 
