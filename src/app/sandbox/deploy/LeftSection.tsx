@@ -100,7 +100,7 @@ export function LeftSection() {
             please use{' '}
             <TextLink
               display="inline"
-              href="https://docs.hiro.so/stacks/clarinet/guides/deploy-a-contract"
+              href="https://docs.stacks.co/clarinet/contract-deployment"
               target="_blank"
               _hover={{ textDecoration: 'underline' }}
             >
@@ -109,7 +109,7 @@ export function LeftSection() {
             or the{' '}
             <TextLink
               display="inline"
-              href="https://docs.hiro.so/stacks/platform/guides/deployment-plans"
+              href="https://platform.hiro.so/"
               target="_blank"
               _hover={{ textDecoration: 'underline' }}
             >
