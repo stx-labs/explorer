@@ -24,8 +24,7 @@ import {
   Transaction,
 } from '@stacks/stacks-blockchain-api-types';
 
-import TokenIdPage from './PageClient';
-import { getTokenInfo } from './getTokenInfo';
+import TokenIdPageRedesign from './PageClient';
 import { getTokenDataFromLunarCrush, getTokenDataFromStacksApi, mergeTokenData } from './page-data';
 import { TokenIdPageDataProvider } from './redesign/context/TokenIdPageContext';
 import { MergedTokenData } from './types';
@@ -61,12 +60,9 @@ export default async function (props: {
   let holders: FungibleTokenHolderList | undefined;
   let numFunctions: number | undefined;
 
-  const tokenInfo = await getTokenInfo(tokenId, chain || NetworkModes.Mainnet, api);
-
-  const isRedesign = searchParams.redesign === 'true';
   const isSSRDisabled = searchParams?.ssr === 'false';
 
-  if (isRedesign && !isSSRDisabled) {
+  if (!isSSRDisabled) {
     try {
       const [
         tokenPriceResult,
@@ -159,7 +155,7 @@ export default async function (props: {
       holders={holders}
       numFunctions={numFunctions}
     >
-      <TokenIdPage tokenId={tokenId} tokenInfo={tokenInfo} />
+      <TokenIdPageRedesign />
     </TokenIdPageDataProvider>
   );
 }

@@ -1,10 +1,12 @@
+'use client';
+
 import { TransactionStatus as TransactionStatusEnum } from '@/common/constants/constants';
 import { getTransactionStatus } from '@/common/utils/transactions';
 import { Alert } from '@/components/ui/alert';
 import { Link } from '@/ui/Link';
 import { Text } from '@/ui/Text';
 import { Stack } from '@chakra-ui/react';
-import { Clock, Question, WarningDiamond, XCircle } from '@phosphor-icons/react';
+import { Clock, Question, Warning, WarningDiamond, XCircle } from '@phosphor-icons/react';
 
 import { MempoolTransaction, Transaction } from '@stacks/stacks-blockchain-api-types';
 
@@ -174,7 +176,7 @@ export function getTxAlert(tx: Transaction | MempoolTransaction) {
   return alertContent;
 }
 
-export function SuspiciousTokenAlert() {
+export function UnknownOrNewlyIssuedTokenAlert() {
   return (
     <AlertWrapper
       status="error"
@@ -192,8 +194,60 @@ export function SimilarTokenAlert() {
       status="error"
       title="Unknown or newly issued token"
       description={
-        'This token appears to be a misrepresentation or is associated with suspicious activity. Investing in unknown or new crypto tokens carries high risk and may result in total loss. Do your own research, as these tokens can be volatile and lack transparency. Ensure you fully trust the token or entity before interacting with it.'
+        "Be cautious of tokens with names similar to well-known projects, as they may be duplicates or imitations. Verify the token's official contract address and confirm its legitimacy before any interaction."
       }
+    />
+  );
+}
+
+export function RiskyTokenAlert() {
+  return (
+    <Alert
+      status="error"
+      description={
+        'This token may be a scam. Engaging with unverified tokens could result in loss of funds.'
+      }
+      icon={<Warning weight="bold" />}
+      alertIconColor="iconError"
+      bg={{ base: 'feedback.red-150', _dark: 'transactionStatus.failed' }}
+    />
+  );
+}
+
+export function NotSBTCTokenAlert() {
+  return (
+    <Alert
+      status="info"
+      description={
+        <Text textStyle="text-regular-xs" color="textPrimary">
+          This is not&nbsp;
+          <Link
+            href="https://explorer.hiro.so/token/SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token?chain=mainnet"
+            color="black"
+            textDecoration="underline"
+          >
+            <Text textStyle="text-regular-xs" color="textPrimary" whiteSpace="nowrap">
+              the official sBTC token
+            </Text>
+          </Link>
+          &nbsp; and may be a scam. Engaging with unverified tokens could result in loss of funds.
+        </Text>
+      }
+      icon={<Warning weight="bold" />}
+      alertIconColor="iconError"
+      bg={{ base: 'feedback.red-150', _dark: 'transactionStatus.failed' }}
+    />
+  );
+}
+
+export function Sip10Alert() {
+  return (
+    <Alert
+      status="neutral"
+      description={
+        'SIP-10 data is sourced from third-party providers. Stacks Explorer does not guarantee its accuracy, timeliness, completeness, or usefulness.'
+      }
+      icon={<Question weight="bold" />}
     />
   );
 }

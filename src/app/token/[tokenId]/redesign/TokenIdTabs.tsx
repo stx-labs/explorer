@@ -1,3 +1,5 @@
+'use client';
+
 import { AvailableFunctions } from '@/app/txid/[txId]/redesign/function-called/AvailableFunctions';
 import { Source } from '@/app/txid/[txId]/redesign/source/Source';
 import { ScrollIndicator } from '@/common/components/ScrollIndicator';
@@ -87,12 +89,6 @@ export const TokenIdTabs = () => {
               onClick={() => setSelectedTab(TokenIdPageTab.Holders)}
             />
           )}
-          <SectionTabsTrigger
-            label="Source code"
-            value={TokenIdPageTab.Source}
-            isActive={selectedTab === TokenIdPageTab.Source}
-            onClick={() => setSelectedTab(TokenIdPageTab.Source)}
-          />
           <SectionTabsTrigger
             label="Source code"
             value={TokenIdPageTab.Source}

@@ -22,7 +22,7 @@ export const RISKY_NFTS = [
 export const RISKY_NFT_RULES = [
   /\.StacksDao$/, // Exact match for contract names ending with .StacksDao (case sensitive)
 ];
-export const legitsBTCDerivatives = [zsbtcContractAddress];
+export const LEGIT_SBTC_DERIVATIVES = [zsbtcContractAddress];
 export const VERIFIED_TOKENS = [
   DROID_CONTRACT_ADDRESS,
   zsbtcContractAddress,

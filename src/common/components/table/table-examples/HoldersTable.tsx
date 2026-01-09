@@ -1,8 +1,8 @@
 'use client';
 
-import { getHoldersQueryKey, useHolders } from '@/app/token/[tokenId]/Tabs/data/useHolders';
 import { GenericResponseType } from '@/common/hooks/useInfiniteQueryResult';
 import { THIRTY_SECONDS } from '@/common/queries/query-stale-time';
+import { getHoldersQueryKey, useHolders } from '@/common/queries/useHolders';
 import {
   calculateHoldingPercentage,
   formatHoldingPercentage,
@@ -142,7 +142,7 @@ export function HoldersTable({
       const adjustedBalance = getFtDecimalAdjustedBalance(holder.balance, decimals);
       const adjustedTotalSupply = getFtDecimalAdjustedBalance(totalSupply, decimals);
       const formattedBalance = formatNumber(adjustedBalance, 0, decimals);
-      const holdingPercentage = calculateHoldingPercentage(adjustedBalance, adjustedTotalSupply, 6);
+      const holdingPercentage = calculateHoldingPercentage(adjustedBalance, adjustedTotalSupply);
       const formattedHoldingPercentage = holdingPercentage
         ? formatHoldingPercentage(holdingPercentage)
         : undefined;
