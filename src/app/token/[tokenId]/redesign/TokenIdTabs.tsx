@@ -37,11 +37,11 @@ export const TokenIdTabs = () => {
     tokenData,
     holders,
     numFunctions,
+    isLoadingTokenData,
   } = useTokenIdPageData();
   const totalAddressTransactions = initialAddressRecentTransactionsData?.total || 0;
   const totalHolders = holders?.total || 0;
 
-  // Type guard to ensure tokenData has required properties for holders tab
   const hasRequiredHoldersData = (
     data: typeof tokenData
   ): data is typeof tokenData & { totalSupply: number; decimals: number } => {
@@ -50,7 +50,7 @@ export const TokenIdTabs = () => {
     );
   };
 
-  const showHoldersTab = assetId && hasRequiredHoldersData(tokenData);
+  const showHoldersTab = isLoadingTokenData || (assetId && hasRequiredHoldersData(tokenData));
 
   return (
     <TabsRoot
@@ -61,7 +61,7 @@ export const TokenIdTabs = () => {
       rowGap={2}
       borderRadius="redesign.xl"
       w="full"
-      lazyMount // needed to reduce the number of requests made to the API
+      lazyMount
     >
       <ScrollIndicator>
         <TabsList>
@@ -118,12 +118,14 @@ export const TokenIdTabs = () => {
       </TabsContent>
       {showHoldersTab && (
         <TabsContent value={TokenIdPageTab.Holders} w="100%">
-          <HoldersTable
-            assetId={assetId}
-            totalSupply={tokenData.totalSupply}
-            decimals={tokenData.decimals}
-            pageSize={DEFAULT_HOLDERS_TABLE_PAGE_SIZE}
-          />
+          {assetId && hasRequiredHoldersData(tokenData) ? (
+            <HoldersTable
+              assetId={assetId}
+              totalSupply={tokenData.totalSupply}
+              decimals={tokenData.decimals}
+              pageSize={DEFAULT_HOLDERS_TABLE_PAGE_SIZE}
+            />
+          ) : null}
         </TabsContent>
       )}
       <TabsContent value={TokenIdPageTab.Source} w="100%">
