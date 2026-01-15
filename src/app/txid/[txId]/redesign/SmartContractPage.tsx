@@ -1,8 +1,11 @@
+import { BalanceCard } from '@/app/address/[principal]/redesign/AddressOverview';
 import { SectionTabsContentContainer, SectionTabsTrigger } from '@/common/components/SectionTabs';
 import { AddressTxsTable } from '@/common/components/table/table-examples/AddressTxsTable';
 import { SMART_CONTRACT_TX_ID_PAGE_ADDRESS_TXS_PAGE_SIZE } from '@/common/components/table/table-examples/consts';
 import { DEFAULT_LIST_LIMIT } from '@/common/constants/constants';
+import { useGlobalContext } from '@/common/context/useGlobalContext';
 import { THIRTY_SECONDS } from '@/common/queries/query-stale-time';
+import { useAccountBalance } from '@/common/queries/useAccountBalance';
 import { useAddressConfirmedTxsWithTransfers } from '@/common/queries/useAddressConfirmedTxsWithTransfersInfinite';
 import { TabsContent } from '@/ui/Tabs';
 import { Grid, Stack } from '@chakra-ui/react';
@@ -103,6 +106,10 @@ export function SmartContractTabContent({
 }: {
   tx: SmartContractTransaction | MempoolSmartContractTransaction;
 }) {
+  const contractId = tx.smart_contract?.contract_id;
+  const { tokenPrice } = useGlobalContext();
+  const { data: balancesData } = useAccountBalance(contractId);
+
   return (
     <>
       <TabsContent
@@ -115,7 +122,15 @@ export function SmartContractTabContent({
             <TxSummary tx={tx} />
           </SectionTabsContentContainer>
 
-          <DetailsCard tx={tx as Transaction} />
+          <Stack gap={2}>
+            <DetailsCard tx={tx as Transaction} />
+            <BalanceCard
+              balancesData={balancesData}
+              stxPrice={tokenPrice.stxPrice}
+              btcPrice={tokenPrice.btcPrice}
+              showAvailableSection={false}
+            />
+          </Stack>
         </Grid>
       </TabsContent>
       <TabsContent

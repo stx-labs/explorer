@@ -21,6 +21,8 @@ import SBTCIcon from '@/ui/icons/sBTCIcon';
 import { Flex, Grid, Icon, IconProps, Stack, Table } from '@chakra-ui/react';
 import { ReactNode } from 'react';
 
+import { AddressBalanceResponse } from '@stacks/stacks-blockchain-api-types';
+
 import { useAddressIdPageData } from '../AddressIdPageContext';
 
 type TokenBalanceType = 'stx' | 'sbtc';
@@ -107,17 +109,24 @@ const BalanceItem = ({
   );
 };
 
-const BalanceCard = () => {
-  const { initialAddressBalancesData, stxPrice, btcPrice, initialBurnChainRewardsData } =
-    useAddressIdPageData();
-
-  const totalBalanceMicroStx = initialAddressBalancesData?.stx.balance;
+export function BalanceCard({
+  balancesData,
+  stxPrice,
+  btcPrice,
+  showAvailableSection = true,
+}: {
+  balancesData?: AddressBalanceResponse;
+  stxPrice: number;
+  btcPrice: number;
+  showAvailableSection?: boolean;
+}) {
+  const totalBalanceMicroStx = balancesData?.stx?.balance;
   const isStxBalanceDefined =
     totalBalanceMicroStx !== undefined && !isNaN(parseFloat(totalBalanceMicroStx));
   const totalBalanceStx = isStxBalanceDefined ? microToStacks(totalBalanceMicroStx) : 0;
   const totalBalanceUsdValue = isStxBalanceDefined ? totalBalanceStx * stxPrice : 0;
 
-  const fungibleTokenBalances = initialAddressBalancesData?.fungible_tokens;
+  const fungibleTokenBalances = balancesData?.fungible_tokens;
   const sbtcBalance = fungibleTokenBalances?.[SBTC_ASSET_ID]?.balance;
   const isSbtcBalanceDefined = sbtcBalance !== undefined && !isNaN(parseFloat(sbtcBalance));
   const sbtcBalanceNumber = isSbtcBalanceDefined
@@ -125,9 +134,9 @@ const BalanceCard = () => {
     : 0;
   const sbtcBalanceUsdValue = isSbtcBalanceDefined ? sbtcBalanceNumber * btcPrice : 0;
 
-  const lockedSTX = initialAddressBalancesData?.stx.locked;
+  const lockedSTX = balancesData?.stx?.locked;
   const hasLockedSTX = !lockedSTX || lockedSTX === '0';
-  const showAvailableSTX = hasLockedSTX;
+  const showAvailableSTX = showAvailableSection && hasLockedSTX;
   const lockedSTXFormatted = microToStacks(lockedSTX || '0');
 
   const availableSTX = totalBalanceStx - lockedSTXFormatted;
@@ -175,6 +184,18 @@ const BalanceCard = () => {
         />
       </Stack>
     </Stack>
+  );
+}
+
+const AddressBalanceCard = () => {
+  const { initialAddressBalancesData, stxPrice, btcPrice } = useAddressIdPageData();
+
+  return (
+    <BalanceCard
+      balancesData={initialAddressBalancesData}
+      stxPrice={stxPrice}
+      btcPrice={btcPrice}
+    />
   );
 };
 
@@ -400,7 +421,7 @@ export const AddressOverview = () => {
   return (
     <Grid templateColumns={{ base: '100%', lg: '75% 25%' }} gap={2} w="full" minW={0}>
       <Stack gap={2} display={{ base: 'flex', lg: 'none' }} w="full" minW={0}>
-        <BalanceCard />
+        <AddressBalanceCard />
         <StackingCard />
         <MinerCard />
       </Stack>
@@ -422,7 +443,7 @@ export const AddressOverview = () => {
         </Stack>
       </Stack>
       <Stack gap={2} display={{ base: 'none', lg: 'flex' }} w="full" minW={0}>
-        <BalanceCard />
+        <AddressBalanceCard />
         <StackingCard />
         <MinerCard />
       </Stack>
