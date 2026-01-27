@@ -67,3 +67,12 @@ export const SUBNETS_PARENT_NETWORK_IDS = {
 };
 
 export const PAGE_MAX_WIDTH = '1580px';
+
+// Fabrizio Mode - Easter egg feature
+export const FABRIZIO_ADDRESSES = [
+  'SP3XXK8BG5X7CRH7W07RRJK3JZJXJ799WX3Y0SMCR',
+  'SP3SBQ9PZEMBNBAWTR7FRPE3XK0EFW9JWVX4G80S2',
+] as const;
+// Keep the original constant for backward compatibility (first address)
+export const FABRIZIO_ADDRESS = FABRIZIO_ADDRESSES[0];
+export const FABRIZIO_POLL_INTERVAL = 4000; // 4 seconds

@@ -6,6 +6,8 @@ import { ReactNode } from 'react';
 import { CookiesProvider } from 'react-cookie';
 import { Provider as ReduxProvider } from 'react-redux';
 
+import { BtcStackingProvider } from '../../common/context/BtcStackingContext';
+import { FabrizioProvider } from '../../common/context/FabrizioContext';
 import { GlobalContextProvider } from '../../common/context/GlobalContextProvider';
 import { store } from '../../common/state/store';
 import { TokenPrice } from '../../common/types/tokenPrice';
@@ -42,11 +44,15 @@ export const Providers = ({
           removedCustomNetworksCookie={removedCustomNetworksCookie}
           tokenPrice={tokenPrice}
         >
-          <ColorModeProvider>
-            <ReduxProvider store={store}>
-              <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-            </ReduxProvider>
-          </ColorModeProvider>
+          <FabrizioProvider>
+            <BtcStackingProvider>
+              <ColorModeProvider>
+                <ReduxProvider store={store}>
+                  <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+                </ReduxProvider>
+              </ColorModeProvider>
+            </BtcStackingProvider>
+          </FabrizioProvider>
         </GlobalContextProvider>
       </CookiesProvider>
     </ChakraProvider>

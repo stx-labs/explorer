@@ -1,18 +1,20 @@
+'use client';
+
 import { ExplorerLink } from '@/common/components/ExplorerLinks';
+import { useBtcStacking } from '@/common/context/BtcStackingContext';
 import { HiroIcon } from '@/ui/icons/HiroIcon';
 import { StacksNameAndLogoIcon } from '@/ui/icons/StacksNameAndLogoIcon';
 import { Box, Flex, Grid, Icon, Stack, Text } from '@chakra-ui/react';
 
-import { PAGE_MAX_WIDTH } from '../../common/constants/constants';
 import { Link } from '../../ui/Link';
 import { StacksSmiley } from './Footer/StacksSmiley';
 
-interface Link {
+interface FooterLink {
   label: string;
   href: string;
 }
 
-const rightSideLinks: Link[] = [
+const rightSideLinks: FooterLink[] = [
   {
     label: 'Home',
     href: '/',
@@ -59,7 +61,7 @@ const rightSideLinks: Link[] = [
   },
 ];
 
-const leftSideLinks: Link[] = [
+const leftSideLinks: FooterLink[] = [
   {
     label: 'Sandbox',
     href: '/sandbox/deploy',
@@ -75,6 +77,25 @@ const leftSideLinks: Link[] = [
 ];
 
 const xPadding = 8;
+
+const BtcStackingLink = () => {
+  const { toggle } = useBtcStacking();
+
+  return (
+    <Link
+      href="#"
+      onClick={e => {
+        e.preventDefault();
+        toggle();
+      }}
+      fontWeight="medium"
+      fontSize="xs"
+      fontFamily="var(--font-instrument-sans)"
+    >
+      🚀 Will Bitcoin Stacking actually work?
+    </Link>
+  );
+};
 
 const TopFooterContent = () => {
   return (
@@ -95,6 +116,7 @@ const TopFooterContent = () => {
                 {link.label}
               </ExplorerLink>
             ))}
+            <BtcStackingLink />
           </Flex>
         </Flex>
       </Box>
@@ -105,6 +127,7 @@ const TopFooterContent = () => {
               {link.label}
             </ExplorerLink>
           ))}
+          <BtcStackingLink />
         </Grid>
       </Box>
     </>

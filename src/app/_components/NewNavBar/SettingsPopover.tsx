@@ -1,17 +1,24 @@
+'use client';
+
 import {
   TabPopoverContent,
   TabPopoverRoot,
   TabPopoverTrigger,
 } from '@/common/components/TabPopover';
+import { useFabrizio } from '@/common/context/FabrizioContext';
 import { Box, Flex, Icon, PopoverRootProps, Separator, Stack } from '@chakra-ui/react';
 import { GearFine, X } from '@phosphor-icons/react';
 import { useState } from 'react';
 
 import { CurrencySetting } from './CurrencySetting';
+import { FabrizioSetting } from './FabrizioSetting';
 import { NetworkSetting } from './NetworkSetting';
+import { NotFabrizioSetting } from './NotFabrizioSetting';
 import { ThemeSetting } from './ThemeSetting';
 
 export const SettingsPopoverContent = ({ isOpen }: { isOpen?: boolean }) => {
+  const { isEnabled: isFabrizioEnabled } = useFabrizio();
+
   return (
     <Stack
       w={{ base: 'full', lg: 'fit-content' }}
@@ -28,6 +35,8 @@ export const SettingsPopoverContent = ({ isOpen }: { isOpen?: boolean }) => {
       <ThemeSetting />
       {/* <CurrencySetting /> */}
       <NetworkSetting />
+      <FabrizioSetting />
+      {isFabrizioEnabled && <NotFabrizioSetting />}
     </Stack>
   );
 };

@@ -6,6 +6,9 @@ import { ReactNode } from 'react';
 import { AddNetworkModal } from '../../common/components/modals/AddNetwork';
 import { AddNetworkModalNew } from '../../common/components/modals/AddNetworkNew';
 import { IncidentContent } from '../../common/types/incidents';
+import { BtcStackingOverlay } from '../../components/btc-stacking/BtcStackingOverlay';
+import { FabrizioOverlay } from '../../components/fabrizio/FabrizioOverlay';
+import { NotFabrizioOverlay } from '../../components/fabrizio/NotFabrizioOverlay';
 import { TestnetBanner } from './Banner/TestnetBanner';
 import { NetworkModeToast } from './NetworkModeToast';
 import { NewFooter } from './NewFooter';
@@ -66,6 +69,9 @@ export function PageWrapper({
       <AddNetworkModal />
       <AddNetworkModalNew />
       <NetworkModeToast />
+      <FabrizioOverlay />
+      <NotFabrizioOverlay />
+      <BtcStackingOverlay />
     </>
   );
 }
