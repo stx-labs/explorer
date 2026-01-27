@@ -129,6 +129,7 @@ export function SmartContractTabContent({
               stxPrice={tokenPrice.stxPrice}
               btcPrice={tokenPrice.btcPrice}
               showAvailableSection={false}
+              principal={contractId}
             />
           </Stack>
         </Grid>

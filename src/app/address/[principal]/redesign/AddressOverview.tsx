@@ -5,13 +5,14 @@ import {
   SummaryItem,
 } from '@/app/txid/[txId]/redesign/tx-summary/SummaryItem';
 import { Circle } from '@/common/components/Circle';
-import { BurnBlockLink } from '@/common/components/ExplorerLinks';
+import { BurnBlockLink, ExplorerLink } from '@/common/components/ExplorerLinks';
 import { SectionTabsContentContainer } from '@/common/components/SectionTabs';
 import { StackingCardItem } from '@/common/components/id-pages/Overview';
 import { AddressTxsTable } from '@/common/components/table/table-examples/AddressTxsTable';
 import { ADDRESS_ID_PAGE_RECENT_ADDRESS_TXS_LIMIT } from '@/common/components/table/table-examples/consts';
 import { getFtDecimalAdjustedBalance, microToStacks } from '@/common/utils/utils';
 import { SimpleTag } from '@/ui/Badge';
+import { Button } from '@/ui/Button';
 import { NextLink } from '@/ui/NextLink';
 import { Text } from '@/ui/Text';
 import BitcoinCircleIcon from '@/ui/icons/BitcoinCircleIcon';
@@ -19,6 +20,7 @@ import BitcoinIcon from '@/ui/icons/BitcoinIcon';
 import StacksIconThin from '@/ui/icons/StacksIconThin';
 import SBTCIcon from '@/ui/icons/sBTCIcon';
 import { Flex, Grid, Icon, IconProps, Stack, Table } from '@chakra-ui/react';
+import { ArrowUpRight } from '@phosphor-icons/react';
 import { ReactNode } from 'react';
 
 import { AddressBalanceResponse } from '@stacks/stacks-blockchain-api-types';
@@ -114,11 +116,13 @@ export function BalanceCard({
   stxPrice,
   btcPrice,
   showAvailableSection = true,
+  principal,
 }: {
   balancesData?: AddressBalanceResponse;
   stxPrice: number;
   btcPrice: number;
   showAvailableSection?: boolean;
+  principal?: string;
 }) {
   const totalBalanceMicroStx = balancesData?.stx?.balance;
   const isStxBalanceDefined =
@@ -141,6 +145,9 @@ export function BalanceCard({
 
   const availableSTX = totalBalanceStx - lockedSTXFormatted;
 
+  const totalFungibleTokens = Object.keys(fungibleTokenBalances || {}).length;
+  const showViewMoreButton = principal && totalFungibleTokens > 0;
+
   return (
     <Stack
       px={5}
@@ -153,9 +160,24 @@ export function BalanceCard({
       w="full"
       minW={0}
     >
-      <Text textStyle="text-medium-sm" color="textPrimary">
-        Total balance
-      </Text>
+      <Flex justifyContent="space-between" alignItems="center">
+        <Text textStyle="text-medium-sm" color="textPrimary">
+          Total balance
+        </Text>
+        {showViewMoreButton && (
+          <ExplorerLink
+            href={`/address/${encodeURIComponent(principal)}?tab=tokens`}
+            variant="noUnderline"
+          >
+            <Button variant="redesignTertiary" size="small">
+              View more
+              <Icon h={3} w={3}>
+                <ArrowUpRight />
+              </Icon>
+            </Button>
+          </ExplorerLink>
+        )}
+      </Flex>
       <Stack gap={6}>
         <Stack gap={4.5}>
           <BalanceItem
