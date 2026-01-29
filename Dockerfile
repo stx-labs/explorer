@@ -1,6 +1,6 @@
 # First stage.  This stage is responsible for installing dependencies and building the application.
 # The output of this stage is a built version of your Next.js app, which includes all the static assets and optimized files that will be served to users.
-FROM node:18-alpine AS build
+FROM node:22-alpine AS build
 
 ARG RELEASE_TAG_NAME
 ENV NEXT_PUBLIC_RELEASE_TAG_NAME=${RELEASE_TAG_NAME}
@@ -13,13 +13,13 @@ WORKDIR /app
 
 COPY . .
 
-RUN npm install -g pnpm@8.11.0
+RUN npm install -g pnpm@10
 RUN pnpm i
 RUN pnpm chakra typegen src/ui/theme/theme.ts
 RUN pnpm build
 
 # This stage creates the final Docker image that will be used in production. It only contains the necessary runtime environment and the built application files from the first stage.
-FROM node:18-alpine
+FROM node:22-alpine
 
 ARG NODE_ENV=production
 ENV NODE_ENV=${NODE_ENV}
