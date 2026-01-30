@@ -21,6 +21,7 @@ export interface TxIdPageSearchParams extends CommonSearchParams {
   fromAddress?: string;
   toAddress?: string;
   transactionType?: string;
+  ssr?: string;
 }
 
 export interface TxIdPageFilters {
@@ -38,7 +39,8 @@ export default async function Page(props: {
   const params = await props.params;
   const { txId } = params;
   const searchParams = await props.searchParams;
-  const { startTime, endTime, chain, api, fromAddress, toAddress, transactionType } = searchParams;
+  const { startTime, endTime, chain, api, fromAddress, toAddress, transactionType, ssr } =
+    searchParams;
   const apiUrl = getApiUrl(chain || NetworkModes.Mainnet, api);
 
   let tokenPrice = {
@@ -49,26 +51,29 @@ export default async function Page(props: {
   let numFunctions: number | undefined;
 
   const isContractId = validateStacksContractId(txId);
+  const isSSRDisabled = ssr === 'false';
 
-  try {
-    tokenPrice = await getTokenPrice();
-    if (isContractId) {
-      const contractData = await fetchContractInfo(apiUrl, txId); // fetch contract data for tx_id
-      const abi: ContractInterfaceResponse = contractData
-        ? JSON.parse(contractData?.abi)
-        : undefined;
-      numFunctions = abi.functions.length;
-      initialTxData = await fetchTx(apiUrl, contractData.tx_id);
-    } else {
-      initialTxData = await fetchTx(apiUrl, txId);
+  if (!isSSRDisabled) {
+    try {
+      tokenPrice = await getTokenPrice();
+      if (isContractId) {
+        const contractData = await fetchContractInfo(apiUrl, txId); // fetch contract data for tx_id
+        const abi: ContractInterfaceResponse = contractData
+          ? JSON.parse(contractData?.abi)
+          : undefined;
+        numFunctions = abi.functions.length;
+        initialTxData = await fetchTx(apiUrl, contractData.tx_id);
+      } else {
+        initialTxData = await fetchTx(apiUrl, txId);
+      }
+    } catch (error) {
+      logError(
+        error as Error,
+        'Transaction Id page server-side fetch for initial data',
+        { txId, tokenPrice, initialTxData, chain, api },
+        'error'
+      );
     }
-  } catch (error) {
-    logError(
-      error as Error,
-      'Transaction Id page server-side fetch for initial data',
-      { txId, tokenPrice, initialTxData, chain, api },
-      'error'
-    );
   }
 
   return (
