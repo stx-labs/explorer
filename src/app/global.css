@@ -4,6 +4,10 @@ body {
   color: var(--stacks-colors-text);
 }
 
+html {
+  scrollbar-gutter: stable;
+}
+
 .prism-code *::selection {
   background-color: #aab3ff;
   color: white !important;
