@@ -47,6 +47,58 @@ Join our community and stay connected with the latest updates and discussions:
 
 - Follow [Hiro on Twitter.](https://twitter.com/hirosystems)
 
+## Troubleshooting
+
+### Common Development Issues
+
+#### Node.js version mismatch
+
+**Symptom**: Build errors or unexpected behavior after installing dependencies.
+
+**Solution**: Ensure you're using Node.js v22+. If using nvm:
+```bash
+nvm use
+```
+
+#### PNPM installation fails
+
+**Symptom**: Permission errors or module not found.
+
+**Solution**: 
+1. Clear the pnpm cache: `pnpm store prune`
+2. Delete `node_modules` and `pnpm-lock.yaml`
+3. Re-run `pnpm i`
+
+#### Environment variables not loading
+
+**Symptom**: API calls fail, pages show errors.
+
+**Solution**: 
+1. Ensure `.env.local` exists in the project root
+2. Restart the dev server after adding/changing env vars
+3. Check that variable names start with `NEXT_PUBLIC_`
+
+#### API connection issues
+
+**Symptom**: "Failed to fetch" errors in the console.
+
+**Solution**:
+1. Verify your internet connection
+2. Check if the Hiro API is operational at [status.hiro.so](https://status.hiro.so)
+3. Try switching between mainnet and testnet
+
+#### Tests failing with type errors
+
+**Symptom**: Jest shows "Cannot find module" or type errors.
+
+**Solution**:
+```bash
+# Rebuild type definitions
+pnpm build
+```
+
+For more setup details, see the [Getting Started](./docs/getting-started.md) guide.
+
 ## License
 
 The Stacks Explorer is open source and released under the MIT License.
