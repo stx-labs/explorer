@@ -19,6 +19,28 @@ You must also ensure you have installed the project dependencies listed below.
 
 It is also highly recommended you install [Homebrew](https://brew.sh/) (macOS).
 
+## Quick Start
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/hirosystems/explorer.git
+cd explorer
+
+# 2. Switch to correct Node.js version (if using nvm)
+nvm use
+
+# 3. Install dependencies
+pnpm i
+
+# 4. Create environment file
+cp .env.example .env.local
+
+# 5. Start development server
+pnpm dev
+```
+
+The explorer will be available at `http://localhost:3000`.
+
 ## Installing Project Dependencies
 
 To install project dependencies:
@@ -28,7 +50,7 @@ To install project dependencies:
 
 ## Setting Environment Variables
 
-The Explorer application needs the environment variables listed below to work properly. 
+The Explorer application needs the environment variables listed below to work properly. Create a `.env.local` file in the project root:
 
 ```
 NEXT_PUBLIC_MAINNET_API_SERVER=https://api.hiro.so
@@ -42,3 +64,20 @@ NEXT_PUBLIC_DEFAULT_POLLING_INTERVAL="10000"
 > **_NOTE:_**
 >
 > If you are working in a macOS environment, you will need to add these variable to `/etc/paths`.
+
+## Running Tests
+
+```bash
+# Run all tests
+pnpm test
+
+# Run tests in watch mode
+pnpm test:watch
+
+# Run specific test file
+pnpm test -- path/to/test.ts
+```
+
+## Common Issues
+
+If you encounter issues during setup, see the troubleshooting section in the main [README](../README.md).
