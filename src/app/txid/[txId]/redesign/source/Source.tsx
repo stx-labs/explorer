@@ -7,32 +7,15 @@ import { ButtonLink } from '@/ui/ButtonLink';
 import { Stack } from '@chakra-ui/react';
 import { usePathname } from 'next/navigation';
 
-import {
-  ContractCallTransaction,
-  MempoolContractCallTransaction,
-  MempoolSmartContractTransaction,
-  SmartContractTransaction,
-} from '@stacks/stacks-blockchain-api-types';
-
 import { CodeEditor, withControls } from './CodeEditor';
 
 const CodeEditorWithControls = withControls(CodeEditor, true, true);
 
-export function Source({
-  tx,
-}: {
-  tx:
-    | ContractCallTransaction
-    | MempoolContractCallTransaction
-    | SmartContractTransaction
-    | MempoolSmartContractTransaction;
-}) {
-  const txContractId =
-    'contract_call' in tx ? tx.contract_call.contract_id : tx.smart_contract.contract_id;
-  const { data: txContract } = useContractById(txContractId);
+export function Source({ contractId }: { contractId: string }) {
+  const { data: txContract } = useContractById(contractId);
   const sourceCode = txContract?.source_code;
   const network = useGlobalContext().activeNetwork;
-  const url = buildUrl(`/txid/${encodeURIComponent(txContractId)}`, network);
+  const url = buildUrl(`/txid/${encodeURIComponent(contractId)}`, network);
   const pathname = usePathname();
   const needLink = !url.includes(pathname);
   return (

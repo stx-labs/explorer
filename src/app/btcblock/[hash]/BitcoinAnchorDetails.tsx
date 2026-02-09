@@ -4,13 +4,13 @@ import { Flex, Icon } from '@chakra-ui/react';
 import styled from '@emotion/styled';
 
 import { useParamsBlockHash } from '../../../app/block/[hash]/useParamsBlockHash';
+import { BurnBlockLink } from '../../../common/components/ExplorerLinks';
 import { KeyValueVertical } from '../../../common/components/KeyValueVertical';
 import { Section } from '../../../common/components/Section';
 import { useGlobalContext } from '../../../common/context/useGlobalContext';
-import { useBlockByHash } from '../../../common/queries/useBlockByHash';
+import { useBlockByHash } from '../../../common/queries/useBlockByHeightOrHash';
 import { useSuspenseBurnBlock } from '../../../common/queries/useBurnBlock';
 import { toRelativeTime, truncateMiddleDeprecated } from '../../../common/utils/utils';
-import { Link } from '../../../ui/Link';
 import { Text } from '../../../ui/Text';
 import { TextLink } from '../../../ui/TextLink';
 import BitcoinCircleIcon from '../../../ui/icons/BitcoinCircleIcon';
@@ -31,7 +31,7 @@ export function BitcoinAnchorDetailsBase() {
     enabled: !!stxBlockHash,
   });
 
-  const { btcBlockBaseUrl, btcTxBaseUrl } = useGlobalContext().activeNetwork;
+  const { btcTxBaseUrl } = useGlobalContext().activeNetwork;
   const btcBlockBlockTimeUTC = new Date(btcBlock.burn_block_time_iso).toUTCString();
 
   if (!btcBlock) return null;
@@ -42,7 +42,7 @@ export function BitcoinAnchorDetailsBase() {
         className="key-value-vertical"
         label={'Block height'}
         value={
-          <Link target="_blank" href={`${btcBlockBaseUrl}/${btcBlock.burn_block_height}`}>
+          <BurnBlockLink heightOrHash={btcBlock.burn_block_height.toString()}>
             <Flex alignItems="center" gap={2}>
               <Icon h={5} w={5} color="accent.bitcoin-500">
                 <BitcoinCircleIcon />
@@ -51,7 +51,7 @@ export function BitcoinAnchorDetailsBase() {
                 #{btcBlock.burn_block_height}
               </Text>
             </Flex>
-          </Link>
+          </BurnBlockLink>
         }
         copyValue={btcBlock.burn_block_height.toString()}
       />
@@ -59,14 +59,9 @@ export function BitcoinAnchorDetailsBase() {
         className="key-value-vertical"
         label={'Hash'}
         value={
-          <Link
-            target="_blank"
-            href={`${btcBlockBaseUrl}/${btcBlock.burn_block_hash.replace('0x', '')}`}
-          >
-            <Text fontSize="sm" fontWeight="medium">
-              {truncateMiddleDeprecated(btcBlock.burn_block_hash, 8)}
-            </Text>
-          </Link>
+          <BurnBlockLink heightOrHash={btcBlock.burn_block_hash} fontSize="sm" fontWeight="medium">
+            {truncateMiddleDeprecated(btcBlock.burn_block_hash, 8)}
+          </BurnBlockLink>
         }
         copyValue={btcBlock.burn_block_hash}
       />

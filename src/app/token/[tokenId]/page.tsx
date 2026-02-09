@@ -24,8 +24,7 @@ import {
   Transaction,
 } from '@stacks/stacks-blockchain-api-types';
 
-import TokenIdPage from './PageClient';
-import { getTokenInfo } from './getTokenInfo';
+import TokenIdPageRedesign from './PageClient';
 import { getTokenDataFromLunarCrush, getTokenDataFromStacksApi, mergeTokenData } from './page-data';
 import { TokenIdPageDataProvider } from './redesign/context/TokenIdPageContext';
 import { MergedTokenData } from './types';
@@ -59,13 +58,11 @@ export default async function (props: {
   let txBlockTime: number | undefined;
   let assetId: string | undefined;
   let holders: FungibleTokenHolderList | undefined;
+  let numFunctions: number | undefined;
 
-  const tokenInfo = await getTokenInfo(tokenId, chain || NetworkModes.Mainnet, api);
-
-  const isRedesign = searchParams.redesign === 'true';
   const isSSRDisabled = searchParams?.ssr === 'false';
 
-  if (isRedesign && !isSSRDisabled) {
+  if (!isSSRDisabled) {
     try {
       const [
         tokenPriceResult,
@@ -107,6 +104,7 @@ export default async function (props: {
         : undefined;
       const ftName = abi ? abi.fungible_tokens[0].name : undefined;
       assetId = ftName ? `${tokenId}::${ftName}` : undefined;
+      numFunctions = abi.functions.length;
 
       const [txResult, holdersResult] = await Promise.allSettled([
         // dependent queries
@@ -119,7 +117,8 @@ export default async function (props: {
 
       tokenData = mergeTokenData(tokenDataFromStacksApi, tokenDataFromLunarCrush, holders, tokenId);
 
-      txBlockTime = tx?.block_time;
+      txBlockTime =
+        tx && isConfirmedTx<Transaction, MempoolTransaction>(tx) ? tx.block_time : undefined;
 
       const compressedRecentAddressTransactions = recentAddressTransactions
         ? {
@@ -143,8 +142,6 @@ export default async function (props: {
     }
   }
 
-  console.log('page', { tokenId, tokenData, txBlockTime, txId });
-
   return (
     <TokenIdPageDataProvider
       tokenId={tokenId}
@@ -156,8 +153,9 @@ export default async function (props: {
       txId={txId}
       assetId={assetId}
       holders={holders}
+      numFunctions={numFunctions}
     >
-      <TokenIdPage tokenId={tokenId} tokenInfo={tokenInfo} />
+      <TokenIdPageRedesign />
     </TokenIdPageDataProvider>
   );
 }

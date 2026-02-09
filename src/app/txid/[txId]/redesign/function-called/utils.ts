@@ -77,7 +77,8 @@ export function formatClarityValue(cv: ClarityValue): FormattedClarityValue {
   if (cv.type === 'principal') {
     const principal: string = cv.hex ? (cvToJSON(hexToCV(cv.hex)) || {}).value : '';
     const isContract = principal.includes('.');
-    value = isContract ? principal : cv.repr;
+    // remove the extra single quote from repr
+    value = isContract ? principal : principal || cv.repr.toString().replace(/^'/, '');
   }
   if (cv.type === 'uint' && typeof cv.repr === 'string') {
     value = cv.repr.replace('u', '');

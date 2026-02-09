@@ -2,7 +2,7 @@ import { AddressLink, BlockLink } from '@/common/components/ExplorerLinks';
 import { EllipsisText } from '@/common/components/table/CommonTableCellRenderers';
 import { useGlobalContext } from '@/common/context/useGlobalContext';
 import { useContractById } from '@/common/queries/useContractById';
-import { truncateHex, truncateStxAddress } from '@/common/utils/utils';
+import { truncateHex, truncateStxContractId } from '@/common/utils/utils';
 import { Badge, BlockHeightBadge, DefaultBadgeLabel, SimpleTag } from '@/ui/Badge';
 import { Link } from '@/ui/Link';
 import { Text } from '@/ui/Text';
@@ -149,9 +149,7 @@ function ContractCallDetailsCardItems({
   tx: ContractCallTransaction | MempoolContractCallTransaction;
 }) {
   const contractId = tx.contract_call.contract_id;
-  const contractParts = contractId.split('.');
-  const contractAddress = contractParts[0];
-  const contractName = contractParts[1];
+  const contractName = contractId.split('.')[1];
 
   return (
     <>
@@ -183,10 +181,10 @@ function ContractCallDetailsCardItems({
       />
       <SummaryItem
         label="Contract ID"
-        value={contractAddress}
+        value={contractId}
         valueRenderer={value => (
           <AddressLink principal={value} wordBreak="break-all" variant="tableLink">
-            {truncateStxAddress(value)}
+            {truncateStxContractId(value)}
           </AddressLink>
         )}
         showCopyButton={true}
@@ -201,9 +199,7 @@ function SmartContractDetailsCardItems({
   tx: SmartContractTransaction | MempoolSmartContractTransaction;
 }) {
   const contractId = tx.smart_contract.contract_id;
-  const contractParts = contractId.split('.');
-  const contractAddress = contractParts[0];
-  const contractName = contractParts[1];
+  const contractName = contractId.split('.')[1];
   const { data: contract } = useContractById(contractId);
   const functions = contract?.abi?.functions || [];
   const variables = contract?.abi?.variables || [];
@@ -224,10 +220,10 @@ function SmartContractDetailsCardItems({
       />
       <SummaryItem
         label="Contract ID"
-        value={contractAddress}
+        value={contractId}
         valueRenderer={value => (
           <AddressLink principal={value} wordBreak="break-all" variant="tableLink">
-            {truncateStxAddress(value)}
+            {truncateStxContractId(value)}
           </AddressLink>
         )}
         showCopyButton={true}

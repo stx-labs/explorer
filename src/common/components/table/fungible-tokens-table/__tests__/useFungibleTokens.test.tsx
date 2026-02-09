@@ -7,7 +7,7 @@ import { FtBalance, NftBalance } from '@stacks/stacks-blockchain-api-types';
 import {
   convertBalancesToArrayWithAssetId,
   filterBalancesBySearchTerm,
-  paginateBalances,
+  paginate,
   putSBTCFirst,
   removeUndefinedFromBalances,
   removeZeroBalanceData,
@@ -175,7 +175,7 @@ describe('paginateBalances', () => {
   ];
 
   it('should paginate balances correctly with limit and offset', () => {
-    const result = paginateBalances(mockBalancesWithAssetId, 2, 1);
+    const result = paginate(mockBalancesWithAssetId, 2, 1);
 
     expect(result).toHaveLength(2);
     expect(result[0].asset_identifier).toBe('token2');
@@ -183,7 +183,7 @@ describe('paginateBalances', () => {
   });
 
   it('should handle pagination at the beginning', () => {
-    const result = paginateBalances(mockBalancesWithAssetId, 3, 0);
+    const result = paginate(mockBalancesWithAssetId, 3, 0);
 
     expect(result).toHaveLength(3);
     expect(result[0].asset_identifier).toBe('token1');
@@ -192,7 +192,7 @@ describe('paginateBalances', () => {
   });
 
   it('should handle pagination beyond array length', () => {
-    const result = paginateBalances(mockBalancesWithAssetId, 10, 3);
+    const result = paginate(mockBalancesWithAssetId, 10, 3);
 
     expect(result).toHaveLength(2); // Only 2 items left from offset 3
     expect(result[0].asset_identifier).toBe('token4');
@@ -200,14 +200,14 @@ describe('paginateBalances', () => {
   });
 
   it('should return empty array when offset exceeds array length', () => {
-    const result = paginateBalances(mockBalancesWithAssetId, 5, 10);
+    const result = paginate(mockBalancesWithAssetId, 5, 10);
 
     expect(result).toEqual([]);
     expect(result).toHaveLength(0);
   });
 
   it('should handle empty array', () => {
-    const result = paginateBalances([], 5, 0);
+    const result = paginate([], 5, 0);
 
     expect(result).toEqual([]);
     expect(result).toHaveLength(0);

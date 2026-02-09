@@ -11,7 +11,7 @@
     "moduleResolution": "Bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "jsx": "preserve",
+    "jsx": "react-jsx",
     "incremental": true,
     "plugins": [
       {
@@ -29,7 +29,8 @@
     ".next/types/**/*.ts",
     "next.config.js",
     "src/stories/OptionPicker.stories.tsx",
-    "src/app/txid/[txId]/redesign/events-table/utils.tsx"
+    "src/app/txid/[txId]/redesign/events-table/utils.tsx",
+    ".next/dev/types/**/*.ts"
   ],
   "exclude": ["node_modules", "next.config.js"]
 }

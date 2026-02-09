@@ -19,5 +19,8 @@ export function getQueryParams(network: Network) {
 }
 
 export const buildUrl = (href: string, network: Network): string => {
-  return `${href}${getQueryParams(network)}`;
+  const queryParams = getQueryParams(network);
+  // If href already has query params, replace the leading ? with &
+  const separator = href.includes('?') ? queryParams.replace('?', '&') : queryParams;
+  return `${href}${separator}`;
 };

@@ -68,7 +68,20 @@ export function FungibleTokenCellRenderer(value: FungibleTokenTableTokenColumnDa
   );
 }
 
-export const TokenImage = ({ url, alt, ...props }: { url: string; alt: string }) => {
+export const TokenImage = ({
+  url,
+  alt,
+  height,
+  width,
+  borderRadius,
+  ...props
+}: {
+  url: string;
+  alt: string;
+  height?: number;
+  width?: number;
+  borderRadius?: string;
+}) => {
   const [error, setError] = useState<boolean>(false);
 
   const imageUrl = useMemo(() => {
@@ -91,13 +104,16 @@ export const TokenImage = ({ url, alt, ...props }: { url: string; alt: string })
 
   return (
     <Image
-      width={24}
-      height={24}
+      width={width || 24}
+      height={height || 24}
       src={imageUrl}
       onError={e => {
         setError(true);
       }}
       alt={alt}
+      style={{
+        borderRadius,
+      }}
       {...props}
     />
   );

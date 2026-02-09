@@ -1,80 +1,94 @@
 'use client';
 
 import { TimeStampCellRenderer } from '@/common/components/table/table-examples/TxTableCellRenderers';
+import { useGlobalContext } from '@/common/context/useGlobalContext';
+import { buildUrl } from '@/common/utils/buildUrl';
 import { formatTimestamp, formatTimestampToRelativeTime } from '@/common/utils/time-utils';
 import { truncateMiddle } from '@/common/utils/utils';
-import { BlockHeightBadge, DefaultBadge, DefaultBadgeIcon, DefaultBadgeLabel } from '@/ui/Badge';
+import { BlockHeightBadge, DefaultBadge, DefaultBadgeIcon } from '@/ui/Badge';
 import BitcoinCircleIcon from '@/ui/icons/BitcoinCircleIcon';
 import StacksIconBlock from '@/ui/icons/StacksIconBlock';
 import StxIcon from '@/ui/icons/StxIcon';
-import { Box, Flex, Link, Text, Tooltip } from '@chakra-ui/react';
+import { Box, Flex, Link, Text } from '@chakra-ui/react';
 import NextLink from 'next/link';
 
 export const StacksBlockRow = {
-  HeightCell: (height: number) => (
-    <DefaultBadge
-      variant="solid"
-      type="blockHeight"
-      icon={<DefaultBadgeIcon icon={<StacksIconBlock />} color="accent.stacks-500" />}
-      label={
-        <Link
-          as={NextLink}
-          href={`/block/${height}`}
-          textStyle="text-mono-sm"
-          color="textPrimary"
-          textDecorationColor="textPrimary"
-          _hover={{
-            color: 'textInteractiveHover',
-            textDecorationColor: 'textInteractiveHover',
-          }}
-          _groupHover={{
-            textDecorationColor: 'textPrimary',
-            _hover: { textDecorationColor: 'textInteractiveHover' },
-          }}
-        >
-          #{height}
-        </Link>
-      }
-      border="none"
-      _groupHover={{ bg: 'surfaceTertiary' }}
-    />
-  ),
+  HeightCell: (height: number) => {
+    const network = useGlobalContext().activeNetwork;
 
-  HashCell: (hash: string) => (
-    <Link
-      as={NextLink}
-      href={`/block/${hash}`}
-      textStyle="text-regular-sm"
-      color="textPrimary"
-      textDecoration="underline"
-      whiteSpace="nowrap"
-      _hover={{
-        color: 'textInteractiveHover',
-      }}
-    >
-      {truncateMiddle(hash, 5, 5)}
-    </Link>
-  ),
+    return (
+      <DefaultBadge
+        variant="solid"
+        type="blockHeight"
+        icon={<DefaultBadgeIcon icon={<StacksIconBlock />} color="accent.stacks-500" />}
+        label={
+          <Link
+            as={NextLink}
+            href={buildUrl(`/block/${height}`, network)}
+            textStyle="text-mono-sm"
+            color="textPrimary"
+            textDecorationColor="textPrimary"
+            _hover={{
+              color: 'textInteractiveHover',
+              textDecorationColor: 'textInteractiveHover',
+            }}
+            _groupHover={{
+              textDecorationColor: 'textPrimary',
+              _hover: { textDecorationColor: 'textInteractiveHover' },
+            }}
+          >
+            #{height}
+          </Link>
+        }
+        border="none"
+        _groupHover={{ bg: 'surfaceTertiary' }}
+      />
+    );
+  },
 
-  BitcoinBlockCell: (height: number, burnBlockHash: string) => (
-    <DefaultBadge
-      variant="solid"
-      type="blockHeight"
-      icon={<DefaultBadgeIcon icon={<BitcoinCircleIcon />} color="iconTertiary" size={4} />}
-      label={
-        <Link
-          as={NextLink}
-          href={`/btcblock/${burnBlockHash}`}
-          textStyle="text-mono-sm"
-          color="textPrimary"
-        >
-          #{height}
-        </Link>
-      }
-      border="none"
-      _groupHover={{ bg: 'surfaceTertiary' }}
-    />
-  ),
+  HashCell: (hash: string) => {
+    const network = useGlobalContext().activeNetwork;
+
+    return (
+      <Link
+        as={NextLink}
+        href={buildUrl(`/block/${hash}`, network)}
+        textStyle="text-regular-sm"
+        color="textPrimary"
+        textDecoration="underline"
+        whiteSpace="nowrap"
+        _hover={{
+          color: 'textInteractiveHover',
+        }}
+      >
+        {truncateMiddle(hash, 5, 5)}
+      </Link>
+    );
+  },
+
+  BitcoinBlockCell: (height: number, burnBlockHash: string) => {
+    const network = useGlobalContext().activeNetwork;
+
+    return (
+      <DefaultBadge
+        variant="solid"
+        type="blockHeight"
+        icon={<DefaultBadgeIcon icon={<BitcoinCircleIcon />} color="iconTertiary" size={4} />}
+        label={
+          <Link
+            as={NextLink}
+            href={`/btcblock/${burnBlockHash}`}
+            textStyle="text-mono-sm"
+            color="textPrimary"
+          >
+            #{height}
+          </Link>
+        }
+        border="none"
+        _groupHover={{ bg: 'surfaceTertiary' }}
+      />
+    );
+  },
 
   TransactionsCell: (count: number) => (
     <Text textStyle="text-regular-sm" lineHeight="20px" color="textPrimary">

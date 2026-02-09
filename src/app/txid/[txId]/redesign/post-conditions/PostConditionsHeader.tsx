@@ -1,4 +1,4 @@
-import { StatusBadge } from '@/ui/Badge';
+import { SimpleTag } from '@/ui/Badge';
 import { Text } from '@/ui/Text';
 import { Flex } from '@chakra-ui/react';
 
@@ -15,10 +15,13 @@ export function PostConditionsHeader({
       flexDirection={{ base: 'column', md: 'row' }}
       alignItems={{ base: 'flex-start', md: 'center' }}
     >
-      <StatusBadge
-        successLabel="Allow mode"
-        failureLabel="Deny mode"
-        success={postConditionMode === 'allow'}
+      <SimpleTag
+        label={postConditionMode === 'allow' ? 'Allow mode' : 'Deny mode'}
+        bg="surfaceFifth"
+        labelProps={{
+          fontFamily: 'var(--stacks-fonts-instrument-sans)',
+          textStyle: 'text-medium-xs',
+        }}
       />
       <Text textStyle="text-regular-sm" color="textSecondary">
         {postConditionMode === 'allow'

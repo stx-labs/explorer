@@ -7,13 +7,12 @@ import {
   isTupleValueType,
 } from '@/app/sandbox/types/values';
 import { encodeOptional, encodeOptionalTuple, encodeTuple, getTuple } from '@/app/sandbox/utils';
-import { CONNECT_AUTH_ORIGIN } from '@/common/constants/env';
+import { callContract } from '@/app/sandbox/utils/walletTransactions';
 import { isUint128 } from '@/common/utils/number-utils';
-import { getContractIdParts } from '@/common/utils/test-utils/contract-utils';
 import { QueryClient } from '@tanstack/react-query';
 
 import { asciiToBytes, bytesToHex } from '@stacks/common';
-import { openContractCall } from '@stacks/connect';
+import { NetworkString } from '@stacks/connect/dist/types/methods';
 import {
   ClarityAbiFunction,
   ClarityAbiType,
@@ -113,7 +112,7 @@ export function extractFunctionParams(values: FunctionFormikState): FunctionPara
 export interface ContractCallDependencies {
   contractId: string;
   fnAbi: ClarityAbiFunction;
-  network: any;
+  network: string | NetworkString;
   queryClient: QueryClient;
 }
 
@@ -122,22 +121,21 @@ export async function handlePublicFunctionCall(
   postConditionParams: PostConditionParameters,
   { contractId, fnAbi, network, queryClient }: ContractCallDependencies
 ): Promise<void> {
-  const { contractAddress, contractName } = getContractIdParts(contractId);
   const postCondition = shouldUsePostConditions(postConditionParams.postConditionMode!)
     ? getPostCondition(postConditionParams)
     : undefined;
-  await openContractCall({
-    contractAddress,
-    contractName,
-    functionName: encodeURIComponent(fnAbi.name),
-    functionArgs: Object.values(final),
+  const functionArgs = Object.values(final);
+
+  await callContract({
+    contract: contractId,
+    functionName: fnAbi.name,
+    functionArgs,
     network: network,
-    authOrigin: CONNECT_AUTH_ORIGIN,
-    onFinish: () => {
-      void queryClient.invalidateQueries({ queryKey: ['addressMempoolTxsInfinite'] });
-    },
     postConditions: postCondition ? [postCondition] : undefined,
-    postConditionMode: postConditionParams.postConditionMode,
+    postConditionMode:
+      postConditionParams.postConditionMode === PostConditionMode.Allow ? 'allow' : 'deny',
+  }).then(() => {
+    void queryClient.invalidateQueries({ queryKey: ['addressMempoolTxsInfinite'] });
   });
 }
 
