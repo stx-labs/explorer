@@ -1,11 +1,12 @@
+'use client';
+
 import { TransactionStatus as TransactionStatusEnum } from '@/common/constants/constants';
 import { getTransactionStatus } from '@/common/utils/transactions';
 import { Alert } from '@/components/ui/alert';
 import { Link } from '@/ui/Link';
 import { Text } from '@/ui/Text';
 import { Stack } from '@chakra-ui/react';
-import { Clock, Question, XCircle } from '@phosphor-icons/react';
-import { WarningDiamond } from '@phosphor-icons/react';
+import { Clock, Question, Warning, WarningDiamond, XCircle } from '@phosphor-icons/react';
 
 import { MempoolTransaction, Transaction } from '@stacks/stacks-blockchain-api-types';
 
@@ -24,9 +25,23 @@ export function getAlertIcon(status: AlertStatus) {
   }
 }
 
+export function AlertWrapper({
+  status,
+  title,
+  description,
+}: {
+  status: AlertStatus;
+  title?: string;
+  description: string | React.ReactNode;
+}) {
+  return (
+    <Alert status={status} title={title} description={description} icon={getAlertIcon(status)} />
+  );
+}
+
 export function PendingAlert() {
   return (
-    <Alert
+    <AlertWrapper
       status="warning"
       title="Transaction taking longer than usual"
       description="Some transactions may be delayed if the tenure budget is full. A tenure budget refers to the limit on the number of tenures (periods during which a miner can produce blocks) that a miner can hold within a specific timeframe. If the tenure budget is full, it means the miner has reached the maximum number of tenures they can hold, potentially delaying the assignment of new tenures and affecting block production or transaction processing times."
@@ -36,7 +51,7 @@ export function PendingAlert() {
 
 export function TransactionDroppedAlert() {
   return (
-    <Alert
+    <AlertWrapper
       status="error"
       title="Transaction dropped"
       description="This transaction was dropped because it could not be mined. Dropped transactions do not incur mining fees and will expire after 256 tenures (~42 hours). Although they do not become part of the blockchain history, some indexers may continue to display data for these transactions for a limited time after expiration."
@@ -46,7 +61,7 @@ export function TransactionDroppedAlert() {
 
 export function TransactionRolledBackAlert() {
   return (
-    <Alert
+    <AlertWrapper
       status="error"
       title="Transaction rolled back"
       description="This transaction would have succeeded but was rolled back due to a supplied post-condition. While a failed transaction is included in a block (with mining fees paid to the miner and non-refundable), it failed because it violated the rules of the Stacks protocol or the smart contract it interacted with. Refer to the error code and/or the contract for more details on the specific cause of failure."
@@ -56,7 +71,7 @@ export function TransactionRolledBackAlert() {
 
 export function TenureAlert() {
   return (
-    <Alert
+    <AlertWrapper
       status="neutral"
       description={
         <Text>
@@ -80,7 +95,7 @@ export function TenureAlert() {
 
 export function NonCanonicalAlert() {
   return (
-    <Alert
+    <AlertWrapper
       status="warning"
       description="This transaction is in a non-canonical fork. It is not in the canonical Stacks chain"
     />
@@ -117,7 +132,9 @@ export function getFailureDescription(tx: Transaction | MempoolTransaction) {
 
 export function TransactionFailedAlert({ tx }: { tx: Transaction | MempoolTransaction }) {
   const failureDescription = getFailureDescription(tx);
-  return <Alert status="error" title="Transaction failed" description={failureDescription} />;
+  return (
+    <AlertWrapper status="error" title="Transaction failed" description={failureDescription} />
+  );
 }
 
 export function getTxAlert(tx: Transaction | MempoolTransaction) {
@@ -159,9 +176,9 @@ export function getTxAlert(tx: Transaction | MempoolTransaction) {
   return alertContent;
 }
 
-export function SuspiciousTokenAlert() {
+export function UnknownOrNewlyIssuedTokenAlert() {
   return (
-    <Alert
+    <AlertWrapper
       status="error"
       title="Unknown or newly issued token"
       description={
@@ -173,14 +190,64 @@ export function SuspiciousTokenAlert() {
 
 export function SimilarTokenAlert() {
   return (
-    <Alert
+    <AlertWrapper
       status="error"
       title="Unknown or newly issued token"
       description={
-        'This token appears to be a misrepresentation or is associated with suspicious activity. Investing in unknown or new crypto tokens carries high risk and may result in total loss. Do your own research, as these tokens can be volatile and lack transparency. Ensure you fully trust the token or entity before interacting with it.'
+        "Be cautious of tokens with names similar to well-known projects, as they may be duplicates or imitations. Verify the token's official contract address and confirm its legitimacy before any interaction."
       }
-      alertBg="colors.feedback.yellow-200"
-      alertIconColor="colors.feedback.yellow-700"
+    />
+  );
+}
+
+export function RiskyTokenAlert() {
+  return (
+    <Alert
+      status="error"
+      description={
+        'This token may be a scam. Engaging with unverified tokens could result in loss of funds.'
+      }
+      icon={<Warning weight="bold" />}
+      alertIconColor="iconError"
+      bg={{ base: 'feedback.red-150', _dark: 'transactionStatus.failed' }}
+    />
+  );
+}
+
+export function NotSBTCTokenAlert() {
+  return (
+    <Alert
+      status="info"
+      description={
+        <Text textStyle="text-regular-xs" color="textPrimary">
+          This is not&nbsp;
+          <Link
+            href="https://explorer.hiro.so/token/SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token?chain=mainnet"
+            color="black"
+            textDecoration="underline"
+          >
+            <Text textStyle="text-regular-xs" color="textPrimary" whiteSpace="nowrap">
+              the official sBTC token
+            </Text>
+          </Link>
+          &nbsp; and may be a scam. Engaging with unverified tokens could result in loss of funds.
+        </Text>
+      }
+      icon={<Warning weight="bold" />}
+      alertIconColor="iconError"
+      bg={{ base: 'feedback.red-150', _dark: 'transactionStatus.failed' }}
+    />
+  );
+}
+
+export function Sip10Alert() {
+  return (
+    <Alert
+      status="neutral"
+      description={
+        'SIP-10 data is sourced from third-party providers. Stacks Explorer does not guarantee its accuracy, timeliness, completeness, or usefulness.'
+      }
+      icon={<Question weight="bold" />}
     />
   );
 }

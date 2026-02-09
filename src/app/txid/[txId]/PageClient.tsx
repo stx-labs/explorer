@@ -1,6 +1,9 @@
 'use client';
 
 import { TxTableFiltersProvider } from '@/common/components/table/tx-table/useTxTableFilters';
+import { useTxById } from '@/common/queries/useTxById';
+import { Text } from '@/ui/Text';
+import { Flex, Spinner } from '@chakra-ui/react';
 
 import { useTxIdPageData } from './TxIdPageContext';
 import { CoinbasePage as CoinbasePageRedesign } from './redesign/CoinbasePage';
@@ -10,7 +13,28 @@ import { TenureChangePage as TenureChangePageRedesign } from './redesign/TenureC
 import { TokenTransferPage as TokenTransferPageRedesign } from './redesign/TokenTransferPage';
 
 function TransactionIdPage() {
-  const { initialTxData: tx, filters } = useTxIdPageData();
+  const { initialTxData, filters, txId } = useTxIdPageData();
+  const { data: clientTxData, isLoading, error } = useTxById(txId, { enabled: !initialTxData });
+  const tx = initialTxData || clientTxData;
+
+  if (!initialTxData && isLoading) {
+    return (
+      <Flex align="center" justify="center" py={20}>
+        <Spinner size="lg" />
+      </Flex>
+    );
+  }
+
+  if (!initialTxData && error) {
+    return (
+      <Flex align="center" justify="center" py={20} direction="column" gap={4}>
+        <Text color="error">Failed to load transaction</Text>
+        <Text fontSize="sm" color="textSubdued">
+          {error instanceof Error ? error.message : 'Unknown error'}
+        </Text>
+      </Flex>
+    );
+  }
 
   let txPage = null;
 

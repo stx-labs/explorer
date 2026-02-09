@@ -62,14 +62,43 @@ export function formatTimestamp(
 ): string {
   const date = new Date(timestampInSeconds * 1000);
 
-  const formatter = new Intl.DateTimeFormat('en-US', {
-    timeZoneName: 'short',
-  });
-  const parts = formatter.formatToParts(date);
-  const tzPart = parts.find(part => part.type === 'timeZoneName');
+  if (formatString !== 'locale') {
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZoneName: 'short',
+    });
+    const parts = formatter.formatToParts(date);
+    const tzPart = parts.find(part => part.type === 'timeZoneName');
 
-  const formatted = format(date, formatString);
-  return includeTimezone ? `${formatted} ${tzPart?.value}` : formatted;
+    const formatted = format(date, formatString);
+    return includeTimezone ? `${formatted} ${tzPart?.value}` : formatted;
+  }
+
+  const options: Intl.DateTimeFormatOptions = {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hourCycle: 'h23',
+    ...(includeTimezone && { timeZoneName: 'short' }),
+  };
+
+  let locale = 'en-US';
+  if (typeof navigator !== 'undefined') {
+    if (navigator.languages && navigator.languages.length > 0) {
+      locale = navigator.languages[0];
+    } else if (navigator.language) {
+      locale = navigator.language;
+    }
+  }
+
+  const formatter = new Intl.DateTimeFormat(locale, options);
+  return formatter.format(date);
+}
+
+export function formatTimestampLocalized(timestampInSeconds: number): string {
+  return formatTimestamp(timestampInSeconds, 'locale', true);
 }
 
 export function formatTimestampToRelativeTime(timestampInSeconds: number): string {

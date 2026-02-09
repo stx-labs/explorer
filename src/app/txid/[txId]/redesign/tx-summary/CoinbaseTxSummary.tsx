@@ -10,6 +10,7 @@ import {
 } from '@stacks/stacks-blockchain-api-types';
 
 import { useTxIdPageData } from '../../TxIdPageContext';
+import { ExecutionCostItem } from './ExecutionCost';
 import { PriceSummaryItemValue, SponsorTag, SummaryItem } from './SummaryItem';
 
 export const CoinbaseTxSummaryItems = ({
@@ -25,7 +26,7 @@ export const CoinbaseTxSummaryItems = ({
     <>
       <SummaryItem label="ID" value={tx.tx_id} showCopyButton />
       <SummaryItem
-        label="From"
+        label="By"
         value={tx.sender_address}
         valueRenderer={value => (
           <AddressLink address={value} wordBreak="break-all" variant="tableLink">
@@ -119,6 +120,9 @@ export const CoinbaseTxSummaryItems = ({
             />
           )}
         />
+      )}
+      {isConfirmedTx<CoinbaseTransaction, MempoolCoinbaseTransaction>(tx) && (
+        <ExecutionCostItem tx={tx} />
       )}
     </>
   );

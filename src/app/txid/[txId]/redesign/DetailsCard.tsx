@@ -149,9 +149,8 @@ function ContractCallDetailsCardItems({
   tx: ContractCallTransaction | MempoolContractCallTransaction;
 }) {
   const contractId = tx.contract_call.contract_id;
-  const contractParts = contractId.split('.');
-  const contractAddress = contractParts[0];
-  const contractName = contractParts[1];
+  const contractName = contractId.split('.')[1];
+  const contractAddress = contractId.split('.')[0];
 
   return (
     <>
@@ -201,9 +200,8 @@ function SmartContractDetailsCardItems({
   tx: SmartContractTransaction | MempoolSmartContractTransaction;
 }) {
   const contractId = tx.smart_contract.contract_id;
-  const contractParts = contractId.split('.');
-  const contractAddress = contractParts[0];
-  const contractName = contractParts[1];
+  const contractName = contractId.split('.')[1];
+  const contractAddress = contractId.split('.')[0];
   const { data: contract } = useContractById(contractId);
   const functions = contract?.abi?.functions || [];
   const variables = contract?.abi?.variables || [];

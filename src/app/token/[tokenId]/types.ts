@@ -96,4 +96,8 @@ export interface TokenDataFromLunarCrush {
   marketCapRank?: number;
 }
 
-export interface MergedTokenData extends TokenDataFromStacksApi, TokenDataFromLunarCrush {}
+export interface MergedTokenData
+  extends Omit<TokenDataFromStacksApi, 'totalSupply'>,
+    TokenDataFromLunarCrush {
+  totalSupply?: number;
+}

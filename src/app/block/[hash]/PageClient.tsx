@@ -10,7 +10,7 @@ import { Section } from '../../../common/components/Section';
 import { Timestamp } from '../../../common/components/Timestamp';
 import { Value } from '../../../common/components/Value';
 import '../../../common/components/loaders/skeleton-text';
-import { useSuspenseBlockByHeightOrHash } from '../../../common/queries/useBlockByHash';
+import { useSuspenseBlockByHeightOrHash } from '../../../common/queries/useBlockByHeightOrHash';
 import { DialogBackdrop, DialogContent, DialogRoot } from '../../../components/ui/dialog';
 import { SkeletonTxsList } from '../../../features/txs-list/SkeletonTxsList';
 import { Text } from '../../../ui/Text';

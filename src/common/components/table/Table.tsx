@@ -146,6 +146,7 @@ export type TableProps<T> = {
   renderSubComponent?: (props: { row: Row<T> }) => ReactNode;
   getRowCanExpand?: (row: Row<T>) => boolean;
   expandAllRowsByDefault?: boolean;
+  meta?: Record<string, unknown>;
 };
 
 const ErrorTable = ({ error }: { error: string }) => {
@@ -245,6 +246,7 @@ export function Table<T>({
   errorTableUi,
   expandAllRowsByDefault,
   renderSubComponent,
+  meta,
 }: TableProps<T>): JSX.Element {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [tableData, setTableData] = useState(data);
@@ -255,7 +257,8 @@ export function Table<T>({
     data: tableData,
     columns,
     defaultColumn: defaultColumnSizing,
-    ...(pagination?.manualPagination ? { rowCount: pagination.totalRows } : {}), // no need to pass pageCount or rowCount with client-side pagination as it is calculated automatically
+    ...(pagination?.manualPagination ? { rowCount: pagination.totalRows } : {}),
+    ...(meta ? { meta } : {}),
     state: {
       sorting,
       columnPinning,

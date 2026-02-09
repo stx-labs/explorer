@@ -196,6 +196,7 @@ function CycleProgress() {
             bg={'surfaceFifth'}
             px={2}
             py={1}
+            suppressHydrationWarning
           >
             ~ {formatDateShort(approximateStartTimestamp)}
           </Text>
@@ -206,6 +207,7 @@ function CycleProgress() {
             bg={'surfaceFifth'}
             px={2}
             py={0.5}
+            suppressHydrationWarning
           >
             ~ {formatDateShort(approximateEndTimestamp)}
           </Text>

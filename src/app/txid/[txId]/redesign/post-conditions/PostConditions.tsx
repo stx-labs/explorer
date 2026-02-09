@@ -1,5 +1,6 @@
 'use client';
 
+import { SectionTabsContentContainer } from '@/common/components/SectionTabs';
 import { Stack } from '@chakra-ui/react';
 
 import {
@@ -9,7 +10,6 @@ import {
   SmartContractTransaction,
 } from '@stacks/stacks-blockchain-api-types';
 
-import { TabsContentContainer } from '../TxTabs';
 import { PostConditionsHeader } from './PostConditionsHeader';
 import { PostConditionsTable } from './PostConditionsTable';
 
@@ -25,12 +25,12 @@ export function PostConditions({
   const { post_condition_mode: mode } = tx;
   return (
     <Stack gap={1}>
-      <TabsContentContainer>
+      <SectionTabsContentContainer>
         <PostConditionsHeader postConditionMode={mode} />
-      </TabsContentContainer>
-      <TabsContentContainer>
+      </SectionTabsContentContainer>
+      <SectionTabsContentContainer>
         <PostConditionsTable tx={tx} />
-      </TabsContentContainer>
+      </SectionTabsContentContainer>
     </Stack>
   );
 }

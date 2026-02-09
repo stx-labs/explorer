@@ -1,3 +1,4 @@
+import { SectionTabsContentContainer } from '@/common/components/SectionTabs';
 import { Text } from '@/ui/Text';
 import { Grid, Stack } from '@chakra-ui/react';
 
@@ -10,7 +11,6 @@ import {
 import { getTxAlert } from './Alert';
 import { DetailsCard } from './DetailsCard';
 import { TxHeader } from './TxHeader';
-import { TabsContentContainer } from './TxTabs';
 import { TxSummary } from './tx-summary/TxSummary';
 
 export const CoinbasePage = ({ tx }: { tx: CoinbaseTransaction | MempoolCoinbaseTransaction }) => {
@@ -24,9 +24,9 @@ export const CoinbasePage = ({ tx }: { tx: CoinbaseTransaction | MempoolCoinbase
         <Text textStyle="heading-xs">Overview</Text>
 
         <Grid templateColumns={{ base: '1fr', md: '75% 25%' }} gap={2}>
-          <TabsContentContainer>
+          <SectionTabsContentContainer>
             <TxSummary tx={tx} />
-          </TabsContentContainer>
+          </SectionTabsContentContainer>
 
           <DetailsCard tx={tx as Transaction} />
         </Grid>

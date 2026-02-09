@@ -8,18 +8,20 @@ import { TokenLink, TxLink } from '../../../common/components/ExplorerLinks';
 import { abbreviateNumber, getFtDecimalAdjustedBalance } from '../../../common/utils/utils';
 import { Text } from '../../../ui/Text';
 import { TokenAvatar } from '../../address/[principal]/TokenBalanceCard/TokenAvatar';
-import { getHasSBTCInName, getIsSBTC } from '../utils';
+import { isSBTC, referencesSBTC } from '../utils';
 
 export const TokenRow: FC<{
   ftToken: FtBasicMetadataResponse;
 }> = ({ ftToken }) => {
   const name = ftToken.name || 'FT Token';
+  const symbol = ftToken.symbol || '';
+  const contractId = ftToken.contract_principal;
 
-  const hasSBTCInName = getHasSBTCInName(name, ftToken.symbol ?? '');
-  const isSBTC = getIsSBTC(ftToken.contract_principal);
+  const includesSbtc = referencesSBTC(name, symbol);
+  const isSbtc = isSBTC(contractId);
 
   const tokenBadge = useMemo(() => {
-    if (isSBTC || VERIFIED_TOKENS.includes(ftToken.contract_principal)) {
+    if (isSbtc || VERIFIED_TOKENS.includes(contractId)) {
       return (
         <Flex
           px={1.5}
@@ -34,7 +36,7 @@ export const TokenRow: FC<{
         </Flex>
       );
     }
-    if ((hasSBTCInName && !isSBTC) || RISKY_TOKENS.includes(ftToken.contract_principal)) {
+    if ((includesSbtc && !isSbtc) || RISKY_TOKENS.includes(contractId)) {
       return (
         <Flex
           px={1.5}
@@ -50,7 +52,7 @@ export const TokenRow: FC<{
       );
     }
     return null;
-  }, [ftToken.contract_principal, hasSBTCInName, isSBTC]);
+  }, [contractId, includesSbtc, isSbtc]);
 
   return (
     <Table.Row>
@@ -58,7 +60,7 @@ export const TokenRow: FC<{
         <Flex alignItems={'center'} gap={'8px'}>
           <TokenAvatar metadataImageUrl={ftToken.image_uri} asset={ftToken.symbol || 'FT'} />
           <TokenLink
-            tokenId={ftToken.contract_principal}
+            tokenId={contractId}
             fontSize={'sm'}
             whiteSpace={'nowrap'}
             textOverflow={'ellipsis'}

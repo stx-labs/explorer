@@ -8,7 +8,7 @@ import {
   useSuspenseInfiniteQueryResult,
 } from '../../common/hooks/useInfiniteQueryResult';
 import { useFtTokens, useSuspenseFtTokens } from '../../common/queries/useFtTokens';
-import { sbtcContractAddress } from '../token/[tokenId]/consts';
+import { sbtcContractAddress, usdcxContractAddress } from '../token/[tokenId]/consts';
 
 export const useSuspenseTokens = (
   debouncedSearchTerm: string
@@ -34,8 +34,15 @@ export const useSuspenseTokens = (
     { enabled: searchByAddress }
   );
 
-  const shouldAddSbtc = useMemo(() => !debouncedSearchTerm, [debouncedSearchTerm]); // Only add sBTC if no search term is provided. If sbtc is searched, it will be added by default. If a search term that is not sbtc is provided, sbtc should not be added.
-  const sbtcResponse = useFtTokens({ address: sbtcContractAddress }, { enabled: shouldAddSbtc });
+  const shouldAddPinnedTokens = useMemo(() => !debouncedSearchTerm, [debouncedSearchTerm]); // Only add pinned tokens if no search term is provided. If they are searched, they will be added by default. If a search term that is not a pinned token is provided, they should not be added.
+  const sbtcResponse = useFtTokens(
+    { address: sbtcContractAddress },
+    { enabled: shouldAddPinnedTokens }
+  );
+  const usdcxResponse = useFtTokens(
+    { address: usdcxContractAddress },
+    { enabled: shouldAddPinnedTokens }
+  );
 
   const ftTokensSearchedByName =
     useSuspenseInfiniteQueryResult<FtBasicMetadataResponse>(searchByNameResponse);
@@ -44,23 +51,27 @@ export const useSuspenseTokens = (
   const ftTokensSearchedByAddress =
     useInfiniteQueryResult<FtBasicMetadataResponse>(searchByAddressResponse);
   const sbtc = useInfiniteQueryResult<FtBasicMetadataResponse>(sbtcResponse);
+  const usdcx = useInfiniteQueryResult<FtBasicMetadataResponse>(usdcxResponse);
 
   const allFtTokensDeduped = useMemo(() => {
     const allFtTokens = [
       ...ftTokensSearchedByName,
       ...ftTokensSearchedBySymbol,
       ...ftTokensSearchedByAddress,
-      ...(shouldAddSbtc ? sbtc : []),
+      ...(shouldAddPinnedTokens ? sbtc : []),
+      ...(shouldAddPinnedTokens ? usdcx : []),
     ];
     const uniqueFtTokens = new Map<string, FtBasicMetadataResponse>();
     allFtTokens.forEach(ftToken => {
       uniqueFtTokens.set(ftToken.tx_id, ftToken);
     });
     return Array.from(uniqueFtTokens.values()).sort((a, b) => {
-      // First check for sBTC
-      if (shouldAddSbtc) {
+      // First check for pinned tokens (sBTC first, then USCx)
+      if (shouldAddPinnedTokens) {
         if (a.tx_id === sbtc[0]?.tx_id) return -1;
         if (b.tx_id === sbtc[0]?.tx_id) return 1;
+        if (a.tx_id === usdcx[0]?.tx_id) return -1;
+        if (b.tx_id === usdcx[0]?.tx_id) return 1;
       }
       // Then do alphabetical comparison
       return (a.name ?? '').localeCompare(b.name ?? '');
@@ -70,7 +81,8 @@ export const useSuspenseTokens = (
     ftTokensSearchedByName,
     ftTokensSearchedBySymbol,
     sbtc,
-    shouldAddSbtc,
+    usdcx,
+    shouldAddPinnedTokens,
   ]);
 
   const loadMore = useCallback(() => {

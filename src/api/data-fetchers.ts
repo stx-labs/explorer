@@ -13,6 +13,7 @@ import {
   BnsNamesOwnByAddressResponse,
   BurnchainRewardsTotal,
   FungibleTokenHolderList,
+  MempoolTransaction,
   SmartContract,
   Transaction,
 } from '@stacks/stacks-blockchain-api-types';
@@ -33,6 +34,12 @@ const ADDRESS_RECENT_TRANSACTIONS_LIMIT = 3;
 const ADDRESS_LATEST_NONCE_REVALIDATION_TIMEOUT_IN_SECONDS = 3;
 const ADDRESS_BNS_NAMES_REVALIDATION_TIMEOUT_IN_SECONDS = 10;
 const ADDRESS_BURNCHAIN_REWARDS_REVALIDATION_TIMEOUT_IN_SECONDS = 10;
+
+const CONFIRMED_TX_REVALIDATION_TIMEOUT_IN_SECONDS = 3; // 3 seconds
+const CONFIRMED_CONTRACT_REVALIDATION_TIMEOUT_IN_SECONDS = 3; // 3 seconds
+
+export const getTxTag = (txId: string) => `tx-id-${txId}`;
+export const getContractTag = (contractId: string) => `contract-id-${contractId}`;
 
 export async function fetchAddressBalances(
   apiUrl: string,
@@ -184,14 +191,29 @@ export async function fetchContractInfo(
   apiUrl: string,
   contractId: string
 ): Promise<SmartContract> {
-  const response = await stacksAPIFetch(`${apiUrl}/extended/v1/contract/${contractId}`);
+  const response = await stacksAPIFetch(`${apiUrl}/extended/v1/contract/${contractId}`, {
+    cache: 'default',
+    next: {
+      revalidate: CONFIRMED_CONTRACT_REVALIDATION_TIMEOUT_IN_SECONDS,
+      tags: [getContractTag(contractId)],
+    },
+  });
   const contractInfo: SmartContract = await response.json();
   return contractInfo;
 }
 
-export async function fetchTx(apiUrl: string, txId: string): Promise<Transaction> {
-  const response = await stacksAPIFetch(`${apiUrl}/extended/v1/tx/${txId}`);
-  const tx: Transaction = await response.json();
+export async function fetchTx(
+  apiUrl: string,
+  txId: string
+): Promise<Transaction | MempoolTransaction> {
+  const response = await stacksAPIFetch(`${apiUrl}/extended/v1/tx/${txId}`, {
+    cache: 'default',
+    next: {
+      revalidate: CONFIRMED_TX_REVALIDATION_TIMEOUT_IN_SECONDS,
+      tags: [getTxTag(txId)],
+    },
+  });
+  const tx: Transaction | MempoolTransaction = await response.json();
   return tx;
 }
 

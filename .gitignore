@@ -22,3 +22,6 @@ coverage
 .env.sentry-build-plugin
 
 *storybook.log
+*.tsbuildinfo
+
+CLAUDE.md

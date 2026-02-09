@@ -8,7 +8,6 @@ import {
   getMempoolTransactionsQueryKey,
   useMempoolTransactions,
 } from '@/common/queries/useMempoolTransactionsInfinite';
-import { formatTimestamp, formatTimestampToRelativeTime } from '@/common/utils/time-utils';
 import { CompressedMempoolTxTableData } from '@/common/utils/transaction-utils';
 import { getAmount, getToAddress } from '@/common/utils/transaction-utils';
 import { validateStacksContractId } from '@/common/utils/utils';
@@ -20,14 +19,14 @@ import { type JSX, useCallback, useEffect, useMemo, useRef, useState } from 'rea
 
 import { MempoolTransaction, Transaction } from '@stacks/stacks-blockchain-api-types';
 
-import { AddressLinkCellRenderer } from '../CommonTableCellRenderers';
+import { AddressLinkCellRenderer, FeeCellRenderer } from '../CommonTableCellRenderers';
 import { Table } from '../Table';
 import { DefaultTableColumnHeader } from '../TableComponents';
 import { TableContainer } from '../TableContainer';
+import { TimestampCell, TimestampColumnHeader, TimestampTableMeta } from '../TimestampColumnHeader';
 import { UpdateTableBannerRow } from '../UpdateTableBannerRow';
 import { TxTableFilters } from '../tx-table/useTxTableFilters';
 import {
-  FeeCellRenderer,
   IconCellRenderer,
   TimeStampCellRenderer,
   TransactionTitleCellRenderer,
@@ -73,7 +72,7 @@ const defaultColumnDefinitions: ColumnDef<MempoolTableData>[] = [
   },
   {
     id: TxTableColumns.From,
-    header: 'From',
+    header: 'By',
     accessorKey: TxTableColumns.From,
     cell: info => AddressLinkCellRenderer(info.getValue() as TxTableAddressColumnData),
     enableSorting: false,
@@ -90,7 +89,7 @@ const defaultColumnDefinitions: ColumnDef<MempoolTableData>[] = [
   },
   {
     id: TxTableColumns.To,
-    header: 'To',
+    header: 'Target',
     accessorKey: TxTableColumns.To,
     cell: info => AddressLinkCellRenderer(info.getValue() as TxTableAddressColumnData),
     enableSorting: false,
@@ -112,24 +111,14 @@ const defaultColumnDefinitions: ColumnDef<MempoolTableData>[] = [
   },
   {
     id: TxTableColumns.BlockTime,
-    header: ({ header }: { header: Header<MempoolTableData, unknown> }) => (
-      <Flex alignItems="center" justifyContent="flex-end" w="full">
-        <DefaultTableColumnHeader header={header}>Timestamp</DefaultTableColumnHeader>
-      </Flex>
+    header: ({ header, table }: { header: Header<MempoolTableData, unknown>; table: any }) => (
+      <TimestampColumnHeader header={header} table={table} />
     ),
     accessorKey: TxTableColumns.BlockTime,
-    cell: info => (
-      <Flex alignItems="center" justifyContent="flex-end" w="full">
-        {TimeStampCellRenderer(
-          formatTimestampToRelativeTime(info.getValue() as number),
-          formatTimestamp(info.getValue() as number, 'MMM dd, yyyy HH:mm:ss', true)
-        )}
-      </Flex>
+    cell: ({ getValue, table }: { getValue: () => unknown; table: any }) => (
+      <TimestampCell timestamp={getValue() as number} table={table} />
     ),
     enableSorting: false,
-    meta: {
-      tooltip: 'Timestamps are shown in your local timezone',
-    },
   },
 ];
 
@@ -150,6 +139,7 @@ export function MempoolTable({
   filters?: Partial<TxTableFilters>;
   initialData?: GenericResponseType<CompressedMempoolTxTableData>;
 }) {
+  const [showAbsoluteTime, setShowAbsoluteTime] = useState(false);
   const queryClient = useQueryClient();
   const isCacheSetWithInitialData = useRef(false);
 
@@ -254,6 +244,14 @@ export function MempoolTable({
       columns={columnDefinitions ?? defaultColumnDefinitions}
       tableContainerWrapper={table => <TableContainer minH="500px">{table}</TableContainer>}
       scrollIndicatorWrapper={table => <ScrollIndicator>{table}</ScrollIndicator>}
+      meta={
+        {
+          toggleTimestamp: {
+            showAbsolute: showAbsoluteTime,
+            toggle: () => setShowAbsoluteTime(!showAbsoluteTime),
+          },
+        } satisfies TimestampTableMeta
+      }
       pagination={
         disablePagination
           ? undefined
