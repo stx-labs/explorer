@@ -61,7 +61,7 @@ export const deployContract = async (params: {
     const response = await request('stx_deployContract', {
       name: params.name,
       clarityCode: params.clarityCode,
-      clarityVersion: params.clarityVersion || 3,
+      clarityVersion: params.clarityVersion || 4,
       network: params.network || 'mainnet',
       postConditionMode: 'allow',
     });
