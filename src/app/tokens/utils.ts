@@ -1,14 +1,36 @@
-import { sbtcContractAddress } from '../token/[tokenId]/consts';
+import { FtBasicMetadataResponse } from '@hirosystems/token-metadata-api-client';
 
-export const getHasSBTCInName = (name: string, symbol: string) => {
-  if (!name || !symbol) {
+import {
+  LEGIT_SBTC_DERIVATIVES,
+  RISKY_TOKENS,
+  sbtcContractAddress,
+} from '../token/[tokenId]/consts';
+
+export const referencesSBTC = (
+  tokenName: FtBasicMetadataResponse['name'],
+  tokenSymbol: FtBasicMetadataResponse['symbol']
+) => {
+  if (!tokenName || !tokenSymbol) {
     return false;
   }
-  return name.toLowerCase().includes('sbtc') || symbol.toLowerCase().includes('sbtc');
+  return tokenName.toLowerCase().includes('sbtc') || tokenSymbol.toLowerCase().includes('sbtc');
 };
-export const getIsSBTC = (contractPrincipal: string) => {
-  if (!contractPrincipal) {
+
+export const isSBTC = (contractId: string) => {
+  if (!contractId) {
     return false;
   }
-  return contractPrincipal === sbtcContractAddress;
+  return contractId === sbtcContractAddress;
 };
+
+export function showSBTCTokenAlert(tokenName: string, tokenSymbol: string, contractId: string) {
+  return (
+    referencesSBTC(tokenName, tokenSymbol) &&
+    !isSBTC(contractId) &&
+    !LEGIT_SBTC_DERIVATIVES.includes(contractId)
+  );
+}
+
+export function showRiskyTokenAlert(contractId: string) {
+  return RISKY_TOKENS.includes(contractId);
+}

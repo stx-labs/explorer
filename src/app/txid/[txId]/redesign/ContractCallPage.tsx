@@ -1,3 +1,4 @@
+import { SectionTabsContentContainer, SectionTabsTrigger } from '@/common/components/SectionTabs';
 import { isConfirmedTx } from '@/common/utils/transactions';
 import { TabsContent } from '@/ui/Tabs';
 import { Grid, Stack } from '@chakra-ui/react';
@@ -13,7 +14,7 @@ import { getTxAlert } from './Alert';
 import { DetailsCard } from './DetailsCard';
 import { Events } from './Events';
 import { TxHeader } from './TxHeader';
-import { TabsContentContainer, TransactionIdPageTab, TxTabs, TxTabsTrigger } from './TxTabs';
+import { TransactionIdPageTab, TxTabs } from './TxTabs';
 import { FunctionCalled } from './function-called/FunctionCalled';
 import { PostConditions } from './post-conditions/PostConditions';
 import { Source } from './source/Source';
@@ -31,14 +32,12 @@ export const ContractCallPage = ({ tx }: { tx: Transaction | MempoolTransaction 
   );
 };
 
-export function ContractCallTabTrigger({
+export function ContractCallTabTriggers({
   tx,
   selectedTab,
-  setSelectedTab,
 }: {
   tx: ContractCallTransaction | MempoolContractCallTransaction;
   selectedTab: TransactionIdPageTab;
-  setSelectedTab: (tab: TransactionIdPageTab) => void;
 }) {
   const numPostConditions = tx.post_conditions.length || 0;
   const numTxEvents = isConfirmedTx<ContractCallTransaction, MempoolContractCallTransaction>(tx)
@@ -47,42 +46,37 @@ export function ContractCallTabTrigger({
 
   return (
     <>
-      <TxTabsTrigger
+      <SectionTabsTrigger
         key={TransactionIdPageTab.Overview}
         label="Overview"
         value={TransactionIdPageTab.Overview}
         isActive={selectedTab === TransactionIdPageTab.Overview}
-        onClick={() => setSelectedTab(TransactionIdPageTab.Overview)}
       />
-      <TxTabsTrigger
+      <SectionTabsTrigger
         key={TransactionIdPageTab.FunctionCall}
         label={'Function called'}
         value={TransactionIdPageTab.FunctionCall}
         isActive={selectedTab === TransactionIdPageTab.FunctionCall}
-        onClick={() => setSelectedTab(TransactionIdPageTab.FunctionCall)}
       />
-      <TxTabsTrigger
+      <SectionTabsTrigger
         key={TransactionIdPageTab.PostConditions}
         label={`Post-conditions`}
         secondaryLabel={numPostConditions > 0 ? `(${numPostConditions})` : ''}
         value={TransactionIdPageTab.PostConditions}
         isActive={selectedTab === TransactionIdPageTab.PostConditions}
-        onClick={() => setSelectedTab(TransactionIdPageTab.PostConditions)}
       />
-      <TxTabsTrigger
+      <SectionTabsTrigger
         key={TransactionIdPageTab.Events}
         label={`Events`}
         secondaryLabel={numTxEvents > 0 ? `(${numTxEvents})` : ''}
         value={TransactionIdPageTab.Events}
         isActive={selectedTab === TransactionIdPageTab.Events}
-        onClick={() => setSelectedTab(TransactionIdPageTab.Events)}
       />
-      <TxTabsTrigger
+      <SectionTabsTrigger
         key={TransactionIdPageTab.SourceCode}
         label={'Source code'}
         value={TransactionIdPageTab.SourceCode}
         isActive={selectedTab === TransactionIdPageTab.SourceCode}
-        onClick={() => setSelectedTab(TransactionIdPageTab.SourceCode)}
       />
     </>
   );
@@ -101,9 +95,9 @@ export function ContractCallTabContent({
         w="100%"
       >
         <Grid templateColumns={{ base: '1fr', md: '75% 25%' }} gap={2}>
-          <TabsContentContainer>
+          <SectionTabsContentContainer>
             <TxSummary tx={tx} />
-          </TabsContentContainer>
+          </SectionTabsContentContainer>
           <DetailsCard tx={tx as Transaction} />
         </Grid>
       </TabsContent>

@@ -3,7 +3,8 @@
 import { logError } from '@/common/utils/error-utils';
 
 import { request } from '@stacks/connect';
-import { Cl } from '@stacks/transactions';
+import { NetworkString } from '@stacks/connect/dist/types/methods';
+import { Cl, PostCondition, PostConditionModeName } from '@stacks/transactions';
 
 const formatClarityArgs = (args: any[]): any[] => {
   return args.map(arg => {
@@ -75,9 +76,9 @@ export const callContract = async (params: {
   contract: string;
   functionName: string;
   functionArgs: any[];
-  network?: string;
-  postConditions?: any[];
-  postConditionMode?: 'allow' | 'deny';
+  network?: string | NetworkString;
+  postConditions?: string[] | PostCondition[];
+  postConditionMode?: PostConditionModeName;
 }) => {
   try {
     const clarityArgs = formatClarityArgs(params.functionArgs);

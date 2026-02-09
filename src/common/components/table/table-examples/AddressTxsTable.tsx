@@ -7,7 +7,6 @@ import {
   getAddressTxsQueryKey,
   useAddressTxs,
 } from '@/common/queries/useAddressConfirmedTxsWithTransfersInfinite';
-import { formatTimestamp, formatTimestampToRelativeTime } from '@/common/utils/time-utils';
 import {
   CompressedTxAndMempoolTxTableData,
   getAmount,
@@ -29,6 +28,7 @@ import { AddressLinkCellRenderer, FeeCellRenderer } from '../CommonTableCellRend
 import { Table } from '../Table';
 import { DefaultTableColumnHeader } from '../TableComponents';
 import { TableContainer } from '../TableContainer';
+import { TimestampCell, TimestampColumnHeader, TimestampTableMeta } from '../TimestampColumnHeader';
 import { EventsCellRenderer, TransactionTitleCellRenderer } from './AddressTxsTaBleCellRenderers';
 import {
   IconCellRenderer,
@@ -119,7 +119,7 @@ export const defaultColumnDefinitions: ColumnDef<AddressTxsTableData>[] = [
   },
   {
     id: AddressTxsTableColumns.From,
-    header: 'From',
+    header: 'By',
     accessorKey: AddressTxsTableColumns.From,
     cell: info => AddressLinkCellRenderer(info.row.original[AddressTxsTableColumns.From]),
     enableSorting: false,
@@ -136,7 +136,7 @@ export const defaultColumnDefinitions: ColumnDef<AddressTxsTableData>[] = [
   },
   {
     id: AddressTxsTableColumns.To,
-    header: 'To',
+    header: 'Target',
     accessorKey: AddressTxsTableColumns.To,
     cell: info => AddressLinkCellRenderer(info.row.original[AddressTxsTableColumns.To]),
     enableSorting: false,
@@ -158,30 +158,14 @@ export const defaultColumnDefinitions: ColumnDef<AddressTxsTableData>[] = [
   },
   {
     id: AddressTxsTableColumns.BlockTime,
-    header: ({ header }: { header: Header<AddressTxsTableData, unknown> }) => (
-      <Flex alignItems="center" justifyContent="flex-end" w="full">
-        <DefaultTableColumnHeader header={header}>Timestamp</DefaultTableColumnHeader>
-      </Flex>
+    header: ({ header, table }: { header: Header<AddressTxsTableData, unknown>; table: any }) => (
+      <TimestampColumnHeader header={header} table={table} />
     ),
     accessorKey: AddressTxsTableColumns.BlockTime,
-    cell: info => (
-      <Flex alignItems="center" justifyContent="flex-end" w="full">
-        {TimeStampCellRenderer(
-          formatTimestampToRelativeTime(
-            info.row.original[AddressTxsTableColumns.BlockTime] as number
-          ),
-          formatTimestamp(
-            info.row.original[AddressTxsTableColumns.BlockTime] as number,
-            'MMM dd, yyyy HH:mm:ss',
-            true
-          )
-        )}
-      </Flex>
+    cell: ({ getValue, table }: { getValue: () => unknown; table: any }) => (
+      <TimestampCell timestamp={getValue() as number} table={table} />
     ),
     enableSorting: false,
-    meta: {
-      tooltip: 'Timestamps are shown in your local timezone',
-    },
   },
 ];
 
@@ -203,6 +187,7 @@ export function AddressTxsTable({
   columnDefinitions,
   pageSize,
 }: AddressTxsTableProps) {
+  const [showAbsoluteTime, setShowAbsoluteTime] = useState(false);
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
     pageSize,
@@ -235,8 +220,8 @@ export function AddressTxsTable({
     isCacheSetWithInitialData.current = true;
   }
 
-  // fetch data
-  let { data, isFetching, isLoading } = useAddressTxs(
+  // TODO: Temporarily fetching client-side - re-enable SSR initialData when API performance is fixed
+  let { data, isFetching, isLoading, isError, error } = useAddressTxs(
     principal,
     pagination.pageSize,
     pagination.pageIndex * pagination.pageSize,
@@ -287,6 +272,14 @@ export function AddressTxsTable({
       columns={columnDefinitions ?? defaultColumnDefinitions}
       tableContainerWrapper={table => <TableContainer>{table}</TableContainer>}
       scrollIndicatorWrapper={table => <ScrollIndicator>{table}</ScrollIndicator>}
+      meta={
+        {
+          toggleTimestamp: {
+            showAbsolute: showAbsoluteTime,
+            toggle: () => setShowAbsoluteTime(!showAbsoluteTime),
+          },
+        } satisfies TimestampTableMeta
+      }
       pagination={
         disablePagination
           ? undefined
@@ -300,6 +293,7 @@ export function AddressTxsTable({
       }
       isLoading={isLoading}
       isFetching={isFetching}
+      error={isError ? (error?.message ?? 'Failed to load transactions') : undefined}
       emptyTableUi={
         <Stack justifyContent="center" alignItems="center" h="full" w="full" flex={1} py={16}>
           <Text textStyle="text-regular-sm" color="textTertiary">

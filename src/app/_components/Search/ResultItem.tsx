@@ -1,5 +1,10 @@
 import { useAppDispatch } from '@/common/state/hooks';
-import { blur, setQuickNavUrl } from '@/features/search/search-slice';
+import {
+  blur,
+  setQuickNavUrl,
+  setSearchTerm,
+  setTempSearchTerm,
+} from '@/features/search/search-slice';
 import { Flex, FlexProps, Icon } from '@chakra-ui/react';
 import { ArrowRight, KeyReturn } from '@phosphor-icons/react';
 import { useRouter } from 'next/navigation';
@@ -52,6 +57,7 @@ function ResultItemWrapper({ children, ...props }: FlexProps) {
 function ResultItemIcon({ type, url }: { type?: 'arrow' | 'enter' | undefined; url: string }) {
   const dispatch = useAppDispatch();
   const router = useRouter();
+
   useEffect(() => {
     if (type === 'enter') {
       const handleKeyDown = (e: KeyboardEvent) => {
@@ -59,6 +65,8 @@ function ResultItemIcon({ type, url }: { type?: 'arrow' | 'enter' | undefined; u
           e.preventDefault();
           dispatch(blur());
           router.push(url);
+          dispatch(setTempSearchTerm(''));
+          dispatch(setSearchTerm(''));
         }
       };
 
@@ -113,6 +121,8 @@ export function ResultItem({
       onClick={() => {
         dispatch(blur());
         router.push(url);
+        dispatch(setTempSearchTerm(''));
+        dispatch(setSearchTerm(''));
       }}
     >
       <SearchItemTitle>{value}</SearchItemTitle>
@@ -145,6 +155,8 @@ function TxResultItem({
       onClick={() => {
         dispatch(blur());
         router.push(url);
+        dispatch(setTempSearchTerm(''));
+        dispatch(setSearchTerm(''));
       }}
     >
       <Flex gap={4} flex={'1 1 auto'} minWidth={0}>
@@ -287,6 +299,8 @@ export function BnsResultItem({
       onClick={() => {
         dispatch(blur());
         router.push(url);
+        dispatch(setTempSearchTerm(''));
+        dispatch(setSearchTerm(''));
       }}
     >
       <Flex gap={4} flex={'1 1 auto'} minWidth={0}>
@@ -319,6 +333,8 @@ export function BlockResultItem({
       onClick={() => {
         dispatch(blur());
         router.push(url);
+        dispatch(setTempSearchTerm(''));
+        dispatch(setSearchTerm(''));
       }}
     >
       <Flex gap={4} flex={'1 1 auto'} minWidth={0}>

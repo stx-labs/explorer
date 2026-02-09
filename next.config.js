@@ -5,6 +5,7 @@ const { withSentryConfig } = require('@sentry/nextjs');
 
 const nextConfig = {
   output: 'standalone',
+  turbopack: {},
   async headers() {
     return [
       {
@@ -35,7 +36,12 @@ const nextConfig = {
     optimizePackageImports: ['@chakra-ui/react'],
   },
   images: {
-    domains: ['assets.hiro.so'],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'assets.hiro.so',
+      },
+    ],
   },
 };
 

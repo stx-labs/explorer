@@ -10,8 +10,8 @@ import {
   SmartContractTransaction,
 } from '@stacks/stacks-blockchain-api-types';
 
-import { SponsorTag } from './SummaryItem';
-import { PriceSummaryItemValue, SummaryItem } from './SummaryItem';
+import { ExecutionCostItem } from './ExecutionCost';
+import { PriceSummaryItemValue, SponsorTag, SummaryItem } from './SummaryItem';
 
 const SummaryItemAddressLink = ({ value }: { value: string }) => {
   return (
@@ -45,7 +45,7 @@ export const SmartContractTxSummaryItems = ({
         showCopyButton
       />
       <SummaryItem
-        label="From"
+        label="By"
         value={tx.sender_address}
         valueRenderer={value => <SummaryItemAddressLink value={value} />}
         showCopyButton
@@ -113,6 +113,9 @@ export const SmartContractTxSummaryItems = ({
             )}
           />
         )}
+      {isConfirmedTx<SmartContractTransaction, MempoolSmartContractTransaction>(tx) && (
+        <ExecutionCostItem tx={tx} />
+      )}
     </>
   );
 };

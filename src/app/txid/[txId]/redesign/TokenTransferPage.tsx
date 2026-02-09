@@ -1,3 +1,4 @@
+import { SectionTabsContentContainer, SectionTabsTrigger } from '@/common/components/SectionTabs';
 import { isConfirmedTx } from '@/common/utils/transactions';
 import { TabsContent } from '@/ui/Tabs';
 import { Stack } from '@chakra-ui/react';
@@ -12,7 +13,7 @@ import {
 import { getTxAlert } from './Alert';
 import { Events } from './Events';
 import { TxHeader } from './TxHeader';
-import { TabsContentContainer, TransactionIdPageTab, TxTabs, TxTabsTrigger } from './TxTabs';
+import { TransactionIdPageTab, TxTabs } from './TxTabs';
 import { TxSummary } from './tx-summary/TxSummary';
 
 export const TokenTransferPage = ({ tx }: { tx: Transaction | MempoolTransaction }) => {
@@ -27,14 +28,12 @@ export const TokenTransferPage = ({ tx }: { tx: Transaction | MempoolTransaction
   );
 };
 
-export function TokenTransferTabTrigger({
+export function TokenTransferTabTriggers({
   tx,
   selectedTab,
-  setSelectedTab,
 }: {
   tx: TokenTransferTransaction | MempoolTokenTransferTransaction;
   selectedTab: TransactionIdPageTab;
-  setSelectedTab: (tab: TransactionIdPageTab) => void;
 }) {
   const numTxEvents = isConfirmedTx<TokenTransferTransaction, MempoolTokenTransferTransaction>(tx)
     ? tx.event_count
@@ -42,20 +41,18 @@ export function TokenTransferTabTrigger({
 
   return (
     <>
-      <TxTabsTrigger
+      <SectionTabsTrigger
         key={TransactionIdPageTab.Overview}
         label="Overview"
         value={TransactionIdPageTab.Overview}
         isActive={selectedTab === TransactionIdPageTab.Overview}
-        onClick={() => setSelectedTab(TransactionIdPageTab.Overview)}
       />
-      <TxTabsTrigger
+      <SectionTabsTrigger
         key={TransactionIdPageTab.Events}
         label={`Events`}
         secondaryLabel={numTxEvents > 0 ? `(${numTxEvents})` : ''}
         value={TransactionIdPageTab.Events}
         isActive={selectedTab === TransactionIdPageTab.Events}
-        onClick={() => setSelectedTab(TransactionIdPageTab.Events)}
       />
     </>
   );
@@ -73,9 +70,9 @@ export function TokenTransferTabContent({
         value={TransactionIdPageTab.Overview}
         w="100%"
       >
-        <TabsContentContainer>
+        <SectionTabsContentContainer>
           <TxSummary tx={tx} />
-        </TabsContentContainer>
+        </SectionTabsContentContainer>
       </TabsContent>
       <TabsContent key={TransactionIdPageTab.Events} value={TransactionIdPageTab.Events} w="100%">
         <Events tx={tx} />

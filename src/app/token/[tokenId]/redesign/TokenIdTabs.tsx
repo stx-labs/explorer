@@ -1,6 +1,9 @@
-import { TxTabsTrigger } from '@/app/txid/[txId]/redesign/TxTabs';
+'use client';
+
+import { AvailableFunctions } from '@/app/txid/[txId]/redesign/function-called/AvailableFunctions';
 import { Source } from '@/app/txid/[txId]/redesign/source/Source';
 import { ScrollIndicator } from '@/common/components/ScrollIndicator';
+import { SectionTabsTrigger } from '@/common/components/SectionTabs';
 import {
   AddressTxsTable,
   columnDefinitionsWithEvents,
@@ -27,12 +30,18 @@ enum TokenIdPageTab {
 export const TokenIdTabs = () => {
   const [selectedTab, setSelectedTab] = useState(TokenIdPageTab.Overview);
 
-  const { initialAddressRecentTransactionsData, tokenId, assetId, tokenData, holders } =
-    useTokenIdPageData();
+  const {
+    initialAddressRecentTransactionsData,
+    tokenId,
+    assetId,
+    tokenData,
+    holders,
+    numFunctions,
+    isLoadingTokenData,
+  } = useTokenIdPageData();
   const totalAddressTransactions = initialAddressRecentTransactionsData?.total || 0;
   const totalHolders = holders?.total || 0;
 
-  // Type guard to ensure tokenData has required properties for holders tab
   const hasRequiredHoldersData = (
     data: typeof tokenData
   ): data is typeof tokenData & { totalSupply: number; decimals: number } => {
@@ -41,7 +50,7 @@ export const TokenIdTabs = () => {
     );
   };
 
-  const showHoldersTab = assetId && hasRequiredHoldersData(tokenData);
+  const showHoldersTab = isLoadingTokenData || (assetId && hasRequiredHoldersData(tokenData));
 
   return (
     <TabsRoot
@@ -52,17 +61,17 @@ export const TokenIdTabs = () => {
       rowGap={2}
       borderRadius="redesign.xl"
       w="full"
-      lazyMount // needed to reduce the number of requests made to the API
+      lazyMount
     >
       <ScrollIndicator>
         <TabsList>
-          <TxTabsTrigger
+          <SectionTabsTrigger
             label="Overview"
             value={TokenIdPageTab.Overview}
             isActive={selectedTab === TokenIdPageTab.Overview}
             onClick={() => setSelectedTab(TokenIdPageTab.Overview)}
           />
-          <TxTabsTrigger
+          <SectionTabsTrigger
             label="Transactions"
             secondaryLabel={
               totalAddressTransactions > 0 ? `(${totalAddressTransactions.toLocaleString()})` : ''
@@ -72,7 +81,7 @@ export const TokenIdTabs = () => {
             onClick={() => setSelectedTab(TokenIdPageTab.Transactions)}
           />
           {showHoldersTab && (
-            <TxTabsTrigger
+            <SectionTabsTrigger
               label="Holders"
               secondaryLabel={totalHolders > 0 ? `(${totalHolders.toLocaleString()})` : ''}
               value={TokenIdPageTab.Holders}
@@ -80,11 +89,20 @@ export const TokenIdTabs = () => {
               onClick={() => setSelectedTab(TokenIdPageTab.Holders)}
             />
           )}
-          <TxTabsTrigger
+          <SectionTabsTrigger
             label="Source code"
             value={TokenIdPageTab.Source}
             isActive={selectedTab === TokenIdPageTab.Source}
             onClick={() => setSelectedTab(TokenIdPageTab.Source)}
+          />
+          <SectionTabsTrigger
+            label="Available functions"
+            secondaryLabel={
+              numFunctions && numFunctions > 0 ? `(${numFunctions.toLocaleString()})` : ''
+            }
+            value={TokenIdPageTab.AvailableFunctions}
+            isActive={selectedTab === TokenIdPageTab.AvailableFunctions}
+            onClick={() => setSelectedTab(TokenIdPageTab.AvailableFunctions)}
           />
         </TabsList>
       </ScrollIndicator>
@@ -100,16 +118,21 @@ export const TokenIdTabs = () => {
       </TabsContent>
       {showHoldersTab && (
         <TabsContent value={TokenIdPageTab.Holders} w="100%">
-          <HoldersTable
-            assetId={assetId}
-            totalSupply={tokenData.totalSupply}
-            decimals={tokenData.decimals}
-            pageSize={DEFAULT_HOLDERS_TABLE_PAGE_SIZE}
-          />
+          {assetId && hasRequiredHoldersData(tokenData) ? (
+            <HoldersTable
+              assetId={assetId}
+              totalSupply={tokenData.totalSupply}
+              decimals={tokenData.decimals}
+              pageSize={DEFAULT_HOLDERS_TABLE_PAGE_SIZE}
+            />
+          ) : null}
         </TabsContent>
       )}
       <TabsContent value={TokenIdPageTab.Source} w="100%">
         <Source contractId={tokenId} />
+      </TabsContent>
+      <TabsContent value={TokenIdPageTab.AvailableFunctions} w="100%">
+        <AvailableFunctions contractId={tokenId} />
       </TabsContent>
     </TabsRoot>
   );

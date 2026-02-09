@@ -1,6 +1,8 @@
 'use client';
 
 import { TimeStampCellRenderer } from '@/common/components/table/table-examples/TxTableCellRenderers';
+import { useGlobalContext } from '@/common/context/useGlobalContext';
+import { buildUrl } from '@/common/utils/buildUrl';
 import { formatTimestamp, formatTimestampToRelativeTime } from '@/common/utils/time-utils';
 import { truncateMiddle } from '@/common/utils/utils';
 import { BlockHeightBadge, DefaultBadge, DefaultBadgeIcon, DefaultBadgeLabel } from '@/ui/Badge';
@@ -11,96 +13,108 @@ import { Box, Flex, Link, Text } from '@chakra-ui/react';
 import NextLink from 'next/link';
 
 export const BitcoinBlockRow = {
-  HeightCell: (height: number, burnBlockHash: string) => (
-    <DefaultBadge
-      variant="solid"
-      type="blockHeight"
-      icon={<DefaultBadgeIcon icon={<BitcoinCircleIcon />} color="accent.bitcoin-500" size={4} />}
-      label={
-        <Link
-          as={NextLink}
-          href={`/btcblock/${burnBlockHash}`}
-          textStyle="text-mono-sm"
-          color="textPrimary"
-          textDecorationColor="textPrimary"
-          _hover={{
-            color: 'textInteractiveHover',
-            textDecorationColor: 'textInteractiveHover',
-          }}
-          _groupHover={{
-            textDecorationColor: 'textPrimary',
-            _hover: { textDecorationColor: 'textInteractiveHover' },
-          }}
-        >
-          #{height}
-        </Link>
-      }
-      _groupHover={{ bg: 'surfaceTertiary' }}
-    />
-  ),
+  HeightCell: (height: number, burnBlockHash: string) => {
+    const network = useGlobalContext().activeNetwork;
 
-  HashCell: (hash: string, burnBlockHash: string) => (
-    <Link
-      as={NextLink}
-      href={`/btcblock/${burnBlockHash}`}
-      textStyle="text-regular-sm"
-      color="textPrimary"
-      textDecoration="underline"
-      whiteSpace="nowrap"
-      _hover={{
-        color: 'textInteractiveHover',
-      }}
-    >
-      {truncateMiddle(hash, 5, 5)}
-    </Link>
-  ),
+    return (
+      <DefaultBadge
+        variant="solid"
+        type="blockHeight"
+        icon={<DefaultBadgeIcon icon={<BitcoinCircleIcon />} color="accent.bitcoin-500" size={4} />}
+        label={
+          <Link
+            as={NextLink}
+            href={buildUrl(`/btcblock/${burnBlockHash}`, network)}
+            textStyle="text-mono-sm"
+            color="textPrimary"
+            textDecorationColor="textPrimary"
+            _hover={{
+              color: 'textInteractiveHover',
+              textDecorationColor: 'textInteractiveHover',
+            }}
+            _groupHover={{
+              textDecorationColor: 'textPrimary',
+              _hover: { textDecorationColor: 'textInteractiveHover' },
+            }}
+          >
+            #{height}
+          </Link>
+        }
+        _groupHover={{ bg: 'surfaceTertiary' }}
+      />
+    );
+  },
 
-  StacksBlocksIntervalCell: (stacksBlocks: string[] | undefined) => (
-    <Flex align="center" gap={2}>
-      {stacksBlocks && stacksBlocks.length > 0 ? (
-        <>
-          {stacksBlocks.slice(0, 2).map((blockHash, index) => (
-            <Link
-              as={NextLink}
-              href={`/block/${blockHash}`}
-              key={`${blockHash}-${index}`}
-              _hover={{ textDecoration: 'none' }}
-            >
-              <DefaultBadge
-                icon={
-                  <DefaultBadgeIcon
-                    icon={<StacksIconBlock color="iconTertiary" />}
-                    color="iconTertiary"
-                  />
-                }
-                label={
-                  <DefaultBadgeLabel
-                    label={`#${truncateMiddle(blockHash, 5, 5)}`}
-                    color="textPrimary"
-                    textDecoration="underline"
-                    textStyle="text-mono-sm"
-                    _hover={{ color: 'textInteractiveHover' }}
-                  />
-                }
-                bg="surfacePrimary"
-                border="none"
-                _groupHover={{ bg: 'surfaceTertiary' }}
-              />
-            </Link>
-          ))}
-          {stacksBlocks.length > 2 && (
-            <Text textStyle="text-regular-xs" lineHeight="16px" color="textTertiary">
-              +{stacksBlocks.length - 2}
-            </Text>
-          )}
-        </>
-      ) : (
-        <Text textStyle="text-regular-sm" lineHeight="20px" color="textTertiary">
-          —
-        </Text>
-      )}
-    </Flex>
-  ),
+  HashCell: (hash: string, burnBlockHash: string) => {
+    const network = useGlobalContext().activeNetwork;
+
+    return (
+      <Link
+        as={NextLink}
+        href={buildUrl(`/btcblock/${burnBlockHash}`, network)}
+        textStyle="text-regular-sm"
+        color="textPrimary"
+        textDecoration="underline"
+        whiteSpace="nowrap"
+        _hover={{
+          color: 'textInteractiveHover',
+        }}
+      >
+        {truncateMiddle(hash, 5, 5)}
+      </Link>
+    );
+  },
+
+  StacksBlocksIntervalCell: (stacksBlocks: string[] | undefined) => {
+    const network = useGlobalContext().activeNetwork;
+
+    return (
+      <Flex align="center" gap={2}>
+        {stacksBlocks && stacksBlocks.length > 0 ? (
+          <>
+            {stacksBlocks.slice(0, 2).map((blockHash, index) => (
+              <Link
+                as={NextLink}
+                href={buildUrl(`/block/${blockHash}`, network)}
+                key={`${blockHash}-${index}`}
+                _hover={{ textDecoration: 'none' }}
+              >
+                <DefaultBadge
+                  icon={
+                    <DefaultBadgeIcon
+                      icon={<StacksIconBlock color="iconTertiary" />}
+                      color="iconTertiary"
+                    />
+                  }
+                  label={
+                    <DefaultBadgeLabel
+                      label={`#${truncateMiddle(blockHash, 5, 5)}`}
+                      color="textPrimary"
+                      textDecoration="underline"
+                      textStyle="text-mono-sm"
+                      _hover={{ color: 'textInteractiveHover' }}
+                    />
+                  }
+                  bg="surfacePrimary"
+                  border="none"
+                  _groupHover={{ bg: 'surfaceTertiary' }}
+                />
+              </Link>
+            ))}
+            {stacksBlocks.length > 2 && (
+              <Text textStyle="text-regular-xs" lineHeight="16px" color="textTertiary">
+                +{stacksBlocks.length - 2}
+              </Text>
+            )}
+          </>
+        ) : (
+          <Text textStyle="text-regular-sm" lineHeight="20px" color="textTertiary">
+            —
+          </Text>
+        )}
+      </Flex>
+    );
+  },
 
   StacksBlocksCell: (count: number) => (
     <Text textStyle="text-regular-sm" lineHeight="20px" color="textPrimary">

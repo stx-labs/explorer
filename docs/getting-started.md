@@ -10,12 +10,14 @@ The Explorer is built with [React](https://reactjs.org/), [next.js](https://gith
 
 To run the explorer locally, you must first clone the [Explorer repository](https://github.com/hirosystems/explorer).
 
-You must also enusre you have installed the project dependencies listed below.
+You must also ensure you have installed the project dependencies listed below.
 
-- [NodeJS](https://nodejs.dev/en/) that includes `npm`
-- [PNPM](https://pnpm.io/installation/)
+- [Node.js](https://nodejs.org/) **v22 or higher** (LTS recommended)
+- [PNPM](https://pnpm.io/installation/) **v10 or higher**
 
-It is also highly recommended you install [Homebrew](https://brew.sh/).
+> **Tip:** Use [nvm](https://github.com/nvm-sh/nvm) to manage Node.js versions. Run `nvm use` in the project root to automatically switch to the required version.
+
+It is also highly recommended you install [Homebrew](https://brew.sh/) (macOS).
 
 ## Installing Project Dependencies
 

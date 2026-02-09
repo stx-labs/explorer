@@ -61,6 +61,20 @@ export const validateStacksAddress = (stacksAddress?: string): boolean => {
   }
 };
 
+/**
+ * validateTxId
+ *
+ * Validates that a string matches the format of a Stacks transaction ID.
+ * A valid tx ID is a 0x-prefixed 64 character hex string (66 chars total).
+ *
+ * @param {String} txId - the transaction ID to validate
+ */
+export const validateTxId = (txId?: string): boolean => {
+  if (!txId) return false;
+  // Must start with 0x and be followed by exactly 64 hex characters
+  return /^0x[a-fA-F0-9]{64}$/.test(txId);
+};
+
 export const validateStacksContractId = (contractId?: string): boolean => {
   try {
     if (!contractId) return false;

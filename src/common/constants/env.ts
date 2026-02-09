@@ -1,9 +1,5 @@
 import packageJson from '../../../package.json';
 
-console.log('=== ALL ENVIRONMENT VARIABLES ===');
-console.log(JSON.stringify(process.env, null, 2));
-console.log('=================================');
-
 export const CONNECT_AUTH_ORIGIN =
   process.env.NEXT_PUBLIC_CONNECT_AUTH_ORIGIN || 'https://pr-725.app.stacks.engineering';
 

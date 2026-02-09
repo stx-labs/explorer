@@ -53,11 +53,7 @@ export function convertBalancesToArrayWithAssetId<T extends FtBalance | NftBalan
   });
 }
 
-export function paginateBalances<T extends FtBalanceWithAssetId | NftBalanceWithAssetId>(
-  balances: T[],
-  limit: number,
-  offset: number
-) {
+export function paginate<T>(balances: T[], limit: number, offset: number) {
   return balances.slice(offset, offset + limit);
 }
 
@@ -180,7 +176,7 @@ export function useFungibleTokensTableData(
   }, [filteredBalancesArray]);
 
   const paginatedBalances = useMemo(() => {
-    return paginateBalances(balancesWithSBTCFirst, limit, offset);
+    return paginate(balancesWithSBTCFirst, limit, offset);
   }, [balancesWithSBTCFirst, limit, offset]);
 
   // extract token ids from the processed balances

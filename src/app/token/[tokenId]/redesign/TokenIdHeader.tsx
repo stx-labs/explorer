@@ -1,16 +1,14 @@
+'use client';
+
+import { showRiskyTokenAlert, showSBTCTokenAlert } from '@/app/tokens/utils';
 import { TokenImage } from '@/common/components/table/fungible-tokens-table/FungibleTokensTableCellRenderers';
 import { useIsInViewport } from '@/common/hooks/useIsInViewport';
-import {
-  truncateStxAddress,
-  truncateStxContractId,
-  validateStacksContractId,
-} from '@/common/utils/utils';
+import { getAssetNameParts } from '@/common/utils/utils';
 import { DefaultBadge, DefaultBadgeIcon, DefaultBadgeLabel } from '@/ui/Badge';
 import { Text, TextProps } from '@/ui/Text';
 import { Tooltip } from '@/ui/Tooltip';
-import StacksIconBlock from '@/ui/icons/StacksIconBlock';
-import { Box, Flex, Stack, useClipboard } from '@chakra-ui/react';
-import { Coin } from '@phosphor-icons/react';
+import { Box, Flex, Icon, Stack, useClipboard } from '@chakra-ui/react';
+import { Coin, Warning } from '@phosphor-icons/react';
 import { motion } from 'motion/react';
 import { forwardRef, useRef } from 'react';
 
@@ -57,9 +55,17 @@ const Badge = ({
   );
 };
 
-const TokenNameBadgeUnminimized = ({ name }: { name: string }) => {
+const TokenNameUnminimized = ({ name }: { name: string }) => {
   return name ? (
     <Text textStyle="heading-sm" color="textPrimary">
+      {name}
+    </Text>
+  ) : null;
+};
+
+const TokenNameMinimized = ({ name }: { name: string }) => {
+  return name ? (
+    <Text textStyle="text-medium-md" color="textPrimary">
       {name}
     </Text>
   ) : null;
@@ -76,19 +82,18 @@ const TokenSymbolBadgeUnminimized = ({ symbol }: { symbol: string }) => {
   ) : null;
 };
 
-const TokenIdBadgeMinimized = ({ tokenId }: { tokenId: string }) => {
-  const isContract = validateStacksContractId(tokenId);
-  return tokenId ? (
+const TokenSymbolBadgeMinimized = ({ symbol }: { symbol: string }) => {
+  return symbol ? (
     <Badge
-      copyValue={tokenId}
-      value={isContract ? truncateStxContractId(tokenId) : truncateStxAddress(tokenId)}
-      copiedText={`Address copied to clipboard`}
+      copyValue={symbol}
+      value={symbol}
+      copiedText={`Token symbol copied to clipboard`}
       textProps={{ textStyle: 'text-medium-sm' }}
     />
   ) : null;
 };
 
-const TokenIdLabelBadgeUnminimized = () => {
+const TokenBadgeUnminimized = () => {
   return (
     <DefaultBadge
       icon={<DefaultBadgeIcon icon={<Coin />} color="iconInvert" size={3} bg="iconPrimary" />}
@@ -97,16 +102,45 @@ const TokenIdLabelBadgeUnminimized = () => {
   );
 };
 
-const TokenIdLabelBadgeMinimized = () => {
+const TokenBadgeMinimized = () => {
   return (
-    <DefaultBadge icon={<DefaultBadgeIcon icon={<StacksIconBlock color="black" />} size={4.5} />} />
+    <DefaultBadge
+      icon={<DefaultBadgeIcon icon={<Coin />} color="iconInvert" size={3} bg="iconPrimary" />}
+      p={1}
+    />
   );
+};
+
+const WarningIcon = ({
+  tokenName,
+  tokenSymbol,
+  contractId,
+}: {
+  tokenName: string;
+  tokenSymbol: string;
+  contractId: string;
+}) => {
+  const icon = (
+    <Icon h={4.5} w={4.5} color="iconError">
+      <Warning weight="fill" />
+    </Icon>
+  );
+
+  if (showSBTCTokenAlert(tokenName, tokenSymbol, contractId)) {
+    return icon;
+  }
+
+  if (showRiskyTokenAlert(contractId)) {
+    return icon;
+  }
+
+  return null;
 };
 
 export const TokenIdHeaderUnminimized = forwardRef<
   HTMLDivElement,
-  { name: string; symbol: string; imageUrl: string }
->(({ name, symbol, imageUrl }, ref) => {
+  { name: string; symbol: string; imageUrl: string; contractId: string }
+>(({ name, symbol, imageUrl, contractId }, ref) => {
   return (
     <Flex
       bg={`linear-gradient(to bottom, var(--stacks-colors-redesign-border-primary), var(--stacks-colors-redesign-border-secondary))`}
@@ -116,18 +150,29 @@ export const TokenIdHeaderUnminimized = forwardRef<
       ref={ref}
     >
       <Stack p={4} gap={3} w="full" borderRadius="redesign.xl" bg="surfaceSecondary">
-        <TokenIdLabelBadgeUnminimized />
+        <TokenBadgeUnminimized />
         <Flex gap={2} flexWrap="wrap" alignItems="center">
-          <TokenImage url={imageUrl} alt={name} />
-          <TokenNameBadgeUnminimized name={name} />
+          <TokenImage url={imageUrl} alt={name} height={40} width={40} borderRadius="50%" />
+          <TokenNameUnminimized name={name} />
           <TokenSymbolBadgeUnminimized symbol={symbol} />
+          <WarningIcon tokenName={name} tokenSymbol={symbol} contractId={contractId} />
         </Flex>
       </Stack>
     </Flex>
   );
 });
 
-export const TokenIdHeaderMinimized = ({ tokenId }: { tokenId: string }) => {
+export const TokenIdHeaderMinimized = ({
+  name,
+  symbol,
+  imageUrl,
+  contractId,
+}: {
+  name: string;
+  symbol: string;
+  imageUrl: string;
+  contractId: string;
+}) => {
   return (
     <Flex
       bg={`linear-gradient(to bottom, var(--stacks-colors-redesign-border-primary), var(--stacks-colors-redesign-border-secondary))`}
@@ -144,8 +189,13 @@ export const TokenIdHeaderMinimized = ({ tokenId }: { tokenId: string }) => {
         alignItems="center"
       >
         <Flex gap={1} alignItems="center">
-          <TokenIdLabelBadgeMinimized />
-          <TokenIdBadgeMinimized tokenId={tokenId} />
+          <TokenBadgeMinimized />
+          <Flex gap={2} alignItems="center">
+            <TokenImage url={imageUrl} alt={name} height={24} width={24} borderRadius="50%" />
+            <TokenNameMinimized name={name} />
+            <TokenSymbolBadgeMinimized symbol={symbol} />
+            <WarningIcon tokenName={name} tokenSymbol={symbol} contractId={contractId} />
+          </Flex>
         </Flex>
       </Flex>
     </Flex>
@@ -155,6 +205,8 @@ export const TokenIdHeaderMinimized = ({ tokenId }: { tokenId: string }) => {
 export const TokenIdHeader = () => {
   const { tokenId, tokenData } = useTokenIdPageData();
   const { name, symbol, imageUri } = tokenData || {};
+  const { address, contract } = getAssetNameParts(tokenId || '');
+  const contractId = `${address}.${contract}`;
   const headerRef = useRef<HTMLDivElement>(null);
   const isHeaderInView = useIsInViewport(headerRef);
 
@@ -165,6 +217,7 @@ export const TokenIdHeader = () => {
         symbol={symbol || ''}
         imageUrl={imageUri || ''}
         ref={headerRef}
+        contractId={contractId}
       />
       <motion.div // TODO: move to shared component
         initial={{ opacity: 0, y: -20 }}
@@ -183,7 +236,12 @@ export const TokenIdHeader = () => {
         }}
       >
         <Box borderRadius="redesign.xl" pt={3} px={6} bg="transparent">
-          <TokenIdHeaderMinimized tokenId={tokenId} />
+          <TokenIdHeaderMinimized
+            name={name || ''}
+            symbol={symbol || ''}
+            imageUrl={imageUri || ''}
+            contractId={contractId}
+          />
         </Box>
       </motion.div>
     </>

@@ -10,6 +10,7 @@ import {
 } from '@stacks/stacks-blockchain-api-types';
 
 import { useTxIdPageData } from '../../TxIdPageContext';
+import { ExecutionCostItem } from './ExecutionCost';
 import { PriceSummaryItemValue, SponsorTag, SummaryItem } from './SummaryItem';
 import { TokensTransferred } from './TokensTransferred';
 
@@ -47,7 +48,7 @@ export const ContractCallTxSummaryItems = ({
         showCopyButton
       />
       <SummaryItem
-        label="From"
+        label="By"
         value={tx.sender_address}
         valueRenderer={value => (
           <AddressLink principal={value} wordBreak="break-all" variant="tableLink">
@@ -145,6 +146,7 @@ export const ContractCallTxSummaryItems = ({
           )}
         />
       )}
+      {isConfirmed && <ExecutionCostItem tx={tx} />}
     </>
   );
 };

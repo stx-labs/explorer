@@ -11,8 +11,8 @@ export const DefaultTokenImage = ({
   width,
 }: {
   asset: string;
-  height: number;
-  width: number;
+  height: number | string;
+  width: number | string;
 }) => {
   return (
     <Flex
@@ -41,8 +41,8 @@ export const TokenImage = ({
 }: {
   url: string;
   alt: string;
-  height: number;
-  width: number;
+  height: number | string;
+  width: number | string;
   addGlow?: boolean;
 }) => {
   const [imageUrl, setImageUrl] = useState<string>(encodeURI(decodeURI(url)));

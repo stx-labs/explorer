@@ -113,7 +113,7 @@ export const defaultColumnDefinitions: ColumnDef<EventsTableData>[] = [
   },
   {
     id: EventsTableColumns.From,
-    header: 'From',
+    header: 'By',
     accessorKey: EventsTableColumns.From,
     cell: info => AddressLinkCellRenderer(info.row.original[EventsTableColumns.From]),
     enableSorting: false,
@@ -127,7 +127,7 @@ export const defaultColumnDefinitions: ColumnDef<EventsTableData>[] = [
   },
   {
     id: EventsTableColumns.To,
-    header: 'To',
+    header: 'Target',
     accessorKey: EventsTableColumns.To,
     cell: info => AddressLinkCellRenderer(info.row.original[EventsTableColumns.To]),
     enableSorting: false,

@@ -1,4 +1,5 @@
 import { useUser } from '@/app/sandbox/hooks/useUser';
+import { SectionTabsContentContainer } from '@/common/components/SectionTabs';
 import { useContractById } from '@/common/queries/useContractById';
 import { isConfirmedTx } from '@/common/utils/transactions';
 import { Button } from '@/ui/Button';
@@ -12,7 +13,6 @@ import {
 } from '@stacks/stacks-blockchain-api-types';
 import { ClarityAbiFunction, cvToJSON, hexToCV } from '@stacks/transactions';
 
-import { TabsContentContainer } from '../TxTabs';
 import { FunctionArgsTable } from './FunctionArgsTable';
 import { FunctionCallForm } from './FunctionCallForm';
 import { FunctionListItem } from './FunctionListItem';
@@ -32,13 +32,13 @@ function FunctionTitle({
   isFunctionCallOpen: boolean;
 }) {
   return (
-    <TabsContentContainer>
+    <SectionTabsContentContainer>
       <FunctionListItem
         functionAbi={fnAbi}
         isOpen={isFunctionCallOpen}
         setIsOpen={setIsFunctionCallOpen}
       />
-    </TabsContentContainer>
+    </SectionTabsContentContainer>
   );
 }
 
@@ -49,7 +49,7 @@ function FunctionResult({ tx }: { tx: ContractCallTransaction | MempoolContractC
   const hasType = !type?.includes('UnknownType');
 
   return (
-    <TabsContentContainer px={6}>
+    <SectionTabsContentContainer px={6}>
       <Grid
         templateColumns={{ base: 'minmax(0, 1fr)', md: '80px minmax(0, 1fr)' }}
         gap={3}
@@ -82,7 +82,7 @@ function FunctionResult({ tx }: { tx: ContractCallTransaction | MempoolContractC
           </>
         )}
       </Grid>
-    </TabsContentContainer>
+    </SectionTabsContentContainer>
   );
 }
 
@@ -90,7 +90,7 @@ function FunctionArgs({ tx }: { tx: ContractCallTransaction | MempoolContractCal
   const args = getContractCallTxFunctionArgs(tx);
   if (!args.length) return null;
   return (
-    <TabsContentContainer px={6}>
+    <SectionTabsContentContainer px={6}>
       <Grid
         templateColumns={{ base: 'minmax(0, 1fr)', md: '80px minmax(0, 1fr)' }}
         gap={3}
@@ -103,7 +103,7 @@ function FunctionArgs({ tx }: { tx: ContractCallTransaction | MempoolContractCal
         </Box>
         <FunctionArgsTable tx={tx} />
       </Grid>
-    </TabsContentContainer>
+    </SectionTabsContentContainer>
   );
 }
 
@@ -132,19 +132,19 @@ export const FunctionCalled = ({
       />
       {isFunctionCallOpen ? (
         isConnected ? (
-          <TabsContentContainer>
+          <SectionTabsContentContainer>
             <FunctionCallForm
               contractId={contractId}
               fnAbi={functionAbi}
               handleCancel={() => setIsFunctionCallOpen(false)}
             />
-          </TabsContentContainer>
+          </SectionTabsContentContainer>
         ) : (
-          <TabsContentContainer alignItems="center">
+          <SectionTabsContentContainer alignItems="center">
             <Button variant="redesignPrimary" onClick={connect} w="fit-content">
               Connect Stacks Wallet
             </Button>
-          </TabsContentContainer>
+          </SectionTabsContentContainer>
         )
       ) : (
         <>

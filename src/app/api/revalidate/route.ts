@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (tag) {
-      revalidateTag(tag);
+      revalidateTag(tag, 'max');
       return NextResponse.json({
         revalidated: true,
         now: Date.now(),

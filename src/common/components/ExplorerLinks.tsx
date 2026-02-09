@@ -40,17 +40,20 @@ export const TokenLink = forwardRef<HTMLAnchorElement, Partial<LinkProps> & { to
   }
 );
 
-export const MicroBlockLink = forwardRef<HTMLAnchorElement, Partial<LinkProps> & { hash: string }>(
-  ({ hash, ...rest }, ref) => {
-    return <ExplorerLink ref={ref} href={`/microblock/${encodeURIComponent(hash)}`} {...rest} />;
-  }
-);
-
 export const BlockLink = forwardRef<HTMLAnchorElement, Partial<LinkProps> & { hash: string }>(
   ({ hash, ...rest }, ref) => {
     return <ExplorerLink ref={ref} href={`/block/${encodeURIComponent(hash)}`} {...rest} />;
   }
 );
+
+export const BurnBlockLink = forwardRef<
+  HTMLAnchorElement,
+  Partial<LinkProps> & { heightOrHash: string }
+>(({ heightOrHash, ...rest }, ref) => {
+  return (
+    <ExplorerLink ref={ref} href={`/btcblock/${encodeURIComponent(heightOrHash)}`} {...rest} />
+  );
+});
 
 export const AddressLink = forwardRef<
   HTMLAnchorElement,

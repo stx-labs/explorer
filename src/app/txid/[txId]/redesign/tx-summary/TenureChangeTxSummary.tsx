@@ -11,6 +11,7 @@ import {
 } from '@stacks/stacks-blockchain-api-types';
 
 import { useTxIdPageData } from '../../TxIdPageContext';
+import { ExecutionCostItem } from './ExecutionCost';
 import { PriceSummaryItemValue, SponsorTag, SummaryItem } from './SummaryItem';
 
 export const TenureChangeTxSummaryItems = ({
@@ -26,7 +27,7 @@ export const TenureChangeTxSummaryItems = ({
     <>
       <SummaryItem label="ID" value={tx.tx_id} showCopyButton />
       <SummaryItem
-        label="From"
+        label="By"
         value={tx.sender_address}
         valueRenderer={value => (
           <AddressLink principal={value} wordBreak="break-all" variant="tableLink">
@@ -137,6 +138,9 @@ export const TenureChangeTxSummaryItems = ({
         value={tx.tenure_change_payload?.pubkey_hash || ''}
         showCopyButton
       />
+      {isConfirmedTx<TenureChangeTransaction, MempoolTenureChangeTransaction>(tx) && (
+        <ExecutionCostItem tx={tx} />
+      )}
     </>
   );
 };

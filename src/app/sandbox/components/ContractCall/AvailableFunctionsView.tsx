@@ -35,12 +35,12 @@ export const AbiFunction = forwardRef<
         <Flex alignItems="center">
           <Grid placeItems="center" borderWidth="1px" borderRadius="100%" h={8} w={8}>
             {abiFn.access === 'read_only' ? (
-              <Icon h={4} w={4}>
-                <FunctionXIcon />
-              </Icon>
-            ) : (
               <Icon h={5} w={5}>
                 <FunctionReadOnlyIcon />
+              </Icon>
+            ) : (
+              <Icon h={4} w={4}>
+                <FunctionXIcon />
               </Icon>
             )}
           </Grid>

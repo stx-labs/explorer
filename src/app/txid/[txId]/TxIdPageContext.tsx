@@ -11,6 +11,7 @@ interface TxIdPageDataContextType {
   initialTxData?: Transaction | MempoolTransaction;
   txId: string;
   filters: TxIdPageFilters;
+  numFunctions?: number;
 }
 
 const DEFAULT_TX_ID_PAGE_DATA: TxIdPageDataContextType = {
@@ -34,6 +35,7 @@ interface TxIdPageDataProviderProps {
   initialTxData?: Transaction | MempoolTransaction;
   txId: string;
   filters: TxIdPageFilters;
+  numFunctions?: number;
 }
 
 export function TxIdPageDataProvider({
@@ -42,12 +44,14 @@ export function TxIdPageDataProvider({
   initialTxData,
   txId,
   filters,
+  numFunctions,
 }: TxIdPageDataProviderProps) {
   const contextValue = {
     stxPrice,
     initialTxData,
     txId,
     filters,
+    numFunctions,
   };
 
   return (

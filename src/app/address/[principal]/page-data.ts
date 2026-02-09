@@ -151,7 +151,7 @@ export async function fetchRecentTransactions(
   const v2Response = await response.json();
   const recentTransactionsResponse: AddressTransactionsListResponse = {
     ...v2Response,
-    results: v2Response.results.map((item: AddressTransaction) => item.tx),
+    results: v2Response.results?.map((item: AddressTransaction) => item.tx) ?? [],
   };
   return recentTransactionsResponse;
 }

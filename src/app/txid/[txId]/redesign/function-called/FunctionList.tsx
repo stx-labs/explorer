@@ -1,10 +1,10 @@
+import { SectionTabsContentContainer } from '@/common/components/SectionTabs';
 import { useContractById } from '@/common/queries/useContractById';
 import { Stack } from '@chakra-ui/react';
 import { useState } from 'react';
 
 import { ClarityAbiFunction } from '@stacks/transactions';
 
-import { TabsContentContainer } from '../TxTabs';
 import { FunctionCallForm } from './FunctionCallForm';
 import { FunctionListItem } from './FunctionListItem';
 
@@ -22,7 +22,7 @@ export function FunctionList({ contractId }: { contractId: string }) {
 
   return (
     <Stack gap={2}>
-      <TabsContentContainer>
+      <SectionTabsContentContainer>
         <Stack gap={4}>
           {filteredFunctions.map(fn => (
             <FunctionListItem
@@ -48,15 +48,15 @@ export function FunctionList({ contractId }: { contractId: string }) {
             />
           ))}
         </Stack>
-      </TabsContentContainer>
+      </SectionTabsContentContainer>
       {selectedFunction && (
-        <TabsContentContainer>
+        <SectionTabsContentContainer>
           <FunctionCallForm
             contractId={contractId}
             fnAbi={selectedFunction}
             handleCancel={() => setSelectedFunction(null)}
           />
-        </TabsContentContainer>
+        </SectionTabsContentContainer>
       )}
     </Stack>
   );

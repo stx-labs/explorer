@@ -10,7 +10,7 @@ import {
   getFtDecimalAdjustedBalance,
   microToStacksFormatted,
 } from '@/common/utils/utils';
-import { DefaultBadge, DefaultBadgeIcon, DefaultBadgeLabel, SimpleTag } from '@/ui/Badge';
+import { DefaultBadge, DefaultBadgeIcon, DefaultBadgeLabel } from '@/ui/Badge';
 import { Tooltip } from '@/ui/Tooltip';
 import MicroStxIcon from '@/ui/icons/MicroStxIcon';
 import StacksIconThin from '@/ui/icons/StacksIconThin';
