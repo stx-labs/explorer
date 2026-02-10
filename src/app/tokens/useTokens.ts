@@ -1,5 +1,6 @@
 'use client';
 
+import { useSbtcTokenContractId } from '@/common/utils/fungible-token-utils';
 import { FtBasicMetadataResponse } from '@hirosystems/token-metadata-api-client';
 import { useCallback, useMemo } from 'react';
 
@@ -8,7 +9,7 @@ import {
   useSuspenseInfiniteQueryResult,
 } from '../../common/hooks/useInfiniteQueryResult';
 import { useFtTokens, useSuspenseFtTokens } from '../../common/queries/useFtTokens';
-import { sbtcContractAddress, usdcxContractAddress } from '../token/[tokenId]/consts';
+import { usdcxContractAddress } from '../token/[tokenId]/consts';
 
 export const useSuspenseTokens = (
   debouncedSearchTerm: string
@@ -19,6 +20,7 @@ export const useSuspenseTokens = (
   loadMore: () => void;
 } => {
   const searchByNameResponse = useSuspenseFtTokens({ name: debouncedSearchTerm || undefined });
+  const sbtcContractId = useSbtcTokenContractId();
 
   const searchBySymbol = !!debouncedSearchTerm;
   const searchByAddress = new RegExp('^[0123456789ABCDEFGHJKMNPQRSTVWXYZ]{28,41}').test(
@@ -35,10 +37,7 @@ export const useSuspenseTokens = (
   );
 
   const shouldAddPinnedTokens = useMemo(() => !debouncedSearchTerm, [debouncedSearchTerm]); // Only add pinned tokens if no search term is provided. If they are searched, they will be added by default. If a search term that is not a pinned token is provided, they should not be added.
-  const sbtcResponse = useFtTokens(
-    { address: sbtcContractAddress },
-    { enabled: shouldAddPinnedTokens }
-  );
+  const sbtcResponse = useFtTokens({ address: sbtcContractId }, { enabled: shouldAddPinnedTokens });
   const usdcxResponse = useFtTokens(
     { address: usdcxContractAddress },
     { enabled: shouldAddPinnedTokens }

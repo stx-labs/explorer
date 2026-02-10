@@ -364,7 +364,7 @@ export const getFtDecimalAdjustedBalance = (
   return initBigNumber(value).shiftedBy(-decimals).toNumber();
 };
 
-export const ftDecimals = (value: number | string | BigNumber, decimals: number) => {
+export const ftDecimals = (value: number | string | BigNumber, decimals: number): string => {
   return getFtDecimalAdjustedBalance(value, decimals).toLocaleString('en-US', {
     maximumFractionDigits: decimals,
   });

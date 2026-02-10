@@ -1,4 +1,5 @@
 import { RISKY_TOKENS, VERIFIED_TOKENS } from '@/app/token/[tokenId]/consts';
+import { getHasSBTCInNameOrSymbol, useIsSBTC } from '@/common/utils/fungible-token-utils';
 import { Flex, Icon, Table } from '@chakra-ui/react';
 import { FtBasicMetadataResponse } from '@hirosystems/token-metadata-api-client';
 import { SealCheck, Warning } from '@phosphor-icons/react';
@@ -8,7 +9,6 @@ import { TokenLink, TxLink } from '../../../common/components/ExplorerLinks';
 import { abbreviateNumber, getFtDecimalAdjustedBalance } from '../../../common/utils/utils';
 import { Text } from '../../../ui/Text';
 import { TokenAvatar } from '../../address/[principal]/TokenBalanceCard/TokenAvatar';
-import { isSBTC, referencesSBTC } from '../utils';
 
 export const TokenRow: FC<{
   ftToken: FtBasicMetadataResponse;
@@ -17,8 +17,8 @@ export const TokenRow: FC<{
   const symbol = ftToken.symbol || '';
   const contractId = ftToken.contract_principal;
 
-  const includesSbtc = referencesSBTC(name, symbol);
-  const isSbtc = isSBTC(contractId);
+  const includesSbtc = getHasSBTCInNameOrSymbol(name, ftToken.symbol ?? '');
+  const isSbtc = useIsSBTC(ftToken.contract_principal);
 
   const tokenBadge = useMemo(() => {
     if (isSbtc || VERIFIED_TOKENS.includes(contractId)) {

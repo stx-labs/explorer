@@ -1,6 +1,7 @@
-import { SBTC_ASSET_ID, SBTC_DECIMALS } from '@/app/token/[tokenId]/consts';
+import { SBTC_DECIMALS } from '@/app/token/[tokenId]/consts';
 import { AddressLink, TokenLink } from '@/common/components/ExplorerLinks';
 import { useFtMetadata } from '@/common/queries/useFtMetadata';
+import { useSbtcTokenAssetId } from '@/common/utils/fungible-token-utils';
 import { ftDecimals, getAssetNameParts, truncateMiddle } from '@/common/utils/utils';
 import { Flex, Text } from '@chakra-ui/react';
 import { FC } from 'react';
@@ -20,6 +21,7 @@ interface TokenTransferItemProps {
 }
 
 export const TokenTransferItem: FC<TokenTransferItemProps> = ({ event }) => {
+  const sbtcAssetId = useSbtcTokenAssetId();
   const isStx = event.event_type === 'stx_asset';
   const isFt = event.event_type === 'fungible_token_asset';
   const isNft = event.event_type === 'non_fungible_token_asset';
@@ -29,7 +31,7 @@ export const TokenTransferItem: FC<TokenTransferItemProps> = ({ event }) => {
   const ftContractId = ftAssetParts
     ? `${ftAssetParts.address}.${ftAssetParts.contract}`
     : undefined;
-  const isSbtc = ftAssetId === SBTC_ASSET_ID;
+  const isSbtc = ftAssetId === sbtcAssetId;
 
   const { data: ftMetadata } = useFtMetadata(ftContractId, { enabled: isFt && !isSbtc });
 

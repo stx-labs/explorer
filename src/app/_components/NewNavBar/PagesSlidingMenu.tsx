@@ -1,3 +1,8 @@
+import {
+  SBTC_TOKEN_CONTRACT_ID_MAINNET,
+  SBTC_TOKEN_CONTRACT_ID_TESTNET,
+} from '@/app/token/[tokenId]/consts';
+import { usePrimaryPages } from '@/common/utils/navbar-utils';
 import { Text } from '@/ui/Text';
 import { Flex, Icon, Separator, Stack } from '@chakra-ui/react';
 import { CaretUpDown, List } from '@phosphor-icons/react';
@@ -6,12 +11,13 @@ import { useMemo, useState } from 'react';
 
 import { SlidingMenu } from '../../../common/components/SlidingMenu';
 import { PrimaryPageLink, SecondaryPageLink } from './PagesLinks';
-import { PrimaryPageLabel, primaryPages, secondaryPages } from './consts';
+import { PrimaryPageLabel, secondaryPages } from './consts';
 
 const getPageLabelFromPath = (path: string): PrimaryPageLabel => {
   if (path === '/transactions') return 'Transactions';
   if (path === '/tokens') return 'Tokens';
-  if (path === '/token/SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token') return 'sBTC';
+  if (path === `/token/${SBTC_TOKEN_CONTRACT_ID_MAINNET}`) return 'sBTC';
+  if (path === `/token/${SBTC_TOKEN_CONTRACT_ID_TESTNET}`) return 'sBTC';
   if (path === '/signers') return 'Signers';
   if (path === '/blocks') return 'Blocks';
   if (path === '/mempool') return 'Mempool';
@@ -29,6 +35,7 @@ export const PagesSlidingMenu = () => {
   const [isOpen, setIsOpen] = useState(false);
   const path = usePathname();
   const pageLabel = getPageLabelFromPath(path);
+  const primaryPages = usePrimaryPages();
 
   const menuContent = useMemo(() => {
     return (
@@ -48,7 +55,7 @@ export const PagesSlidingMenu = () => {
         </Stack>
       </Stack>
     );
-  }, [pageLabel]);
+  }, [pageLabel, primaryPages]);
 
   return (
     <SlidingMenu

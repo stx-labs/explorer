@@ -1,4 +1,4 @@
-import { SBTC_ASSET_ID } from '@/app/token/[tokenId]/consts';
+import { SBTC_TOKEN_ASSET_ID_MAINNET } from '@/app/token/[tokenId]/consts';
 import { THIRTY_SECONDS } from '@/common/queries/query-stale-time';
 import { useAccountBalance } from '@/common/queries/useAccountBalance';
 import { useFungibleTokensMetadata } from '@/common/queries/useFtMetadata';
@@ -124,9 +124,9 @@ export function filterBalances(
 }
 
 export function putSBTCFirst(balances: FtBalanceWithAssetId[]): FtBalanceWithAssetId[] {
-  const sbtc = balances.find(balance => balance.asset_identifier === SBTC_ASSET_ID);
+  const sbtc = balances.find(balance => balance.asset_identifier === SBTC_TOKEN_ASSET_ID_MAINNET);
   if (sbtc) {
-    balances = balances.filter(balance => balance.asset_identifier !== SBTC_ASSET_ID);
+    balances = balances.filter(balance => balance.asset_identifier !== SBTC_TOKEN_ASSET_ID_MAINNET);
     balances.unshift(sbtc);
   }
   return balances;
