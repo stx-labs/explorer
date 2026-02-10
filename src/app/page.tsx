@@ -1,25 +1,25 @@
-import { FeeSection } from '@/app/_components/FeeSection';
-import { MempoolSection } from '@/app/_components/MempoolSection';
+// import { FeeSection } from '@/app/_components/FeeSection';
+// import { MempoolSection } from '@/app/_components/MempoolSection';
 import { NetworkModes } from '@/common/types/network';
 import { logError } from '@/common/utils/error-utils';
-import { SampleTxsFeeEstimate, getSampleTxsFeeEstimate } from '@/common/utils/fee-utils';
 import { getApiUrl } from '@/common/utils/network-utils';
 import { CompressedTxTableData } from '@/common/utils/transaction-utils';
 import { Flex, Stack } from '@chakra-ui/react';
 
 import { NetworkOverview } from './_components/NetworkOverview/NetworkOverview';
 import { RecentBlocksSection } from './_components/RecentBlocks/RecentBlocks';
+import { SBTCSection } from './_components/SBTCSection';
+import { fetchSBTCData } from './_components/SBTCSection/data';
+import { SBTCData } from './_components/SBTCSection/types';
 import { StackingSection } from './_components/StackingSection/StackingSection';
 import { TxsSection } from './_components/TxsSection';
 import { HomePageDataProvider } from './context';
 import {
   RecentBlocks,
-  UIMempoolStats,
   UIStackingCycle,
   fetchCurrentStackingCycle,
   fetchRecentBlocks,
   fetchRecentUITxs,
-  fetchUIMempoolStats,
 } from './data';
 import { CommonSearchParams } from './transactions/page';
 
@@ -35,8 +35,7 @@ export default async function HomeRedesign(props: { searchParams: Promise<HomeSe
   let recentBlocks: RecentBlocks | undefined;
   let stackingCycle: UIStackingCycle | undefined;
   let initialTxTableData: CompressedTxTableData | undefined;
-  let mempoolStats: UIMempoolStats | undefined;
-  let feeEstimates: SampleTxsFeeEstimate | undefined;
+  let sbtcData: SBTCData | undefined;
 
   try {
     const stacksAPIRequests = isSSRDisabled
@@ -45,14 +44,13 @@ export default async function HomeRedesign(props: { searchParams: Promise<HomeSe
           fetchRecentBlocks(chain, api),
           fetchCurrentStackingCycle(chain, api),
           fetchRecentUITxs(chain, api),
-          fetchUIMempoolStats(chain, api),
-          getSampleTxsFeeEstimate(chain as 'mainnet' | 'testnet', apiUrl),
+          fetchSBTCData(apiUrl),
         ] as const);
 
     const stacksAPIResults = await Promise.all(stacksAPIRequests);
 
-    [recentBlocks, stackingCycle, initialTxTableData, mempoolStats, feeEstimates] = isSSRDisabled
-      ? ([undefined, undefined, undefined, undefined, undefined] as const)
+    [recentBlocks, stackingCycle, initialTxTableData, sbtcData] = isSSRDisabled
+      ? ([undefined, undefined, undefined, undefined] as const)
       : stacksAPIResults;
   } catch (error) {
     logError(
@@ -63,8 +61,6 @@ export default async function HomeRedesign(props: { searchParams: Promise<HomeSe
         chain,
         recentBlocks,
         stackingCycle,
-        mempoolStats,
-        feeEstimates,
         isSSRDisabled,
       },
       'error'
@@ -75,8 +71,6 @@ export default async function HomeRedesign(props: { searchParams: Promise<HomeSe
     <HomePageDataProvider
       initialRecentBlocks={recentBlocks}
       stackingCycle={stackingCycle}
-      mempoolStats={mempoolStats}
-      feeEstimates={feeEstimates}
       isSSRDisabled={isSSRDisabled}
     >
       <Stack gap={{ base: 16, md: 18, lg: 20, xl: 24 }}>
@@ -96,13 +90,8 @@ export default async function HomeRedesign(props: { searchParams: Promise<HomeSe
           <Flex flex={1} minWidth={0}>
             <TxsSection initialTxTableData={initialTxTableData} />
           </Flex>
-          <Flex gap={4} flexDirection={['column', 'column', 'column', 'column', 'column']} flex={1}>
-            <MempoolSection
-              mempoolStats={mempoolStats}
-              isSSRDisabled={isSSRDisabled}
-              showHeader={true}
-            />
-            <FeeSection initialFeeEstimates={feeEstimates} />
+          <Flex flex={1}>
+            <SBTCSection sbtcData={sbtcData} />
           </Flex>
         </Flex>
       </Stack>
