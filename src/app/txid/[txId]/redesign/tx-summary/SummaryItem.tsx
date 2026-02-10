@@ -38,7 +38,7 @@ export function SponsorTag({ isSponsored, sponsor }: { isSponsored: boolean; spo
         Sponsored {sponsor ? 'by' : ''}
       </Text>
       {sponsor && (
-        <AddressLink principal={sponsor} wordBreak="break-all" variant="tableLink">
+        <AddressLink address={sponsor} wordBreak="break-all" variant="tableLink">
           {truncateStxAddress(sponsor)}
         </AddressLink>
       )}

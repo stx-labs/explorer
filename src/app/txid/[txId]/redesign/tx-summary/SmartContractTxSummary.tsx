@@ -1,5 +1,5 @@
 import { useTxIdPageData } from '@/app/txid/[txId]/TxIdPageContext';
-import { AddressLink } from '@/common/components/ExplorerLinks';
+import { AddressLink, TxLink } from '@/common/components/ExplorerLinks';
 import { formatBlockTime } from '@/common/utils/time-utils';
 import { isConfirmedTx } from '@/common/utils/transaction-utils';
 import { Badge, BlockHeightBadge, DefaultBadgeLabel } from '@/ui/Badge';
@@ -12,14 +12,6 @@ import {
 
 import { ExecutionCostItem } from './ExecutionCost';
 import { PriceSummaryItemValue, SponsorTag, SummaryItem } from './SummaryItem';
-
-const SummaryItemAddressLink = ({ value }: { value: string }) => {
-  return (
-    <AddressLink principal={value} wordBreak="break-all" variant="tableLink">
-      {value}
-    </AddressLink>
-  );
-};
 
 export const SmartContractTxSummaryItems = ({
   tx,
@@ -35,19 +27,31 @@ export const SmartContractTxSummaryItems = ({
       <SummaryItem
         label="Contract address"
         value={tx.smart_contract?.contract_id}
-        valueRenderer={value => <SummaryItemAddressLink value={value} />}
+        valueRenderer={value => (
+          <AddressLink address={value} wordBreak="break-all" variant="tableLink">
+            {value}
+          </AddressLink>
+        )}
         showCopyButton
       />
       <SummaryItem
         label="Transaction ID"
         value={tx.tx_id}
-        valueRenderer={value => <SummaryItemAddressLink value={value} />}
+        valueRenderer={value => (
+          <TxLink txId={value} wordBreak="break-all" variant="tableLink">
+            {value}
+          </TxLink>
+        )}
         showCopyButton
       />
       <SummaryItem
         label="By"
         value={tx.sender_address}
-        valueRenderer={value => <SummaryItemAddressLink value={value} />}
+        valueRenderer={value => (
+          <AddressLink address={value} wordBreak="break-all" variant="tableLink">
+            {value}
+          </AddressLink>
+        )}
         showCopyButton
       />
 

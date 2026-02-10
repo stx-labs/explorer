@@ -36,7 +36,7 @@ export function TokenTransferTxSummaryItems({
         label="By"
         value={tx.sender_address}
         valueRenderer={value => (
-          <AddressLink principal={value} wordBreak="break-all" variant="tableLink">
+          <AddressLink address={value} wordBreak="break-all" variant="tableLink">
             {value}
           </AddressLink>
         )}
@@ -46,7 +46,7 @@ export function TokenTransferTxSummaryItems({
         label="Target"
         value={getToAddress(tx)}
         valueRenderer={value => (
-          <AddressLink principal={value} wordBreak="break-all" variant="tableLink">
+          <AddressLink address={value} wordBreak="break-all" variant="tableLink">
             {value}
           </AddressLink>
         )}

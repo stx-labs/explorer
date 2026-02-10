@@ -56,14 +56,14 @@ export const TokenTransferItem: FC<TokenTransferItemProps> = ({ event }) => {
       {event.asset.sender && (
         <>
           <Text textStyle="text-regular-sm">From:</Text>
-          <AddressLink principal={event.asset.sender} variant="tableLink">
+          <AddressLink address={event.asset.sender} variant="tableLink">
             {truncateMiddle(event.asset.sender, 4, 5)}
           </AddressLink>
           <Text textStyle="text-regular-sm">→</Text>
         </>
       )}
       <Text textStyle="text-regular-sm">To:</Text>
-      <AddressLink principal={event.asset.recipient || ''} variant="tableLink">
+      <AddressLink address={event.asset.recipient || ''} variant="tableLink">
         {truncateMiddle(event.asset.recipient || '', 4, 5)}
       </AddressLink>
       <Text textStyle="text-regular-sm">For:</Text>

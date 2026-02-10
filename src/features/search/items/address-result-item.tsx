@@ -21,7 +21,7 @@ export const AddressResultItem: React.FC<AddressResultItemProps> = ({ result }) 
   const truncatedPrincipal = truncateMiddleDeprecated(principal, 4);
   const { data: stxBalance } = useAccountStxBalance(principal);
   return (
-    <AddressLink principal={principal} className={`search-bar-result-1`}>
+    <AddressLink address={principal} className={`search-bar-result-1`}>
       <ResultItemWrapper>
         <Flex alignItems="center">
           <Circle h={12} w={12}>

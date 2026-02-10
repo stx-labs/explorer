@@ -30,7 +30,7 @@ export const TenureChangeTxSummaryItems = ({
         label="By"
         value={tx.sender_address}
         valueRenderer={value => (
-          <AddressLink principal={value} wordBreak="break-all" variant="tableLink">
+          <AddressLink address={value} wordBreak="break-all" variant="tableLink">
             {value}
           </AddressLink>
         )}

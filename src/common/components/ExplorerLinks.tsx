@@ -55,13 +55,8 @@ export const BurnBlockLink = forwardRef<
   );
 });
 
-export const AddressLink = forwardRef<
-  HTMLAnchorElement,
-  Partial<LinkProps> & { principal: string }
->(({ principal, ...rest }, ref) => {
-  return principal.includes('.') ? (
-    <TxLink ref={ref} txId={principal} {...rest} />
-  ) : (
-    <ExplorerLink ref={ref} href={`/address/${encodeURIComponent(principal)}`} {...rest} />
-  );
-});
+export const AddressLink = forwardRef<HTMLAnchorElement, Partial<LinkProps> & { address: string }>(
+  ({ address, ...rest }, ref) => {
+    return <ExplorerLink ref={ref} href={`/address/${encodeURIComponent(address)}`} {...rest} />;
+  }
+);
