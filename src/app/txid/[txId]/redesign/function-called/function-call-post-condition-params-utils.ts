@@ -484,11 +484,12 @@ export function extractPostConditionParams(values: FunctionFormikState): PostCon
   } = values;
 
   return {
-    postConditionMode,
-    postConditionType,
+    postConditionMode: postConditionMode != null ? Number(postConditionMode) : undefined,
+    postConditionType: postConditionType != null ? Number(postConditionType) : undefined,
     postConditionAddress,
-    postConditionConditionCode,
-    postConditionAmount,
+    postConditionConditionCode:
+      postConditionConditionCode != null ? Number(postConditionConditionCode) : undefined,
+    postConditionAmount: postConditionAmount != null ? Number(postConditionAmount) : undefined,
     postConditionAssetAddress,
     postConditionAssetContractName,
     postConditionAssetName,
