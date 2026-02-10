@@ -70,7 +70,7 @@ export const TokenTransferItem: FC<TokenTransferItemProps> = ({ event }) => {
       <Text textStyle="text-regular-sm" fontWeight="medium">
         {amount}
       </Text>
-      {isStx ? (
+      {isStx || isNft ? (
         <Text textStyle="text-regular-sm">{symbol}</Text>
       ) : (
         <TokenLink tokenId={contractId} variant="tableLink">
