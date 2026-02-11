@@ -1,8 +1,7 @@
 # PRs:
 #   - Builds Explorer (no package push)
 # Pushes to main:
-#   - Builds Explorer
-#   - Pushes Docker image to GitHub Container Registry
+#   - Builds Explorer and pushes Docker image to GHCR
 #   - Creates attestations for supply chain security
 
 name: CI
@@ -49,9 +48,6 @@ jobs:
           SEMANTIC_RELEASE_PACKAGE: ${{ github.event.repository.name }}
         with:
           semantic_version: 19
-          extra_plugins: |
-            @semantic-release/changelog
-            @semantic-release/git
 
 
       - name: Set up Docker Buildx
