@@ -218,7 +218,8 @@ export function EventsTable({
   const isTableFiltered = Object.values(filters).some(v => v != null && v !== '');
 
   const rowData: EventsTableData[] = useMemo(() => {
-    const rows = events.map((event, index) => {
+    const sortedEvents = [...events].sort((a, b) => a.event_index - b.event_index);
+    const rows = sortedEvents.map((event, index) => {
       const to = getToAddress(event);
       const from = getFromAddress(event);
       const amount = getAmount(event);
@@ -228,7 +229,7 @@ export function EventsTable({
       const contractLogPrintValue = getContractLogPrintValue(event);
 
       return {
-        [EventsTableColumns.Index]: Math.abs(event.event_index - numTxEvents),
+        [EventsTableColumns.Index]: event.event_index + 1,
         [EventsTableColumns.AssetEventType]: assetEventType,
         [EventsTableColumns.Asset]: asset,
         [EventsTableColumns.AssetType]: assetType,
@@ -251,7 +252,7 @@ export function EventsTable({
       };
     });
     return rows;
-  }, [events, numTxEvents]);
+  }, [events]);
 
   return (
     <Table
