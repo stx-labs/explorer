@@ -187,11 +187,6 @@ jest.mock('@stacks/transactions', () => ({
   hexToCV: jest.fn(),
 }));
 
-// Mock microToStacksFormatted since we're testing functions that use it
-jest.mock('@/common/utils/utils', () => ({
-  microToStacksFormatted: jest.fn(),
-}));
-
 describe('Function Called Utils', () => {
   // Reset mocks before each test
   beforeEach(() => {
@@ -285,7 +280,7 @@ describe('Function Called Utils', () => {
       });
     });
 
-    it('handles uint values correctly', () => {
+    it('handles uint values as integers without decimals', () => {
       const result = formatClarityValue({
         type: 'uint',
         repr: 'u1000',
@@ -293,16 +288,12 @@ describe('Function Called Utils', () => {
 
       expect(result).toEqual({
         name: '',
-        value: '1000',
+        value: '1,000',
         type: 'Unsigned Integer',
       });
     });
 
-    it('handles ustx values correctly', () => {
-      // Mock the microToStacksFormatted function specifically for this test
-      const mockMicroToStacks = require('@/common/utils/utils').microToStacksFormatted;
-      mockMicroToStacks.mockReturnValue('1');
-
+    it('handles ustx uint values as integers without STX conversion', () => {
       const result = formatClarityValue({
         type: 'uint',
         repr: 'u1000000',
@@ -311,12 +302,9 @@ describe('Function Called Utils', () => {
 
       expect(result).toEqual({
         name: 'amount-ustx',
-        value: '1',
+        value: '1,000,000',
         type: 'Unsigned Integer',
       });
-
-      // Verify that microToStacksFormatted was called with the correct value
-      expect(mockMicroToStacks).toHaveBeenCalledWith('1000000');
     });
 
     it('handles tuple values correctly', () => {

@@ -1,5 +1,4 @@
 import { Singleton } from '@/common/types/utils';
-import { microToStacksFormatted } from '@/common/utils/utils';
 
 import {
   ContractCallTransaction,
@@ -81,11 +80,9 @@ export function formatClarityValue(cv: ClarityValue): FormattedClarityValue {
     value = isContract ? principal : principal || cv.repr.toString().replace(/^'/, '');
   }
   if (cv.type === 'uint' && typeof cv.repr === 'string') {
-    value = cv.repr.replace('u', '');
-    if (cv.name?.includes('ustx')) {
-      value = microToStacksFormatted(value);
-    }
-    value = value.toLocaleString();
+    value = Number(cv.repr.replace('u', '')).toLocaleString(undefined, {
+      maximumFractionDigits: 0,
+    });
   }
   if (cv.type.includes('tuple') && typeof cv.repr === 'string') {
     value = formatTupleResult(cv.repr);
