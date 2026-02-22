@@ -50,3 +50,4 @@ Join our community and stay connected with the latest updates and discussions:
 ## License
 
 The Stacks Explorer is open source and released under the MIT License.
+``
