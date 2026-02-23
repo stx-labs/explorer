@@ -9,6 +9,7 @@ import { Badge } from '../../../common/components/Badge';
 import { CONNECT_AUTH_ORIGIN } from '../../../common/constants/env';
 import { useGlobalContext } from '../../../common/context/useGlobalContext';
 import { useFeeTransfer } from '../../../common/queries/useFeeTransfer';
+import { getConnectNetworkString } from '../../../common/utils/network-utils';
 import { microToStacks, stacksToMicro, validateStacksAddress } from '../../../common/utils/utils';
 import { Button } from '../../../ui/Button';
 import { Input } from '../../../ui/Input';
@@ -54,7 +55,7 @@ const PageClient: NextPage = () => {
           recipient,
           amount: stacksToMicro(amount || 0).toString(),
           memo,
-          network: network.mode,
+          network: getConnectNetworkString(network),
         });
       }}
       render={({ handleChange, handleBlur, values, errors, setFieldValue }) => (

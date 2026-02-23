@@ -1,4 +1,6 @@
-import { isHiroSubdomain, isLocalhost } from '../network-utils';
+import { DEFAULT_DEVNET_SERVER } from '../../constants/constants';
+import { Network, NetworkModes } from '../../types/network';
+import { getConnectNetworkString, isHiroSubdomain, isLocalhost } from '../network-utils';
 
 describe('getApiUrl', () => {
   const originalEnv = process.env;
@@ -158,5 +160,36 @@ describe('isHiroSubdomain', () => {
       expect(isHiroSubdomain('https://hiro.som')).toBe(false);
       expect(isHiroSubdomain('https://hero.so')).toBe(false);
     });
+  });
+});
+
+describe('getConnectNetworkString', () => {
+  const baseNetwork: Network = {
+    label: '',
+    url: '',
+    btcBlockBaseUrl: '',
+    btcTxBaseUrl: '',
+    btcAddressBaseUrl: '',
+    networkId: 1,
+    mode: NetworkModes.Mainnet,
+  };
+
+  it('should return "devnet" when the network URL matches DEFAULT_DEVNET_SERVER', () => {
+    const network = { ...baseNetwork, url: DEFAULT_DEVNET_SERVER, mode: NetworkModes.Testnet };
+    expect(getConnectNetworkString(network)).toBe('devnet');
+  });
+
+  it('should return network.mode for mainnet', () => {
+    const network = { ...baseNetwork, url: 'https://api.hiro.so', mode: NetworkModes.Mainnet };
+    expect(getConnectNetworkString(network)).toBe('mainnet');
+  });
+
+  it('should return network.mode for testnet', () => {
+    const network = {
+      ...baseNetwork,
+      url: 'https://api.testnet.hiro.so',
+      mode: NetworkModes.Testnet,
+    };
+    expect(getConnectNetworkString(network)).toBe('testnet');
   });
 });

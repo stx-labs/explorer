@@ -8,6 +8,7 @@ import { useCallback, useState } from 'react';
 import { useGlobalContext } from '../../../common/context/useGlobalContext';
 import { useRandomName } from '../../../common/hooks/useRandomName';
 import { useAppDispatch, useAppSelector } from '../../../common/state/hooks';
+import { getConnectNetworkString } from '../../../common/utils/network-utils';
 import { InputGroup } from '../../../components/ui/input-group';
 import { IconButton } from '../../../ui/IconButton';
 import { Input } from '../../../ui/Input';
@@ -30,7 +31,7 @@ export function LeftSection() {
     await deployContract({
       name: contractName,
       clarityCode: codeBody,
-      network: network.mode,
+      network: getConnectNetworkString(network),
     });
     void queryClient.invalidateQueries({ queryKey: ['addressMempoolTxsInfinite'] });
   }, [codeBody, contractName, network, queryClient]);

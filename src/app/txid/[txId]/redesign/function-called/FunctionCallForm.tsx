@@ -4,6 +4,7 @@ import { ListValueType, ValueType } from '@/app/sandbox/types/values';
 import { Select } from '@/common/components/Select';
 import { useGlobalContext } from '@/common/context/useGlobalContext';
 import { logError } from '@/common/utils/error-utils';
+import { getConnectNetworkString } from '@/common/utils/network-utils';
 import { InvalidFunctionType, getInvalidFunctionType, showFn } from '@/common/utils/sandbox';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/ui/Button';
@@ -120,7 +121,7 @@ export const FunctionCallForm: FC<FunctionCallFormProps> = ({
             await handlePublicFunctionCall(processedFunctionParams, postConditionParams, {
               contractId,
               fnAbi,
-              network: network.mode,
+              network: getConnectNetworkString(network),
               queryClient,
             });
           } else {
