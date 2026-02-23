@@ -2,6 +2,17 @@ import { DEFAULT_DEVNET_SERVER } from '../constants/constants';
 import { DEFAULT_MAINNET_SERVER, DEFAULT_TESTNET_SERVER } from '../constants/env';
 import { Network, NetworkModes } from '../types/network';
 
+/**
+ * Returns the network string expected by @stacks/connect.
+ * Devnet uses testnet chain ID and mode, but @stacks/connect needs "devnet" as the network string.
+ */
+export function getConnectNetworkString(network: Network): string {
+  if (network.url === DEFAULT_DEVNET_SERVER) {
+    return 'devnet';
+  }
+  return network.mode;
+}
+
 export function getApiUrl(chain: string, customApiUrl?: string): string {
   if (customApiUrl) {
     return customApiUrl;

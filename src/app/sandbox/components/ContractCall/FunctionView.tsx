@@ -19,6 +19,7 @@ import {
 
 import { Section } from '../../../../common/components/Section';
 import { useGlobalContext } from '../../../../common/context/useGlobalContext';
+import { getConnectNetworkString } from '../../../../common/utils/network-utils';
 import { showFn } from '../../../../common/utils/sandbox';
 import { Switch } from '../../../../components/ui/switch';
 import { Button } from '../../../../ui/Button';
@@ -196,7 +197,7 @@ export const FunctionView: FC<FunctionViewProps> = ({ fn, contractId, cancelButt
             contract: contractId,
             functionName: fn.name,
             functionArgs: Object.values(final),
-            network: network.mode,
+            network: getConnectNetworkString(network),
             postConditions:
               postConditionMode === PostConditionMode.Allow
                 ? undefined
