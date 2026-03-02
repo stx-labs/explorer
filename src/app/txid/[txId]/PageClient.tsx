@@ -48,6 +48,14 @@ function TransactionIdPage() {
 
   if (tx?.tx_type === 'contract_call') txPage = <ContractCallPageRedesign tx={tx} />;
 
+  if (tx && !txPage) {
+    return (
+      <Flex align="center" justify="center" py={20} direction="column" gap={4}>
+        <Text color="error">Transaction not found</Text>
+      </Flex>
+    );
+  }
+
   return (
     <TxTableFiltersProvider
       defaultTransactionType={filters.transactionType}
