@@ -213,6 +213,9 @@ export async function fetchTx(
       tags: [getTxTag(txId)],
     },
   });
+  if (!response.ok) {
+    throw new Error(`Failed to fetch transaction: ${response.status} ${response.statusText}`);
+  }
   const tx: Transaction | MempoolTransaction = await response.json();
   return tx;
 }
