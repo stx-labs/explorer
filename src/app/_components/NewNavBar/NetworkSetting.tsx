@@ -8,6 +8,7 @@ import { useCustomNetworkApiInfo } from '@/common/queries/useCustomNetworkApiInf
 import { useAppDispatch } from '@/common/state/hooks';
 import { Network } from '@/common/types/network';
 import { buildUrl } from '@/common/utils/buildUrl';
+import { isLocalhost } from '@/common/utils/network-utils';
 import { Button } from '@/components/ui/button';
 import { Link } from '@/ui/Link';
 import { Text } from '@/ui/Text';
@@ -85,8 +86,10 @@ const NetworkLabel = ({ network }: { network: Network }) => {
   const isDefault = isMainnet || isTestnet;
   const isDevnet = network.url === DEFAULT_DEVNET_SERVER;
 
+  const isLocalNetwork = isLocalhost(network.url);
+
   const { error, isFetching } = useCustomNetworkApiInfo(network.url, {
-    enabled: !!network.url && !isDefault,
+    enabled: !!network.url && !isDefault && !isLocalNetwork,
   });
   const isDisabled = isFetching || !!error;
 
