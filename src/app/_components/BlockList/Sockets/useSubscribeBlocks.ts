@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useRef } from 'react';
 
-import { Block, NakamotoBlock, StacksApiSocketClient } from '@stacks/blockchain-api-client';
+import { Block, NakamotoBlock, StacksApiWebSocketClient } from '@stacks/blockchain-api-client';
 
 import { useGlobalContext } from '../../../../common/context/useGlobalContext';
 
 interface Subscription {
-  unsubscribe(): void;
+  unsubscribe(): Promise<void>;
 }
 
 export function useSubscribeBlocks(
@@ -26,8 +26,8 @@ export function useSubscribeBlocks(
   }, [disconnect]);
 
   useEffect(() => {
-    const subscribe = async (client: StacksApiSocketClient) => {
-      subscription.current = client?.subscribeBlocks(block => {
+    const subscribe = async (client: StacksApiWebSocketClient) => {
+      subscription.current = await client.subscribeBlocks(block => {
         handleBlock({
           ...(block as Block),
           parent_index_block_hash: '',

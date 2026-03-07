@@ -2,7 +2,7 @@ import { renderHook } from '@testing-library/react';
 
 import { useSubscribeBlocks } from '../useSubscribeBlocks';
 
-const mockUnsubscribe = jest.fn();
+const mockUnsubscribe = jest.fn().mockResolvedValue(undefined);
 const mockDisconnect = jest.fn();
 const mockConnect = jest.fn();
 
@@ -16,7 +16,7 @@ jest.mock('../../../../../common/context/useGlobalContext', () => ({
     stacksApiSocketClientInfo: {
       connect: mockConnect.mockImplementation(handleConnect => {
         const mockClient = {
-          subscribeBlocks: jest.fn(() => mockSubscription),
+          subscribeBlocks: jest.fn().mockResolvedValue(mockSubscription),
         };
         handleConnect(mockClient);
       }),
@@ -30,13 +30,16 @@ describe('useSubscribeBlocks', () => {
     jest.clearAllMocks();
   });
 
-  it('calls unsubscribe and clears subscription on cleanup', () => {
+  it('calls unsubscribe and clears subscription on cleanup', async () => {
     const handleBlock = jest.fn();
 
     const { unmount } = renderHook(() => useSubscribeBlocks(true, handleBlock));
 
     // Verify subscription was created only once
     expect(mockConnect).toHaveBeenCalledTimes(1);
+
+    // Wait for async subscription to resolve
+    await new Promise(resolve => setTimeout(resolve, 0));
 
     // Unmount the hook
     unmount();

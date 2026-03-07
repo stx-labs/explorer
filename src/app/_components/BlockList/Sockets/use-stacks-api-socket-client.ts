@@ -1,65 +1,62 @@
 import { useCallback, useRef } from 'react';
 
-import { StacksApiSocketClient } from '@stacks/blockchain-api-client';
+import { StacksApiWebSocketClient } from '@stacks/blockchain-api-client';
 
 export interface StacksApiSocketClientInfo {
-  client: StacksApiSocketClient | null;
+  client: StacksApiWebSocketClient | null;
   connect: (
-    handleOnConnect?: (client: StacksApiSocketClient) => void,
+    handleOnConnect?: (client: StacksApiWebSocketClient) => void,
     handleError?: (error: Error) => void
   ) => void;
   disconnect: () => void;
 }
 
 export function useStacksApiSocketClient(apiUrl: string): StacksApiSocketClientInfo {
-  const socketClientRef = useRef<StacksApiSocketClient | null>(null);
-  const isSocketClientConnecting = useRef(false);
+  const clientRef = useRef<StacksApiWebSocketClient | null>(null);
+  const isConnecting = useRef(false);
+  const connectId = useRef(0);
 
   const disconnect = useCallback(() => {
-    if (socketClientRef.current?.socket.connected) {
-      socketClientRef.current.socket.removeAllListeners();
-      socketClientRef.current.socket.close();
-      socketClientRef.current = null;
-      isSocketClientConnecting.current = false;
+    connectId.current++;
+    if (clientRef.current) {
+      clientRef.current.webSocket.close();
+      clientRef.current = null;
     }
+    isConnecting.current = false;
   }, []);
 
   const connect = useCallback(
     async (
-      handleOnConnect?: (client: StacksApiSocketClient) => void,
+      handleOnConnect?: (client: StacksApiWebSocketClient) => void,
       handleError?: (error: Error) => void
     ) => {
       if (!apiUrl) return;
-      if (socketClientRef.current?.socket.connected || isSocketClientConnecting.current) {
+      if (clientRef.current || isConnecting.current) {
         return;
       }
+      const currentConnectId = ++connectId.current;
       try {
-        isSocketClientConnecting.current = true;
-        const client = await StacksApiSocketClient.connect({ url: apiUrl });
-        client.socket.on('connect', () => {
-          socketClientRef.current = client;
-          handleOnConnect?.(client);
-        });
-        client.socket.on('disconnect', () => {
-          client.socket.removeAllListeners();
-          client.socket.close();
-          disconnect();
-        });
-        client.socket.on('connect_error', error => {
-          client.socket.removeAllListeners();
-          client.socket.close();
-          disconnect();
-          handleError?.(error);
-        });
+        isConnecting.current = true;
+        const client = await StacksApiWebSocketClient.connect(apiUrl);
+        if (currentConnectId !== connectId.current) {
+          client.webSocket.close();
+          return;
+        }
+        clientRef.current = client;
+        isConnecting.current = false;
+        handleOnConnect?.(client);
       } catch (error) {
-        disconnect();
+        if (currentConnectId !== connectId.current) return;
+        isConnecting.current = false;
+        clientRef.current = null;
+        handleError?.(error instanceof Error ? error : new Error(String(error)));
       }
     },
     [apiUrl, disconnect]
   );
 
   return {
-    client: socketClientRef.current,
+    client: clientRef.current,
     connect,
     disconnect,
   };
