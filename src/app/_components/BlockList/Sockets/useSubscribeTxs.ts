@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useRef } from 'react';
 
-import { MempoolTransaction, StacksApiSocketClient } from '@stacks/blockchain-api-client';
+import { MempoolTransaction, StacksApiWebSocketClient } from '@stacks/blockchain-api-client';
 
 import { useGlobalContext } from '../../../../common/context/useGlobalContext';
 
 interface Subscription {
-  unsubscribe(): void;
+  unsubscribe(): Promise<void>;
 }
 
 export function useSubscribeTxs(
@@ -26,11 +26,9 @@ export function useSubscribeTxs(
   }, [disconnect]);
 
   useEffect(() => {
-    const subscribe = async (client: StacksApiSocketClient) => {
-      subscription.current = client?.subscribeMempool(tx => {
-        handleTransaction({
-          ...tx,
-        });
+    const subscribe = async (client: StacksApiWebSocketClient) => {
+      subscription.current = await client.subscribeMempool(tx => {
+        handleTransaction(tx as unknown as MempoolTransaction);
       });
     };
 

@@ -6,7 +6,7 @@ import { useCookies } from 'react-cookie';
 
 import { getApiClient } from '../../api/getApiClient';
 import {
-  StacksApiSocketClientInfo,
+  type StacksApiSocketClientInfo,
   useStacksApiSocketClient,
 } from '../../app/_components/BlockList/Sockets/use-stacks-api-socket-client';
 import { buildCustomNetworkUrl, fetchCustomNetworkId } from '../components/modals/AddNetwork/utils';

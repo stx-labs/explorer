@@ -2,7 +2,7 @@ import { renderHook } from '@testing-library/react';
 
 import { useSubscribeTxs } from '../useSubscribeTxs';
 
-const mockUnsubscribe = jest.fn();
+const mockUnsubscribe = jest.fn().mockResolvedValue(undefined);
 const mockDisconnect = jest.fn();
 const mockConnect = jest.fn();
 
@@ -16,7 +16,7 @@ jest.mock('../../../../../common/context/useGlobalContext', () => ({
     stacksApiSocketClientInfo: {
       connect: mockConnect.mockImplementation(handleConnect => {
         const mockClient = {
-          subscribeMempool: jest.fn(() => mockSubscription),
+          subscribeMempool: jest.fn().mockResolvedValue(mockSubscription),
         };
         handleConnect(mockClient);
       }),
@@ -30,13 +30,16 @@ describe('useSubscribeTxs', () => {
     jest.clearAllMocks();
   });
 
-  it('calls unsubscribe and clears subscription on cleanup', () => {
+  it('calls unsubscribe and clears subscription on cleanup', async () => {
     const handleTransaction = jest.fn();
 
     const { unmount } = renderHook(() => useSubscribeTxs(true, handleTransaction));
 
     // Verify subscription was created only once
     expect(mockConnect).toHaveBeenCalledTimes(1);
+
+    // Wait for async subscription to resolve
+    await new Promise(resolve => setTimeout(resolve, 0));
 
     // Unmount the hook
     unmount();
