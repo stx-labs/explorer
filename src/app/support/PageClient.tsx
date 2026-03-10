@@ -38,6 +38,22 @@ const SupportPage: NextPage = () => {
         <Card lineHeight={'tall'} p={8} pb={10}>
           <Stack gap={4}>
             <Text fontSize={'xl'} fontWeight={'medium'}>
+              Contact support
+            </Text>
+            <Text fontSize={'sm'}>
+              Need help? Email us at{' '}
+              <ExternalLink href={'mailto:support@stackslabs.com'} display={'inline'}>
+                support@stackslabs.com
+              </ExternalLink>
+              <Text fontSize={'sm'} display={'inline'}>
+                .
+              </Text>
+            </Text>
+          </Stack>
+        </Card>
+        <Card lineHeight={'tall'} p={8} pb={10}>
+          <Stack gap={4}>
+            <Text fontSize={'xl'} fontWeight={'medium'}>
               Transaction help
             </Text>
             <Text fontSize={'sm'}>
