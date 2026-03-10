@@ -13,7 +13,6 @@ import { ADDRESS_ID_PAGE_RECENT_ADDRESS_TXS_LIMIT } from '@/common/components/ta
 import { getFtDecimalAdjustedBalance, microToStacks } from '@/common/utils/utils';
 import { SimpleTag } from '@/ui/Badge';
 import { Button } from '@/ui/Button';
-import { NextLink } from '@/ui/NextLink';
 import { Text } from '@/ui/Text';
 import BitcoinCircleIcon from '@/ui/icons/BitcoinCircleIcon';
 import BitcoinIcon from '@/ui/icons/BitcoinIcon';
@@ -275,14 +274,9 @@ export function CurrentCycleValue() {
       : `Ends in ${approximateDaysTilNextCycle} ${approximateDaysTilNextCycle === 1 ? 'day' : 'days'}`;
   return (
     <Stack gap={1}>
-      <NextLink
-        href={`/stacking/cycle/${currentCycleId}`}
-        textStyle="text-regular-sm"
-        color="textSecondary"
-        w="fit-content"
-      >
+      <Text textStyle="text-regular-sm" color="textSecondary">
         {currentCycleId}
-      </NextLink>
+      </Text>
       <Flex gap={1.5} alignItems="center">
         <Flex bg="surfaceFifth" borderRadius="redesign.xl" w="50%" h={1} alignItems="center">
           <Flex
