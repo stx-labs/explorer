@@ -91,7 +91,7 @@ export function TokenIdPageDataProvider({
 
     return {
       ...ssrTokenData,
-      name: ssrTokenData?.name ?? ftMetadata?.name ?? ftMetadata?.metadata?.name,
+      name: ssrTokenData?.name ?? ftMetadata?.metadata?.name ?? ftMetadata?.name,
       symbol: ssrTokenData?.symbol ?? ftMetadata?.symbol,
       imageUri: ssrTokenData?.imageUri ?? ftMetadata?.image_uri,
       decimals,

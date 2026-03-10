@@ -181,7 +181,7 @@ export function FungibleTokensTable({
         const tokenId = `${address}.${contract}`;
         const holding = calculateHoldingPercentage(ft.balance, ft.total_supply);
         const ticker = ft.symbol || deriveTokenTickerFromAssetId(tokenAssetId);
-        const name = ft.name || asset;
+        const name = ft.metadata?.name || ft.name || asset;
         const imageUrl = ft.metadata ? getTokenImageUrlFromTokenMetadata(ft.metadata) : undefined;
         const balance = ftDecimals(ft?.balance, ft?.decimals || 0);
 

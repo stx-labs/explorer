@@ -19,7 +19,7 @@ export async function getTokenDataFromStacksApi(
   try {
     const tokenMetadata = await fetchTokenMetadata(apiUrl, tokenId);
 
-    const name = safeGet(tokenMetadata?.name, tokenMetadata?.metadata?.name);
+    const name = safeGet(tokenMetadata?.metadata?.name, tokenMetadata?.name);
     const symbol = tokenMetadata?.symbol;
     const decimals = tokenMetadata?.decimals;
     const totalSupply = tokenMetadata?.total_supply;
