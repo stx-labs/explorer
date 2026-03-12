@@ -42,3 +42,65 @@ NEXT_PUBLIC_DEFAULT_POLLING_INTERVAL="10000"
 > **_NOTE:_**
 >
 > If you are working in a macOS environment, you will need to add these variable to `/etc/paths`.
+
+## Running the Development Server
+
+After installing dependencies and configuring environment variables:
+
+```bash
+# Start the development server
+pnpm dev
+
+# The app will be available at http://localhost:3000
+```
+
+## Running Tests
+
+```bash
+# Run unit tests
+pnpm test
+
+# Run end-to-end tests
+pnpm e2e
+
+# Run tests in watch mode
+pnpm test:watch
+```
+
+## Troubleshooting
+
+### Common Issues
+
+**Issue: `pnpm i` fails with node version error**
+```
+Solution: Ensure you're using Node.js v22 or higher. Use nvm to switch versions:
+nvm install 22
+nvm use 22
+```
+
+**Issue: Environment variables not loading**
+```
+Solution: Create a .env.local file in the project root with the required variables.
+Copy from .env.example if available.
+```
+
+**Issue: API requests failing with CORS errors**
+```
+Solution: The Stacks API has CORS enabled for localhost. Ensure you're running 
+on http://localhost:3000 (not 127.0.0.1).
+```
+
+**Issue: Build fails with memory errors**
+```bash
+# Increase Node.js memory limit
+export NODE_OPTIONS="--max-old-space-size=4096"
+pnpm build
+```
+
+### Getting Help
+
+If you encounter issues not covered here:
+
+1. Check [existing GitHub issues](https://github.com/hirosystems/explorer/issues)
+2. Join the [Discord community](https://discord.com/invite/pPwMzMx9k8)
+3. Open a new issue with detailed reproduction steps
