@@ -147,6 +147,9 @@ export type TableProps<T> = {
   getRowCanExpand?: (row: Row<T>) => boolean;
   expandAllRowsByDefault?: boolean;
   meta?: Record<string, unknown>;
+  manualSorting?: boolean;
+  initialSorting?: SortingState;
+  enableSortingRemoval?: boolean;
 };
 
 const ErrorTable = ({ error }: { error: string }) => {
@@ -247,8 +250,11 @@ export function Table<T>({
   expandAllRowsByDefault,
   renderSubComponent,
   meta,
+  manualSorting,
+  initialSorting,
+  enableSortingRemoval,
 }: TableProps<T>): JSX.Element {
-  const [sorting, setSorting] = useState<SortingState>([]);
+  const [sorting, setSorting] = useState<SortingState>(initialSorting ?? []);
   const [tableData, setTableData] = useState(data);
 
   const columnPinning = useMemo(() => getColumnPinningState(columns), [columns]);
@@ -287,6 +293,8 @@ export function Table<T>({
     getCoreRowModel: getCoreRowModel(),
     getExpandedRowModel: getExpandedRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    manualSorting: manualSorting ?? false,
+    enableSortingRemoval: enableSortingRemoval ?? true,
     manualPagination: pagination?.manualPagination ?? false,
     ...(pagination
       ? pagination?.manualPagination
