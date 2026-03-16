@@ -129,7 +129,7 @@ const TxDetailsFunctions = ({
         </HStack>
       </Flex>
       {fnsVisible ? (
-        <Stack maxHeight="120px" overflowX="auto">
+        <Stack maxHeight="120px" overflowY="auto">
           {contractInterface?.abi?.functions?.map((func: any, index: number, arr: any[]) => {
             return func.access !== 'private' ? (
               <Flex
@@ -254,8 +254,10 @@ export function TransactionsPanel() {
     () =>
       filteredTxs.map(tx => (
         <AccordionItem key={tx.tx_id} border={'none'} value={tx.tx_id}>
-          <Flex gap={1.5}>
-            <TxListItemMini tx={tx} />
+          <Flex gap={1.5} minWidth={0}>
+            <Box minWidth={0} flex={1} overflow="hidden">
+              <TxListItemMini tx={tx} />
+            </Box>
             <AccordionItemTrigger
               flexGrow={0}
               flexShrink={0}

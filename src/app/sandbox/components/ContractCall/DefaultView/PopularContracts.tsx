@@ -22,6 +22,12 @@ const defaultContracts = (address: string) => [
     icon: Signature,
   },
   {
+    name: 'BNS-V2',
+    address: 'SP2QEZ06AGJ3RKJPBV14SY1V5BBFNAW33D96YPGZF',
+    description: '',
+    icon: Signature,
+  },
+  {
     name: 'cost-voting',
     address,
     description: '',

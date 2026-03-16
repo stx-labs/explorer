@@ -201,15 +201,17 @@ export const FunctionView: FC<FunctionViewProps> = ({ fn, contractId, cancelButt
             postConditions:
               postConditionMode === PostConditionMode.Allow
                 ? undefined
-                : getPostCondition({
-                    postConditionType,
-                    postConditionAddress,
-                    postConditionConditionCode,
-                    postConditionAmount,
-                    postConditionAssetAddress,
-                    postConditionAssetContractName,
-                    postConditionAssetName,
-                  }),
+                : postConditionType == null
+                  ? []
+                  : getPostCondition({
+                      postConditionType,
+                      postConditionAddress,
+                      postConditionConditionCode,
+                      postConditionAmount,
+                      postConditionAssetAddress,
+                      postConditionAssetContractName,
+                      postConditionAssetName,
+                    }),
             postConditionMode: postConditionMode === PostConditionMode.Allow ? 'allow' : 'deny',
           });
           void queryClient.invalidateQueries({ queryKey: ['addressMempoolTxsInfinite'] });

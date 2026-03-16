@@ -35,7 +35,7 @@ describe('checkPostConditionParameters', () => {
     expect(checkPostConditionParameters(pcValues)).toEqual({});
   });
 
-  it('should return error if postConditionType is missing', () => {
+  it('should return no errors if postConditionType is missing in deny mode', () => {
     const pcValues: FunctionFormikState = {
       postConditionMode: PostConditionMode.Deny,
       postConditionType: undefined,
@@ -47,9 +47,7 @@ describe('checkPostConditionParameters', () => {
       postConditionAssetName: 'asset-name',
     } as FunctionFormikState;
 
-    expect(checkPostConditionParameters(pcValues)).toEqual({
-      postConditionType: 'Post condition type is required',
-    });
+    expect(checkPostConditionParameters(pcValues)).toEqual({});
   });
 
   it('should return error if postConditionConditionCode is missing', () => {
