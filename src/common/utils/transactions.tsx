@@ -10,8 +10,10 @@ import {
   CoinbaseTransaction,
   MempoolCoinbaseTransaction,
   MempoolTenureChangeTransaction,
+  MempoolTokenTransferTransaction,
   MempoolTransaction,
   TenureChangeTransaction,
+  TokenTransferTransaction,
   Transaction,
 } from '@stacks/stacks-blockchain-api-types';
 
@@ -169,6 +171,12 @@ export const getTxTitle = (tx: Transaction | MempoolTransaction) => {
     case 'contract_call':
       return getFunctionName(tx);
     case 'token_transfer':
+      if (
+        isConfirmedTx<TokenTransferTransaction, MempoolTokenTransferTransaction>(tx) &&
+        tx.block_height === 1
+      ) {
+        return 'Stacks 2.0 genesis transfer';
+      }
       return `Send ${microToStacksFormatted(tx.token_transfer.amount)} STX`;
     case 'coinbase':
       return isConfirmedTx<CoinbaseTransaction, MempoolCoinbaseTransaction>(tx)

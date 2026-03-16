@@ -4,6 +4,7 @@ import { MempoolTransaction, Transaction } from '@stacks/stacks-blockchain-api-t
 
 import { TxLink } from '../../common/components/ExplorerLinks';
 import { StxPrice } from '../../common/components/StxPrice';
+import { isConfirmedTx } from '../../common/utils/transactions';
 import { getContractName, getFunctionName, microToStacksFormatted } from '../../common/utils/utils';
 
 export const TxTitle = ({
@@ -44,6 +45,13 @@ export const TxTitle = ({
         </Flex>
       );
     case 'token_transfer':
+      if (isConfirmedTx(tx) && tx.block_height === 1) {
+        return (
+          <TxLink txId={tx.tx_id} openInNewTab={openInNewTab}>
+            Stacks 2.0 genesis transfer
+          </TxLink>
+        );
+      }
       return (
         <Flex flexDirection={['row']} alignItems={['center']}>
           <TxLink txId={tx.tx_id} openInNewTab={openInNewTab}>
