@@ -1,6 +1,11 @@
 'use client';
 
 import { CopyButtonRedesign } from '@/common/components/CopyButton';
+import { claritySyntax } from '@/common/constants/claritySyntax';
+import { autocomplete, hover } from '@/common/editor-config/autocomplete';
+import { defineTheme } from '@/common/editor-config/define-theme';
+import { liftOff } from '@/common/editor-config/init';
+import { configLanguage } from '@/common/editor-config/language';
 import { useColorMode } from '@/components/ui/color-mode';
 import { Button } from '@/ui/Button';
 import { Flex, Icon, Stack } from '@chakra-ui/react';
@@ -10,11 +15,6 @@ import Prism from 'prismjs';
 import { forwardRef, memo, useCallback, useRef, useState } from 'react';
 
 import { clarity } from './clarity';
-import { autocomplete, hover } from './editor-config/autocomplete';
-import { claritySyntax } from './editor-config/claritySyntax';
-import { defineTheme } from './editor-config/define-theme';
-import { liftOff } from './editor-config/init';
-import { configLanguage } from './editor-config/language';
 
 clarity(Prism);
 

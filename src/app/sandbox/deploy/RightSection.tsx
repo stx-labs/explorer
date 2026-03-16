@@ -5,14 +5,14 @@ import Editor, { Monaco } from '@monaco-editor/react';
 import { useCallback, useState } from 'react';
 
 import { claritySyntax } from '../../../common/constants/claritySyntax';
+import { autocomplete, hover } from '../../../common/editor-config/autocomplete';
+import { defineTheme } from '../../../common/editor-config/define-theme';
+import { liftOff } from '../../../common/editor-config/init';
+import { configLanguage } from '../../../common/editor-config/language';
 import { useAppDispatch, useAppSelector } from '../../../common/state/hooks';
 import ClarityIcon from '../../../ui/icons/ClarityIcon';
 import { Caption } from '../../../ui/typography';
 import { Toolbar } from '../components/Toolbar';
-import { autocomplete, hover } from '../editor-config/autocomplete';
-import { defineTheme } from '../editor-config/define-theme';
-import { liftOff } from '../editor-config/init';
-import { configLanguage } from '../editor-config/language';
 import { selectCodeBody, setCodeBody } from '../sandbox-slice';
 
 export function RightSection() {

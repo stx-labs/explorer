@@ -6,11 +6,11 @@ import { FrameCorners } from '@phosphor-icons/react';
 import Prism from 'prismjs';
 import { FC, memo, useState } from 'react';
 
-import { autocomplete, hover } from '../../app/sandbox/editor-config/autocomplete';
-import { defineTheme } from '../../app/sandbox/editor-config/define-theme';
-import { liftOff } from '../../app/sandbox/editor-config/init';
-import { configLanguage } from '../../app/sandbox/editor-config/language';
 import { claritySyntax } from '../../common/constants/claritySyntax';
+import { autocomplete, hover } from '../../common/editor-config/autocomplete';
+import { defineTheme } from '../../common/editor-config/define-theme';
+import { liftOff } from '../../common/editor-config/init';
+import { configLanguage } from '../../common/editor-config/language';
 import { IconButton } from '../IconButton';
 import { clarity } from './clarity';
 
