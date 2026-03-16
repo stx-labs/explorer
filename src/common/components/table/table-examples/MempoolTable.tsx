@@ -14,7 +14,7 @@ import { validateStacksContractId } from '@/common/utils/utils';
 import { Flex } from '@chakra-ui/react';
 import { ArrowRight } from '@phosphor-icons/react';
 import { useQueryClient } from '@tanstack/react-query';
-import { ColumnDef, Header, PaginationState } from '@tanstack/react-table';
+import { ColumnDef, Header, PaginationState, SortingState } from '@tanstack/react-table';
 import { type JSX, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { MempoolTransaction, Transaction } from '@stacks/stacks-blockchain-api-types';
@@ -118,9 +118,21 @@ const defaultColumnDefinitions: ColumnDef<MempoolTableData>[] = [
     cell: ({ getValue, table }: { getValue: () => unknown; table: any }) => (
       <TimestampCell timestamp={getValue() as number} table={table} />
     ),
-    enableSorting: false,
+    enableSorting: true,
   },
 ];
+
+type MempoolSortField = 'age' | 'size' | 'fee';
+
+const COLUMN_TO_SORT_FIELD: Record<string, MempoolSortField> = {
+  [TxTableColumns.Fee]: 'fee',
+  [TxTableColumns.BlockTime]: 'age',
+};
+
+const SORT_FIELD_TO_COLUMN: Record<string, string> = {
+  fee: TxTableColumns.Fee,
+  age: TxTableColumns.BlockTime,
+};
 
 const TX_TABLE_PAGE_SIZE = 20;
 
@@ -143,6 +155,9 @@ export function MempoolTable({
   const queryClient = useQueryClient();
   const isCacheSetWithInitialData = useRef(false);
 
+  const [currentSort, setCurrentSort] = useState<MempoolSortField>(sort);
+  const [currentOrder, setCurrentOrder] = useState<'asc' | 'desc'>(order);
+
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
     pageSize: TX_TABLE_PAGE_SIZE,
@@ -150,20 +165,20 @@ export function MempoolTable({
 
   const { fromAddress, toAddress } = filters || {};
 
-  // Reset pagination when filters change
+  // Reset pagination when filters or sort change
   useEffect(() => {
     setPagination(prev => ({
       ...prev,
       pageIndex: 0,
     }));
-  }, [fromAddress, toAddress]);
+  }, [fromAddress, toAddress, currentSort, currentOrder]);
 
   if (isCacheSetWithInitialData.current === false && initialData) {
     const queryKey = getMempoolTransactionsQueryKey(
       pagination.pageSize,
       pagination.pageIndex * pagination.pageSize,
-      sort,
-      order,
+      currentSort,
+      currentOrder,
       { fromAddress, toAddress }
     );
     queryClient.setQueryData(queryKey, initialData);
@@ -174,8 +189,8 @@ export function MempoolTable({
     pagination.pageSize,
     pagination.pageIndex * pagination.pageSize,
     { fromAddress, toAddress },
-    sort,
-    order,
+    currentSort,
+    currentOrder,
     {
       staleTime: THIRTY_SECONDS,
       gcTime: THIRTY_SECONDS,
@@ -238,10 +253,33 @@ export function MempoolTable({
     });
   }, [txs]);
 
+  const initialSorting = useMemo<SortingState>(
+    () => [{ id: SORT_FIELD_TO_COLUMN[sort], desc: order === 'desc' }],
+    [sort, order]
+  );
+
+  const handleSort = useCallback(
+    async (columnId: string | undefined, direction: 'asc' | 'desc' | undefined) => {
+      if (columnId && direction) {
+        const newSort = COLUMN_TO_SORT_FIELD[columnId];
+        if (newSort) {
+          setCurrentSort(newSort);
+          setCurrentOrder(direction);
+        }
+      }
+      return rowData;
+    },
+    [rowData]
+  );
+
   return (
     <Table
       data={rowData}
       columns={columnDefinitions ?? defaultColumnDefinitions}
+      manualSorting
+      initialSorting={initialSorting}
+      enableSortingRemoval={false}
+      onSort={handleSort}
       tableContainerWrapper={table => <TableContainer minH="500px">{table}</TableContainer>}
       scrollIndicatorWrapper={table => <ScrollIndicator>{table}</ScrollIndicator>}
       meta={
