@@ -29,6 +29,8 @@ export function RightPanel() {
       top={0}
       width={96}
       height={'full'}
+      overflowX="hidden"
+      overflowY="auto"
     >
       {balance ? (
         <Box bg={'surface'} borderBottomWidth="1px" p={7}>

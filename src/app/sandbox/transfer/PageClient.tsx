@@ -10,7 +10,12 @@ import { CONNECT_AUTH_ORIGIN } from '../../../common/constants/env';
 import { useGlobalContext } from '../../../common/context/useGlobalContext';
 import { useFeeTransfer } from '../../../common/queries/useFeeTransfer';
 import { getConnectNetworkString } from '../../../common/utils/network-utils';
-import { microToStacks, stacksToMicro, validateStacksAddress } from '../../../common/utils/utils';
+import {
+  microToStacks,
+  stacksToMicro,
+  validateStacksAddress,
+  validateStacksContractId,
+} from '../../../common/utils/utils';
 import { Button } from '../../../ui/Button';
 import { Input } from '../../../ui/Input';
 import { Text } from '../../../ui/Text';
@@ -35,7 +40,8 @@ const PageClient: NextPage = () => {
       }}
       validate={values => {
         const _errors: any = {};
-        const validPrincipal = validateStacksAddress(values.recipient);
+        const validPrincipal =
+          validateStacksAddress(values.recipient) || validateStacksContractId(values.recipient);
         if (!validPrincipal) {
           _errors.recipient = 'Invalid Stacks address.';
         } else if (values.recipient === stxAddress) {

@@ -243,9 +243,7 @@ export const checkPostConditionParameters = (
 ): Record<string, string> => {
   const errors: Record<string, string> = {};
   if (formikState.postConditionMode === PostConditionMode.Allow) return errors;
-  if (formikState.postConditionType == null) {
-    errors.postConditionType = 'Post condition type is required';
-  }
+  if (formikState.postConditionType == null) return errors;
   const postConditionParameters =
     postConditionParameterMap[formikState.postConditionType as PostConditionType];
   postConditionParameters?.forEach(key => {
