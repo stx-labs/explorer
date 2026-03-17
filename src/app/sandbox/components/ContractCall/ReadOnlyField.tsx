@@ -1,4 +1,4 @@
-import { Box, Flex } from '@chakra-ui/react';
+import { Box, Flex, Spinner } from '@chakra-ui/react';
 import { FC, ReactNode } from 'react';
 
 import { ClarityAbiFunction, ClarityValue } from '@stacks/transactions';
@@ -7,6 +7,7 @@ import { Section } from '../../../../common/components/Section';
 import { useGlobalContext } from '../../../../common/context/useGlobalContext';
 import { useCallReadOnlyFunction } from '../../../../common/queries/useCallReadOnlyFunction';
 import { CodeEditor } from '../../../../ui/CodeEditor';
+import { Text } from '../../../../ui/Text';
 import { useUser } from '../../hooks/useUser';
 import { parseReadOnlyResponse } from '../../utils';
 
@@ -26,7 +27,7 @@ export const ReadOnlyField: FC<ReadOnlyProps> = ({
   const { stxAddress } = useUser();
   const network = useGlobalContext().activeNetwork;
 
-  const { data } = useCallReadOnlyFunction({
+  const { data, error, isLoading } = useCallReadOnlyFunction({
     contractId,
     fn,
     readOnlyValue,
@@ -34,17 +35,55 @@ export const ReadOnlyField: FC<ReadOnlyProps> = ({
     stxAddress,
   });
 
+  if (isLoading) {
+    return (
+      <Box p={4}>
+        <Flex alignItems="center" justifyContent="center" py={4}>
+          <Spinner size="sm" />
+        </Flex>
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Box p={4}>
+        <Text color="red" fontSize="sm">
+          {error.message || 'Failed to call read-only function'}
+        </Text>
+        <Flex alignItems="center" justifyContent="center" pt={4}>
+          {cancelButton}
+        </Flex>
+      </Box>
+    );
+  }
+
   if (!data) return null;
+
+  let resultContent;
+  if (data.okay) {
+    resultContent = (
+      <Section title="Response">
+        <CodeEditor code={parseReadOnlyResponse(data)} />
+      </Section>
+    );
+  } else {
+    let errorMessage = data.result;
+    try {
+      errorMessage = parseReadOnlyResponse(data);
+    } catch {
+      // Fall back to raw result if parsing fails
+    }
+    resultContent = (
+      <Section title="Error">
+        <CodeEditor code={errorMessage} />
+      </Section>
+    );
+  }
 
   return (
     <Box p={4}>
-      {data.okay ? (
-        <Section title="Response">
-          <CodeEditor code={parseReadOnlyResponse(data)} />
-        </Section>
-      ) : (
-        <Box>{data.result}</Box>
-      )}
+      {resultContent}
       <Flex alignItems="center" justifyContent="center" pt={4}>
         {cancelButton}
       </Flex>

@@ -24,16 +24,22 @@ export function LeftSection() {
   const randomName = useRandomName();
   const network = useGlobalContext().activeNetwork;
   const [contractName, setContractName] = useState(randomName());
+  const [deployError, setDeployError] = useState<string | null>(null);
   const codeBody = useAppSelector(selectCodeBody);
   const queryClient = useQueryClient();
 
   const onDeploy = useCallback(async () => {
-    await deployContract({
-      name: contractName,
-      clarityCode: codeBody,
-      network: getConnectNetworkString(network),
-    });
-    void queryClient.invalidateQueries({ queryKey: ['addressMempoolTxsInfinite'] });
+    setDeployError(null);
+    try {
+      await deployContract({
+        name: contractName,
+        clarityCode: codeBody,
+        network: getConnectNetworkString(network),
+      });
+      void queryClient.invalidateQueries({ queryKey: ['addressMempoolTxsInfinite'] });
+    } catch (e: any) {
+      setDeployError(e?.message || 'Deployment failed');
+    }
   }, [codeBody, contractName, network, queryClient]);
   return (
     <>
@@ -93,6 +99,11 @@ export function LeftSection() {
             >
               Deploy
             </Button>
+            {deployError && (
+              <Text color="red" fontSize="sm">
+                {deployError}
+              </Text>
+            )}
           </Stack>
         </Stack>
         <Stack gap={2}>
