@@ -119,7 +119,6 @@ export const SelectedContractView: FC<{
       flexShrink={1}
     >
       <Box borderRightWidth="1px" p={4}>
-        {/* <BackLink href={buildUrl(`/sandbox/contract-call`, network)} /> */}
         <ContractInfo contract={contract} />
       </Box>
       <Box overflow="auto" maxHeight="calc(100vh - 217px)" p={4}>
@@ -134,7 +133,7 @@ export const SelectedContractView: FC<{
             cancelButton={
               <NextLink href={buildUrl(`/sandbox/contract-call/${contractId}`, activeNetwork)}>
                 <Caption _hover={{ cursor: 'pointer', color: 'textTitle' }} mt={4}>
-                  Cancel
+                  Back to functions
                 </Caption>
               </NextLink>
             }
