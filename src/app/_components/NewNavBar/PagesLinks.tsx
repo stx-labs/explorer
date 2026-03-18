@@ -1,5 +1,6 @@
 import { useGlobalContext } from '@/common/context/useGlobalContext';
 import { buildUrl } from '@/common/utils/buildUrl';
+import { Kbd } from '@/ui/Kbd';
 import { NextLink } from '@/ui/NextLink';
 import { Text } from '@/ui/Text';
 import { Flex, Icon } from '@chakra-ui/react';
@@ -52,16 +53,31 @@ export const SecondaryPageLink = ({
   const network = useGlobalContext().activeNetwork;
   return (
     <NextLink href={buildUrl(page.href, network)} variant="noUnderline" onClick={onClick}>
-      <Text
-        fontSize={{ base: 'md', lg: 'xs' }}
-        color="textSecondary"
-        fontWeight="medium"
-        _hover={{
-          color: 'textPrimary',
-        }}
-      >
-        {page.label}
-      </Text>
+      <Flex alignItems="center" justifyContent="space-between" w="full">
+        <Text
+          fontSize={{ base: 'md', lg: 'xs' }}
+          color="textSecondary"
+          fontWeight="medium"
+          _hover={{
+            color: 'textPrimary',
+          }}
+        >
+          {page.label}
+        </Text>
+        {page.shortcut && (
+          <Kbd
+            fontSize="2xs"
+            display={{ base: 'none', lg: 'inline-flex' }}
+            bg="surfaceTertiary"
+            borderRadius="redesign.sm"
+            px={1.5}
+            py={0.5}
+            minW={5}
+          >
+            {page.shortcut}
+          </Kbd>
+        )}
+      </Flex>
     </NextLink>
   );
 };

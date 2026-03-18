@@ -86,6 +86,7 @@
     "react-dom": "19.2.0",
     "react-error-boundary": "5.0.0",
     "react-hot-toast": "2.5.2",
+    "react-hotkeys-hook": "^5.2.4",
     "react-icons": "5.5.0",
     "react-leaflet": "5.0.0",
     "react-redux": "9.2.0",
