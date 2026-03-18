@@ -173,6 +173,19 @@ const TxDetailsFunctions = ({
   ) : null;
 };
 
+function TxErrorDetails({ tx }: { tx: Transaction }) {
+  if (tx.tx_status === 'success') return null;
+  const errorResult = (tx as any).tx_result?.repr;
+  if (!errorResult) return null;
+  return (
+    <Box px="16px" py="8px" borderBottomWidth="1px">
+      <Caption fontWeight="500" color="red">
+        Error: {errorResult}
+      </Caption>
+    </Box>
+  );
+}
+
 function TxDetailsBase({ tx }: { tx: Transaction }) {
   const contractId =
     tx.tx_type === 'smart_contract'
@@ -190,13 +203,19 @@ function TxDetailsBase({ tx }: { tx: Transaction }) {
 
   if (!contract)
     return (
-      <Text fontSize={'14px'} p={'20px'} textAlign={'center'}>
-        Nothing to show
-      </Text>
+      <>
+        <TxErrorDetails tx={tx} />
+        <Text fontSize={'14px'} p={'20px'} textAlign={'center'}>
+          {tx.tx_status !== 'success' && !(tx as any).tx_result?.repr
+            ? 'Transaction failed'
+            : 'Nothing to show'}
+        </Text>
+      </>
     );
 
   return (
     <>
+      <TxErrorDetails tx={tx} />
       <Box>
         <Box>
           <Flex
