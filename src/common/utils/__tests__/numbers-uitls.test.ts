@@ -1,4 +1,4 @@
-import { bigintPow } from '../number-utils';
+import { bigintPow, isUint128 } from '../number-utils';
 
 describe('bigintPow', () => {
   test('returns 1 for exponent 0 for any base', () => {
@@ -33,5 +33,29 @@ describe('bigintPow', () => {
 
   test('zero base with positive exponent yields zero', () => {
     expect(bigintPow(BigInt(0), 5)).toBe(BigInt(0));
+  });
+});
+
+describe('isUint128', () => {
+  test('accepts valid small numbers', () => {
+    expect(isUint128(0)).toBe(true);
+    expect(isUint128(1)).toBe(true);
+    expect(isUint128(1000000)).toBe(true);
+  });
+
+  test('rejects negative numbers', () => {
+    expect(isUint128(-1)).toBe(false);
+  });
+
+  test('accepts large integers as strings', () => {
+    expect(isUint128('340282366920938463463374607431768211455')).toBe(true);
+  });
+
+  test('rejects values exceeding uint128 max', () => {
+    expect(isUint128('340282366920938463463374607431768211456')).toBe(false);
+  });
+
+  test('rejects non-numeric strings', () => {
+    expect(isUint128('abc')).toBe(false);
   });
 });

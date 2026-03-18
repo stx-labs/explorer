@@ -67,16 +67,22 @@ export const AvailableFunctionsView: FC<{
 }> = ({ contractId, contract }) => (
   <Section title="Available functions" overflowY="auto" flexGrow={1}>
     <Stack>
-      {contract?.abi?.functions.map(
-        (abiFn: any) =>
-          showFn(contractId, abiFn) && (
-            <ExplorerLink
-              href={`/sandbox/contract-call/${contractId}/${abiFn.name}`}
-              key={abiFn.name}
-            >
-              <AbiFunction abiFn={abiFn} />
-            </ExplorerLink>
-          )
+      {contract?.abi?.functions ? (
+        contract.abi.functions.map(
+          (abiFn: any) =>
+            showFn(contractId, abiFn) && (
+              <ExplorerLink
+                href={`/sandbox/contract-call/${contractId}/${abiFn.name}`}
+                key={abiFn.name}
+              >
+                <AbiFunction abiFn={abiFn} />
+              </ExplorerLink>
+            )
+        )
+      ) : (
+        <Text fontSize="sm" color="textSubdued" p={4}>
+          Contract ABI is not available.
+        </Text>
       )}
     </Stack>
   </Section>

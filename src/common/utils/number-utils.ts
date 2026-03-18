@@ -1,8 +1,12 @@
-export function isUint128(value: number | bigint): boolean {
-  // we could also add a check for maxUint128
-  // const maxUint128 = BigInt('340282366920938463463374607431768211455'); // 2^128 - 1
-  // value <= Number(maxUint128);
-  return typeof value === 'number' && Number.isInteger(value) && value >= 0;
+const MAX_UINT128 = BigInt('340282366920938463463374607431768211455'); // 2^128 - 1
+
+export function isUint128(value: number | bigint | string): boolean {
+  try {
+    const bigVal = BigInt(value);
+    return bigVal >= BigInt(0) && bigVal <= MAX_UINT128;
+  } catch {
+    return false;
+  }
 }
 
 export function isStringNumber(value: string): boolean {

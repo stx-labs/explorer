@@ -25,3 +25,4 @@ coverage
 *.tsbuildinfo
 
 CLAUDE.md
+scripts/
