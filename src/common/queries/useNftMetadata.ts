@@ -1,7 +1,13 @@
-import { NftMetadataResponse } from '@hirosystems/token-metadata-api-client';
-import { UseQueryOptions, useQueries, useQuery } from '@tanstack/react-query';
+import { UseQueryOptions, useQuery } from '@tanstack/react-query';
+
+import type { operations } from '@stacks/token-metadata-api-client/lib/generated/schema';
 
 import { useMetadataApi } from '../api/useApi';
+
+type NftMetadataResponse =
+  operations['getNftMetadata']['responses']['200']['content']['application/json'];
+
+export type { NftMetadataResponse };
 
 const NFT_METADATA_QUERY_KEY = 'nft-metadata';
 export const getNftMetadataQueryKey = (contractId: string, tokenId: string) => {
@@ -12,10 +18,16 @@ export const useNftMetadata = (
   { contractId, tokenId }: { contractId?: string; tokenId?: string },
   options: Omit<UseQueryOptions<any, any, NftMetadataResponse, any>, 'queryKey' | 'queryFn'> = {}
 ) => {
-  const tokenMetadataApi = useMetadataApi();
+  const client = useMetadataApi();
   return useQuery({
     queryKey: getNftMetadataQueryKey(contractId!, tokenId!),
-    queryFn: () => tokenMetadataApi?.getNftMetadata(contractId!, parseInt(tokenId!)),
+    queryFn: async () => {
+      const { data, error } = await client.GET('/metadata/v1/nft/{principal}/{token_id}', {
+        params: { path: { principal: contractId!, token_id: parseInt(tokenId!) } },
+      });
+      if (error) throw new Error('Failed to fetch NFT metadata');
+      return data;
+    },
     retry: false,
     staleTime: Infinity,
     refetchOnWindowFocus: false,
@@ -23,57 +35,3 @@ export const useNftMetadata = (
     ...options,
   });
 };
-
-/**
- * Basic hook that returns raw useQueries result for NFT metadata
- */
-export function useNftsMetadataQueries(
-  tokenIds: string[],
-  contractId: string,
-  options?: Omit<UseQueryOptions<NftMetadataResponse, Error>, 'queryKey' | 'queryFn'>
-) {
-  const tokenMetadataApi = useMetadataApi();
-
-  return useQueries({
-    queries: tokenIds.map(
-      (tokenId): UseQueryOptions<NftMetadataResponse, Error> => ({
-        queryKey: getNftMetadataQueryKey(contractId, tokenId),
-        queryFn: () => tokenMetadataApi?.getNftMetadata(contractId, parseInt(tokenId)),
-        retry: false,
-        staleTime: Infinity,
-        refetchOnWindowFocus: false,
-        enabled: !!tokenId,
-        ...options,
-      })
-    ),
-  });
-}
-
-/**
- * Hook that transforms the raw query results into a more convenient format
- */
-export function useNftsMetadata(
-  tokenIds: string[],
-  contractId: string,
-  options?: Omit<UseQueryOptions<NftMetadataResponse, Error>, 'queryKey' | 'queryFn'>
-): {
-  data: (NftMetadataResponse | undefined)[];
-  isLoading: boolean;
-  isFetching: boolean;
-  metadataErrors: unknown[];
-} {
-  const nftMetadataQueries = useNftsMetadataQueries(tokenIds, contractId, options);
-
-  // Extract the data from each query result
-  const nftMetadata = nftMetadataQueries.map(query => query.data);
-  const isMetadataLoading = nftMetadataQueries.some(query => query.isLoading);
-  const isMetadataFetching = nftMetadataQueries.some(query => query.isFetching);
-  const metadataErrors = nftMetadataQueries.filter(query => query.error).map(query => query.error);
-
-  return {
-    data: nftMetadata,
-    isLoading: isMetadataLoading,
-    isFetching: isMetadataFetching,
-    metadataErrors,
-  };
-}

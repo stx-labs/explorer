@@ -3,11 +3,13 @@
 import { Box, Grid } from '@chakra-ui/react';
 import dynamic from 'next/dynamic';
 import * as React from 'react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import { AddressBalanceResponse } from '@stacks/stacks-blockchain-api-types';
 
 import { TwoColumnsListItemSkeleton } from '../../../../common/components/TwoColumnsListItemSkeleton';
+import { useBulkFtMetadata } from '../../../../common/queries/useBulkTokenMetadata';
+import { getContractIdFromAssetId } from '../../../../common/utils/utils';
 import { Button } from '../../../../ui/Button';
 import { Caption } from '../../../../ui/typography';
 
@@ -36,17 +38,25 @@ export const FtBalance: React.FC<{ balance: AddressBalanceResponse }> = ({ balan
 
   const visibleFt = ftWithCount.slice(0, visibleItemsCount);
 
+  const contractIds = useMemo(() => visibleFt.map(getContractIdFromAssetId), [visibleFt]);
+
+  const { metadataMap } = useBulkFtMetadata(contractIds);
+
   return ftWithCount.length > 0 ? (
     <Box pb={4}>
       <Box>
-        {visibleFt.map((key, index) => (
-          <TokenAssetListItem
-            amount={balance.fungible_tokens[key]?.balance || ''}
-            key={index}
-            token={key}
-            tokenType="fungible_tokens"
-          />
-        ))}
+        {visibleFt.map((key, index) => {
+          const contractId = getContractIdFromAssetId(key);
+          return (
+            <TokenAssetListItem
+              amount={balance.fungible_tokens[key]?.balance || ''}
+              key={index}
+              token={key}
+              tokenType="fungible_tokens"
+              ftMetadata={metadataMap.get(contractId)}
+            />
+          );
+        })}
       </Box>
       {visibleItemsCount < ftWithCount.length && (
         <Box width={'full'}>

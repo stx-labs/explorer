@@ -1,3 +1,5 @@
+'use client';
+
 import { ScrollIndicator } from '@/common/components/ScrollIndicator';
 import {
   AddressLinkCellRenderer,
@@ -6,10 +8,12 @@ import {
 } from '@/common/components/table/CommonTableCellRenderers';
 import { Table } from '@/common/components/table/Table';
 import { DefaultTableColumnHeader } from '@/common/components/table/TableComponents';
+import { useBulkFtMetadata } from '@/common/queries/useBulkTokenMetadata';
 import { validateStacksContractId } from '@/common/utils/utils';
 import { Text } from '@/ui/Text';
 import { Flex } from '@chakra-ui/react';
 import { ColumnDef, Header } from '@tanstack/react-table';
+import { useMemo } from 'react';
 
 import {
   ContractCallTransaction,
@@ -21,7 +25,10 @@ import {
   SmartContractTransaction,
 } from '@stacks/stacks-blockchain-api-types';
 
-import { PostConditionAmountCellRenderer } from './PostConditionsTableCellRenderers';
+import {
+  PostConditionAmountCellRenderer,
+  PostConditionAmountData,
+} from './PostConditionsTableCellRenderers';
 
 enum PostConditionsTableColumns {
   From = 'from',
@@ -33,7 +40,7 @@ enum PostConditionsTableColumns {
 interface PostConditionsTableData {
   [PostConditionsTableColumns.From]: AddressLinkCellRendererProps;
   [PostConditionsTableColumns.Condition]: string;
-  [PostConditionsTableColumns.AssetAmount]: PostCondition;
+  [PostConditionsTableColumns.AssetAmount]: PostConditionAmountData;
   [PostConditionsTableColumns.Principal]: AddressLinkCellRendererProps;
 }
 
@@ -66,7 +73,7 @@ const columnDefinitions: ColumnDef<PostConditionsTableData>[] = [
     accessorKey: PostConditionsTableColumns.AssetAmount,
     cell: info => (
       <Flex alignItems="center" justifyContent="flex-end">
-        {PostConditionAmountCellRenderer(info.getValue() as PostCondition)}
+        {PostConditionAmountCellRenderer(info.getValue() as PostConditionAmountData)}
       </Flex>
     ),
     enableSorting: false,
@@ -87,13 +94,6 @@ const columnDefinitions: ColumnDef<PostConditionsTableData>[] = [
     enableSorting: false,
   },
 ];
-
-interface PostConditionTableData {
-  from: AddressLinkCellRendererProps;
-  condition: string;
-  assetAmount: PostCondition;
-  principal: AddressLinkCellRendererProps;
-}
 
 type PostConditionConditionCode =
   | PostConditionFungibleConditionCode
@@ -124,54 +124,66 @@ function getPostConditionCellText(postConditionCode: PostConditionConditionCode)
   return 'Undefined post condition code';
 }
 
-function getRowData(
-  tx:
-    | ContractCallTransaction
-    | MempoolContractCallTransaction
-    | SmartContractTransaction
-    | MempoolSmartContractTransaction
-): PostConditionTableData[] {
+type TxWithPostConditions =
+  | ContractCallTransaction
+  | MempoolContractCallTransaction
+  | SmartContractTransaction
+  | MempoolSmartContractTransaction;
+
+export function PostConditionsTable({ tx }: { tx: TxWithPostConditions }) {
   const { post_conditions: postConditions } = tx;
   const senderAddress = tx.sender_address;
   const isContract = validateStacksContractId(senderAddress);
-  const from = { address: senderAddress, isContract };
 
-  return postConditions.map(postCondition => {
-    const principal = postCondition.principal;
-    const principalAddress =
-      principal.type_id === 'principal_origin'
-        ? { address: from.address, isContract: from.isContract }
-        : principal.type_id === 'principal_contract'
-          ? {
-              address: `${principal.address}.${principal.contract_name}`,
-              isContract: true,
-            }
-          : {
-              address: principal.address,
-              isContract: false,
-            };
+  // Extract unique FT contract IDs for bulk metadata fetch
+  const ftContractIds = useMemo(() => {
+    const ids = new Set<string>();
+    postConditions.forEach(pc => {
+      if (pc.type === 'fungible') {
+        const { contract_address, contract_name } = pc.asset;
+        if (contract_address && contract_name) ids.add(`${contract_address}.${contract_name}`);
+      }
+    });
+    return Array.from(ids);
+  }, [postConditions]);
 
-    return {
-      [PostConditionsTableColumns.From]: from,
-      [PostConditionsTableColumns.Condition]: getPostConditionCellText(
-        postCondition.condition_code
-      ),
-      [PostConditionsTableColumns.AssetAmount]: postCondition,
-      [PostConditionsTableColumns.Principal]: principalAddress,
-    };
-  });
-}
+  const { metadataMap } = useBulkFtMetadata(ftContractIds);
 
-export function PostConditionsTable({
-  tx,
-}: {
-  tx:
-    | ContractCallTransaction
-    | MempoolContractCallTransaction
-    | SmartContractTransaction
-    | MempoolSmartContractTransaction;
-}) {
-  const rowData = getRowData(tx);
+  const rowData: PostConditionsTableData[] = useMemo(() => {
+    const from = { address: senderAddress, isContract };
+    return postConditions.map(postCondition => {
+      const principal = postCondition.principal;
+      const principalAddress =
+        principal.type_id === 'principal_origin'
+          ? { address: from.address, isContract: from.isContract }
+          : principal.type_id === 'principal_contract'
+            ? {
+                address: `${principal.address}.${principal.contract_name}`,
+                isContract: true,
+              }
+            : {
+                address: principal.address,
+                isContract: false,
+              };
+
+      let ftDecimals: number | undefined;
+      if (postCondition.type === 'fungible') {
+        const { contract_address, contract_name } = postCondition.asset;
+        const metadata = metadataMap.get(`${contract_address}.${contract_name}`);
+        ftDecimals = metadata?.decimals;
+      }
+
+      return {
+        [PostConditionsTableColumns.From]: from,
+        [PostConditionsTableColumns.Condition]: getPostConditionCellText(
+          postCondition.condition_code
+        ),
+        [PostConditionsTableColumns.AssetAmount]: { postCondition, ftDecimals },
+        [PostConditionsTableColumns.Principal]: principalAddress,
+      };
+    });
+  }, [postConditions, senderAddress, isContract, metadataMap]);
+
   return (
     <Table
       columns={columnDefinitions}

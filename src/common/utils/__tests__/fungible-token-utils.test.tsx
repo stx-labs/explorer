@@ -1,4 +1,4 @@
-import { Metadata } from '@hirosystems/token-metadata-api-client';
+import type { operations } from '@stacks/token-metadata-api-client/lib/generated/schema';
 
 import {
   calculateHoldingPercentage,
@@ -8,6 +8,10 @@ import {
   isRiskyToken,
   isVerifiedToken,
 } from '../fungible-token-utils';
+
+type Metadata = NonNullable<
+  operations['getFtMetadata']['responses']['200']['content']['application/json']['metadata']
+>;
 
 // Mock the constants
 jest.mock('@/app/token/[tokenId]/consts', () => ({

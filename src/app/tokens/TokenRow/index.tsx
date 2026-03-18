@@ -1,14 +1,18 @@
 import { RISKY_TOKENS, VERIFIED_TOKENS } from '@/app/token/[tokenId]/consts';
 import { Flex, Icon, Table } from '@chakra-ui/react';
-import { FtBasicMetadataResponse } from '@hirosystems/token-metadata-api-client';
 import { SealCheck, Warning } from '@phosphor-icons/react';
 import { FC, useMemo } from 'react';
+
+import type { operations } from '@stacks/token-metadata-api-client/lib/generated/schema';
 
 import { TokenLink, TxLink } from '../../../common/components/ExplorerLinks';
 import { abbreviateNumber, getFtDecimalAdjustedBalance } from '../../../common/utils/utils';
 import { Text } from '../../../ui/Text';
 import { TokenAvatar } from '../../address/[principal]/TokenBalanceCard/TokenAvatar';
 import { isSBTC, referencesSBTC } from '../utils';
+
+type FtBasicMetadataResponse =
+  operations['getFungibleTokens']['responses']['200']['content']['application/json']['results'][number];
 
 export const TokenRow: FC<{
   ftToken: FtBasicMetadataResponse;

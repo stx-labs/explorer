@@ -1,7 +1,6 @@
 'use client';
 
 import { TxLink } from '@/common/components/ExplorerLinks';
-import { useNftMetadata } from '@/common/queries/useNftMetadata';
 import { deriveTokenTickerFromAssetId } from '@/common/utils/fungible-token-utils';
 import { getAssetNameParts } from '@/common/utils/utils';
 import { Link } from '@/ui/Link';
@@ -17,19 +16,16 @@ const COLLECTIBLE_CARD_IMAGE_WIDTH = 'full';
 export function CollectibleCard({
   assetId,
   tokenId,
+  metadataImageUrl,
 }: {
   assetId: string;
   tokenId?: bigint | string | undefined;
+  metadataImageUrl?: string;
 }) {
   const { address, contract, asset } = getAssetNameParts(assetId);
   const contractId = `${address}.${contract}`;
 
-  const { data: tokenMetadata } = useNftMetadata(
-    { contractId, tokenId: tokenId?.toString() },
-    { enabled: !!tokenId, retry: 1, retryDelay: 2000 }
-  );
-
-  const { url, contentType } = useImageContentType(tokenMetadata?.metadata?.cached_image);
+  const { url, contentType } = useImageContentType(metadataImageUrl);
 
   const ticker = deriveTokenTickerFromAssetId(asset);
 

@@ -1,7 +1,6 @@
 'use client';
 
 import { GenericResponseType } from '@/common/hooks/useInfiniteQueryResult';
-import { THIRTY_SECONDS } from '@/common/queries/query-stale-time';
 import { getAccountBalanceQueryKey } from '@/common/queries/useAccountBalance';
 import {
   calculateHoldingPercentage,
@@ -165,11 +164,7 @@ export function FungibleTokensTable({
     pagination.pageIndex * pagination.pageSize,
     searchTerm,
     hideSuspiciousTokens,
-    hideZeroBalanceTokens,
-    {
-      staleTime: THIRTY_SECONDS,
-      gcTime: THIRTY_SECONDS,
-    }
+    hideZeroBalanceTokens
   );
 
   const rowData: FungibleTokenTableData[] = useMemo(() => {

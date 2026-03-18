@@ -9,6 +9,7 @@ import {
   formatStacksAmount,
   ftDecimals,
   getAssetNameParts,
+  getContractIdFromAssetId,
   getContractName,
   getFtDecimalAdjustedBalance,
   getFungibleAssetName,
@@ -616,5 +617,21 @@ describe('validateAssettId', () => {
     // Test that function returns false when getAssetNameParts throws
     // This would happen if the input format is completely malformed
     expect(validateAssettId('completely::malformed::input::with::too::many::parts')).toBe(false);
+  });
+});
+
+describe('getContractIdFromAssetId', () => {
+  test('extracts contract ID from fully qualified asset identifier', () => {
+    expect(
+      getContractIdFromAssetId('SP3D6PV2ACBPEKYJTCMH7HEN02KP87QSP8KTEH335.mega-token::MEGA')
+    ).toBe('SP3D6PV2ACBPEKYJTCMH7HEN02KP87QSP8KTEH335.mega-token');
+  });
+
+  test('works with different asset names', () => {
+    expect(
+      getContractIdFromAssetId(
+        'SPQYMRAKZPQPJAADX5JBEFT0FHE3RZZK9F8TYBQ3.dawgpool-stxcity::dawgpool'
+      )
+    ).toBe('SPQYMRAKZPQPJAADX5JBEFT0FHE3RZZK9F8TYBQ3.dawgpool-stxcity');
   });
 });

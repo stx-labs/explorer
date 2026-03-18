@@ -1,23 +1,34 @@
-import { FtMetadataResponse } from '@hirosystems/token-metadata-api-client/dist/api';
 import {
-  UseQueryOptions,
   UseQueryResult,
   UseSuspenseQueryResult,
-  useQueries,
   useQuery,
   useSuspenseQuery,
 } from '@tanstack/react-query';
 
+import type { operations } from '@stacks/token-metadata-api-client/lib/generated/schema';
+
 import { useMetadataApi } from '../api/useApi';
+import { useBulkFtMetadata } from './useBulkTokenMetadata';
+
+type FtMetadataResponse =
+  operations['getFtMetadata']['responses']['200']['content']['application/json'];
+
+export type { FtMetadataResponse };
 
 export function useFtMetadata(
   contractId?: string,
   options: any = {}
 ): UseQueryResult<FtMetadataResponse> {
-  const tokenMetadataApi = useMetadataApi();
+  const client = useMetadataApi();
   return useQuery({
     queryKey: ['ft-metadata', contractId],
-    queryFn: () => tokenMetadataApi?.getFtMetadata(contractId!),
+    queryFn: async () => {
+      const { data, error } = await client.GET('/metadata/v1/ft/{principal}', {
+        params: { path: { principal: contractId! } },
+      });
+      if (error) throw new Error('Failed to fetch FT metadata');
+      return data;
+    },
     retry: false,
     staleTime: Infinity,
     refetchOnWindowFocus: false,
@@ -30,10 +41,16 @@ export function useSuspenseFtMetadata(
   contractId: string,
   options: any = {}
 ): UseSuspenseQueryResult<FtMetadataResponse> {
-  const tokenMetadataApi = useMetadataApi();
+  const client = useMetadataApi();
   return useSuspenseQuery({
     queryKey: ['ft-metadata', contractId],
-    queryFn: () => tokenMetadataApi?.getFtMetadata(contractId),
+    queryFn: async () => {
+      const { data, error } = await client.GET('/metadata/v1/ft/{principal}', {
+        params: { path: { principal: contractId } },
+      });
+      if (error) throw new Error('Failed to fetch FT metadata');
+      return data;
+    },
     retry: false,
     staleTime: Infinity,
     refetchOnWindowFocus: false,
@@ -41,59 +58,22 @@ export function useSuspenseFtMetadata(
   });
 }
 
-const FT_METADATA_QUERY_KEY = 'ft-metadata';
-export function getFTMetadataQueryKey(tokenId: string) {
-  return [FT_METADATA_QUERY_KEY, tokenId];
-}
-
 /**
- * Basic hook that returns raw useQueries result for FT metadata
+ * Fetches metadata for multiple FT tokens in a single bulk request
+ * and returns the results mapped by token ID for easy lookup.
  */
-export function useFungibleTokensMetadataQueries(
-  tokenIds: string[],
-  options?: Omit<UseQueryOptions<FtMetadataResponse, Error>, 'queryKey' | 'queryFn'>
-) {
-  const tokenMetadataApi = useMetadataApi();
-
-  return useQueries({
-    queries: tokenIds.map(
-      (tokenId): UseQueryOptions<FtMetadataResponse, Error> => ({
-        queryKey: getFTMetadataQueryKey(tokenId),
-        queryFn: () => tokenMetadataApi?.getFtMetadata(tokenId),
-        retry: false,
-        staleTime: Infinity,
-        refetchOnWindowFocus: false,
-        enabled: !!tokenId,
-        ...options,
-      })
-    ),
-  });
-}
-
-/**
- * Hook that transforms the raw query results into a more convenient format
- */
-export function useFungibleTokensMetadata(
-  tokenIds: string[],
-  options?: Omit<UseQueryOptions<FtMetadataResponse, Error>, 'queryKey' | 'queryFn'>
-): {
+export function useFungibleTokensMetadata(tokenIds: string[]): {
   ftMetadata: (FtMetadataResponse | undefined)[];
   isLoading: boolean;
   isFetching: boolean;
-  metadataErrors: unknown[];
 } {
-  const ftMetadataQueries = useFungibleTokensMetadataQueries(tokenIds, options);
+  const { metadataMap, isLoading, isFetching } = useBulkFtMetadata(tokenIds);
 
-  // Extract the data from each query result
-  const ftMetadata = ftMetadataQueries.map(query => query.data);
-  const isMetadataLoading = ftMetadataQueries.some(query => query.isLoading);
-  const isMetadataFetching = ftMetadataQueries.some(query => query.isFetching);
-  const metadataErrors = ftMetadataQueries.filter(query => query.error).map(query => query.error);
+  const ftMetadata = tokenIds.map(tokenId => metadataMap.get(tokenId));
 
   return {
     ftMetadata,
-    isLoading: isMetadataLoading,
-    isFetching: isMetadataFetching,
-    metadataErrors,
+    isLoading,
+    isFetching,
   };
 }
