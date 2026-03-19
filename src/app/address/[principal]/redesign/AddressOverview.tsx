@@ -302,11 +302,11 @@ export function CurrentCycleValue() {
 const StackingCard = () => {
   const { initialAddressBalancesData, stxPrice, btcPrice, initialBurnChainRewardsData } =
     useAddressIdPageData();
-  const burnChainLockHeight = initialAddressBalancesData?.stx.burnchain_lock_height;
-  const burnChainUnlockHeight = initialAddressBalancesData?.stx.burnchain_unlock_height;
-  const lockedSTX = initialAddressBalancesData?.stx.locked;
+  const burnChainLockHeight = initialAddressBalancesData?.stx?.burnchain_lock_height;
+  const burnChainUnlockHeight = initialAddressBalancesData?.stx?.burnchain_unlock_height;
+  const lockedSTX = initialAddressBalancesData?.stx?.locked;
   const lockedSTXFormatted = microToStacks(lockedSTX || '0');
-  const minerRewards = initialAddressBalancesData?.stx.total_miner_rewards_received;
+  const minerRewards = initialAddressBalancesData?.stx?.total_miner_rewards_received;
   const btcRewards = parseFloat(initialBurnChainRewardsData?.reward_amount || '0');
 
   if (!lockedSTX || lockedSTX === '0') {
