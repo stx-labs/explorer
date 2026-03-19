@@ -397,7 +397,7 @@ const StackingCard = () => {
 
 export function MinerCard() {
   const { initialAddressBalancesData, stxPrice } = useAddressIdPageData();
-  const minerRewardsInMicroStacks = initialAddressBalancesData?.stx.total_miner_rewards_received;
+  const minerRewardsInMicroStacks = initialAddressBalancesData?.stx?.total_miner_rewards_received;
 
   if (!minerRewardsInMicroStacks || parseFloat(minerRewardsInMicroStacks) <= 0) {
     return null;
