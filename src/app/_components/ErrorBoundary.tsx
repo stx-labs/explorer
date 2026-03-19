@@ -3,6 +3,7 @@ import { ComponentType, Fragment, PropsWithChildren, ReactNode } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
 
 import { ExplorerError } from '../../common/types/Error';
+import { logError } from '../../common/utils/error-utils';
 import { ErrorBox } from './ErrorBox';
 
 interface ErrorBoundaryProps<WrapperProps extends PropsWithChildren<Record<string, unknown>>> {
@@ -26,6 +27,9 @@ export function ExplorerErrorBoundary<WrapperProps extends PropsWithChildren<unk
     <QueryErrorResetBoundary>
       {({ reset }) => (
         <ErrorBoundary
+          onError={error => {
+            logError(error, 'component-error-boundary');
+          }}
           fallbackRender={({ error, resetErrorBoundary }) => {
             return (
               <Wrapper {...wrapperProps}>
