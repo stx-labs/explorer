@@ -37,8 +37,8 @@ Sentry.init({
 
   integrations: [
     Sentry.replayIntegration({
-      maskAllText: false,
-      blockAllMedia: false,
+      maskAllText: true,
+      blockAllMedia: true,
     }),
   ],
 
@@ -51,3 +51,4 @@ Sentry.init({
 });
 
 export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;
+Sentry.setTag('version', process.env.NEXT_PUBLIC_RELEASE_TAG_NAME || 'dev');

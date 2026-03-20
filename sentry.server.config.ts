@@ -7,3 +7,4 @@ Sentry.init({
   debug: false,
   environment: process.env.VERCEL_ENV || process.env.NODE_ENV,
 });
+Sentry.setTag('version', process.env.NEXT_PUBLIC_RELEASE_TAG_NAME || 'dev');

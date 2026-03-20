@@ -3,7 +3,7 @@
 import { usePathname, useSearchParams } from 'next/navigation';
 import { FC, ReactNode, createContext, useCallback, useEffect, useState } from 'react';
 import { useCookies } from 'react-cookie';
-
+import * as Sentry from '@sentry/nextjs';
 import { getApiClient } from '../../api/getApiClient';
 import {
   type StacksApiSocketClientInfo,
@@ -25,7 +25,6 @@ import { ONE_HOUR } from '../queries/query-stale-time';
 import { Network, NetworkModes } from '../types/network';
 import { TokenPrice } from '../types/tokenPrice';
 import { removeTrailingSlash } from '../utils/utils';
-import * as Sentry from '@sentry/nextjs';
 
 function filterNetworks(
   networks: Record<string, Network>,
@@ -50,8 +49,8 @@ interface GlobalContext {
 export const GlobalContext = createContext<GlobalContext>({
   activeNetwork: mainnetNetwork,
   activeNetworkKey: NetworkModeUrlMap[NetworkModes.Mainnet],
-  addCustomNetwork: (network: Network) => { },
-  removeCustomNetwork: (network: Network) => { },
+  addCustomNetwork: (network: Network) => {},
+  removeCustomNetwork: (network: Network) => {},
   networks: {},
   stacksApiSocketClientInfo: null,
   apiClient: getApiClient(NetworkModeUrlMap[NetworkModes.Mainnet]),
@@ -244,7 +243,6 @@ export const GlobalContextProvider: FC<{
     connect: connectStacksApiSocket,
     disconnect: disconnectStacksApiSocket,
   } = useStacksApiSocketClient(activeNetworkKey);
-
 
   return (
     <GlobalContext.Provider
