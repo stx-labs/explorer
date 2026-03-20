@@ -1,9 +1,9 @@
 'use client';
-
 import { usePathname, useSearchParams } from 'next/navigation';
 import { FC, ReactNode, createContext, useCallback, useEffect, useState } from 'react';
 import { useCookies } from 'react-cookie';
 import * as Sentry from '@sentry/nextjs';
+
 import { getApiClient } from '../../api/getApiClient';
 import {
   type StacksApiSocketClientInfo,
