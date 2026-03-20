@@ -25,6 +25,7 @@ import { ONE_HOUR } from '../queries/query-stale-time';
 import { Network, NetworkModes } from '../types/network';
 import { TokenPrice } from '../types/tokenPrice';
 import { removeTrailingSlash } from '../utils/utils';
+import * as Sentry from '@sentry/nextjs';
 
 function filterNetworks(
   networks: Record<string, Network>,
@@ -49,8 +50,8 @@ interface GlobalContext {
 export const GlobalContext = createContext<GlobalContext>({
   activeNetwork: mainnetNetwork,
   activeNetworkKey: NetworkModeUrlMap[NetworkModes.Mainnet],
-  addCustomNetwork: (network: Network) => {},
-  removeCustomNetwork: (network: Network) => {},
+  addCustomNetwork: (network: Network) => { },
+  removeCustomNetwork: (network: Network) => { },
   networks: {},
   stacksApiSocketClientInfo: null,
   apiClient: getApiClient(NetworkModeUrlMap[NetworkModes.Mainnet]),
@@ -227,12 +228,23 @@ export const GlobalContextProvider: FC<{
     queryBtcAddressBaseUrl,
     addCustomNetwork,
   ]);
+  useEffect(() => {
+    const network = networks[activeNetworkKey];
+    if (network) {
+      Sentry.setTag('network.url', network.url);
+      Sentry.setTag('network', network.mode);
+      Sentry.setTag('network_id', network.networkId);
+      Sentry.setTag('is_custom_network', network.isCustomNetwork);
+      Sentry.setTag('is_subnet', network.isSubnet);
+    }
+  }, [activeNetworkKey, networks]);
 
   const {
     client: stacksApiSocketClient,
     connect: connectStacksApiSocket,
     disconnect: disconnectStacksApiSocket,
   } = useStacksApiSocketClient(activeNetworkKey);
+
 
   return (
     <GlobalContext.Provider
