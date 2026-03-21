@@ -132,7 +132,7 @@ describe('GlobalContext', () => {
       expect(mockSetTag).toHaveBeenCalledWith('network_id', '1');
       expect(mockSetTag).toHaveBeenCalledWith('is_custom_network', 'true');
       expect(mockSetTag).toHaveBeenCalledWith('is_subnet', 'false');
-      expect(mockSetTag).toHaveBeenCalledWith('network.url', 'custom');
+      expect(mockSetTag).toHaveBeenCalledWith('network.url', 'custom-3c36a0b0');
     });
   });
 
