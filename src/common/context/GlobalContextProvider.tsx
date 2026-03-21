@@ -231,7 +231,7 @@ export const GlobalContextProvider: FC<{
   useEffect(() => {
     const network = networks[activeNetworkKey];
     if (network) {
-      Sentry.setTag('network.url', network.url);
+      Sentry.setTag('network.url', network.isCustomNetwork ? 'custom' : network.url);
       Sentry.setTag('network', network.mode);
       Sentry.setTag('network_id', network.networkId);
       Sentry.setTag('is_custom_network', String(!!network.isCustomNetwork));

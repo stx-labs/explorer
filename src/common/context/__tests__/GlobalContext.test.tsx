@@ -29,7 +29,7 @@ jest.mock('@stacks/blockchain-api-client', () => ({
 
 jest.mock('../../components/modals/AddNetwork/utils', () => ({
   ...jest.requireActual('../../components/modals/AddNetwork/utils'),
-  fetchCustomNetworkId: jest.fn(() => Promise.resolve('custom-network-id')),
+  fetchCustomNetworkId: jest.fn(() => Promise.resolve(1)), // Use Mainnet Chain ID
 }));
 
 jest.mock('@sentry/nextjs', () => ({
@@ -66,6 +66,7 @@ describe('GlobalContext', () => {
     useSearchParams.mockReset();
     useRouter.mockReset();
     usePathname.mockReset();
+    mockSetTag.mockClear();
 
     useRouter.mockReturnValue({
       replace: jest.fn(),
@@ -130,6 +131,9 @@ describe('GlobalContext', () => {
       const updatedNetworks = getContextField('networks');
       expect(Object.keys(updatedNetworks).length).toBe(4);
       expect(updatedNetworks[customApiUrl].isCustomNetwork).toBe(true);
+      expect(mockSetTag).toHaveBeenCalledWith('network', 'mainnet');
+      expect(mockSetTag).toHaveBeenCalledWith('is_custom_network', 'true');
+      expect(mockSetTag).toHaveBeenCalledWith('network.url', 'custom');
     });
   });
 
