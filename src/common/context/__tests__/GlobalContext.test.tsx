@@ -63,10 +63,7 @@ const getContextField = (fieldId: string) => {
 
 describe('GlobalContext', () => {
   beforeEach(() => {
-    useSearchParams.mockReset();
-    useRouter.mockReset();
-    usePathname.mockReset();
-    mockSetTag.mockClear();
+    jest.clearAllMocks();
 
     useRouter.mockReturnValue({
       replace: jest.fn(),
@@ -132,7 +129,9 @@ describe('GlobalContext', () => {
       expect(Object.keys(updatedNetworks).length).toBe(4);
       expect(updatedNetworks[customApiUrl].isCustomNetwork).toBe(true);
       expect(mockSetTag).toHaveBeenCalledWith('network', 'mainnet');
+      expect(mockSetTag).toHaveBeenCalledWith('network_id', '1');
       expect(mockSetTag).toHaveBeenCalledWith('is_custom_network', 'true');
+      expect(mockSetTag).toHaveBeenCalledWith('is_subnet', 'false');
       expect(mockSetTag).toHaveBeenCalledWith('network.url', 'custom');
     });
   });
@@ -158,7 +157,9 @@ describe('GlobalContext', () => {
     );
 
     await waitFor(() => {
+      expect(mockSetTag).toHaveBeenCalledWith('network.url', 'https://api.hiro.so');
       expect(mockSetTag).toHaveBeenCalledWith('network', 'mainnet');
+      expect(mockSetTag).toHaveBeenCalledWith('network_id', '1');
       expect(mockSetTag).toHaveBeenCalledWith('is_custom_network', 'false');
       expect(mockSetTag).toHaveBeenCalledWith('is_subnet', 'false');
     });

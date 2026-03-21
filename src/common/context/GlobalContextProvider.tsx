@@ -233,7 +233,7 @@ export const GlobalContextProvider: FC<{
     if (network) {
       Sentry.setTag('network.url', network.isCustomNetwork ? 'custom' : network.url);
       Sentry.setTag('network', network.mode);
-      Sentry.setTag('network_id', network.networkId);
+      Sentry.setTag('network_id', String(network.networkId));
       Sentry.setTag('is_custom_network', String(!!network.isCustomNetwork));
       Sentry.setTag('is_subnet', String(!!network.isSubnet));
     } else {

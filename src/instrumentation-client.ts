@@ -51,4 +51,9 @@ Sentry.init({
 });
 
 export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;
-Sentry.setTag('version', process.env.NEXT_PUBLIC_RELEASE_TAG_NAME || 'dev');
+const version =
+  process.env.SENTRY_RELEASE ||
+  process.env.VERCEL_GIT_COMMIT_SHA ||
+  process.env.NEXT_PUBLIC_RELEASE_TAG_NAME ||
+  'dev';
+Sentry.setTag('version', version);
