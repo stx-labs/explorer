@@ -321,13 +321,23 @@ export function isPendingTx(tx: MempoolTransaction | Transaction) {
   return statuses.includes(tx.tx_status);
 }
 
-export function stringToHslColor(str: string, saturation: number, lightness: number): string {
+export function stringToHash(str: string): number {
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
     hash = str.charCodeAt(i) + ((hash << 5) - hash);
   }
+  return hash;
+}
 
-  const hue = hash % 320;
+export function getShortHash(str: string): string {
+  if (!str) return '';
+  const hash = stringToHash(str);
+  return Math.abs(hash).toString(16).substring(0, 10);
+}
+
+export function stringToHslColor(str: string, saturation: number, lightness: number): string {
+  const hash = stringToHash(str);
+  const hue = Math.abs(hash) % 320;
   return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
 }
 
