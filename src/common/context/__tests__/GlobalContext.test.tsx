@@ -1,4 +1,5 @@
 import { render, screen, waitFor } from '@testing-library/react';
+import * as Sentry from '@sentry/nextjs';
 import {
   usePathname as usePathnameActual,
   useRouter as useRouterActual,
@@ -30,6 +31,13 @@ jest.mock('../../components/modals/AddNetwork/utils', () => ({
   ...jest.requireActual('../../components/modals/AddNetwork/utils'),
   fetchCustomNetworkId: jest.fn(() => Promise.resolve('custom-network-id')),
 }));
+
+jest.mock('@sentry/nextjs', () => ({
+  setTag: jest.fn(),
+  captureException: jest.fn(),
+  captureMessage: jest.fn(),
+}));
+const mockSetTag = Sentry.setTag as jest.Mock;
 
 const customApiUrl = 'https://my-custom-api-url.com/something';
 
@@ -122,6 +130,33 @@ describe('GlobalContext', () => {
       const updatedNetworks = getContextField('networks');
       expect(Object.keys(updatedNetworks).length).toBe(4);
       expect(updatedNetworks[customApiUrl].isCustomNetwork).toBe(true);
+    });
+  });
+
+  it('synchronizes Sentry tags when the active network changes', async () => {
+    useSearchParams.mockReturnValue({
+      get: (key: string) => {
+        if (key === 'chain') return 'mainnet';
+        return null;
+      },
+    } as any);
+
+    render(
+      <CookiesProvider>
+        <GlobalContextProvider
+          addedCustomNetworksCookie={''}
+          removedCustomNetworksCookie={''}
+          tokenPrice={mockTokenPrice}
+        >
+          <GlobalContextTestComponent />
+        </GlobalContextProvider>
+      </CookiesProvider>
+    );
+
+    await waitFor(() => {
+      expect(mockSetTag).toHaveBeenCalledWith('network', 'mainnet');
+      expect(mockSetTag).toHaveBeenCalledWith('is_custom_network', 'false');
+      expect(mockSetTag).toHaveBeenCalledWith('is_subnet', 'false');
     });
   });
 });
