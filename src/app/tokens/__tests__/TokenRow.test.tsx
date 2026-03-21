@@ -24,7 +24,9 @@ describe('TokenRow', () => {
       <QueryClientProvider client={queryClient}>
         <ChakraProvider value={system}>
           <Table.Root>
-            <TokenRow ftToken={tokenMetadata} />
+            <Table.Body>
+              <TokenRow ftToken={tokenMetadata} />
+            </Table.Body>
           </Table.Root>
         </ChakraProvider>
       </QueryClientProvider>

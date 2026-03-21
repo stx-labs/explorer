@@ -18,6 +18,10 @@ import {
   nonFungibleConditionCodeToComparator,
 } from '../function-call-post-condition-params-utils';
 
+jest.mock('@/common/utils/error-utils', () => ({
+  logError: jest.fn(),
+}));
+
 describe('Type Guard Functions', () => {
   describe('isFungibleConditionCode', () => {
     it('should return true for fungible condition codes', () => {

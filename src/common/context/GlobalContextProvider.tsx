@@ -1,9 +1,8 @@
 'use client';
 import { usePathname, useSearchParams } from 'next/navigation';
+import * as Sentry from '@sentry/nextjs';
 import { FC, ReactNode, createContext, useCallback, useEffect, useState } from 'react';
 import { useCookies } from 'react-cookie';
-import * as Sentry from '@sentry/nextjs';
-
 import { getApiClient } from '../../api/getApiClient';
 import {
   type StacksApiSocketClientInfo,
@@ -233,8 +232,15 @@ export const GlobalContextProvider: FC<{
       Sentry.setTag('network.url', network.url);
       Sentry.setTag('network', network.mode);
       Sentry.setTag('network_id', network.networkId);
-      Sentry.setTag('is_custom_network', network.isCustomNetwork);
+      Sentry.setTag('is_custom_network', !!network.isCustomNetwork);
       Sentry.setTag('is_subnet', network.isSubnet);
+    } else {
+      // If no network found, reset tags to "unknown" to avoid stale data
+      Sentry.setTag('network.url', 'unknown');
+      Sentry.setTag('network', 'unknown');
+      Sentry.setTag('network_id', 'unknown');
+      Sentry.setTag('is_custom_network', false);
+      Sentry.setTag('is_subnet', false);
     }
   }, [activeNetworkKey, networks]);
 

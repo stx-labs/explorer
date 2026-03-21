@@ -5,7 +5,9 @@ exports[`TokenRow renders correctly 1`] = `
   <table
     class="chakra-table__root css-g8yqxe"
   >
-    <tbody>
+    <tbody
+      class="chakra-table__body"
+    >
       <tr
         class="chakra-table__row css-16kmb31"
       >

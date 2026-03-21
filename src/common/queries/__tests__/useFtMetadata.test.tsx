@@ -57,6 +57,7 @@ describe('useFungibleTokensMetadataQueries', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockUseMetadataApi.mockReturnValue(mockTokenMetadataApi);
+    mockTokenMetadataApi.getFtMetadata.mockResolvedValue(mockFtMetadata1);
   });
 
   it('should return useQueries result for multiple token IDs', async () => {
@@ -124,6 +125,7 @@ describe('useFungibleTokensMetadata', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockUseMetadataApi.mockReturnValue(mockTokenMetadataApi);
+    mockTokenMetadataApi.getFtMetadata.mockResolvedValue(mockFtMetadata1);
   });
 
   it('should transform query results into convenient format', async () => {

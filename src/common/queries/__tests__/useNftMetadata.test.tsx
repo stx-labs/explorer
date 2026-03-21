@@ -55,6 +55,7 @@ describe('useNftsMetadataQueries', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockUseMetadataApi.mockReturnValue(mockTokenMetadataApi);
+    mockTokenMetadataApi.getNftMetadata.mockResolvedValue(mockNftMetadata1);
   });
 
   it('should return useQueries result for multiple token IDs', async () => {
@@ -118,6 +119,7 @@ describe('useNftsMetadata', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockUseMetadataApi.mockReturnValue(mockTokenMetadataApi);
+    mockTokenMetadataApi.getNftMetadata.mockResolvedValue(mockNftMetadata1);
   });
 
   it('should transform query results into convenient format', async () => {
