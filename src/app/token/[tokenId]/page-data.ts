@@ -1,6 +1,7 @@
 import { fetchTokenDataFromLunarCrush, fetchTokenMetadata } from '@/api/data-fetchers';
-import { isSBTC } from '@/app/tokens/utils';
+import { NetworkModes } from '@/common/types/network';
 import { logError } from '@/common/utils/error-utils';
+import { getIsSBTC } from '@/common/utils/fungible-token-utils';
 
 import { FungibleTokenHolderList } from '@stacks/stacks-blockchain-api-types';
 
@@ -119,7 +120,8 @@ export function mergeTokenData(
   tokenDataFromStacksApi: TokenDataFromStacksApi | undefined,
   tokenDataFromLunarCrush: TokenDataFromLunarCrush | undefined,
   holders: FungibleTokenHolderList | undefined,
-  tokenId: string
+  tokenId: string,
+  chain: NetworkModes
 ): MergedTokenData {
   // Basic token information
   const name = safeGet(tokenDataFromLunarCrush?.name, tokenDataFromStacksApi?.name);
@@ -132,7 +134,7 @@ export function mergeTokenData(
     : undefined;
 
   // Special handling for circulating supply for SBTC. If it's SBTC, use the holders total supply (aka circulating supply), otherwise use the circulating supply from LunarCrush first, then fallback to the circulating supply from Stacks API
-  const isSbtc = isSBTC(tokenId);
+  const isSbtc = getIsSBTC(tokenId, chain);
   const circulatingSupplyFromStacksApi = parseFloat(holders?.total_supply || '0');
   const circulatingSupply = isSbtc
     ? safeGet(circulatingSupplyFromStacksApi, tokenDataFromLunarCrush?.circulatingSupply)

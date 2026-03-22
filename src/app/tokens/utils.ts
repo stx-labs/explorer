@@ -3,7 +3,8 @@ import { FtBasicMetadataResponse } from '@hirosystems/token-metadata-api-client'
 import {
   LEGIT_SBTC_DERIVATIVES,
   RISKY_TOKENS,
-  sbtcContractAddress,
+  SBTC_TOKEN_CONTRACT_ID_MAINNET,
+  SBTC_TOKEN_CONTRACT_ID_TESTNET,
 } from '../token/[tokenId]/consts';
 
 export const referencesSBTC = (
@@ -20,7 +21,9 @@ export const isSBTC = (contractId: string) => {
   if (!contractId) {
     return false;
   }
-  return contractId === sbtcContractAddress;
+  return (
+    contractId === SBTC_TOKEN_CONTRACT_ID_MAINNET || contractId === SBTC_TOKEN_CONTRACT_ID_TESTNET
+  );
 };
 
 export function showSBTCTokenAlert(tokenName: string, tokenSymbol: string, contractId: string) {

@@ -115,7 +115,13 @@ export default async function (props: {
       const tx = handleSettledResult(txResult, 'Failed to fetch transaction');
       holders = handleSettledResult(holdersResult, 'Failed to fetch holders');
 
-      tokenData = mergeTokenData(tokenDataFromStacksApi, tokenDataFromLunarCrush, holders, tokenId);
+      tokenData = mergeTokenData(
+        tokenDataFromStacksApi,
+        tokenDataFromLunarCrush,
+        holders,
+        tokenId,
+        (chain as NetworkModes) || NetworkModes.Mainnet
+      );
 
       txBlockTime =
         tx && isConfirmedTx<Transaction, MempoolTransaction>(tx) ? tx.block_time : undefined;

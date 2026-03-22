@@ -1,3 +1,8 @@
+import {
+  SBTC_TOKEN_CONTRACT_ID_MAINNET,
+  SBTC_TOKEN_CONTRACT_ID_TESTNET,
+} from '@/app/token/[tokenId]/consts';
+
 export type PrimaryPage = {
   id: PrimaryPageId;
   label: PrimaryPageLabel;
@@ -30,58 +35,71 @@ export type PrimaryPageId =
   | 'nfts'
   | 'analytics';
 
-export const primaryPages: PrimaryPage[] = [
-  {
-    id: 'home',
-    label: 'Home',
-    href: '/',
-  },
-  {
-    id: 'blocks',
-    label: 'Blocks',
-    href: '/blocks',
-  },
-  {
-    id: 'transactions',
-    label: 'Transactions',
-    href: '/transactions',
-  },
-  {
-    id: 'mempool',
-    label: 'Mempool',
-    href: '/mempool',
-  },
-  {
-    id: 'sbtc',
-    label: 'sBTC',
-    href: '/token/SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token',
-  },
-  // {
-  //   id: 'stacking',
-  //   label: 'Stacking',
-  //   href: '/stacking',
-  // },
-  {
-    id: 'signers',
-    label: 'Signers',
-    href: '/signers',
-  },
-  {
-    id: 'tokens',
-    label: 'Tokens',
-    href: '/tokens',
-  },
-  // {
-  //   id: 'nfts',
-  //   label: 'NFTs',
-  //   href: '/nfts',
-  // },
-  // {
-  //   id: 'analytics',
-  //   label: 'Analytics',
-  //   href: '/analytics',
-  // },
-];
+export const homePage: PrimaryPage = {
+  id: 'home',
+  label: 'Home',
+  href: '/',
+};
+
+export const blocksPage: PrimaryPage = {
+  id: 'blocks',
+  label: 'Blocks',
+  href: '/blocks',
+};
+
+export const transactionsPage: PrimaryPage = {
+  id: 'transactions',
+  label: 'Transactions',
+  href: '/transactions',
+};
+
+export const mempoolPage: PrimaryPage = {
+  id: 'mempool',
+  label: 'Mempool',
+  href: '/mempool',
+};
+
+export const sbtcMainnetPage: PrimaryPage = {
+  id: 'sbtc',
+  label: 'sBTC',
+  href: `/token/${SBTC_TOKEN_CONTRACT_ID_MAINNET}`,
+};
+
+export const sbtcTestnetPage: PrimaryPage = {
+  id: 'sbtc',
+  label: 'sBTC',
+  href: `/token/${SBTC_TOKEN_CONTRACT_ID_TESTNET}`,
+};
+
+export const stackingPage: PrimaryPage = {
+  id: 'stacking',
+  label: 'Stacking',
+  href: '/stacking',
+};
+
+export const signersPage: PrimaryPage = {
+  id: 'signers',
+  label: 'Signers',
+  href: '/signers',
+};
+
+export const tokensPage: PrimaryPage = {
+  id: 'tokens',
+  label: 'Tokens',
+  href: '/tokens',
+};
+
+export const nftsPage: PrimaryPage = {
+  id: 'nfts',
+  label: 'NFTs',
+  href: '/nfts',
+};
+
+export const analyticsPage: PrimaryPage = {
+  id: 'analytics',
+  label: 'Analytics',
+  href: '/analytics',
+};
 
 export type SecondaryPageLabel = 'Sandbox' | 'Status Center' | 'Support';
 export type SecondaryPageId = 'sandbox' | 'status-center' | 'support';

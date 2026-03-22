@@ -1,4 +1,4 @@
-import { SBTC_ASSET_ID } from '@/app/token/[tokenId]/consts';
+import { SBTC_TOKEN_ASSET_ID_MAINNET } from '@/app/token/[tokenId]/consts';
 import { isRiskyToken } from '@/common/utils/fungible-token-utils';
 import { getAssetNameParts } from '@/common/utils/utils';
 
@@ -350,7 +350,7 @@ describe('putSBTCFirst (if exported)', () => {
   it.skip('should move SBTC to first position', () => {
     const mockBalancesWithSBTC = [
       { ...mockFtBalance1, asset_identifier: 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.token1' },
-      { ...mockFtBalance2, asset_identifier: SBTC_ASSET_ID },
+      { ...mockFtBalance2, asset_identifier: SBTC_TOKEN_ASSET_ID_MAINNET },
       {
         ...mockFtBalanceZero,
         asset_identifier: 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.token3',
@@ -358,7 +358,7 @@ describe('putSBTCFirst (if exported)', () => {
     ];
 
     const result = putSBTCFirst(mockBalancesWithSBTC);
-    expect(result[0].asset_identifier).toBe(SBTC_ASSET_ID);
+    expect(result[0].asset_identifier).toBe(SBTC_TOKEN_ASSET_ID_MAINNET);
     expect(result).toHaveLength(3);
   });
 

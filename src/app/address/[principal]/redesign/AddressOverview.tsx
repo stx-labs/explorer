@@ -1,4 +1,4 @@
-import { SBTC_ASSET_ID, SBTC_DECIMALS } from '@/app/token/[tokenId]/consts';
+import { SBTC_DECIMALS } from '@/app/token/[tokenId]/consts';
 import {
   PriceSummaryItemValue,
   RowCopyButton,
@@ -10,6 +10,7 @@ import { SectionTabsContentContainer } from '@/common/components/SectionTabs';
 import { StackingCardItem } from '@/common/components/id-pages/Overview';
 import { AddressTxsTable } from '@/common/components/table/table-examples/AddressTxsTable';
 import { ADDRESS_ID_PAGE_RECENT_ADDRESS_TXS_LIMIT } from '@/common/components/table/table-examples/consts';
+import { useSbtcTokenAssetId } from '@/common/utils/fungible-token-utils';
 import { getFtDecimalAdjustedBalance, microToStacks } from '@/common/utils/utils';
 import { SimpleTag } from '@/ui/Badge';
 import { Button } from '@/ui/Button';
@@ -123,6 +124,7 @@ export function BalanceCard({
   showAvailableSection?: boolean;
   principal?: string;
 }) {
+  const sbtcTokenAssetId = useSbtcTokenAssetId();
   const totalBalanceMicroStx = balancesData?.stx?.balance;
   const isStxBalanceDefined =
     totalBalanceMicroStx !== undefined && !isNaN(parseFloat(totalBalanceMicroStx));
@@ -130,7 +132,7 @@ export function BalanceCard({
   const totalBalanceUsdValue = isStxBalanceDefined ? totalBalanceStx * stxPrice : 0;
 
   const fungibleTokenBalances = balancesData?.fungible_tokens;
-  const sbtcBalance = fungibleTokenBalances?.[SBTC_ASSET_ID]?.balance;
+  const sbtcBalance = fungibleTokenBalances?.[sbtcTokenAssetId]?.balance;
   const isSbtcBalanceDefined = sbtcBalance !== undefined && !isNaN(parseFloat(sbtcBalance));
   const sbtcBalanceNumber = isSbtcBalanceDefined
     ? getFtDecimalAdjustedBalance(sbtcBalance, SBTC_DECIMALS)

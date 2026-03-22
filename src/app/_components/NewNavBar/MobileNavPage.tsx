@@ -1,3 +1,4 @@
+import { usePrimaryPages } from '@/common/utils/navbar-utils';
 import { Text } from '@/ui/Text';
 import { Box, Flex, Icon, Stack, useDisclosure } from '@chakra-ui/react';
 import { CaretLeft, CaretRight, X } from '@phosphor-icons/react';
@@ -8,7 +9,7 @@ import { SharedMobileNavBar } from './NavBar';
 import { PrimaryPageLink, SecondaryPageLink } from './PagesLinks';
 import { Prices } from './Prices';
 import { SettingsPopoverContent } from './SettingsPopover';
-import { primaryPages, secondaryPages } from './consts';
+import { secondaryPages } from './consts';
 
 const topOpacityDuration = 0.3;
 
@@ -19,6 +20,7 @@ const MobileContentTop = ({
   isSettingsMenuOpen: boolean;
   onClose: () => void;
 }) => {
+  const primaryPages = usePrimaryPages();
   return (
     <Box position="relative">
       <AnimatePresence>
