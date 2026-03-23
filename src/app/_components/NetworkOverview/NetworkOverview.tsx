@@ -84,15 +84,19 @@ function NetworkOverviewChart() {
         dataKey: 'dailyTransactions',
         ...commonColors,
         name: 'Transactions',
-        valueFormatter: (value: number) => value.toLocaleString(),
-        subtitle: chartData.reduce((sum, item) => sum + item.dailyTransactions, 0).toLocaleString(),
+        valueFormatter: (value: number) => value.toLocaleString('en-US'),
+        subtitle: chartData
+          .reduce((sum, item) => sum + item.dailyTransactions, 0)
+          .toLocaleString('en-US'),
       },
       [Chart.blocksMined]: {
         dataKey: 'blocksMined',
         ...commonColors,
         name: 'Blocks',
-        valueFormatter: (value: number) => value.toLocaleString(),
-        subtitle: chartData.reduce((sum, item) => sum + item.blocksMined, 0).toLocaleString(),
+        valueFormatter: (value: number) => value.toLocaleString('en-US'),
+        subtitle: chartData
+          .reduce((sum, item) => sum + item.blocksMined, 0)
+          .toLocaleString('en-US'),
       },
     };
 
@@ -178,7 +182,7 @@ function NetworkOverviewChart() {
                 textAlign="center"
                 suppressHydrationWarning
               >
-                {tick.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                {tick.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
               </Text>
             ));
           })()}

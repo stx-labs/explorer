@@ -80,7 +80,7 @@ export function formatClarityValue(cv: ClarityValue): FormattedClarityValue {
     value = isContract ? principal : principal || cv.repr.toString().replace(/^'/, '');
   }
   if (cv.type === 'uint' && typeof cv.repr === 'string') {
-    value = Number(cv.repr.replace('u', '')).toLocaleString(undefined, {
+    value = Number(cv.repr.replace('u', '')).toLocaleString('en-US', {
       maximumFractionDigits: 0,
     });
   }

@@ -64,7 +64,7 @@ export function TokenTransferTxSummaryItems({
                 bg: 'surfaceTertiary',
               }}
             >
-              <DefaultBadgeLabel label={value} fontFamily="matterMono" />
+              <DefaultBadgeLabel label={value} fontFamily="matterMono" suppressHydrationWarning />
             </Badge>
           )}
           showCopyButton
