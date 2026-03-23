@@ -1,21 +1,22 @@
 # Posts a deploy notification to Slack when Vercel promotes to production.
 # If the PR has a Marketing Summary, posts that as a second message.
 #
+# Triggered by Vercel's native repository_dispatch event on production promotion.
+# See: https://vercel.com/docs/git/vercel-for-github#repository-dispatch-events
+#
 # Required secrets:
 #   SLACK_WEBHOOK_URL - Slack incoming webhook URL for the target channel
 
 name: Deploy Notification
 
 on:
-  deployment_status:
+  repository_dispatch:
+    types: [vercel.deployment.promoted]
 
 permissions: {}
 
 jobs:
   notify-slack:
-    if: >-
-      github.event.deployment_status.state == 'success' &&
-      github.event.deployment_status.environment == 'Production'
     runs-on: ubuntu-latest
     steps:
       - name: Find PR for deployed commit
@@ -23,7 +24,12 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const sha = context.payload.deployment.sha;
+            const sha = context.payload.client_payload?.git?.sha;
+            if (!sha) {
+              core.setFailed('No SHA in dispatch payload');
+              return;
+            }
+
             const { data: prs } = await github.rest.repos.listPullRequestsAssociatedWithCommit({
               owner: context.repo.owner,
               repo: context.repo.repo,
