@@ -48,7 +48,7 @@ export const TenureChangeTxSummaryItems = ({
                 bg: 'surfaceTertiary',
               }}
             >
-              <DefaultBadgeLabel label={value} fontFamily="matterMono" />
+              <DefaultBadgeLabel label={value} fontFamily="matterMono" suppressHydrationWarning />
             </Badge>
           )}
           showCopyButton
