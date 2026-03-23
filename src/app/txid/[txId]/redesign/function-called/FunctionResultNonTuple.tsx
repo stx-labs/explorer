@@ -11,16 +11,13 @@ export const FunctionResultNonTuple = ({ tx }: { tx: ContractCallTransaction }) 
   const formattedResult = formatFunctionResult(result);
   const firstFormattedResult = formattedResult[0];
   if (!firstFormattedResult) return null;
-  const { value, type } = firstFormattedResult;
+  const { value } = firstFormattedResult;
   return (
     <Flex alignItems="center" gap={1}>
       <Text textStyle="text-regular-sm" color="textPrimary">
         {value}
       </Text>
-      <Text textStyle="text-regular-sm" color="textPrimary">
-        {type}
-      </Text>
-      <RowCopyButton value={`${value} ${type}`} ariaLabel={`copy function result`} />
+      <RowCopyButton value={value} ariaLabel={`copy function result`} />
     </Flex>
   );
 };
