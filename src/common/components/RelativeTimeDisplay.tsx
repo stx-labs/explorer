@@ -4,27 +4,25 @@ import { useCallback, useEffect, useState } from 'react';
 import { ONE_MINUTE } from '../queries/query-stale-time';
 
 export const RelativeTimeDisplay = ({ timestampInMs }: { timestampInMs: number }) => {
-  const [time, setTime] = useState('');
+  const [display, setDisplay] = useState('');
 
-  const updateRelativeTime = useCallback(() => {
-    setTime(dayjs().to(dayjs(timestampInMs * 1000)));
-  }, [timestampInMs, setTime]);
+  const updateDisplay = useCallback(() => {
+    const now = Date.now() / 1000;
+    const diff = Math.round(now - timestampInMs);
+    if (diff >= 0 && diff < 60) {
+      setDisplay(`${diff}s ago`);
+    } else {
+      setDisplay(dayjs().to(dayjs(timestampInMs * 1000)));
+    }
+  }, [timestampInMs]);
 
   useEffect(() => {
-    updateRelativeTime(); // Update immediately on mount
-    const interval = setInterval(updateRelativeTime, ONE_MINUTE); // Update every minute
+    updateDisplay();
+    const interval = setInterval(updateDisplay, ONE_MINUTE);
+    return () => clearInterval(interval);
+  }, [timestampInMs, updateDisplay]);
 
-    return () => clearInterval(interval); // Cleanup the interval on component unmount
-  }, [timestampInMs, updateRelativeTime]); // Dependencies array: the effect depends on the timestamp
-
-  const now = Date.now() / 1000;
-  const diff = Math.round(now - timestampInMs);
-  const lessThanOneMinute = diff >= 0 && diff < 60;
-  if (lessThanOneMinute) {
-    return <>{diff}s ago</>;
-  }
-
-  return <>{time}</>;
+  return <>{display}</>;
 };
 
 export default RelativeTimeDisplay;

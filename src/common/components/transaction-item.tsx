@@ -131,13 +131,17 @@ export const AddressArea = React.memo(
 );
 
 export const TxTimestamp = ({ tx }: { tx: Transaction | MempoolTransaction }) => {
-  const relativeTimestamp = getRelativeTimestamp(tx);
   const txTime = getTransactionTime(tx);
-  const date = new Date(txTime * 1000);
-  const dateString = date.toUTCString();
+  const [relativeTimestamp, setRelativeTimestamp] = React.useState('');
+  const dateString = txTime ? new Date(txTime * 1000).toUTCString() : '';
+
+  React.useEffect(() => {
+    setRelativeTimestamp(getRelativeTimestamp(tx));
+  }, [tx]);
+
   return (
     <Tooltip content={dateString}>
-      <Box>{relativeTimestamp}</Box>
+      <Box suppressHydrationWarning>{relativeTimestamp}</Box>
     </Tooltip>
   );
 };
