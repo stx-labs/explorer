@@ -1,7 +1,8 @@
 import { AddressLink, BlockLink, TxLink } from '@/common/components/ExplorerLinks';
 import { formatBlockTime } from '@/common/utils/time-utils';
 import { isConfirmedTx } from '@/common/utils/transaction-utils';
-import { Badge, BlockHeightBadge, DefaultBadgeLabel } from '@/ui/Badge';
+import { Badge, BlockHeightBadge, DefaultBadgeLabel, StatusBadge } from '@/ui/Badge';
+import { Text } from '@/ui/Text';
 import { Flex } from '@chakra-ui/react';
 
 import {
@@ -10,6 +11,7 @@ import {
 } from '@stacks/stacks-blockchain-api-types';
 
 import { useTxIdPageData } from '../../TxIdPageContext';
+import { formatFunctionResult, getFunctionResultSuccessStatus } from '../function-called/utils';
 import { ExecutionCostItem } from './ExecutionCost';
 import { PriceSummaryItemValue, SponsorTag, SummaryItem } from './SummaryItem';
 import { TokensTransferred } from './TokensTransferred';
@@ -24,6 +26,15 @@ export const ContractCallTxSummaryItems = ({
   const sponsor = tx.sponsor_address;
 
   const isConfirmed = isConfirmedTx<ContractCallTransaction, MempoolContractCallTransaction>(tx);
+
+  let resultValue = '';
+  let resultSuccess = false;
+  if (isConfirmed && tx.tx_result) {
+    const formattedResult = formatFunctionResult(tx.tx_result);
+    resultValue = formattedResult.map(r => r.value).join(', ');
+    resultSuccess = getFunctionResultSuccessStatus(tx);
+  }
+
   const txHasAllEvents = isConfirmed && tx.event_count <= 100;
   const showTransfers =
     txHasAllEvents &&
@@ -67,6 +78,21 @@ export const ContractCallTxSummaryItems = ({
         )}
         showCopyButton
       />
+      {isConfirmed && tx.tx_result && (
+        <SummaryItem
+          label="Result"
+          value={resultValue}
+          valueRenderer={() => (
+            <Flex gap={2} alignItems="center">
+              <StatusBadge success={resultSuccess} successLabel="Success" failureLabel="Failure" />
+              <Text textStyle="text-regular-sm" color="textPrimary">
+                {resultValue}
+              </Text>
+            </Flex>
+          )}
+          showCopyButton
+        />
+      )}
       {showTransfers && (
         <SummaryItem
           label="Tokens Transferred"
