@@ -234,6 +234,7 @@ export const FeePopover = () => {
       positioning={POSITIONING}
       open={open}
       onOpenChange={e => setOpen(e.open)}
+      lazyMount
     >
       <TabPopoverTrigger open={open} positioning={POSITIONING}>
         <Flex
