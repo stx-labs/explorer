@@ -1,0 +1,155 @@
+# Posts a deploy notification to Slack when Vercel promotes to production.
+# If the PR has a Marketing Summary, posts that as a second message.
+#
+# Required secrets:
+#   SLACK_WEBHOOK_URL - Slack incoming webhook URL for the target channel
+
+name: Deploy Notification
+
+on:
+  deployment_status:
+
+jobs:
+  notify-slack:
+    if: >-
+      github.event.deployment_status.state == 'success' &&
+      github.event.deployment_status.environment == 'Production'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Find PR for deployed commit
+        id: find_pr
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const sha = context.payload.deployment.sha;
+            const { data: prs } = await github.rest.repos.listPullRequestsAssociatedWithCommit({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              commit_sha: sha,
+            });
+
+            const merged = prs.find(pr => pr.merged_at);
+            if (!merged) {
+              core.info(`No merged PR found for commit ${sha}`);
+              core.setOutput('found', 'false');
+              return;
+            }
+
+            core.setOutput('found', 'true');
+            core.setOutput('pr_number', String(merged.number));
+            core.setOutput('pr_title', merged.title);
+            core.setOutput('pr_url', merged.html_url);
+            core.setOutput('pr_body', merged.body || '');
+
+      - name: Extract marketing summary
+        if: steps.find_pr.outputs.found == 'true'
+        id: extract
+        env:
+          PR_BODY: ${{ steps.find_pr.outputs.pr_body }}
+        run: |
+          MARKER="## Marketing Summary"
+
+          if ! echo "$PR_BODY" | grep -qF "$MARKER"; then
+            echo "No Marketing Summary section found"
+            echo "has_summary=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # Extract everything after the marker, up to the next ## heading
+          SUMMARY=$(echo "$PR_BODY" | sed -n "/^${MARKER}/,/^## /{ /^${MARKER}/d; /^## /d; p; }" | sed 's/<!--.*-->//g' | sed '/^$/N;/^\n$/d' | xargs)
+
+          if [ -z "$SUMMARY" ]; then
+            echo "Marketing Summary section is empty"
+            echo "has_summary=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "has_summary=true" >> "$GITHUB_OUTPUT"
+          {
+            echo "summary<<MARKETING_EOF"
+            echo "$SUMMARY"
+            echo "MARKETING_EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Post deploy notification to Slack
+        if: steps.find_pr.outputs.found == 'true'
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          PR_TITLE: ${{ steps.find_pr.outputs.pr_title }}
+          PR_URL: ${{ steps.find_pr.outputs.pr_url }}
+          PR_NUMBER: ${{ steps.find_pr.outputs.pr_number }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const payload = {
+              blocks: [
+                {
+                  type: 'section',
+                  text: {
+                    type: 'mrkdwn',
+                    text: `Deployed to production: <${process.env.PR_URL}|#${process.env.PR_NUMBER} — ${process.env.PR_TITLE}>`,
+                  },
+                },
+              ],
+            };
+
+            const resp = await fetch(process.env.SLACK_WEBHOOK_URL, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload),
+            });
+
+            if (!resp.ok) {
+              const text = await resp.text();
+              core.setFailed(`Slack webhook failed (${resp.status}): ${text}`);
+            }
+
+      - name: Post marketing summary to Slack
+        if: steps.extract.outputs.has_summary == 'true'
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SUMMARY: ${{ steps.extract.outputs.summary }}
+          PR_TITLE: ${{ steps.find_pr.outputs.pr_title }}
+          PR_URL: ${{ steps.find_pr.outputs.pr_url }}
+          PR_NUMBER: ${{ steps.find_pr.outputs.pr_number }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const payload = {
+              blocks: [
+                {
+                  type: 'header',
+                  text: {
+                    type: 'plain_text',
+                    text: 'New Explorer Update Shipped',
+                  },
+                },
+                {
+                  type: 'section',
+                  text: {
+                    type: 'mrkdwn',
+                    text: process.env.SUMMARY,
+                  },
+                },
+                {
+                  type: 'context',
+                  elements: [
+                    {
+                      type: 'mrkdwn',
+                      text: `<${process.env.PR_URL}|#${process.env.PR_NUMBER} — ${process.env.PR_TITLE}>`,
+                    },
+                  ],
+                },
+              ],
+            };
+
+            const resp = await fetch(process.env.SLACK_WEBHOOK_URL, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload),
+            });
+
+            if (!resp.ok) {
+              const text = await resp.text();
+              core.setFailed(`Slack webhook failed (${resp.status}): ${text}`);
+            }
