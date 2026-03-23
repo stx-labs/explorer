@@ -371,7 +371,7 @@ export const ftDecimals = (value: number | string | BigNumber, decimals: number)
 };
 
 export function getLocaleDecimalSeparator() {
-  return Intl.NumberFormat()
+  return Intl.NumberFormat('en-US')
     .formatToParts(1.1)
     .find(part => part.type === 'decimal')?.value;
 }
