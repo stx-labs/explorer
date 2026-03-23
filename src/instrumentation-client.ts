@@ -1,4 +1,5 @@
 import * as Sentry from '@sentry/nextjs';
+import { addCustomFingerprint } from './common/utils/sentry-utils';
 
 function isThirdPartyError(event: Sentry.ErrorEvent): boolean {
   const errorMessage = event.exception?.values?.[0]?.value || '';
@@ -46,7 +47,7 @@ Sentry.init({
     if (isThirdPartyError(event)) {
       return null;
     }
-    return event;
+    return addCustomFingerprint(event, hint);
   },
 });
 

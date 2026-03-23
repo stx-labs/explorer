@@ -1,5 +1,5 @@
 import * as Sentry from '@sentry/nextjs';
-import { addCustomFingerprint } from './src//common/utils/sentry-utils';
+import { addCustomFingerprint } from './src/common/utils/sentry-utils';
 
 Sentry.init({
   dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
