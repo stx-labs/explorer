@@ -1,5 +1,5 @@
-import { render, screen, waitFor } from '@testing-library/react';
 import * as Sentry from '@sentry/nextjs';
+import { render, screen, waitFor } from '@testing-library/react';
 import {
   usePathname as usePathnameActual,
   useRouter as useRouterActual,
