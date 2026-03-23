@@ -79,11 +79,11 @@ const BalanceItem = ({
   tokenBalanceUsdValue: number;
   tokenBalanceType: TokenBalanceType;
 }) => {
-  const formattedTokenBalance = tokenBalance.toLocaleString(undefined, {
+  const formattedTokenBalance = tokenBalance.toLocaleString('en-US', {
     minimumFractionDigits: 0,
     maximumFractionDigits: 6,
   });
-  const formattedTokenBalanceValue = new Intl.NumberFormat(undefined, {
+  const formattedTokenBalanceValue = new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
     minimumFractionDigits: 2,
@@ -233,7 +233,7 @@ export function TokenBalanceAndTokenBalanceUsdValueItem({
   tokenTicker: string;
   iconProps?: IconProps;
 }) {
-  const formattedTokenBalance = tokenBalance.toLocaleString(undefined, {
+  const formattedTokenBalance = tokenBalance.toLocaleString('en-US', {
     minimumFractionDigits: 0,
     maximumFractionDigits: 6,
   });
