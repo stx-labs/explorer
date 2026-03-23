@@ -337,7 +337,7 @@ export function getShortHash(str: string): string {
 
 export function stringToHslColor(str: string, saturation: number, lightness: number): string {
   const hash = stringToHash(str);
-  const hue = Math.abs(hash) % 320;
+  const hue = hash % 320;
   return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
 }
 
