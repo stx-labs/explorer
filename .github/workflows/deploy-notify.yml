@@ -9,6 +9,8 @@ name: Deploy Notification
 on:
   deployment_status:
 
+permissions: {}
+
 jobs:
   notify-slack:
     if: >-
