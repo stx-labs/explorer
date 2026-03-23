@@ -16,6 +16,7 @@ import {
   compressMempoolTransaction,
   compressTransaction,
 } from '@/common/utils/transaction-utils';
+import { validateStacksContractId } from '@/common/utils/utils';
 
 import {
   ContractInterfaceResponse,
@@ -45,6 +46,11 @@ export default async function (props: {
   const params = await props.params;
 
   const { tokenId } = params;
+
+  if (!validateStacksContractId(tokenId)) {
+    const { notFound } = await import('next/navigation');
+    notFound();
+  }
 
   let tokenPrice = {
     stxPrice: 0,
