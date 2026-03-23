@@ -90,6 +90,8 @@ jobs:
         with:
           script: |
             const payload = {
+              unfurl_links: false,
+              unfurl_media: false,
               blocks: [
                 {
                   type: 'section',
@@ -124,6 +126,8 @@ jobs:
         with:
           script: |
             const payload = {
+              unfurl_links: false,
+              unfurl_media: false,
               blocks: [
                 {
                   type: 'header',
