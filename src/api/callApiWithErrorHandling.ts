@@ -23,11 +23,22 @@ export async function callApiWithErrorHandling<Endpoint extends PathsWithMethod<
   apiUrl: Endpoint,
   apiParams?: ApiParams<Endpoint>
 ): Promise<OperationResponse[Endpoint]> {
-  const { error, data } = await apiClient.GET(apiUrl, apiParams as any);
+  const { error, data, response } = await apiClient.GET(apiUrl, apiParams as any);
 
   if (error) {
-    const errorObj = new Error(getErrorMessage(error));
-    logError(errorObj, ERROR_TRANSACTION_NAME, { apiUrl, apiParams });
+    const errorObj = new Error(getErrorMessage(error)) as any;
+    const requestId = response.headers.get('x-request-id');
+    const status = response.status;
+    errorObj.status = status;
+    errorObj.requestId = requestId;
+
+    logError(errorObj, ERROR_TRANSACTION_NAME, {
+      apiUrl,
+      apiParams,
+      status,
+      requestId,
+      fullUrl: response.url,
+    });
     throw errorObj;
   }
 

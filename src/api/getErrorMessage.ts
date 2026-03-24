@@ -1,3 +1,9 @@
 export function getErrorMessage(error: any) {
-  return error?.message || 'Something went wrong! Please try again later.';
+  if (typeof error === 'string') return error;
+  return (
+    error?.reason ||
+    error?.message ||
+    error?.error ||
+    'Something went wrong! Please try again later.'
+  );
 }

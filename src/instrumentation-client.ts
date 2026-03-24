@@ -1,4 +1,5 @@
 import * as Sentry from '@sentry/nextjs';
+
 import { addCustomFingerprint } from './common/utils/sentry-utils';
 
 function isThirdPartyError(event: Sentry.ErrorEvent): boolean {

@@ -61,6 +61,10 @@ export function logErrorInSentry(
     }
     if (extraData) {
       scope.setContext('app-context', extraData);
+      // Set tags for easy filtering in Sentry UI
+      if (extraData.status) scope.setTag('status', String(extraData.status));
+      if (extraData.apiUrl) scope.setTag('api_url', extraData.apiUrl);
+      if (extraData.requestId) scope.setTag('request_id', extraData.requestId);
     }
     return scope;
   });
