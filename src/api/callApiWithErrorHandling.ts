@@ -27,17 +27,20 @@ export async function callApiWithErrorHandling<Endpoint extends PathsWithMethod<
 
   if (error) {
     const errorObj = new Error(getErrorMessage(error)) as any;
-    const requestId = response.headers.get('x-request-id');
-    const status = response.status;
+    const requestId = response?.headers?.get?.('x-request-id');
+    const status = response?.status ?? 'unknown';
+
     errorObj.status = status;
-    errorObj.requestId = requestId;
+    if (requestId) {
+      errorObj.requestId = requestId;
+    }
 
     logError(errorObj, ERROR_TRANSACTION_NAME, {
       apiUrl,
       apiParams,
       status,
       requestId,
-      fullUrl: response.url,
+      fullUrl: response?.url,
     });
     throw errorObj;
   }
