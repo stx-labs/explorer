@@ -36,3 +36,16 @@ describe('addCustomFingerprint', () => {
     expect(result.fingerprint).toEqual(['{{ default }}']);
   });
 });
+  it('groups API errors by status property in the error object', () => {
+    const mockEvent = {
+      exception: {
+        values: [{ value: 'Something went wrong' }],
+      },
+    } as ErrorEvent;
+    const mockHint = {
+      originalException: { status: 404 },
+    } as any;
+
+    const result = addCustomFingerprint(mockEvent, mockHint);
+    expect(result.fingerprint).toEqual(['api-error', '404']);
+  });
