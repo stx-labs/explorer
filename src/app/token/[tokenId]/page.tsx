@@ -105,12 +105,12 @@ export default async function (props: {
       const contractInfo = handleSettledResult(contractInfoResult, 'Failed to fetch contract info');
 
       txId = contractInfo?.tx_id;
-      const abi: ContractInterfaceResponse = contractInfo
-        ? JSON.parse(contractInfo?.abi)
-        : undefined;
+      const abi: ContractInterfaceResponse | null = contractInfo?.abi
+        ? JSON.parse(contractInfo.abi)
+        : null;
       const ftName = abi ? abi.fungible_tokens[0].name : undefined;
       assetId = ftName ? `${tokenId}::${ftName}` : undefined;
-      numFunctions = abi.functions.length;
+      numFunctions = abi?.functions?.length;
 
       const [txResult, holdersResult] = await Promise.allSettled([
         // dependent queries

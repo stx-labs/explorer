@@ -58,10 +58,10 @@ export default async function Page(props: {
       tokenPrice = await getTokenPrice();
       if (isContractId) {
         const contractData = await fetchContractInfo(apiUrl, txId); // fetch contract data for tx_id
-        const abi: ContractInterfaceResponse = contractData
-          ? JSON.parse(contractData?.abi)
-          : undefined;
-        numFunctions = abi.functions.length;
+        const abi: ContractInterfaceResponse | null = contractData?.abi
+          ? JSON.parse(contractData.abi)
+          : null;
+        numFunctions = abi?.functions?.length;
         initialTxData = await fetchTx(apiUrl, contractData.tx_id);
       } else {
         initialTxData = await fetchTx(apiUrl, txId);
