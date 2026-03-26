@@ -97,7 +97,7 @@ jobs:
                   type: 'section',
                   text: {
                     type: 'mrkdwn',
-                    text: `Deployed to production: <${process.env.PR_URL}|#${process.env.PR_NUMBER} — ${process.env.PR_TITLE}>`,
+                    text: `:package: Just shipped to prod :zap: <${process.env.PR_URL}|#${process.env.PR_NUMBER} — ${process.env.PR_TITLE}>`,
                   },
                 },
               ],
