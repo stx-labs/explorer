@@ -185,6 +185,9 @@ importers:
       react-hot-toast:
         specifier: 2.5.2
         version: 2.5.2(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+      react-hotkeys-hook:
+        specifier: ^5.2.4
+        version: 5.2.4(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
       react-icons:
         specifier: 5.5.0
         version: 5.5.0(react@19.2.0)
@@ -7279,6 +7282,12 @@ packages:
     peerDependencies:
       react: '>=16'
       react-dom: '>=16'
+
+  react-hotkeys-hook@5.2.4:
+    resolution: {integrity: sha512-BgKg+A1+TawkYluh5Bo4cTmcgMN5L29uhJbDUQdHwPX+qgXRjIPYU5kIDHyxnAwCkCBiu9V5OpB2mpyeluVF2A==}
+    peerDependencies:
+      react: '>=16.8.0'
+      react-dom: '>=16.8.0'
 
   react-icons@5.5.0:
     resolution: {integrity: sha512-MEFcXdkP3dLo8uumGI5xN3lDFNsRtrjbOEKDLD7yv76v4wpnEq2Lt2qeHaQOr34I/wPN3s3+N08WkQ+CW37Xiw==}
@@ -17404,6 +17413,11 @@ snapshots:
     dependencies:
       csstype: 3.2.3
       goober: 2.1.18(csstype@3.2.3)
+      react: 19.2.0
+      react-dom: 19.2.0(react@19.2.0)
+
+  react-hotkeys-hook@5.2.4(react-dom@19.2.0(react@19.2.0))(react@19.2.0):
+    dependencies:
       react: 19.2.0
       react-dom: 19.2.0(react@19.2.0)
 
