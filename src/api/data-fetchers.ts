@@ -174,6 +174,7 @@ export async function fetchTokenDataFromLunarCrush(
     if (!response || response?.error) {
       throw new Error('Error fetching token data from Lunar Crush');
     }
+    return response;
   } catch (error) {
     logError(
       new Error('Error fetching token data from Lunar Crush'),
