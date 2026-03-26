@@ -162,7 +162,7 @@ export async function fetchTokenDataFromLunarCrush(
   tokenId: string
 ): Promise<LunarCrushCoinRedesign | undefined> {
   try {
-    const response = await (
+    const response: LunarCrushCoinRedesign = await (
       await fetch(`https://lunarcrush.com/api4/public/coins/${tokenId}/v1`, {
         cache: 'default',
         next: { revalidate: 60 * 10 }, // Revalidate every 10 minutes
@@ -171,18 +171,31 @@ export async function fetchTokenDataFromLunarCrush(
         },
       })
     ).json();
-    if (!response || response?.error) {
-      throw new Error('Error fetching token data from Lunar Crush');
+    if (!response) {
+      throw new Error(`Lunar Crush returned empty response for token ${tokenId}`);
+    }
+    if (response.error) {
+      throw new Error(`Lunar Crush API error for token ${tokenId}: ${response.error}`);
     }
     return response;
   } catch (error) {
+    const errorType =
+      !error || (error instanceof Error && error.message.includes('empty response'))
+        ? 'empty_response'
+        : error instanceof Error && error.message.includes('API error')
+          ? 'api_error'
+          : 'fetch_error';
     logError(
-      new Error('Error fetching token data from Lunar Crush'),
+      error instanceof Error ? error : new Error(`Lunar Crush fetch failed for token ${tokenId}`),
       'getLunarCrushTokenData',
+      { tokenId },
+      'warning',
+      undefined,
       {
-        tokenId,
-      },
-      'error'
+        integration: 'lunarcrush',
+        'lunarcrush.token_id': tokenId,
+        'lunarcrush.error_type': errorType,
+      }
     );
     return undefined;
   }
