@@ -3,7 +3,6 @@ import {
   AssetType,
   EllipsisText,
 } from '@/common/components/table/CommonTableCellRenderers';
-import { useFtMetadata } from '@/common/queries/useFtMetadata';
 import {
   formatStacksAmount,
   getAssetNameParts,
@@ -44,16 +43,16 @@ export const AssetEventTypeCellRenderer = ({
   );
 };
 
-export function useEventAmountCellData(event: TransactionEvent) {
+export interface EventAmountData {
+  event: TransactionEvent;
+  ftDecimals?: number;
+}
+
+export function getEventAmountCellData(data: EventAmountData) {
+  const { event, ftDecimals } = data;
   const eventType = event.event_type;
   const assetId = eventType === 'fungible_token_asset' ? event.asset.asset_id : undefined;
-  const { address, contract, asset } = assetId ? getAssetNameParts(assetId) : {};
-  const contractId = `${address}.${contract}`;
-  const shouldFetchMetadata = eventType === 'fungible_token_asset' && !!contractId;
-  const ftMetadata = useFtMetadata(contractId, {
-    enabled: shouldFetchMetadata,
-  });
-  const ftDecimals = ftMetadata.data?.decimals;
+  const { asset } = assetId ? getAssetNameParts(assetId) : {};
   const amount = getAmount(event);
 
   return {
@@ -77,8 +76,8 @@ export function getAssetTypeFromEventType(eventType: TransactionEvent['event_typ
   }
 }
 
-export const EventAmountCellRenderer = (event: TransactionEvent) => {
-  const { amount, assetType, assetName, decimals } = useEventAmountCellData(event);
+export const EventAmountCellRenderer = (data: EventAmountData) => {
+  const { amount, assetType, assetName, decimals } = getEventAmountCellData(data);
 
   return (
     <AmountCellRenderer

@@ -1,7 +1,12 @@
 import { RISKY_TOKENS, VERIFIED_TOKENS } from '@/app/token/[tokenId]/consts';
-import { Metadata } from '@hirosystems/token-metadata-api-client';
+
+import type { operations } from '@stacks/token-metadata-api-client/lib/generated/schema';
 
 import { bigintPow } from './number-utils';
+
+type Metadata = NonNullable<
+  operations['getFtMetadata']['responses']['200']['content']['application/json']['metadata']
+>;
 
 export const deriveTokenTickerFromAssetId = (assetId: string) => {
   const ticker = assetId.toUpperCase();

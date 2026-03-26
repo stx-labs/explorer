@@ -4,7 +4,6 @@ import { PoxInfo } from '@/common/queries/usePoxInforRaw';
 import { LunarCrushCoinRedesign } from '@/common/types/lunarCrush';
 import { logError } from '@/common/utils/error-utils';
 import { validateAssettId } from '@/common/utils/utils';
-import { FtMetadataResponse } from '@hirosystems/token-metadata-api-client';
 
 import {
   AddressBalanceResponse,
@@ -17,6 +16,10 @@ import {
   SmartContract,
   Transaction,
 } from '@stacks/stacks-blockchain-api-types';
+import type { operations } from '@stacks/token-metadata-api-client/lib/generated/schema';
+
+type FtMetadataResponse =
+  operations['getFtMetadata']['responses']['200']['content']['application/json'];
 
 export const getAddressBalancesTag = (principal: string) => `address-balances-${principal}`;
 export const getAddressLatestNonceTag = (principal: string) => `address-latest-nonce-${principal}`;

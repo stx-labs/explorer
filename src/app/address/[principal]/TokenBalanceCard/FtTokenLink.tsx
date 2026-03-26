@@ -1,10 +1,14 @@
 'use client';
 
-import { FtMetadataResponse } from '@hirosystems/token-metadata-api-client/dist/api';
 import React from 'react';
+
+import type { operations } from '@stacks/token-metadata-api-client/lib/generated/schema';
 
 import { TokenLink } from '../../../../common/components/ExplorerLinks';
 import { getTokenDisplayName } from '../../../../common/utils/token-display-name';
+
+type FtMetadataResponse =
+  operations['getFtMetadata']['responses']['200']['content']['application/json'];
 
 interface FtTokenLinkProps {
   contractId: string;

@@ -4,12 +4,13 @@ import { useAccountBalance } from '@/common/queries/useAccountBalance';
 import { useFungibleTokensMetadata } from '@/common/queries/useFtMetadata';
 import { isRiskyToken } from '@/common/utils/fungible-token-utils';
 import { getAssetNameParts } from '@/common/utils/utils';
-import { FtMetadataResponse } from '@hirosystems/token-metadata-api-client';
-// TOOD: This type is horribly out of date
-import { UseQueryOptions } from '@tanstack/react-query';
 import { useMemo } from 'react';
 
 import { FtBalance, NftBalance } from '@stacks/stacks-blockchain-api-types';
+import type { operations } from '@stacks/token-metadata-api-client/lib/generated/schema';
+
+type FtMetadataResponse =
+  operations['getFtMetadata']['responses']['200']['content']['application/json'];
 
 type FtBalanceWithAssetId = FtBalance & { asset_identifier: string };
 type NftBalanceWithAssetId = NftBalance & { asset_identifier: string };
@@ -27,6 +28,7 @@ const EMPTY_METADATA: FtMetadataResponse = {
   image_canonical_uri: undefined,
   tx_id: '',
   sender_address: '',
+  asset_identifier: '',
   metadata: undefined,
 };
 
@@ -143,8 +145,7 @@ export function useFungibleTokensTableData(
   offset: number,
   searchTerm?: string | undefined,
   hideSuspiciousTokens?: boolean | undefined,
-  hideZeroBalanceTokens?: boolean | undefined,
-  options?: Omit<UseQueryOptions<FtMetadataResponse, Error>, 'queryKey' | 'queryFn'>
+  hideZeroBalanceTokens?: boolean | undefined
 ) {
   let {
     data: balances,
@@ -153,7 +154,6 @@ export function useFungibleTokensTableData(
   } = useAccountBalance(principal, {
     staleTime: THIRTY_SECONDS,
     gcTime: THIRTY_SECONDS,
-    ...options,
   });
 
   const positiveDefinedBalancesArray = useMemo(() => {
@@ -194,19 +194,18 @@ export function useFungibleTokensTableData(
     ftMetadata,
     isLoading: isLoadingMetadata,
     isFetching: isFetchingMetadata,
-  } = useFungibleTokensMetadata(tokenIds, options);
+  } = useFungibleTokensMetadata(tokenIds);
 
   // the final data object, containing both balance and metadata
   const ftBalanceAndMetadata: FungibleTokenWithMetadata[] = useMemo(() => {
     const result: FungibleTokenWithMetadata[] = [];
-    paginatedBalances.forEach(balance => {
-      const assetId = balance.asset_identifier;
-      const metadata = ftMetadata.find(
-        ft => ft && 'asset_identifier' in ft && ft.asset_identifier === assetId // There are instances where ftMetadata is missing
-      );
+    paginatedBalances.forEach((balance, index) => {
+      const metadata = ftMetadata[index];
       result.push({
+        ...EMPTY_METADATA,
         ...balance,
-        ...(metadata ?? EMPTY_METADATA),
+        ...(metadata ?? {}),
+        asset_identifier: balance.asset_identifier,
       });
     });
     return result;

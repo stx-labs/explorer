@@ -1,10 +1,13 @@
-import { FtBasicMetadataResponse } from '@hirosystems/token-metadata-api-client';
+import type { operations } from '@stacks/token-metadata-api-client/lib/generated/schema';
 
 import {
   LEGIT_SBTC_DERIVATIVES,
   RISKY_TOKENS,
   sbtcContractAddress,
 } from '../token/[tokenId]/consts';
+
+type FtBasicMetadataResponse =
+  operations['getFungibleTokens']['responses']['200']['content']['application/json']['results'][number];
 
 export const referencesSBTC = (
   tokenName: FtBasicMetadataResponse['name'],

@@ -14,6 +14,7 @@ const tokenMetadata = {
   total_supply: '1000000',
   image_uri: 'https://example.com/token.png',
   sender_address: '0x1234',
+  asset_identifier: '0x5678::test-token',
 };
 
 describe('TokenRow', () => {

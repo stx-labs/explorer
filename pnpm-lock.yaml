@@ -35,9 +35,6 @@ importers:
       '@emotion/styled':
         specifier: 11.14.0
         version: 11.14.0(@emotion/react@11.14.0(@types/react@19.2.0)(react@19.2.0))(@types/react@19.2.0)(react@19.2.0)
-      '@hirosystems/token-metadata-api-client':
-        specifier: 1.2.0
-        version: 1.2.0
       '@leather.io/models':
         specifier: 0.31.0
         version: 0.31.0
@@ -86,6 +83,9 @@ importers:
       '@stacks/network':
         specifier: 7.0.2
         version: 7.0.2
+      '@stacks/token-metadata-api-client':
+        specifier: 2.2.1
+        version: 2.2.1
       '@stacks/transactions':
         specifier: 7.1.0
         version: 7.1.0
@@ -2702,6 +2702,10 @@ packages:
 
   '@stacks/stacks-blockchain-api-types@7.8.2':
     resolution: {integrity: sha512-wcDSdgIZx/ttQfUTPtGJOIyEkTOjmCsC79TaIyxTIiihSgrGppqTuzkwHD/DyuQkcJtUZvDTxMsAXkBKShE1kw==}
+
+  '@stacks/token-metadata-api-client@2.2.1':
+    resolution: {integrity: sha512-gOOWU5TIGMvtbubYyGL+It9JJ7zcvdOPrBpkmHTDHLOnloH8UA6fJUF1BBwh0uiYB6697RUB9Ub6fgFwB58+4w==}
+    engines: {node: '>=22'}
 
   '@stacks/transactions@6.17.0':
     resolution: {integrity: sha512-FUah2BRgV66ApLcEXGNGhwyFTRXqX5Zco3LpiM3essw8PF0NQlHwwdPgtDko5RfrJl3LhGXXe/30nwsfNnB3+g==}
@@ -6845,6 +6849,9 @@ packages:
 
   openapi-fetch@0.10.6:
     resolution: {integrity: sha512-6xXfvIEL/POtLGOaFPsp3O+pDe+J3DZYxbD9BrsQHXOTeNK8z/gsWHT6adUy1KcpQOhmkerMzlQrJM6DbN55dQ==}
+
+  openapi-fetch@0.12.5:
+    resolution: {integrity: sha512-FnAMWLt0MNL6ComcL4q/YbB1tUgyz5YnYtwA1+zlJ5xcucmK5RlWsgH1ynxmEeu8fGJkYjm8armU/HVpORc9lw==}
 
   openapi-typescript-helpers@0.0.11:
     resolution: {integrity: sha512-xofUHlVFq+BMquf3nh9I8N2guHckW6mrDO/F3kaFgrL7MGbjldDnQ9TIT+rkH/+H0LiuO+RuZLnNmsJwsjwUKg==}
@@ -11408,6 +11415,10 @@ snapshots:
   '@stacks/stacks-blockchain-api-types@7.14.1': {}
 
   '@stacks/stacks-blockchain-api-types@7.8.2': {}
+
+  '@stacks/token-metadata-api-client@2.2.1':
+    dependencies:
+      openapi-fetch: 0.12.5
 
   '@stacks/transactions@6.17.0':
     dependencies:
@@ -17000,6 +17011,10 @@ snapshots:
   openapi-fetch@0.10.6:
     dependencies:
       openapi-typescript-helpers: 0.0.11
+
+  openapi-fetch@0.12.5:
+    dependencies:
+      openapi-typescript-helpers: 0.0.15
 
   openapi-typescript-helpers@0.0.11: {}
 

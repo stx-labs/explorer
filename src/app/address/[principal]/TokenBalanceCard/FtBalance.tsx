@@ -3,11 +3,13 @@
 import { Box, Grid } from '@chakra-ui/react';
 import dynamic from 'next/dynamic';
 import * as React from 'react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import { AddressBalanceResponse } from '@stacks/stacks-blockchain-api-types';
 
 import { TwoColumnsListItemSkeleton } from '../../../../common/components/TwoColumnsListItemSkeleton';
+import { useBulkFtMetadata } from '../../../../common/queries/useBulkTokenMetadata';
+import { getContractIdFromAssetId } from '../../../../common/utils/utils';
 import { Button } from '../../../../ui/Button';
 import { Caption } from '../../../../ui/typography';
 
@@ -36,6 +38,13 @@ export const FtBalance: React.FC<{ balance: AddressBalanceResponse }> = ({ balan
 
   const visibleFt = ftWithCount.slice(0, visibleItemsCount);
 
+  const contractIds = useMemo(
+    () => ftWithCount.slice(0, visibleItemsCount).map(getContractIdFromAssetId),
+    [ftWithCount, visibleItemsCount]
+  );
+
+  const { metadataMap } = useBulkFtMetadata(contractIds);
+
   return ftWithCount.length > 0 ? (
     <Box pb={4}>
       <Box>
@@ -45,6 +54,7 @@ export const FtBalance: React.FC<{ balance: AddressBalanceResponse }> = ({ balan
             key={index}
             token={key}
             tokenType="fungible_tokens"
+            ftMetadata={metadataMap.get(contractIds[index])}
           />
         ))}
       </Box>

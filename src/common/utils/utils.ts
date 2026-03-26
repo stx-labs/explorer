@@ -286,6 +286,11 @@ export const getAssetNameParts = (fullyRealizedName: string) => {
   };
 };
 
+export function getContractIdFromAssetId(assetIdentifier: string): string {
+  const { address, contract } = getAssetNameParts(assetIdentifier);
+  return `${address}.${contract}`;
+}
+
 export const getMemoString = (string: string): string | null =>
   string
     ? Buffer.from(string.replace('0x', '').replace(/^(0{2})+|(0{2})+$/g, ''), 'hex').toString(

@@ -1,5 +1,4 @@
 import { AmountCellRenderer, AssetType } from '@/common/components/table/CommonTableCellRenderers';
-import { useFtMetadata } from '@/common/queries/useFtMetadata';
 
 import { PostCondition } from '@stacks/stacks-blockchain-api-types';
 
@@ -18,19 +17,15 @@ export function getAssetTypeFromPostConditionType(postConditionType: PostConditi
   }
 }
 
-function usePostConditonAnountCellData(postCondition: PostCondition) {
+export interface PostConditionAmountData {
+  postCondition: PostCondition;
+  ftDecimals?: number;
+}
+
+function getPostConditionAmountCellData(data: PostConditionAmountData) {
+  const { postCondition, ftDecimals } = data;
   const postConditionType = postCondition.type;
-  const {
-    asset_name: assetName,
-    contract_address: contractAddress,
-    contract_name: contractName,
-  } = postConditionType !== 'stx' ? postCondition.asset : {};
-  const contractId = `${contractAddress}.${contractName}`;
-  const shouldFetchMetadata = postConditionType === 'fungible' && !!contractId;
-  const ftMetadata = useFtMetadata(contractId, {
-    enabled: shouldFetchMetadata,
-  });
-  const ftDecimals = ftMetadata.data?.decimals;
+  const { asset_name: assetName } = postConditionType !== 'stx' ? postCondition.asset : {};
   const amount = getAmount(postCondition);
 
   return {
@@ -41,8 +36,8 @@ function usePostConditonAnountCellData(postCondition: PostCondition) {
   };
 }
 
-export const PostConditionAmountCellRenderer = (postCondition: PostCondition) => {
-  const { amount, assetType, assetName, decimals } = usePostConditonAnountCellData(postCondition);
+export const PostConditionAmountCellRenderer = (data: PostConditionAmountData) => {
+  const { amount, assetType, assetName, decimals } = getPostConditionAmountCellData(data);
 
   return (
     <AmountCellRenderer

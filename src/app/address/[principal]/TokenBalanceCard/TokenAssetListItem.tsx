@@ -7,18 +7,20 @@ import { Warning } from '@phosphor-icons/react';
 import React from 'react';
 
 import { NonFungibleTokenHolding } from '@stacks/stacks-blockchain-api-types/generated';
+import type { operations } from '@stacks/token-metadata-api-client/lib/generated/schema';
 import { cvToJSON, hexToCV } from '@stacks/transactions';
 
 import { TxLink } from '../../../../common/components/ExplorerLinks';
 import { TwoColsListItem } from '../../../../common/components/TwoColumnsListItem';
 import { FtTokenAmount, NftTokenAmount } from '../../../../common/components/balances/TokenAmount';
 import { FtTokenSymbol, NftTokenSymbol } from '../../../../common/components/balances/TokenSymbol';
-import { useFtMetadata } from '../../../../common/queries/useFtMetadata';
-import { TOKENS_WITH_METADATA_NAME_OVERRIDE } from '../../../../common/utils/token-display-name';
 import { getAssetNameParts, initBigNumber } from '../../../../common/utils/utils';
 import { FtAvatar } from './FtAvatar';
 import { FtTokenLink } from './FtTokenLink';
 import { NftAvatar } from './NftAvatar';
+
+type FtMetadataResponse =
+  operations['getFtMetadata']['responses']['200']['content']['application/json'];
 
 interface TokenAssetListItemProps extends FlexProps {
   amount: string;
@@ -26,6 +28,7 @@ interface TokenAssetListItemProps extends FlexProps {
   tokenType: 'non_fungible_tokens' | 'fungible_tokens';
   bnsName?: string;
   holdings?: NonFungibleTokenHolding[];
+  ftMetadata?: FtMetadataResponse;
 }
 
 export const TokenAssetListItem: React.FC<TokenAssetListItemProps> = ({
@@ -34,15 +37,10 @@ export const TokenAssetListItem: React.FC<TokenAssetListItemProps> = ({
   tokenType,
   bnsName,
   holdings,
+  ftMetadata,
 }) => {
   const { address, asset, contract } = getAssetNameParts(token);
   const contractId = `${address}.${contract}`;
-
-  // Only fetch metadata for specific tokens with known name mismatches
-  const needsMetadata =
-    tokenType === 'fungible_tokens' && TOKENS_WITH_METADATA_NAME_OVERRIDE.includes(contractId);
-
-  const { data: ftMetadata } = useFtMetadata(needsMetadata ? contractId : undefined);
 
   const firstNftValue = (() => {
     if (!holdings?.length) return undefined;
@@ -68,7 +66,11 @@ export const TokenAssetListItem: React.FC<TokenAssetListItemProps> = ({
             firstNftValue={firstNftValue}
           />
         ) : (
-          <FtAvatar token={token} contractId={contractId} />
+          <FtAvatar
+            token={token}
+            contractId={contractId}
+            metadataImageUrl={ftMetadata?.metadata?.cached_image}
+          />
         )
       }
       leftContent={{
@@ -87,7 +89,7 @@ export const TokenAssetListItem: React.FC<TokenAssetListItemProps> = ({
           tokenType === 'non_fungible_tokens' ? (
             <NftTokenSymbol asset={asset} />
           ) : (
-            <FtTokenSymbol asset={asset} contractId={contractId} ftMetadata={ftMetadata} />
+            <FtTokenSymbol asset={asset} symbol={ftMetadata?.symbol} />
           ),
       }}
       rightContent={{
@@ -95,7 +97,11 @@ export const TokenAssetListItem: React.FC<TokenAssetListItemProps> = ({
           tokenType === 'non_fungible_tokens' ? (
             <NftTokenAmount amount={amount} />
           ) : (
-            <FtTokenAmount amount={amount} contractId={contractId} />
+            <FtTokenAmount
+              amount={amount}
+              contractId={contractId}
+              decimals={ftMetadata?.decimals}
+            />
           ),
         subtitle:
           tokenType === 'non_fungible_tokens' &&

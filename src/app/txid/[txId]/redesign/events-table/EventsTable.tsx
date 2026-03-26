@@ -10,10 +10,11 @@ import { Table } from '@/common/components/table/Table';
 import { TableContainer } from '@/common/components/table/TableContainer';
 import { GenericResponseType } from '@/common/hooks/useInfiniteQueryResult';
 import { THIRTY_SECONDS } from '@/common/queries/query-stale-time';
+import { useBulkFtMetadata } from '@/common/queries/useBulkTokenMetadata';
 import { useTxById } from '@/common/queries/useTxById';
 import { getTxEventsByIdQueryKey, useTxEventsById } from '@/common/queries/useTxEventsById';
 import { handleContractLogHex } from '@/common/utils/transaction-utils';
-import { validateStacksContractId } from '@/common/utils/utils';
+import { getContractIdFromAssetId, validateStacksContractId } from '@/common/utils/utils';
 import { Box, Code, Icon } from '@chakra-ui/react';
 import { ArrowRight } from '@phosphor-icons/react';
 import { useQueryClient } from '@tanstack/react-query';
@@ -22,7 +23,11 @@ import { type JSX, useCallback, useEffect, useMemo, useRef, useState } from 'rea
 
 import { TransactionEvent } from '@stacks/stacks-blockchain-api-types';
 
-import { AssetEventTypeCellRenderer, EventAmountCellRenderer } from './EventsTableCellRenderers';
+import {
+  AssetEventTypeCellRenderer,
+  EventAmountCellRenderer,
+  EventAmountData,
+} from './EventsTableCellRenderers';
 import { EVENTS_TABLE_PAGE_SIZE } from './consts';
 import { EventsTableFilters } from './filters/useEventsTableFilters';
 import {
@@ -59,7 +64,7 @@ export interface EventsTableData {
   [EventsTableColumns.AssetEventType]: ExtendedTransactionEventAssetType;
   [EventsTableColumns.Asset]: string;
   [EventsTableColumns.AssetType]: string;
-  [EventsTableColumns.Amount]: TransactionEvent;
+  [EventsTableColumns.Amount]: EventAmountData;
   [EventsTableColumns.From]: EventsTableAddressColumnData;
   [EventsTableColumns.ArrowRight]: JSX.Element;
   [EventsTableColumns.To]: EventsTableAddressColumnData;
@@ -217,6 +222,19 @@ export function EventsTable({
   const { total = numTxEvents, events = [] } = data || {};
   const isTableFiltered = Object.values(filters).some(v => v != null && v !== '');
 
+  // Extract unique FT contract IDs for bulk metadata fetch
+  const ftContractIds = useMemo(() => {
+    const ids = new Set<string>();
+    events.forEach(event => {
+      if (event.event_type === 'fungible_token_asset') {
+        ids.add(getContractIdFromAssetId(event.asset.asset_id));
+      }
+    });
+    return Array.from(ids);
+  }, [events]);
+
+  const { metadataMap } = useBulkFtMetadata(ftContractIds);
+
   const rowData: EventsTableData[] = useMemo(() => {
     const sortedEvents = [...events].sort((a, b) => a.event_index - b.event_index);
     const rows = sortedEvents.map((event, index) => {
@@ -228,12 +246,18 @@ export function EventsTable({
       const assetType = getAssetType(event);
       const contractLogPrintValue = getContractLogPrintValue(event);
 
+      let ftDecimals: number | undefined;
+      if (event.event_type === 'fungible_token_asset') {
+        const metadata = metadataMap.get(getContractIdFromAssetId(event.asset.asset_id));
+        ftDecimals = metadata?.decimals;
+      }
+
       return {
         [EventsTableColumns.Index]: event.event_index + 1,
         [EventsTableColumns.AssetEventType]: assetEventType,
         [EventsTableColumns.Asset]: asset,
         [EventsTableColumns.AssetType]: assetType,
-        [EventsTableColumns.Amount]: event,
+        [EventsTableColumns.Amount]: { event, ftDecimals },
         [EventsTableColumns.From]: {
           address: from,
           isContract: validateStacksContractId(from),
@@ -252,7 +276,7 @@ export function EventsTable({
       };
     });
     return rows;
-  }, [events]);
+  }, [events, metadataMap]);
 
   return (
     <Table

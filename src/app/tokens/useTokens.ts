@@ -1,7 +1,8 @@
 'use client';
 
-import { FtBasicMetadataResponse } from '@hirosystems/token-metadata-api-client';
 import { useCallback, useMemo } from 'react';
+
+import type { operations } from '@stacks/token-metadata-api-client/lib/generated/schema';
 
 import {
   useInfiniteQueryResult,
@@ -9,6 +10,9 @@ import {
 } from '../../common/hooks/useInfiniteQueryResult';
 import { useFtTokens, useSuspenseFtTokens } from '../../common/queries/useFtTokens';
 import { sbtcContractAddress, usdcxContractAddress } from '../token/[tokenId]/consts';
+
+type FtBasicMetadataResponse =
+  operations['getFungibleTokens']['responses']['200']['content']['application/json']['results'][number];
 
 export const useSuspenseTokens = (
   debouncedSearchTerm: string
