@@ -59,7 +59,7 @@ export function ChartTooltip({ active, payload, label }: TooltipProps<number, st
               : 'var(--stacks-colors-neutral-sand-100)'
           }
         >
-          {`${payload[0].value?.toLocaleString()} ${payload[0].name === 'Transactions' ? 'txs' : 'blocks'}`}
+          {`${payload[0].value?.toLocaleString('en-US')} ${payload[0].name === 'Transactions' ? 'txs' : 'blocks'}`}
         </Text>
         <Text
           textStyle={'text-medium-xs'}

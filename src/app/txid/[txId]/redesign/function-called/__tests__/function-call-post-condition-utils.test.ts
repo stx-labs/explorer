@@ -332,6 +332,25 @@ describe('Utility Functions', () => {
       });
     });
 
+    it('should coerce string-typed numeric values from form state to numbers', () => {
+      const formikState = {
+        postConditionMode: '2' as any, // Formik may stringify numeric values
+        postConditionType: '0' as any,
+        postConditionAddress: 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM',
+        postConditionConditionCode: '1' as any,
+        postConditionAmount: '100' as any,
+        postConditionAssetAddress: undefined as any,
+        postConditionAssetContractName: undefined as any,
+        postConditionAssetName: undefined as any,
+      };
+
+      const result = extractPostConditionParams(formikState as any);
+      expect(result.postConditionMode).toBe(PostConditionMode.Deny);
+      expect(result.postConditionType).toBe(PostConditionType.STX);
+      expect(result.postConditionConditionCode).toBe(FungibleConditionCode.Equal);
+      expect(result.postConditionAmount).toBe(100);
+    });
+
     it('should handle undefined post condition parameters', () => {
       const formikState = {
         someArg: 'value',

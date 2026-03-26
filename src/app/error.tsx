@@ -4,6 +4,7 @@ import { ErrorMessageLayout } from '@/common/components/ErrorMessageLayout';
 import { Section } from '@/common/components/Section';
 import { useGlobalContext } from '@/common/context/useGlobalContext';
 import { buildUrl } from '@/common/utils/buildUrl';
+import { logError } from '@/common/utils/error-utils';
 import { Button } from '@/ui/Button';
 import { DeprecatedButtonLink } from '@/ui/DeprecatedButtonLink';
 import { Box, Grid, HStack } from '@chakra-ui/react';
@@ -19,8 +20,7 @@ export default function Error({
   reset: () => void;
 }) {
   useEffect(() => {
-    // Log the error to an error reporting service
-    console.error(error);
+    logError(error, 'page-error');
   }, [error]);
 
   const network = useGlobalContext().activeNetwork;
