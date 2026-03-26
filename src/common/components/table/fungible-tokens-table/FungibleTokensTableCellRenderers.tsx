@@ -14,7 +14,7 @@ import { FungibleTokenTableTokenColumnData } from './FungibleTokensTable';
 export function DefaultTokenAvatar({ asset }: { asset: string }) {
   return (
     <Circle h={6} w={6}>
-      {asset[0].toUpperCase()}
+      {asset?.[0]?.toUpperCase() ?? '?'}
     </Circle>
   );
 }
