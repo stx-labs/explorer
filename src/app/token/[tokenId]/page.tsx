@@ -108,7 +108,7 @@ export default async function (props: {
       const abi: ContractInterfaceResponse | null = contractInfo?.abi
         ? JSON.parse(contractInfo.abi)
         : null;
-      const ftName = abi ? abi.fungible_tokens[0].name : undefined;
+      const ftName = abi?.fungible_tokens?.[0]?.name;
       assetId = ftName ? `${tokenId}::${ftName}` : undefined;
       numFunctions = abi?.functions?.length;
 
