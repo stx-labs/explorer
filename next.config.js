@@ -53,6 +53,12 @@ const sentryWebpackPluginOptions = {
   hideSourceMaps: true,
   deleteSourceMapsAfterUpload: true,
   disableLogger: true,
+  unstable_sentryWebpackPluginOptions: {
+    applicationKey: 'stacks-explorer',
+  },
+  _experimental: {
+    turbopackApplicationKey: 'stacks-explorer',
+  },
   release: {
     name: process.env.VERCEL_GIT_COMMIT_SHA || process.env.NEXT_PUBLIC_RELEASE_TAG_NAME,
     inject: true,
