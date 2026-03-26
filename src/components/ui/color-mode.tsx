@@ -1,20 +1,44 @@
 import type { ThemeProviderProps } from 'next-themes';
 import { ThemeProvider, useTheme } from 'next-themes';
 import * as React from 'react';
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import { useCookies } from 'react-cookie';
 
-export interface ColorModeProviderProps extends ThemeProviderProps {}
+export interface ColorModeProviderProps extends ThemeProviderProps {
+  serverTheme?: string;
+}
 
-export function ColorModeProvider(props: ColorModeProviderProps) {
+function ResolvedThemeCookieSync() {
+  const { resolvedTheme } = useTheme();
+  const [_, setCookie] = useCookies(['stacks-explorer-color-mode']);
+
+  useEffect(() => {
+    if (resolvedTheme === 'light' || resolvedTheme === 'dark') {
+      setCookie('stacks-explorer-color-mode', resolvedTheme, {
+        path: '/',
+        maxAge: 31536000,
+        sameSite: 'lax',
+      });
+    }
+  }, [resolvedTheme, setCookie]);
+
+  return null;
+}
+
+export function ColorModeProvider({ serverTheme, children, ...props }: ColorModeProviderProps) {
+  const defaultTheme = serverTheme === 'dark' || serverTheme === 'light' ? serverTheme : 'system';
+
   return (
     <ThemeProvider
       attribute="class"
       disableTransitionOnChange
       enableSystem={true}
-      defaultTheme="system"
+      defaultTheme={defaultTheme}
       {...props}
-    />
+    >
+      <ResolvedThemeCookieSync />
+      {children}
+    </ThemeProvider>
   );
 }
 
@@ -53,7 +77,7 @@ export function useColorMode() {
   );
 
   return {
-    colorMode: resolvedTheme || 'system',
+    colorMode: resolvedTheme || 'light',
     setColorMode,
     toggleColorMode,
   };

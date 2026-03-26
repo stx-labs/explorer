@@ -28,6 +28,9 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
 
   const tokenPrice = await getTokenPrice();
   const statusBarContent = await getStatusBarContent();
+  const serverTheme =
+    cookieStore.get('stacks-explorer-color-mode')?.value ||
+    cookieStore.get('stacks-explorer-theme')?.value;
 
   return (
     <html
@@ -40,6 +43,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
           addedCustomNetworksCookie={addedCustomNetworksCookie}
           removedCustomNetworksCookie={removedCustomNetworksCookie}
           tokenPrice={tokenPrice}
+          serverTheme={serverTheme}
         >
           <PageWrapper statusBarContent={statusBarContent}>{children}</PageWrapper>
         </Providers>
