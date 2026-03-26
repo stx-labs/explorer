@@ -52,7 +52,8 @@ export function logErrorInSentry(
   error: Error,
   transactionName: string,
   extraData?: { [key: string]: any },
-  level?: Sentry.SeverityLevel
+  level?: Sentry.SeverityLevel,
+  tags?: Record<string, string>
 ) {
   Sentry.captureException(error, scope => {
     scope.setLevel(level || 'error');
@@ -61,6 +62,11 @@ export function logErrorInSentry(
     }
     if (extraData) {
       scope.setContext('app-context', extraData);
+    }
+    if (tags) {
+      for (const [key, value] of Object.entries(tags)) {
+        scope.setTag(key, value);
+      }
     }
     return scope;
   });
@@ -75,7 +81,8 @@ export function logError(
   transactionName: string,
   extraData?: Record<string, any>,
   sentrySeverityLevel?: Sentry.SeverityLevel,
-  options?: LogErrorOptions
+  options?: LogErrorOptions,
+  tags?: Record<string, string>
 ) {
   const checkedError = ensureError(error);
   const errorDetails = extractErrorDetails(error);
@@ -86,5 +93,11 @@ export function logError(
     return;
   }
 
-  logErrorInSentry(checkedError, transactionName, { ...updatedExtraData }, sentrySeverityLevel);
+  logErrorInSentry(
+    checkedError,
+    transactionName,
+    { ...updatedExtraData },
+    sentrySeverityLevel,
+    tags
+  );
 }
