@@ -205,6 +205,7 @@ export function useFungibleTokensTableData(
         ...EMPTY_METADATA,
         ...balance,
         ...(metadata ?? {}),
+        asset_identifier: balance.asset_identifier,
       });
     });
     return result;

@@ -75,7 +75,7 @@ export function useBulkFtMetadata(contractIds: string[]) {
   );
 
   const query = useQuery({
-    queryKey: [BULK_TOKEN_METADATA_QUERY_KEY, sortedIds],
+    queryKey: [BULK_TOKEN_METADATA_QUERY_KEY, basePath, sortedIds],
     queryFn: () => fetchBulkTokenMetadata(basePath, sortedIds),
     enabled: sortedIds.length > 0,
     staleTime: Infinity,
