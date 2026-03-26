@@ -224,7 +224,7 @@ export function truncateText(text: string, limit: number) {
 }
 
 export const formatStacksAmount = (amountInStacks: string | number): string => {
-  return amountInStacks.toLocaleString(undefined, {
+  return amountInStacks.toLocaleString('en-US', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 6,
   });
@@ -376,7 +376,7 @@ export const ftDecimals = (value: number | string | BigNumber, decimals: number)
 };
 
 export function getLocaleDecimalSeparator() {
-  return Intl.NumberFormat()
+  return Intl.NumberFormat('en-US')
     .formatToParts(1.1)
     .find(part => part.type === 'decimal')?.value;
 }
@@ -431,7 +431,7 @@ export const formatNumber = (num: number, divisor: number, suffix: string, decim
   // If decimals is undefined, don't limit decimal places
   if (decimals == null) {
     return `${(num / divisor)
-      .toLocaleString(undefined, { maximumFractionDigits: maxDecimals })
+      .toLocaleString('en-US', { maximumFractionDigits: maxDecimals })
       .replace(/\.0+$/, '')}${suffix}`;
   }
 
@@ -442,7 +442,7 @@ export const formatNumber = (num: number, divisor: number, suffix: string, decim
 
   // Remove trailing zeros and decimal point if all decimals are zero
   return `${parseFloat((num / divisor).toFixed(decimals))
-    .toLocaleString(undefined, { maximumFractionDigits: maxDecimals })
+    .toLocaleString('en-US', { maximumFractionDigits: maxDecimals })
     .replace(/\.0+$/, '')}${suffix}`;
 };
 

@@ -79,8 +79,8 @@ export const StackingPercentage = ({
           {isStacking ? (
             <Stack gap={2} alignItems="center">
               <Caption mb="12px">
-                ~{blocksUntilUnlocked.toLocaleString(undefined, { maximumFractionDigits: 2 })}{' '}
-                blocks remaining
+                ~{blocksUntilUnlocked.toLocaleString('en-US', { maximumFractionDigits: 2 })} blocks
+                remaining
               </Caption>
               <TxLink txId={balance?.stx?.lock_tx_id} target="_blank" fontSize={'xs'}>
                 View Stacking transaction

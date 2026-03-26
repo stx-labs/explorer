@@ -174,7 +174,7 @@ const TypeListItem = ({
     </HStack>
     <HStack gap={2}>
       <Text textStyle="text-medium-sm" color="textSecondary">
-        {item.value.toLocaleString()} tx{item.value > 1 ? 's' : ''}
+        {item.value.toLocaleString('en-US')} tx{item.value > 1 ? 's' : ''}
       </Text>
       <Text
         textStyle={'text-mono-xs'}

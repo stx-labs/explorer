@@ -9,6 +9,7 @@ import { useGlobalContext } from '../../../common/context/useGlobalContext';
 import { useError } from '../../../common/hooks/useError';
 import { ExplorerError } from '../../../common/types/Error';
 import { buildUrl } from '../../../common/utils/buildUrl';
+import { logError } from '../../../common/utils/error-utils';
 import { DeprecatedButtonLink } from '../../../ui/DeprecatedButtonLink';
 import { PageTitle } from '../../_components/PageTitle';
 
@@ -16,8 +17,8 @@ const defaultErrorMessage = 'Failed to fetch transaction';
 
 export default function Error({ error }: { error: ExplorerError; reset: () => void }) {
   useEffect(() => {
-    console.error(error);
     if (error.status === 404) return;
+    logError(error, 'transaction-page-error', { status: error.status });
   }, [error]);
   const network = useGlobalContext().activeNetwork;
   const { errorName, errorStatusCode, errorMessage } = useError(error, defaultErrorMessage);

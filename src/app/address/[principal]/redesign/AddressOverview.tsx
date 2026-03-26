@@ -36,7 +36,7 @@ export const AddressOverviewTable = () => {
     initialAddressLatestNonceData,
     initialAddressBNSNamesData,
   } = useAddressIdPageData();
-  const totalFees = initialAddressBalancesData?.stx.total_fees_sent || 0;
+  const totalFees = initialAddressBalancesData?.stx?.total_fees_sent || 0;
   const bnsNames = initialAddressBNSNamesData?.names;
 
   return (
@@ -79,11 +79,11 @@ const BalanceItem = ({
   tokenBalanceUsdValue: number;
   tokenBalanceType: TokenBalanceType;
 }) => {
-  const formattedTokenBalance = tokenBalance.toLocaleString(undefined, {
+  const formattedTokenBalance = tokenBalance.toLocaleString('en-US', {
     minimumFractionDigits: 0,
     maximumFractionDigits: 6,
   });
-  const formattedTokenBalanceValue = new Intl.NumberFormat(undefined, {
+  const formattedTokenBalanceValue = new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
     minimumFractionDigits: 2,
@@ -233,7 +233,7 @@ export function TokenBalanceAndTokenBalanceUsdValueItem({
   tokenTicker: string;
   iconProps?: IconProps;
 }) {
-  const formattedTokenBalance = tokenBalance.toLocaleString(undefined, {
+  const formattedTokenBalance = tokenBalance.toLocaleString('en-US', {
     minimumFractionDigits: 0,
     maximumFractionDigits: 6,
   });
@@ -302,11 +302,11 @@ export function CurrentCycleValue() {
 const StackingCard = () => {
   const { initialAddressBalancesData, stxPrice, btcPrice, initialBurnChainRewardsData } =
     useAddressIdPageData();
-  const burnChainLockHeight = initialAddressBalancesData?.stx.burnchain_lock_height;
-  const burnChainUnlockHeight = initialAddressBalancesData?.stx.burnchain_unlock_height;
-  const lockedSTX = initialAddressBalancesData?.stx.locked;
+  const burnChainLockHeight = initialAddressBalancesData?.stx?.burnchain_lock_height;
+  const burnChainUnlockHeight = initialAddressBalancesData?.stx?.burnchain_unlock_height;
+  const lockedSTX = initialAddressBalancesData?.stx?.locked;
   const lockedSTXFormatted = microToStacks(lockedSTX || '0');
-  const minerRewards = initialAddressBalancesData?.stx.total_miner_rewards_received;
+  const minerRewards = initialAddressBalancesData?.stx?.total_miner_rewards_received;
   const btcRewards = parseFloat(initialBurnChainRewardsData?.reward_amount || '0');
 
   if (!lockedSTX || lockedSTX === '0') {
@@ -397,7 +397,7 @@ const StackingCard = () => {
 
 export function MinerCard() {
   const { initialAddressBalancesData, stxPrice } = useAddressIdPageData();
-  const minerRewardsInMicroStacks = initialAddressBalancesData?.stx.total_miner_rewards_received;
+  const minerRewardsInMicroStacks = initialAddressBalancesData?.stx?.total_miner_rewards_received;
 
   if (!minerRewardsInMicroStacks || parseFloat(minerRewardsInMicroStacks) <= 0) {
     return null;

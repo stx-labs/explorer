@@ -47,7 +47,7 @@ function ExecutionCostRow({ label, value, limit }: ExecutionCostRowProps) {
   return (
     <Flex gap={8} alignItems="center">
       <Tooltip
-        content={`${value.toLocaleString()} / ${limit.toLocaleString()}`}
+        content={`${value.toLocaleString('en-US')} / ${limit.toLocaleString('en-US')}`}
         variant="redesignPrimary"
       >
         <Text textStyle="text-mono-xs" color="textSecondary" cursor="help" minW="150px">

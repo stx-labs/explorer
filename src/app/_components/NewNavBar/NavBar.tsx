@@ -1,7 +1,11 @@
 'use client';
 
+import { useGlobalContext } from '@/common/context/useGlobalContext';
+import { buildUrl } from '@/common/utils/buildUrl';
 import { Box, Flex, FlexProps, Icon, useDisclosure } from '@chakra-ui/react';
 import { List } from '@phosphor-icons/react';
+import { useRouter } from 'next/navigation';
+import { useHotkeys } from 'react-hotkeys-hook';
 
 import { Search } from '../Search/Search';
 import { Logo } from './Logo';
@@ -9,6 +13,7 @@ import { MobileNavPage } from './MobileNavPage';
 import { PagesSlidingMenu } from './PagesSlidingMenu';
 import { Prices } from './Prices';
 import { SettingsPopover } from './SettingsPopover';
+import { secondaryPages } from './consts';
 
 const DesktopNavBar = (props: FlexProps) => {
   return (
@@ -98,7 +103,33 @@ const MobileNavBar = (props: FlexProps) => {
   );
 };
 
+function usePageShortcuts() {
+  const router = useRouter();
+  const network = useGlobalContext().activeNetwork;
+
+  const shortcuts = secondaryPages.filter(p => p.shortcut).map(p => p.shortcut!.toLowerCase());
+
+  useHotkeys(
+    shortcuts,
+    (e, handler) => {
+      const key = handler.keys?.join('').toUpperCase();
+      const page = secondaryPages.find(p => p.shortcut === key);
+      if (page) {
+        router.push(buildUrl(page.href, network));
+      }
+    },
+    {
+      ignoreEventWhen: e => {
+        const el = e.target as HTMLElement;
+        return !!(el.closest('[role="dialog"]') || el.closest('[role="alertdialog"]'));
+      },
+    }
+  );
+}
+
 export function NavBar() {
+  usePageShortcuts();
+
   return (
     <Box fontFamily="var(--font-instrument-sans)">
       <DesktopNavBar hideBelow="lg" />

@@ -16,6 +16,7 @@ import {
   compressMempoolTransaction,
   compressTransaction,
 } from '@/common/utils/transaction-utils';
+import { validateStacksContractId } from '@/common/utils/utils';
 
 import {
   ContractInterfaceResponse,
@@ -45,6 +46,11 @@ export default async function (props: {
   const params = await props.params;
 
   const { tokenId } = params;
+
+  if (!validateStacksContractId(tokenId)) {
+    const { notFound } = await import('next/navigation');
+    notFound();
+  }
 
   let tokenPrice = {
     stxPrice: 0,
@@ -99,12 +105,12 @@ export default async function (props: {
       const contractInfo = handleSettledResult(contractInfoResult, 'Failed to fetch contract info');
 
       txId = contractInfo?.tx_id;
-      const abi: ContractInterfaceResponse = contractInfo
-        ? JSON.parse(contractInfo?.abi)
-        : undefined;
-      const ftName = abi ? abi.fungible_tokens[0].name : undefined;
+      const abi: ContractInterfaceResponse | null = contractInfo?.abi
+        ? JSON.parse(contractInfo.abi)
+        : null;
+      const ftName = abi?.fungible_tokens?.[0]?.name;
       assetId = ftName ? `${tokenId}::${ftName}` : undefined;
-      numFunctions = abi.functions.length;
+      numFunctions = abi?.functions?.length;
 
       const [txResult, holdersResult] = await Promise.allSettled([
         // dependent queries

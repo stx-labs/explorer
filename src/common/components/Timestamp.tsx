@@ -1,6 +1,7 @@
 'use client';
 
 import { Flex, FlexProps } from '@chakra-ui/react';
+import { useEffect, useState } from 'react';
 
 import { Tooltip } from '../../ui/Tooltip';
 import RelativeTimeDisplay from './RelativeTimeDisplay';
@@ -11,9 +12,14 @@ interface TimestampProps {
 }
 
 export function Timestamp({ ts, ...rest }: TimestampProps & FlexProps) {
-  const readableTimestamp = ts
-    ? `${new Date(ts * 1000).toLocaleTimeString()} ${new Date(ts * 1000).toLocaleDateString()}`
-    : '';
+  const [readableTimestamp, setReadableTimestamp] = useState('');
+
+  useEffect(() => {
+    if (ts) {
+      const date = new Date(ts * 1000);
+      setReadableTimestamp(`${date.toLocaleTimeString()} ${date.toLocaleDateString()}`);
+    }
+  }, [ts]);
 
   return (
     <Tooltip content={readableTimestamp}>
