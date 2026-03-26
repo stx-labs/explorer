@@ -1,36 +1,16 @@
 import * as Sentry from '@sentry/nextjs';
 
-function isThirdPartyError(event: Sentry.ErrorEvent): boolean {
-  const errorMessage = event.exception?.values?.[0]?.value || '';
-  const frames = event.exception?.values?.[0]?.stacktrace?.frames || [];
-  const filename = frames[frames.length - 1]?.filename || '';
-
-  if (
-    filename.includes('gt-window-provider') ||
-    errorMessage.includes('shouldSetTallyForCurrentProvider') ||
-    errorMessage.includes('walletRouter')
-  ) {
-    return true;
-  }
-
-  if (
-    filename.startsWith('extension://') ||
-    filename.startsWith('moz-extension://') ||
-    filename.startsWith('chrome-extension://') ||
-    filename.startsWith('safari-extension://')
-  ) {
-    return true;
-  }
-
-  return false;
-}
-
 Sentry.init({
   dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
   enabled: process.env.NODE_ENV === 'production',
   tracesSampleRate: 0.1,
   debug: false,
   environment: process.env.VERCEL_ENV || process.env.NODE_ENV,
+
+  // Drop errors whose message matches these patterns. The parenthesized domain format
+  // (e.g. "Failed to fetch (www.google-analytics.com)") is added by Sentry's fetch
+  // instrumentation and never appears in first-party fetch errors.
+  ignoreErrors: [/^Failed to fetch \(.*(?:google-analytics|googletagmanager)\.com.*\)$/],
 
   replaysSessionSampleRate: 0.1,
   replaysOnErrorSampleRate: 1.0,
@@ -40,14 +20,14 @@ Sentry.init({
       maskAllText: false,
       blockAllMedia: false,
     }),
+    // Uses build-time code tagging to identify first-party vs third-party stack frames.
+    // Drops errors that originate exclusively from third-party code (browser extensions,
+    // injected scripts, etc.) without needing to maintain URL/message pattern lists.
+    Sentry.thirdPartyErrorFilterIntegration({
+      filterKeys: ['stacks-explorer'],
+      behaviour: 'drop-error-if-exclusively-contains-third-party-frames',
+    }),
   ],
-
-  beforeSend(event, hint) {
-    if (isThirdPartyError(event)) {
-      return null;
-    }
-    return event;
-  },
 });
 
 export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;
