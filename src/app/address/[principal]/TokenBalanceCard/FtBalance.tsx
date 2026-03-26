@@ -38,25 +38,25 @@ export const FtBalance: React.FC<{ balance: AddressBalanceResponse }> = ({ balan
 
   const visibleFt = ftWithCount.slice(0, visibleItemsCount);
 
-  const contractIds = useMemo(() => visibleFt.map(getContractIdFromAssetId), [visibleFt]);
+  const contractIds = useMemo(
+    () => ftWithCount.slice(0, visibleItemsCount).map(getContractIdFromAssetId),
+    [ftWithCount, visibleItemsCount]
+  );
 
   const { metadataMap } = useBulkFtMetadata(contractIds);
 
   return ftWithCount.length > 0 ? (
     <Box pb={4}>
       <Box>
-        {visibleFt.map((key, index) => {
-          const contractId = getContractIdFromAssetId(key);
-          return (
-            <TokenAssetListItem
-              amount={balance.fungible_tokens[key]?.balance || ''}
-              key={index}
-              token={key}
-              tokenType="fungible_tokens"
-              ftMetadata={metadataMap.get(contractId)}
-            />
-          );
-        })}
+        {visibleFt.map((key, index) => (
+          <TokenAssetListItem
+            amount={balance.fungible_tokens[key]?.balance || ''}
+            key={index}
+            token={key}
+            tokenType="fungible_tokens"
+            ftMetadata={metadataMap.get(contractIds[index])}
+          />
+        ))}
       </Box>
       {visibleItemsCount < ftWithCount.length && (
         <Box width={'full'}>
