@@ -6,6 +6,7 @@ export const SBTC_ASSET_ID = 'SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-tok
 export const SBTC_DECIMALS = 8;
 export const DROID_CONTRACT_ADDRESS = 'SP2EEV5QBZA454MSMW9W3WJNRXVJF36VPV17FFKYH.DROID';
 const zsbtcContractAddress = 'SP2VCQJGH7PHP2DJK7Z0V48AGBHQAW3R3ZW1QF4N.zsbtc-token';
+const zestSbtcVaultAddress = 'SP1A27KFY4XERQCCRCARCYD1CC5N7M6688BSYADJ7.v0-vault-sbtc';
 export const usdcxContractAddress = 'SP120SBRBQJ00MCWS7TM5R8WJNTTKD5K0HFRC2CNE.usdcx';
 export const RISKY_TOKENS = [
   'SP1J45NVEGQ7ZA4M57TGF0RAB00TMYCYG00X8EF5B.granite-btc',
@@ -22,10 +23,11 @@ export const RISKY_NFTS = [
 export const RISKY_NFT_RULES = [
   /\.StacksDao$/, // Exact match for contract names ending with .StacksDao (case sensitive)
 ];
-export const LEGIT_SBTC_DERIVATIVES = [zsbtcContractAddress];
+export const LEGIT_SBTC_DERIVATIVES = [zsbtcContractAddress, zestSbtcVaultAddress];
 export const VERIFIED_TOKENS = [
   DROID_CONTRACT_ADDRESS,
   zsbtcContractAddress,
+  zestSbtcVaultAddress,
   sbtcContractAddress,
   usdcxContractAddress,
 ];
