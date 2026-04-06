@@ -1,7 +1,7 @@
 import type { ThemeProviderProps } from 'next-themes';
 import { ThemeProvider, useTheme } from 'next-themes';
 import * as React from 'react';
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useCookies } from 'react-cookie';
 
 export interface ColorModeProviderProps extends ThemeProviderProps {
@@ -62,6 +62,11 @@ export const useUpdateThemeCookie = () => {
 export function useColorMode() {
   const { resolvedTheme, setTheme } = useTheme();
   const setThemeCookie = useUpdateThemeCookie();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const toggleColorMode = useCallback(() => {
     setTheme(resolvedTheme === 'light' ? 'dark' : 'light');
@@ -77,7 +82,7 @@ export function useColorMode() {
   );
 
   return {
-    colorMode: resolvedTheme || 'light',
+    colorMode: mounted ? resolvedTheme || 'light' : 'light',
     setColorMode,
     toggleColorMode,
   };
