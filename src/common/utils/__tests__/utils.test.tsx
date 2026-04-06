@@ -358,6 +358,15 @@ describe('getAssetNameParts', () => {
       asset: 'asset',
     });
   });
+
+  test('should handle strings without a dot separator', () => {
+    const result = getAssetNameParts('');
+    expect(result).toEqual({
+      address: '',
+      contract: '',
+      asset: undefined,
+    });
+  });
 });
 
 describe('getMemoString', () => {
