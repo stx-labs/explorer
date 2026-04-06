@@ -276,7 +276,8 @@ export const getFungibleAssetName = (fullyRealizedName: string): string =>
 
 export const getAssetNameParts = (fullyRealizedName: string) => {
   const address = fullyRealizedName.split('.')[0];
-  const contract = getContractName(fullyRealizedName).split('::')[0];
+  const contractName = getContractName(fullyRealizedName);
+  const contract = contractName?.split('::')[0] ?? '';
   const asset = getFungibleAssetName(fullyRealizedName);
 
   return {
