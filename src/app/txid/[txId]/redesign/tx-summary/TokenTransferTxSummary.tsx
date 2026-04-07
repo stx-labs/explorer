@@ -1,8 +1,10 @@
 import { AddressLink } from '@/common/components/ExplorerLinks';
 import { formatBlockTime } from '@/common/utils/time-utils';
 import { getAmount, getToAddress, isConfirmedTx } from '@/common/utils/transaction-utils';
+import { getMemoString } from '@/common/utils/utils';
 import { Badge, BlockHeightBadge, DefaultBadgeLabel } from '@/ui/Badge';
-import { Flex } from '@chakra-ui/react';
+import { Text } from '@/ui/Text';
+import { Flex, Stack } from '@chakra-ui/react';
 
 import {
   MempoolTokenTransferTransaction,
@@ -80,7 +82,30 @@ export function TokenTransferTxSummaryItems({
           </Flex>
         )}
       />
-      <SummaryItem label="Memo" value={tx.token_transfer.memo} showCopyButton />
+      <SummaryItem
+        label="Memo"
+        value={tx.token_transfer.memo}
+        valueRenderer={value => {
+          const decoded = getMemoString(value);
+          return (
+            <Stack gap={0.5}>
+              {decoded && (
+                <Text textStyle="text-regular-sm" color="textPrimary" wordBreak="break-all">
+                  {decoded}
+                </Text>
+              )}
+              <Text
+                textStyle="text-regular-sm"
+                color={decoded ? 'textSecondary' : 'textPrimary'}
+                wordBreak="break-all"
+              >
+                {value}
+              </Text>
+            </Stack>
+          );
+        }}
+        showCopyButton
+      />
       <SummaryItem label="Nonce" value={tx.nonce?.toString() || ''} showCopyButton />
       {isConfirmedTx<TokenTransferTransaction, MempoolTokenTransferTransaction>(tx) && (
         <SummaryItem
