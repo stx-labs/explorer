@@ -97,7 +97,9 @@ const columnDefinitions: ColumnDef<PostConditionsTableData>[] = [
 
 type PostConditionConditionCode =
   | PostConditionFungibleConditionCode
-  | PostConditionNonFungibleConditionCode;
+  | PostConditionNonFungibleConditionCode
+  // TODO: remove once @stacks/stacks-blockchain-api-types adds 'maybe_sent'
+  | 'maybe_sent';
 
 function getPostConditionCellText(postConditionCode: PostConditionConditionCode): string {
   if (postConditionCode === 'sent_equal_to') {
@@ -120,6 +122,9 @@ function getPostConditionCellText(postConditionCode: PostConditionConditionCode)
   }
   if (postConditionCode === 'not_sent') {
     return 'Must not transfer';
+  }
+  if (postConditionCode === 'maybe_sent') {
+    return 'May transfer';
   }
   return 'Undefined post condition code';
 }
