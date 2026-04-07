@@ -21,7 +21,7 @@ const formatClarityValueType = (type: string) => {
     }
   }
 
-  if (type.includes('tuple')) {
+  if (type === 'tuple' || type.startsWith('(tuple')) {
     return 'Tuple';
   }
   return type;
@@ -84,7 +84,7 @@ export function formatClarityValue(cv: ClarityValue): FormattedClarityValue {
       maximumFractionDigits: 0,
     });
   }
-  if (cv.type.includes('tuple') && typeof cv.repr === 'string') {
+  if ((cv.type === 'tuple' || cv.type.startsWith('(tuple')) && typeof cv.repr === 'string') {
     value = formatTupleResult(cv.repr);
   }
 
@@ -130,7 +130,7 @@ const getReprValue = ({ type, value }: ReprValueProps) => {
 // TODO: add tests for this
 export function formatFunctionResult(result: ContractCallTxResult): FormattedClarityValue[] {
   const { success, type, value } = cvToJSON(hexToCV(result.hex)); // TODO: what type are we handling here?
-  if (type?.includes('tuple')) {
+  if (value?.type === 'tuple' || value?.type?.startsWith('(tuple')) {
     const formattedResult = Object.keys(value.value).map((name: string) => {
       const isNestedType = Object.keys(value.value).includes('type');
       const entry = isNestedType ? value.value : value.value[name];

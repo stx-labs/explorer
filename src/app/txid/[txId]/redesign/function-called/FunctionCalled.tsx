@@ -56,7 +56,7 @@ function FunctionResult({ tx }: { tx: ContractCallTransaction | MempoolContractC
         columnGap={12}
         alignItems="center"
       >
-        {type?.includes('tuple') ? (
+        {value?.type === 'tuple' || value?.type?.startsWith('(tuple') ? (
           <>
             <Box pt={5}>
               <Text textStyle="text-medium-sm" color="textSecondary">
