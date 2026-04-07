@@ -20,7 +20,7 @@ import { FunctionResultNonTuple } from './FunctionResultNonTuple';
 import { FunctionResultStatus } from './FunctionResultStatus';
 import { FunctionResultsTable } from './FunctionResultTable';
 import { FunctionResultType } from './FunctionResultType';
-import { getContractCallTxFunctionArgs } from './utils';
+import { getContractCallTxFunctionArgs, isTupleType } from './utils';
 
 function FunctionTitle({
   fnAbi,
@@ -56,7 +56,7 @@ function FunctionResult({ tx }: { tx: ContractCallTransaction | MempoolContractC
         columnGap={12}
         alignItems="center"
       >
-        {value?.type === 'tuple' || value?.type?.startsWith('(tuple') ? (
+        {isTupleType(value?.type) ? (
           <>
             <Box pt={5}>
               <Text textStyle="text-medium-sm" color="textSecondary">

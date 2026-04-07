@@ -6,6 +6,7 @@ import {
   formatFunctionResult,
   getContractCallTxFunctionArgs,
   getFunctionResultSuccessStatus,
+  isTupleType,
 } from '../utils';
 
 export const contractCallTxWithNonTupleResult = {
@@ -186,6 +187,43 @@ jest.mock('@stacks/transactions', () => ({
   cvToJSON: jest.fn(),
   hexToCV: jest.fn(),
 }));
+
+describe('isTupleType', () => {
+  it('returns true for direct tuple types', () => {
+    expect(isTupleType('tuple')).toBe(true);
+    expect(isTupleType('(tuple (x-amount uint) (y-amount uint))')).toBe(true);
+    expect(isTupleType('(tuple (hashbytes (buff 32)) (version (buff 1)))')).toBe(true);
+  });
+
+  it('returns false for list types containing tuples', () => {
+    expect(isTupleType('(list 300 (tuple (x-amount uint) (y-amount uint)))')).toBe(false);
+    expect(isTupleType('(list 2 (tuple (a uint) (b uint)))')).toBe(false);
+  });
+
+  it('returns false for response types containing tuples', () => {
+    expect(isTupleType('(response (tuple (amount uint)) UnknownType)')).toBe(false);
+    expect(
+      isTupleType('(response (list 300 (tuple (x-amount uint) (y-amount uint))) UnknownType)')
+    ).toBe(false);
+  });
+
+  it('returns false for optional types wrapping tuples', () => {
+    expect(isTupleType('(optional (tuple (amount uint) (recipient principal)))')).toBe(false);
+  });
+
+  it('returns false for non-tuple types', () => {
+    expect(isTupleType('uint')).toBe(false);
+    expect(isTupleType('bool')).toBe(false);
+    expect(isTupleType('principal')).toBe(false);
+    expect(isTupleType('(list 3 uint)')).toBe(false);
+    expect(isTupleType('(response bool UnknownType)')).toBe(false);
+  });
+
+  it('returns false for undefined or empty', () => {
+    expect(isTupleType(undefined)).toBe(false);
+    expect(isTupleType('')).toBe(false);
+  });
+});
 
 describe('Function Called Utils', () => {
   // Reset mocks before each test
