@@ -7,9 +7,8 @@ import {
 import { cvToJSON, hexToCV } from '@stacks/transactions';
 
 /**
- * Returns true if the type string represents a direct tuple type,
- * not a type that merely contains tuples (e.g. a list of tuples).
- * Matches 'tuple' and '(tuple ...)' but not '(list N (tuple ...))' or '(response (tuple ...) ...)'.
+ * Returns true if the type string is a tuple type ('tuple' or '(tuple ...)').
+ * Returns false for list, response, and optional types that wrap tuples.
  */
 export function isTupleType(type: string | undefined): boolean {
   if (!type) return false;
