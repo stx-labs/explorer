@@ -15,13 +15,13 @@ import { Flex } from '@chakra-ui/react';
 import { ColumnDef, Header } from '@tanstack/react-table';
 import { useMemo } from 'react';
 
+import type { Transaction } from '@stacks/blockchain-api-client';
 import {
   ContractCallTransaction,
   MempoolContractCallTransaction,
   MempoolSmartContractTransaction,
   PostCondition,
   PostConditionFungibleConditionCode,
-  PostConditionNonFungibleConditionCode,
   SmartContractTransaction,
 } from '@stacks/stacks-blockchain-api-types';
 
@@ -95,11 +95,14 @@ const columnDefinitions: ColumnDef<PostConditionsTableData>[] = [
   },
 ];
 
+type PostConditionNonFungibleConditionCode = Extract<
+  Transaction['post_conditions'][number],
+  { type: 'non_fungible' }
+>['condition_code'];
+
 type PostConditionConditionCode =
   | PostConditionFungibleConditionCode
-  | PostConditionNonFungibleConditionCode
-  // TODO: remove once @stacks/stacks-blockchain-api-types adds 'maybe_sent'
-  | 'maybe_sent';
+  | PostConditionNonFungibleConditionCode;
 
 function getPostConditionCellText(postConditionCode: PostConditionConditionCode): string {
   if (postConditionCode === 'sent_equal_to') {
