@@ -6,8 +6,16 @@ import {
 } from '@stacks/stacks-blockchain-api-types';
 import { cvToJSON, hexToCV } from '@stacks/transactions';
 
+/**
+ * Returns true if the type string is a tuple type ('tuple' or '(tuple ...)').
+ * Returns false for list, response, and optional types that wrap tuples.
+ */
+export function isTupleType(type: string | undefined): boolean {
+  if (!type) return false;
+  return type === 'tuple' || type.startsWith('(tuple');
+}
+
 const formatClarityValueType = (type: string) => {
-  // TODO: add tests for this
   if (type === 'bool' || type === 'int' || type === 'principal' || type === 'uint') {
     switch (type) {
       case 'bool':
@@ -21,7 +29,7 @@ const formatClarityValueType = (type: string) => {
     }
   }
 
-  if (type.includes('tuple')) {
+  if (isTupleType(type)) {
     return 'Tuple';
   }
   return type;
@@ -84,7 +92,7 @@ export function formatClarityValue(cv: ClarityValue): FormattedClarityValue {
       maximumFractionDigits: 0,
     });
   }
-  if (cv.type.includes('tuple') && typeof cv.repr === 'string') {
+  if (isTupleType(cv.type) && typeof cv.repr === 'string') {
     value = formatTupleResult(cv.repr);
   }
 
@@ -130,7 +138,7 @@ const getReprValue = ({ type, value }: ReprValueProps) => {
 // TODO: add tests for this
 export function formatFunctionResult(result: ContractCallTxResult): FormattedClarityValue[] {
   const { success, type, value } = cvToJSON(hexToCV(result.hex)); // TODO: what type are we handling here?
-  if (type?.includes('tuple')) {
+  if (isTupleType(value?.type)) {
     const formattedResult = Object.keys(value.value).map((name: string) => {
       const isNestedType = Object.keys(value.value).includes('type');
       const entry = isNestedType ? value.value : value.value[name];

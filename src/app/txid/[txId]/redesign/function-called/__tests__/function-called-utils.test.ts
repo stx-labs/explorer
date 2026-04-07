@@ -6,6 +6,7 @@ import {
   formatFunctionResult,
   getContractCallTxFunctionArgs,
   getFunctionResultSuccessStatus,
+  isTupleType,
 } from '../utils';
 
 export const contractCallTxWithNonTupleResult = {
@@ -187,6 +188,43 @@ jest.mock('@stacks/transactions', () => ({
   hexToCV: jest.fn(),
 }));
 
+describe('isTupleType', () => {
+  it('returns true for direct tuple types', () => {
+    expect(isTupleType('tuple')).toBe(true);
+    expect(isTupleType('(tuple (x-amount uint) (y-amount uint))')).toBe(true);
+    expect(isTupleType('(tuple (hashbytes (buff 32)) (version (buff 1)))')).toBe(true);
+  });
+
+  it('returns false for list types containing tuples', () => {
+    expect(isTupleType('(list 300 (tuple (x-amount uint) (y-amount uint)))')).toBe(false);
+    expect(isTupleType('(list 2 (tuple (a uint) (b uint)))')).toBe(false);
+  });
+
+  it('returns false for response types containing tuples', () => {
+    expect(isTupleType('(response (tuple (amount uint)) UnknownType)')).toBe(false);
+    expect(
+      isTupleType('(response (list 300 (tuple (x-amount uint) (y-amount uint))) UnknownType)')
+    ).toBe(false);
+  });
+
+  it('returns false for optional types wrapping tuples', () => {
+    expect(isTupleType('(optional (tuple (amount uint) (recipient principal)))')).toBe(false);
+  });
+
+  it('returns false for non-tuple types', () => {
+    expect(isTupleType('uint')).toBe(false);
+    expect(isTupleType('bool')).toBe(false);
+    expect(isTupleType('principal')).toBe(false);
+    expect(isTupleType('(list 3 uint)')).toBe(false);
+    expect(isTupleType('(response bool UnknownType)')).toBe(false);
+  });
+
+  it('returns false for undefined or empty', () => {
+    expect(isTupleType(undefined)).toBe(false);
+    expect(isTupleType('')).toBe(false);
+  });
+});
+
 describe('Function Called Utils', () => {
   // Reset mocks before each test
   beforeEach(() => {
@@ -361,12 +399,12 @@ describe('Function Called Utils', () => {
     });
 
     it('formats tuple results correctly', () => {
-      // Mock the hexToCV and cvToJSON functions for a tuple result
       (hexToCV as jest.Mock).mockReturnValue({});
       (cvToJSON as jest.Mock).mockReturnValue({
         success: true,
-        type: 'tuple',
+        type: '(response (tuple (amount uint) (recipient principal)) UnknownType)',
         value: {
+          type: '(tuple (amount uint) (recipient principal))',
           value: {
             amount: { type: 'uint', value: 1000 },
             recipient: { type: 'principal', value: 'SP123...' },
@@ -392,30 +430,41 @@ describe('Function Called Utils', () => {
       });
     });
 
-    it('handles nested types in tuple results', () => {
-      // Mock the hexToCV and cvToJSON functions for a tuple with nested types
+    it('formats list-of-tuples results using repr instead of tuple rendering', () => {
       (hexToCV as jest.Mock).mockReturnValue({});
       (cvToJSON as jest.Mock).mockReturnValue({
         success: true,
-        type: 'tuple',
+        type: '(response (list 2 (tuple (x-amount uint) (y-amount uint))) UnknownType)',
         value: {
-          value: {
-            type: 'nested-type', // This indicates a nested type
-            value: {
-              field1: { type: 'uint', value: 100 },
-              field2: { type: 'bool', value: true },
+          type: '(list 2 (tuple (x-amount uint) (y-amount uint)))',
+          value: [
+            {
+              type: '(tuple (x-amount uint) (y-amount uint))',
+              value: {
+                'x-amount': { type: 'uint', value: '0' },
+                'y-amount': { type: 'uint', value: '100' },
+              },
             },
-          },
+            {
+              type: '(tuple (x-amount uint) (y-amount uint))',
+              value: {
+                'x-amount': { type: 'uint', value: '1' },
+                'y-amount': { type: 'uint', value: '200' },
+              },
+            },
+          ],
         },
       });
 
+      const repr =
+        '(ok (list (tuple (x-amount u0) (y-amount u100)) (tuple (x-amount u1) (y-amount u200))))';
       const result = formatFunctionResult({
-        hex: '0x070a...',
-        repr: '(ok (tuple (field1 u100) (field2 true)))',
+        hex: '0x070b...',
+        repr,
       });
 
-      // The function should handle this case, even if the result might not be what we expect
-      expect(result).toBeDefined();
+      expect(result).toHaveLength(1);
+      expect(result[0].value).toBe(repr);
     });
 
     it('formats results from real transaction data (non-tuple)', () => {
@@ -449,11 +498,9 @@ describe('Function Called Utils', () => {
       expect(hexToCV).toHaveBeenCalledWith('0x0703');
     });
 
-    it('formats results from real transaction data (tuple)', () => {
-      // Use the real transaction data from our examples
+    it('formats results from real transaction data (optional-wrapped tuple uses repr)', () => {
       const txResult = contractCallTxWithTupleResult.tx_result;
 
-      // Mock the hexToCV and cvToJSON functions to return what we expect from this tx
       (hexToCV as jest.Mock).mockReturnValue({});
       (cvToJSON as jest.Mock).mockReturnValue({
         success: true,
@@ -463,22 +510,13 @@ describe('Function Called Utils', () => {
           value: {
             type: '(tuple (amount-ustx uint) (delegated-to principal) (pox-addr (optional none)) (until-burn-ht (optional none)))',
             value: {
-              'amount-ustx': {
-                type: 'uint',
-                value: '24183461872',
-              },
+              'amount-ustx': { type: 'uint', value: '24183461872' },
               'delegated-to': {
                 type: 'principal',
                 value: 'SP21YTSM60CAY6D011EZVEVNKXVW8FVZE198XEFFP.pox4-fast-pool-v3',
               },
-              'pox-addr': {
-                type: '(optional none)',
-                value: null,
-              },
-              'until-burn-ht': {
-                type: '(optional none)',
-                value: null,
-              },
+              'pox-addr': { type: '(optional none)', value: null },
+              'until-burn-ht': { type: '(optional none)', value: null },
             },
           },
         },
@@ -486,28 +524,9 @@ describe('Function Called Utils', () => {
 
       const result = formatFunctionResult(txResult);
 
-      const expectedResult = [
-        {
-          name: 'type',
-          value:
-            '{"amount-ustx":{"type":"uint","value":"24183461872"},"delegated-to":{"type":"principal","value":"SP21YTSM60CAY6D011EZVEVNKXVW8FVZE198XEFFP.pox4-fast-pool-v3"},"pox-addr":{"type":"optional: none","value":null},"until-burn-ht":{"type":"(optional, ',
-          type: 'Tuple',
-        },
-        {
-          name: 'value',
-          value:
-            '{"amount-ustx":{"type":"uint","value":"24183461872"},"delegated-to":{"type":"principal","value":"SP21YTSM60CAY6D011EZVEVNKXVW8FVZE198XEFFP.pox4-fast-pool-v3"},"pox-addr":{"type":"optional: none","value":null},"until-burn-ht":{"type":"(optional, ',
-          type: 'Tuple',
-        },
-      ];
-
-      expect(result).toHaveLength(2);
-      expect(result[0].name).toBe('type');
-      expect(result[0].value).toBe(expectedResult[0].value);
-      expect(result[0].type).toBe(expectedResult[0].type);
-      expect(result[1].name).toBe('value');
-      expect(result[1].value).toBe(expectedResult[1].value);
-      expect(result[1].type).toBe(expectedResult[1].type);
+      // Optional-wrapped tuples use the non-tuple path and display repr directly
+      expect(result).toHaveLength(1);
+      expect(result[0].value).toBe(txResult.repr);
       expect(hexToCV).toHaveBeenCalledWith(txResult.hex);
     });
   });
