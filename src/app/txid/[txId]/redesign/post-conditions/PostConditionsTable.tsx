@@ -15,13 +15,13 @@ import { Flex } from '@chakra-ui/react';
 import { ColumnDef, Header } from '@tanstack/react-table';
 import { useMemo } from 'react';
 
+import type { Transaction } from '@stacks/blockchain-api-client';
 import {
   ContractCallTransaction,
   MempoolContractCallTransaction,
   MempoolSmartContractTransaction,
   PostCondition,
   PostConditionFungibleConditionCode,
-  PostConditionNonFungibleConditionCode,
   SmartContractTransaction,
 } from '@stacks/stacks-blockchain-api-types';
 
@@ -95,6 +95,11 @@ const columnDefinitions: ColumnDef<PostConditionsTableData>[] = [
   },
 ];
 
+type PostConditionNonFungibleConditionCode = Extract<
+  Transaction['post_conditions'][number],
+  { type: 'non_fungible' }
+>['condition_code'];
+
 type PostConditionConditionCode =
   | PostConditionFungibleConditionCode
   | PostConditionNonFungibleConditionCode;
@@ -120,6 +125,9 @@ function getPostConditionCellText(postConditionCode: PostConditionConditionCode)
   }
   if (postConditionCode === 'not_sent') {
     return 'Must not transfer';
+  }
+  if (postConditionCode === 'maybe_sent') {
+    return 'May transfer';
   }
   return 'Undefined post condition code';
 }
