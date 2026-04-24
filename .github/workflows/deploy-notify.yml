@@ -32,11 +32,12 @@ jobs:
           script: |
             let prNumber;
             if (context.eventName === 'workflow_dispatch') {
-              prNumber = Number(context.payload.inputs.pr_number);
-              if (!prNumber) {
-                core.setFailed('pr_number input is required');
+              const raw = context.payload.inputs.pr_number;
+              if (!/^[1-9]\d*$/.test(raw)) {
+                core.setFailed('pr_number must be a positive integer');
                 return;
               }
+              prNumber = Number(raw);
             } else {
               const sha = context.payload.client_payload?.git?.sha;
               if (!sha) {
@@ -77,14 +78,14 @@ jobs:
         run: |
           MARKER="## Marketing Summary"
 
-          if ! echo "$PR_BODY" | grep -qF "$MARKER"; then
+          if ! printf '%s\n' "$PR_BODY" | grep -qF "$MARKER"; then
             echo "No Marketing Summary section found"
             echo "has_summary=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
           # Extract everything after the marker, up to the next ## heading
-          SUMMARY=$(echo "$PR_BODY" | sed -n "/^${MARKER}/,/^## /{ /^${MARKER}/d; /^## /d; p; }" | sed 's/<!--.*-->//g' | sed '/^$/N;/^\n$/d' | tr -s '[:space:]' ' ' | sed 's/^ //;s/ $//')
+          SUMMARY=$(printf '%s\n' "$PR_BODY" | sed -n "/^${MARKER}/,/^## /{ /^${MARKER}/d; /^## /d; p; }" | sed 's/<!--.*-->//g' | sed '/^$/N;/^\n$/d' | tr -s '[:space:]' ' ' | sed 's/^ //;s/ $//')
 
           if [ -z "$SUMMARY" ]; then
             echo "Marketing Summary section is empty"
