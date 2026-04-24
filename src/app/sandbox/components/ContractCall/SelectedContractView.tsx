@@ -18,6 +18,7 @@ import FunctionXIcon from '../../../../ui/icons/FunctionX';
 import { Caption, Title } from '../../../../ui/typography';
 import { selectShowRightPanel } from '../../sandbox-slice';
 import { AvailableFunctionsView } from './AvailableFunctionsView';
+import { DataVariablesView } from './DataVariablesView';
 import { FunctionView } from './FunctionView';
 import { PluralizedCaption } from './PluralizedCaption';
 
@@ -139,7 +140,10 @@ export const SelectedContractView: FC<{
             }
           />
         ) : (
-          <AvailableFunctionsView contract={contract} contractId={contractId} />
+          <>
+            <AvailableFunctionsView contract={contract} contractId={contractId} />
+            <DataVariablesView contract={contract} contractId={contractId} />
+          </>
         )}
       </Box>
     </Grid>

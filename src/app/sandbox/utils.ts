@@ -7,6 +7,7 @@ import {
   cvToString,
   deserializeCV,
   encodeAbiClarityValue,
+  hexToCV,
   isClarityAbiOptional,
   isClarityAbiTuple,
   noneCV,
@@ -22,6 +23,19 @@ export const parseReadOnlyResponse = ({ result }: ReadOnlyResponse) => {
   const bufferCv = Buffer.from(hex, 'hex');
   const clarityValue = deserializeCV(bufferCv);
   return cvToString(clarityValue);
+};
+
+export interface ParsedHexClarityValue {
+  display: string;
+  parsed: boolean;
+}
+
+export const parseHexClarityValue = (hex: string): ParsedHexClarityValue => {
+  try {
+    return { display: cvToString(hexToCV(hex)), parsed: true };
+  } catch {
+    return { display: hex, parsed: false };
+  }
 };
 
 export const getTuple = (type?: ClarityAbiType): ClarityAbiTypeTuple['tuple'] | undefined => {
