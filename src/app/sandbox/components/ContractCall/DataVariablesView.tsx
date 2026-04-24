@@ -1,8 +1,6 @@
-'use client';
-
 import { Box, Flex, Grid, Icon, Spinner, Stack } from '@chakra-ui/react';
 import { Atom } from '@phosphor-icons/react';
-import { FC, useState } from 'react';
+import { FC, memo, useId, useState } from 'react';
 
 import { ClarityAbiType, getTypeString } from '@stacks/transactions';
 
@@ -23,8 +21,10 @@ interface AbiVariable {
 const DataVariableRow: FC<{
   contractId: string;
   variable: AbiVariable;
-}> = ({ contractId, variable }) => {
+}> = memo(function DataVariableRow({ contractId, variable }) {
   const [expanded, setExpanded] = useState(false);
+  const panelId = useId();
+  const labelId = useId();
   const network = useGlobalContext().activeNetwork;
 
   const { data, error, isLoading } = useDataVarValue({
@@ -38,13 +38,21 @@ const DataVariableRow: FC<{
 
   return (
     <Box>
-      <Flex
-        justifyContent="space-between"
-        p={4}
-        _hover={{ cursor: 'pointer', bg: 'surfaceHighlight' }}
+      <Box
+        as="button"
+        aria-expanded={expanded}
+        aria-controls={panelId}
         onClick={() => setExpanded(prev => !prev)}
-        w="full"
+        display="flex"
+        width="full"
+        justifyContent="space-between"
         alignItems="center"
+        p={4}
+        bg="transparent"
+        border="none"
+        textAlign="left"
+        cursor="pointer"
+        _hover={{ bg: 'surfaceHighlight' }}
       >
         <Flex alignItems="center" minW={0}>
           <Grid
@@ -54,13 +62,14 @@ const DataVariableRow: FC<{
             h={8}
             w={8}
             flexShrink={0}
+            aria-hidden="true"
           >
             <Icon h={4} w={4}>
               <Atom />
             </Icon>
           </Grid>
           <Box ml={4} minW={0}>
-            <Text fontSize="sm" fontFamily={`"Fira Code", monospace`} fontWeight="500">
+            <Text id={labelId} fontSize="sm" fontFamily="matterMono" fontWeight="500">
               {variable.name}
             </Text>
             <Text fontSize="xs" color="textSubdued" truncate>
@@ -69,35 +78,27 @@ const DataVariableRow: FC<{
           </Box>
         </Flex>
         <Text fontSize="xs" color="textSubdued" ml={4}>
-          {expanded ? 'Hide' : 'Fetch value'}
+          {isLoading ? 'Loading…' : expanded ? 'Hide' : 'Fetch value'}
         </Text>
-      </Flex>
+      </Box>
       {expanded && (
-        <Box px={4} pb={4}>
+        <Box id={panelId} role="region" aria-labelledby={labelId} px={4} pb={4}>
           {isLoading && (
             <Flex alignItems="center" justifyContent="center" py={4}>
               <Spinner size="sm" />
             </Flex>
           )}
           {error && (
-            <Text color="red" fontSize="sm">
+            <Text color="textError" fontSize="sm">
               {error instanceof Error ? error.message : 'Failed to fetch data variable value'}
             </Text>
           )}
-          {data && <CodeEditor code={safeParse(data.data)} />}
+          {data && <CodeEditor code={parseHexClarityValue(data.data).display} />}
         </Box>
       )}
     </Box>
   );
-};
-
-const safeParse = (hex: string): string => {
-  try {
-    return parseHexClarityValue(hex);
-  } catch {
-    return hex;
-  }
-};
+});
 
 export const DataVariablesView: FC<{
   contract: ContractWithParsedAbi;

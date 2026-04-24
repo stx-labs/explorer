@@ -24,9 +24,17 @@ export const parseReadOnlyResponse = ({ result }: ReadOnlyResponse) => {
   return cvToString(clarityValue);
 };
 
-export const parseHexClarityValue = (hex: string): string => {
-  const clarityValue = deserializeCV(hex);
-  return cvToString(clarityValue);
+export interface ParsedHexClarityValue {
+  display: string;
+  parsed: boolean;
+}
+
+export const parseHexClarityValue = (hex: string): ParsedHexClarityValue => {
+  try {
+    return { display: cvToString(deserializeCV(hex)), parsed: true };
+  } catch {
+    return { display: hex, parsed: false };
+  }
 };
 
 export const getTuple = (type?: ClarityAbiType): ClarityAbiTypeTuple['tuple'] | undefined => {

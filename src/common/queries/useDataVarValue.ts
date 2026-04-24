@@ -2,6 +2,7 @@ import { UseQueryResult, useQuery } from '@tanstack/react-query';
 
 import { HIRO_HEADERS } from '../constants/env';
 import { Network } from '../types/network';
+import { validateStacksContractId } from '../utils/utils';
 
 export interface DataVarResponse {
   data: string;
@@ -15,15 +16,27 @@ interface DataVarOptions {
   network: Network;
 }
 
+const MAX_VAR_NAME_LENGTH = 128;
+const MAX_ERROR_BYTES = 2048;
+const CONTROL_CHARS = /[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g;
+
+export const sanitizeErrorBody = (body: string): string => {
+  const truncated = body.length > MAX_ERROR_BYTES ? `${body.slice(0, MAX_ERROR_BYTES)}…` : body;
+  return truncated.replace(CONTROL_CHARS, '');
+};
+
 export const fetchDataVarValue = async ({
   contractAddress,
   contractName,
   varName,
   network,
 }: DataVarOptions): Promise<DataVarResponse> => {
-  const url = `${network.url}/v2/data_var/${contractAddress}/${contractName}/${encodeURIComponent(
-    varName
-  )}?proof=0`;
+  if (varName.length > MAX_VAR_NAME_LENGTH) {
+    throw new Error(`Variable name exceeds maximum length of ${MAX_VAR_NAME_LENGTH}`);
+  }
+  const url = `${network.url}/v2/data_var/${encodeURIComponent(
+    contractAddress
+  )}/${encodeURIComponent(contractName)}/${encodeURIComponent(varName)}?proof=0`;
 
   const response = await fetch(url, {
     headers: {
@@ -32,7 +45,7 @@ export const fetchDataVarValue = async ({
   });
 
   if (!response.ok) {
-    const text = await response.text();
+    const text = sanitizeErrorBody(await response.text());
     throw new Error(text || `Request failed with status ${response.status}`);
   }
 
@@ -50,7 +63,8 @@ export function useDataVarValue({
   network: Network;
   enabled: boolean;
 }): UseQueryResult<DataVarResponse> {
-  const [contractAddress, contractName] = contractId.split('.');
+  const isValid = validateStacksContractId(contractId);
+  const [contractAddress = '', contractName = ''] = isValid ? contractId.split('.') : [];
 
   return useQuery({
     queryKey: ['dataVar', contractId, varName, network.networkId],
@@ -61,7 +75,7 @@ export function useDataVarValue({
         varName,
         network,
       }),
-    enabled,
+    enabled: enabled && isValid,
     staleTime: 0,
   });
 }
