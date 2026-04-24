@@ -1,4 +1,4 @@
-import { Box, Flex, Grid, Icon, Spinner, Stack } from '@chakra-ui/react';
+import { Box, Flex, Grid, Icon, Spinner, Stack, chakra } from '@chakra-ui/react';
 import { Atom } from '@phosphor-icons/react';
 import { FC, memo, useId, useState } from 'react';
 
@@ -32,8 +32,8 @@ const DataVariableRow: FC<{
 
   return (
     <Box>
-      <Box
-        as="button"
+      <chakra.button
+        type="button"
         aria-expanded={expanded}
         aria-controls={panelId}
         onClick={() => setExpanded(prev => !prev)}
@@ -74,7 +74,7 @@ const DataVariableRow: FC<{
         <Text fontSize="xs" color="textSubdued" ml={4}>
           {isLoading ? 'Loading…' : expanded ? 'Hide' : 'Fetch value'}
         </Text>
-      </Box>
+      </chakra.button>
       {expanded && (
         <Box id={panelId} role="region" aria-labelledby={labelId} px={4} pb={4}>
           {isLoading && (

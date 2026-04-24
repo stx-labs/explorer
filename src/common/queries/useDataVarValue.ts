@@ -67,7 +67,7 @@ export function useDataVarValue({
   const [contractAddress = '', contractName = ''] = isValid ? contractId.split('.') : [];
 
   return useQuery({
-    queryKey: ['dataVar', contractId, varName, network.networkId],
+    queryKey: ['dataVar', contractId, varName, network.networkId, network.url],
     queryFn: () =>
       fetchDataVarValue({
         contractAddress,
