@@ -8,7 +8,6 @@ import { Section } from '../../../../common/components/Section';
 import { useGlobalContext } from '../../../../common/context/useGlobalContext';
 import { useDataVarValue } from '../../../../common/queries/useDataVarValue';
 import { ContractWithParsedAbi } from '../../../../common/types/contract';
-import { CodeEditor } from '../../../../ui/CodeEditor';
 import { Text } from '../../../../ui/Text';
 import { parseHexClarityValue } from '../../utils';
 
@@ -87,7 +86,21 @@ const DataVariableRow: FC<{
               {error instanceof Error ? error.message : 'Failed to fetch data variable value'}
             </Text>
           )}
-          {data && <CodeEditor code={parseHexClarityValue(data.data).display} />}
+          {data && (
+            <Box
+              as="pre"
+              fontFamily="matterMono"
+              fontSize="sm"
+              whiteSpace="pre-wrap"
+              wordBreak="break-all"
+              bg="surfaceHighlight"
+              p={3}
+              borderRadius="md"
+              m={0}
+            >
+              {parseHexClarityValue(data.data).display}
+            </Box>
+          )}
         </Box>
       )}
     </Box>
