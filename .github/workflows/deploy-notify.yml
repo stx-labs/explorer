@@ -12,6 +12,12 @@ name: Deploy Notification
 on:
   repository_dispatch:
     types: [vercel.deployment.promoted]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'PR number to re-notify for'
+        required: true
+        type: string
 
 permissions: {}
 
@@ -19,35 +25,49 @@ jobs:
   notify-slack:
     runs-on: ubuntu-latest
     steps:
-      - name: Find PR for deployed commit
+      - name: Find PR
         id: find_pr
         uses: actions/github-script@v7
         with:
           script: |
-            const sha = context.payload.client_payload?.git?.sha;
-            if (!sha) {
-              core.setFailed('No SHA in dispatch payload');
-              return;
+            let prNumber;
+            if (context.eventName === 'workflow_dispatch') {
+              prNumber = Number(context.payload.inputs.pr_number);
+              if (!prNumber) {
+                core.setFailed('pr_number input is required');
+                return;
+              }
+            } else {
+              const sha = context.payload.client_payload?.git?.sha;
+              if (!sha) {
+                core.setFailed('No SHA in dispatch payload');
+                return;
+              }
+              const { data: prs } = await github.rest.repos.listPullRequestsAssociatedWithCommit({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                commit_sha: sha,
+              });
+              const merged = prs.find(pr => pr.merged_at);
+              if (!merged) {
+                core.info(`No merged PR found for commit ${sha}`);
+                core.setOutput('found', 'false');
+                return;
+              }
+              prNumber = merged.number;
             }
 
-            const { data: prs } = await github.rest.repos.listPullRequestsAssociatedWithCommit({
+            const { data: pr } = await github.rest.pulls.get({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              commit_sha: sha,
+              pull_number: prNumber,
             });
 
-            const merged = prs.find(pr => pr.merged_at);
-            if (!merged) {
-              core.info(`No merged PR found for commit ${sha}`);
-              core.setOutput('found', 'false');
-              return;
-            }
-
             core.setOutput('found', 'true');
-            core.setOutput('pr_number', String(merged.number));
-            core.setOutput('pr_title', merged.title);
-            core.setOutput('pr_url', merged.html_url);
-            core.setOutput('pr_body', merged.body || '');
+            core.setOutput('pr_number', String(pr.number));
+            core.setOutput('pr_title', pr.title);
+            core.setOutput('pr_url', pr.html_url);
+            core.setOutput('pr_body', pr.body || '');
 
       - name: Extract marketing summary
         if: steps.find_pr.outputs.found == 'true'
@@ -64,7 +84,7 @@ jobs:
           fi
 
           # Extract everything after the marker, up to the next ## heading
-          SUMMARY=$(echo "$PR_BODY" | sed -n "/^${MARKER}/,/^## /{ /^${MARKER}/d; /^## /d; p; }" | sed 's/<!--.*-->//g' | sed '/^$/N;/^\n$/d' | xargs)
+          SUMMARY=$(echo "$PR_BODY" | sed -n "/^${MARKER}/,/^## /{ /^${MARKER}/d; /^## /d; p; }" | sed 's/<!--.*-->//g' | sed '/^$/N;/^\n$/d' | tr -s '[:space:]' ' ' | sed 's/^ //;s/ $//')
 
           if [ -z "$SUMMARY" ]; then
             echo "Marketing Summary section is empty"
