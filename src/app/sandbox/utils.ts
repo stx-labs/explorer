@@ -7,6 +7,7 @@ import {
   cvToString,
   deserializeCV,
   encodeAbiClarityValue,
+  hexToCV,
   isClarityAbiOptional,
   isClarityAbiTuple,
   noneCV,
@@ -31,7 +32,7 @@ export interface ParsedHexClarityValue {
 
 export const parseHexClarityValue = (hex: string): ParsedHexClarityValue => {
   try {
-    return { display: cvToString(deserializeCV(hex)), parsed: true };
+    return { display: cvToString(hexToCV(hex)), parsed: true };
   } catch {
     return { display: hex, parsed: false };
   }

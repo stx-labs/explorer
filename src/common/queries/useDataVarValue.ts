@@ -77,5 +77,6 @@ export function useDataVarValue({
       }),
     enabled: enabled && isValid,
     staleTime: 0,
+    gcTime: 0,
   });
 }
