@@ -29,6 +29,7 @@ import {
 import { Button } from '@/ui/Button';
 import { NextLink } from '@/ui/NextLink';
 import { Text } from '@/ui/Text';
+import { Tooltip } from '@/ui/Tooltip';
 import {
   Box,
   Card,
@@ -40,8 +41,9 @@ import {
   Skeleton,
   Stack,
   Table,
+  useClipboard,
 } from '@chakra-ui/react';
-import { ArrowClockwise, House, Star, Trash } from '@phosphor-icons/react';
+import { ArrowClockwise, Copy, House, Star, Trash } from '@phosphor-icons/react';
 import { useQueryClient } from '@tanstack/react-query';
 import dayjs from 'dayjs';
 import { useRouter } from 'next/navigation';
@@ -55,6 +57,61 @@ type SortKey =
   | 'added_desc'
   | 'added_asc'
   | 'label_asc';
+
+type WatchlistTableAddressCellProps = {
+  principal: string;
+  bnsName?: string;
+  network: ReturnType<typeof useGlobalContext>['activeNetwork'];
+};
+
+/** Desktop table cell: BNS / truncated address + copy full principal (hooks must live here, not in map). */
+function WatchlistTableAddressCell({
+  principal,
+  bnsName,
+  network,
+}: WatchlistTableAddressCellProps) {
+  const { copied, copy } = useClipboard({ value: principal, timeout: 750 });
+
+  return (
+    <Flex alignItems="flex-start" gap={2} minW={0}>
+      <Stack gap={0} minW={0} flex="1">
+        {bnsName ? (
+          <NextLink
+            href={buildUrl(`/address/${encodeURIComponent(principal)}`, network)}
+            variant="noUnderline"
+          >
+            <Text textStyle="text-medium-sm" color="accent.stacks-600">
+              {bnsName}
+            </Text>
+          </NextLink>
+        ) : null}
+        <Text textStyle="text-regular-xs" color="textSecondary" fontFamily="mono">
+          {truncateStxAddress(principal)}
+        </Text>
+      </Stack>
+      <Tooltip
+        content={copied ? 'Copied!' : 'Copy address'}
+        open={copied}
+        variant="redesignPrimary"
+      >
+        <Button
+          type="button"
+          variant="unstyled"
+          aria-label="Copy address"
+          flexShrink={0}
+          p={1}
+          borderRadius="redesign.md"
+          _hover={{ bg: 'surfaceFifth' }}
+          onClick={() => copy()}
+        >
+          <Icon h={4} w={4} color="iconSecondary">
+            <Copy />
+          </Icon>
+        </Button>
+      </Tooltip>
+    </Flex>
+  );
+}
 
 function txGroupLabel(ts: number): 'today' | 'yesterday' | 'earlier' {
   const t = dayjs.unix(ts);
@@ -604,21 +661,11 @@ export default function WatchlistPageClient() {
               {tableRows.map(row => (
                 <Table.Row key={row.principal}>
                   <Table.Cell>
-                    <Stack gap={0}>
-                      {row.item.bnsName ? (
-                        <NextLink
-                          href={buildUrl(`/address/${encodeURIComponent(row.principal)}`, network)}
-                          variant="noUnderline"
-                        >
-                          <Text textStyle="text-medium-sm" color="accent.stacks-600">
-                            {row.item.bnsName}
-                          </Text>
-                        </NextLink>
-                      ) : null}
-                      <Text textStyle="text-regular-xs" color="textSecondary" fontFamily="mono">
-                        {truncateStxAddress(row.principal)}
-                      </Text>
-                    </Stack>
+                    <WatchlistTableAddressCell
+                      principal={row.principal}
+                      bnsName={row.item.bnsName}
+                      network={network}
+                    />
                   </Table.Cell>
                   <Table.Cell>
                     {row.balancePending ? (
