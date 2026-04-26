@@ -172,6 +172,11 @@ export default function WatchlistPageClient() {
   } = useWatchlistBalancesBatch(principals, hydrated && hasAddresses);
 
   const [txFeedLimit, setTxFeedLimit] = useState(WATCHLIST_TX_INITIAL_LIMIT);
+  /** After refresh, block auto load-more until the user scrolls (avoids chained loads from scroll restoration). */
+  const txInfiniteScrollReadyRef = useRef(false);
+  const txFeedLoadLockRef = useRef(false);
+  const txFeedSentinelRef = useRef<HTMLDivElement | null>(null);
+
   const feedQueries = useWatchlistTransactionQueries(
     principals,
     txFeedLimit,
@@ -193,7 +198,29 @@ export default function WatchlistPageClient() {
 
   useEffect(() => {
     setTxFeedLimit(WATCHLIST_TX_INITIAL_LIMIT);
+    txInfiniteScrollReadyRef.current = false;
+    txFeedLoadLockRef.current = false;
   }, [txFilterType, txFilterPrincipal]);
+
+  useEffect(() => {
+    const onScroll = () => {
+      txInfiniteScrollReadyRef.current = true;
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  useEffect(() => {
+    const onPageShow = (e: PageTransitionEvent) => {
+      if (e.persisted) {
+        setTxFeedLimit(WATCHLIST_TX_INITIAL_LIMIT);
+        txInfiniteScrollReadyRef.current = false;
+        txFeedLoadLockRef.current = false;
+      }
+    };
+    window.addEventListener('pageshow', onPageShow);
+    return () => window.removeEventListener('pageshow', onPageShow);
+  }, []);
 
   const [removeOpen, setRemoveOpen] = useState(false);
   const [removeTarget, setRemoveTarget] = useState<string | null>(null);
@@ -359,8 +386,6 @@ export default function WatchlistPageClient() {
     return true;
   }, [hydrated, hasAddresses, canLoadMoreTx, isTxFeedFetching, feedQueries]);
 
-  const txFeedSentinelRef = useRef<HTMLDivElement | null>(null);
-  const txFeedLoadLockRef = useRef(false);
   const canLoadMoreTxRef = useRef(canLoadMoreTx);
   const isTxFeedFetchingRef = useRef(isTxFeedFetching);
   canLoadMoreTxRef.current = canLoadMoreTx;
@@ -382,6 +407,7 @@ export default function WatchlistPageClient() {
         const hit = entries.some(e => e.isIntersecting);
         if (
           !hit ||
+          !txInfiniteScrollReadyRef.current ||
           !canLoadMoreTxRef.current ||
           isTxFeedFetchingRef.current ||
           txFeedLoadLockRef.current
