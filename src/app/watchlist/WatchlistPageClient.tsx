@@ -55,7 +55,7 @@ import {
 import { useQueryClient } from '@tanstack/react-query';
 import dayjs from 'dayjs';
 import { useRouter } from 'next/navigation';
-import { type ChangeEvent, useCallback, useEffect, useMemo, useState } from 'react';
+import { type ChangeEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 type SortKey =
   | 'stx_desc'
@@ -146,6 +146,9 @@ const SORT_OPTIONS = [
   { value: 'added_asc', label: 'Date added (old)' },
   { value: 'label_asc', label: 'Name (A–Z)' },
 ] as const;
+
+/** `title` / tooltip hint when balance or tx count failed to load */
+const WATCHLIST_CELL_LOAD_ERROR_TITLE = 'Ошибка загрузки';
 
 export default function WatchlistPageClient() {
   const router = useRouter();
@@ -348,6 +351,52 @@ export default function WatchlistPageClient() {
   }, [feedQueries, txFeedLimit, hasAddresses, hydrated]);
 
   const isTxFeedFetching = feedQueries.some(q => q.isFetching);
+
+  const showTxFeedEndMessage = useMemo(() => {
+    if (!hydrated || !hasAddresses || canLoadMoreTx || isTxFeedFetching) return false;
+    if (!feedQueries.some(q => q.isSuccess)) return false;
+    if (feedQueries.length > 0 && feedQueries.every(q => q.isError)) return false;
+    return true;
+  }, [hydrated, hasAddresses, canLoadMoreTx, isTxFeedFetching, feedQueries]);
+
+  const txFeedSentinelRef = useRef<HTMLDivElement | null>(null);
+  const txFeedLoadLockRef = useRef(false);
+  const canLoadMoreTxRef = useRef(canLoadMoreTx);
+  const isTxFeedFetchingRef = useRef(isTxFeedFetching);
+  canLoadMoreTxRef.current = canLoadMoreTx;
+  isTxFeedFetchingRef.current = isTxFeedFetching;
+
+  useEffect(() => {
+    if (!isTxFeedFetching) {
+      txFeedLoadLockRef.current = false;
+    }
+  }, [isTxFeedFetching]);
+
+  useEffect(() => {
+    if (!hydrated || !hasAddresses) return;
+    const node = txFeedSentinelRef.current;
+    if (!node || typeof IntersectionObserver === 'undefined') return;
+
+    const observer = new IntersectionObserver(
+      entries => {
+        const hit = entries.some(e => e.isIntersecting);
+        if (
+          !hit ||
+          !canLoadMoreTxRef.current ||
+          isTxFeedFetchingRef.current ||
+          txFeedLoadLockRef.current
+        ) {
+          return;
+        }
+        txFeedLoadLockRef.current = true;
+        setTxFeedLimit(prev => prev + WATCHLIST_TX_INITIAL_LIMIT);
+      },
+      { root: null, rootMargin: '120px', threshold: 0 }
+    );
+
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [hydrated, hasAddresses]);
 
   const onRetry = useCallback(() => {
     void queryClient.invalidateQueries();
@@ -609,7 +658,9 @@ export default function WatchlistPageClient() {
                       {row.balancePending ? (
                         <Skeleton height="14px" width="80px" />
                       ) : row.balanceError ? (
-                        <Text textStyle="text-medium-sm">—</Text>
+                        <Text textStyle="text-medium-sm" title={WATCHLIST_CELL_LOAD_ERROR_TITLE}>
+                          {microToStacksFormatted('0')}
+                        </Text>
                       ) : (
                         <Text textStyle="text-medium-sm">
                           {microToStacksFormatted(row.stxMicro)}
@@ -620,7 +671,10 @@ export default function WatchlistPageClient() {
                       <Text textStyle="text-regular-xs" color="textSecondary">
                         USD (STX)
                       </Text>
-                      <Text textStyle="text-medium-sm">
+                      <Text
+                        textStyle="text-medium-sm"
+                        title={row.balanceError ? WATCHLIST_CELL_LOAD_ERROR_TITLE : undefined}
+                      >
                         {formatWatchlistUsdFromMicroStx(
                           row.balancePending || row.balanceError ? '0' : row.stxMicro
                         )}
@@ -633,7 +687,9 @@ export default function WatchlistPageClient() {
                       {row.txPending ? (
                         <Skeleton height="14px" width="48px" />
                       ) : row.txError ? (
-                        <Text textStyle="text-medium-sm">—</Text>
+                        <Text textStyle="text-medium-sm" title={WATCHLIST_CELL_LOAD_ERROR_TITLE}>
+                          0
+                        </Text>
                       ) : (
                         <Text textStyle="text-medium-sm">{row.totalTx}</Text>
                       )}
@@ -679,21 +735,30 @@ export default function WatchlistPageClient() {
                     {row.balancePending ? (
                       <Skeleton height="16px" width="88px" />
                     ) : row.balanceError ? (
-                      '—'
+                      <Text textStyle="text-medium-sm" title={WATCHLIST_CELL_LOAD_ERROR_TITLE}>
+                        {microToStacksFormatted('0')}
+                      </Text>
                     ) : (
                       microToStacksFormatted(row.stxMicro)
                     )}
                   </Table.Cell>
                   <Table.Cell>
-                    {formatWatchlistUsdFromMicroStx(
-                      row.balancePending || row.balanceError ? '0' : row.stxMicro
-                    )}
+                    <Text
+                      as="span"
+                      title={row.balanceError ? WATCHLIST_CELL_LOAD_ERROR_TITLE : undefined}
+                    >
+                      {formatWatchlistUsdFromMicroStx(
+                        row.balancePending || row.balanceError ? '0' : row.stxMicro
+                      )}
+                    </Text>
                   </Table.Cell>
                   <Table.Cell>
                     {row.txPending ? (
                       <Skeleton height="16px" width="40px" />
                     ) : row.txError ? (
-                      '—'
+                      <Text textStyle="text-medium-sm" title={WATCHLIST_CELL_LOAD_ERROR_TITLE}>
+                        0
+                      </Text>
                     ) : (
                       row.totalTx
                     )}
@@ -839,15 +904,22 @@ export default function WatchlistPageClient() {
           })}
         </Stack>
 
-        {canLoadMoreTx ? (
-          <Button
-            variant="redesignSecondary"
-            disabled={isTxFeedFetching}
-            onClick={() => setTxFeedLimit(l => l + WATCHLIST_TX_INITIAL_LIMIT)}
-            alignSelf="flex-start"
-          >
-            Load more
-          </Button>
+        {isTxFeedFetching && canLoadMoreTx ? (
+          <Skeleton
+            height="48px"
+            w="full"
+            maxW="md"
+            borderRadius="redesign.md"
+            alignSelf="center"
+          />
+        ) : null}
+
+        <Box ref={txFeedSentinelRef} h="1px" w="full" aria-hidden />
+
+        {showTxFeedEndMessage ? (
+          <Text textStyle="text-regular-sm" color="textSecondary" textAlign="center">
+            Все транзакции загружены
+          </Text>
         ) : null}
       </Stack>
 
