@@ -8,6 +8,7 @@ import { AddNetworkModalNew } from '../../common/components/modals/AddNetworkNew
 import { IncidentContent } from '../../common/types/incidents';
 import { TestnetBanner } from './Banner/TestnetBanner';
 import { NetworkModeToast } from './NetworkModeToast';
+import { WatchlistTxNotifier } from '../../features/watchlist/WatchlistTxNotifier';
 import { NewFooter } from './NewFooter';
 import { NavBar as NewNavBar } from './NewNavBar/NavBar';
 import { CMSStatusBars } from './StatusBar/CMSStatusBars';
@@ -49,6 +50,7 @@ export function PageWrapper({
         >
           <Box className="navbar-content-wrapper" h="full" w="full">
             <NewNavBar />
+            <WatchlistTxNotifier />
             <Stack
               className="page-content-spacing"
               marginTop={'50px'}

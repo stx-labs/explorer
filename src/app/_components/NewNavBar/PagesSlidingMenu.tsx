@@ -19,6 +19,7 @@ const getPageLabelFromPath = (path: string): PrimaryPageLabel => {
   if (path === '/analytics') return 'Analytics';
   if (path === '/nfts') return 'NFTs';
   if (path === '/') return 'Home';
+  if (path === '/watchlist') return 'Watchlist';
   return 'Menu';
 };
 

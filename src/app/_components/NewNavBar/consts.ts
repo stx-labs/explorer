@@ -16,6 +16,7 @@ export type PrimaryPageLabel =
   | 'Tokens'
   | 'NFTs'
   | 'Analytics'
+  | 'Watchlist'
   | 'Menu';
 
 export type PrimaryPageId =
@@ -28,7 +29,8 @@ export type PrimaryPageId =
   | 'signers'
   | 'tokens'
   | 'nfts'
-  | 'analytics';
+  | 'analytics'
+  | 'watchlist';
 
 export const primaryPages: PrimaryPage[] = [
   {
@@ -70,6 +72,11 @@ export const primaryPages: PrimaryPage[] = [
     id: 'tokens',
     label: 'Tokens',
     href: '/tokens',
+  },
+  {
+    id: 'watchlist',
+    label: 'Watchlist',
+    href: '/watchlist',
   },
   // {
   //   id: 'nfts',

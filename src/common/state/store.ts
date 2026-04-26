@@ -14,6 +14,7 @@ import {
   TransactionValueFilterState,
   activeTransactionValueFilterSlice,
 } from './slices/transaction-value-filter-slice';
+import { WatchlistState, watchlistSlice } from '../../features/watchlist/watchlist-slice';
 
 const rootReducer = combineReducers({
   modal: modalSlice.reducer,
@@ -21,6 +22,7 @@ const rootReducer = combineReducers({
   connect: sandboxSlice.reducer,
   activeTransactionValueFilter: activeTransactionValueFilterSlice.reducer,
   currency: currencySlice.reducer,
+  watchlist: watchlistSlice.reducer,
   ...filterAndSortReducers,
 });
 
@@ -45,6 +47,7 @@ export interface RootState extends TxFilters {
   connect: ConnectState;
   activeTransactionValueFilter: TransactionValueFilterState;
   currency: CurrencyState;
+  watchlist: WatchlistState;
 }
 
 export type AppDispatch = ReturnType<typeof makeStore>['dispatch'];

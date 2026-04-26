@@ -8,6 +8,7 @@ import { Provider as ReduxProvider } from 'react-redux';
 
 import { GlobalContextProvider } from '../../common/context/GlobalContextProvider';
 import { store } from '../../common/state/store';
+import { WatchlistPersistence } from '../../features/watchlist/WatchlistPersistence';
 import { TokenPrice } from '../../common/types/tokenPrice';
 import { ColorModeProvider } from '../../components/ui/color-mode';
 import { system } from '../../ui/theme/theme';
@@ -46,6 +47,7 @@ export const Providers = ({
         >
           <ColorModeProvider serverTheme={serverTheme}>
             <ReduxProvider store={store}>
+              <WatchlistPersistence />
               <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
             </ReduxProvider>
           </ColorModeProvider>

@@ -13,7 +13,7 @@ import {
   Transaction,
 } from '@stacks/stacks-blockchain-api-types';
 
-import { BNS_EXTENSIONS } from '../constants/constants';
+import { BNS_EXTENSIONS, FIXED_STX_USD } from '../constants/constants';
 import { GenericResponseType } from '../hooks/useInfiniteQueryResult';
 import { ContractCallTxs } from '../types/tx';
 
@@ -250,10 +250,10 @@ export const getUsdValue = (
   stxPrice: number,
   isInMicroStacks = false
 ): string => {
-  if (!stxPrice) return 'N/A';
+  const rate = stxPrice > 0 ? stxPrice : FIXED_STX_USD;
   const amountInStx = isInMicroStacks ? microToStacks(stxAmount) : stxAmount;
-  const price = amountInStx * stxPrice;
-  return price > 0 && price < 0.01 ? '<$0.01' : usdFormatter.format(price);
+  const usd = amountInStx * rate;
+  return usd > 0 && usd < 0.01 ? '<$0.01' : usdFormatter.format(usd);
 };
 
 /**

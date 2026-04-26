@@ -13,6 +13,7 @@ import { MobileNavPage } from './MobileNavPage';
 import { PagesSlidingMenu } from './PagesSlidingMenu';
 import { Prices } from './Prices';
 import { SettingsPopover } from './SettingsPopover';
+import { WatchlistNavLink } from './WatchlistNavLink';
 import { secondaryPages } from './consts';
 
 const DesktopNavBar = (props: FlexProps) => {
@@ -28,6 +29,7 @@ const DesktopNavBar = (props: FlexProps) => {
       <Flex alignItems="center" gap={4} h="full">
         <Logo logoSize={10} />
         <PagesSlidingMenu />
+        <WatchlistNavLink />
       </Flex>
       <Flex flexGrow={1} flexShrink={1} maxWidth="507px">
         <Search />

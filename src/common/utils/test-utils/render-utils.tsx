@@ -17,6 +17,10 @@ import {
   initialState as searchSliceInitialState,
 } from '../../../features/search/search-slice';
 import {
+  watchlistInitialState,
+  watchlistSlice,
+} from '../../../features/watchlist/watchlist-slice';
+import {
   TxFilterAndSortTypes,
   TxFilters,
   filterAndSortReducers,
@@ -56,6 +60,7 @@ function createDefaultStore(preloadedState?: PreloadedState<RootState>) {
       search: searchSlice.reducer,
       connect: sandboxSlice.reducer,
       activeTransactionValueFilter: activeTransactionValueFilterSlice.reducer,
+      watchlist: watchlistSlice.reducer,
       ...filterAndSortReducers,
     },
     preloadedState: preloadedState ?? {
@@ -63,6 +68,7 @@ function createDefaultStore(preloadedState?: PreloadedState<RootState>) {
       search: searchSliceInitialState,
       connect: sandboxSliceInitialState,
       activeTransactionValueFilter: activeTransactionValueFilterInitialState,
+      watchlist: watchlistInitialState,
       ...Object.keys(TxFilterAndSortTypes).reduce(
         (acc, filterType) => ({ ...acc, [filterType]: filterSliceInitialState }),
         {} as TxFilters
@@ -132,6 +138,7 @@ export function renderWithReduxProviders(
       connect: sandboxSliceInitialState,
       currency: currencySliceInitialState,
       activeTransactionValueFilter: activeTransactionValueFilterInitialState,
+      watchlist: watchlistInitialState,
       ...Object.keys(TxFilterAndSortTypes).reduce(
         (acc, filterType) => ({ ...acc, [filterType]: filterSliceInitialState }),
         {} as TxFilters
@@ -144,6 +151,7 @@ export function renderWithReduxProviders(
         connect: sandboxSlice.reducer,
         activeTransactionValueFilter: activeTransactionValueFilterSlice.reducer,
         currency: currencySlice.reducer,
+        watchlist: watchlistSlice.reducer,
         ...filterAndSortReducers,
       },
       preloadedState,

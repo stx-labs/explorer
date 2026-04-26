@@ -22,6 +22,7 @@ import { forwardRef, useRef } from 'react';
 
 import { useAddressIdPageData } from '../AddressIdPageContext';
 import { QRcode } from './QRcode';
+import { WatchlistStarButton } from './WatchlistStarButton';
 
 const BORDER_WIDTH = 1;
 
@@ -242,6 +243,7 @@ export const AddressHeaderUnminimized = forwardRef<HTMLDivElement, { principal: 
             <Flex gap={2} flexWrap="wrap" alignItems="flex-end">
               <AddressBadgeUnminimized address={principal} />
               <BnsNames />
+              <WatchlistStarButton principal={principal} />
               <QRCodeBadge />
               <QRCodeModal principal={principal} />
             </Flex>
