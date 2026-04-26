@@ -43,7 +43,15 @@ import {
   Table,
   useClipboard,
 } from '@chakra-ui/react';
-import { ArrowClockwise, Copy, House, Star, Trash } from '@phosphor-icons/react';
+import {
+  ArrowClockwise,
+  ArrowDownLeft,
+  ArrowUpRight,
+  Copy,
+  House,
+  Star,
+  Trash,
+} from '@phosphor-icons/react';
 import { useQueryClient } from '@tanstack/react-query';
 import dayjs from 'dayjs';
 import { useRouter } from 'next/navigation';
@@ -770,12 +778,39 @@ export default function WatchlistPageClient() {
                                 {tx.txId}
                               </Text>
                             </NextLink>
-                            <Text textStyle="text-regular-xs" color="textSecondary">
-                              {tx.type} · {tx.direction === 'in' ? 'Incoming' : 'Outgoing'} ·
-                              watched{' '}
-                              {sortedItems.find(i => i.principal === tx.principal)?.bnsName ||
-                                truncateStxAddress(tx.principal)}
-                            </Text>
+                            <Flex
+                              alignItems="center"
+                              gap={1.5}
+                              flexWrap="wrap"
+                              textStyle="text-regular-xs"
+                              color="textSecondary"
+                            >
+                              <Text as="span">{tx.type}</Text>
+                              <Text as="span">·</Text>
+                              <Flex
+                                as="span"
+                                alignItems="center"
+                                aria-label={tx.direction === 'in' ? 'Incoming' : 'Outgoing'}
+                              >
+                                <Icon
+                                  h={3.5}
+                                  w={3.5}
+                                  color={tx.direction === 'in' ? 'feedback.green-500' : 'iconError'}
+                                >
+                                  {tx.direction === 'in' ? (
+                                    <ArrowDownLeft weight="bold" />
+                                  ) : (
+                                    <ArrowUpRight weight="bold" />
+                                  )}
+                                </Icon>
+                              </Flex>
+                              <Text as="span">·</Text>
+                              <Text as="span">
+                                watched{' '}
+                                {sortedItems.find(i => i.principal === tx.principal)?.bnsName ||
+                                  truncateStxAddress(tx.principal)}
+                              </Text>
+                            </Flex>
                           </Stack>
                           <Stack alignItems="flex-end" gap={1}>
                             <Text textStyle="text-medium-sm">
