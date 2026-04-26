@@ -115,7 +115,11 @@ export function renderWithProviders(
   }: ExtendedRenderOptions = {}
 ) {
   function Wrapper({ children }: PropsWithChildren<{}>): JSX.Element {
-    return <AllProviders store={store}>{children}</AllProviders>;
+    return (
+      <AllProviders store={store} queryClient={queryClient}>
+        {children}
+      </AllProviders>
+    );
   }
 
   return {

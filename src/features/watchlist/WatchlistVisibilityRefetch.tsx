@@ -6,9 +6,11 @@ import { useWatchlist } from '@/features/watchlist/useWatchlist';
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 
+const DEV = process.env.NODE_ENV === 'development';
+
 /**
  * When the tab becomes visible, refetch watchlist balances + tx queries so badge/toasts
- * see fresh data without relying on `refetchOnWindowFocus` for tx feeds.
+ * see fresh data without relying on `refetchOnWindowFocus` (interval + visibility only).
  */
 export function WatchlistVisibilityRefetch() {
   const queryClient = useQueryClient();
@@ -20,6 +22,11 @@ export function WatchlistVisibilityRefetch() {
     const onVisibility = () => {
       if (document.visibilityState !== 'visible') return;
       if (!hydrated || sortedItems.length === 0) return;
+
+      if (DEV) {
+        // eslint-disable-next-line no-console -- dev-only trace for watchlist refetch strategy
+        console.debug('[watchlist:visibility] invalidate balances + watchlist tx queries');
+      }
 
       void queryClient.invalidateQueries({
         queryKey: watchlistBalancesQueryKey(baseUrl, principalsKey),

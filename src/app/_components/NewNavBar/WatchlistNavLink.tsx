@@ -2,6 +2,7 @@
 
 import { useGlobalContext } from '@/common/context/useGlobalContext';
 import { buildUrl } from '@/common/utils/buildUrl';
+import { useWatchlist } from '@/features/watchlist/useWatchlist';
 import { useWatchlistNewTxCount } from '@/features/watchlist/useWatchlistNewTxCount';
 import { NextLink } from '@/ui/NextLink';
 import { Text } from '@/ui/Text';
@@ -11,9 +12,18 @@ import { Star } from '@phosphor-icons/react';
 export function WatchlistNavLink() {
   const { activeNetwork: network } = useGlobalContext();
   const newTxCount = useWatchlistNewTxCount();
+  const { markAllViewed, hydrated } = useWatchlist();
 
   return (
-    <NextLink href={buildUrl('/watchlist', network)} variant="noUnderline">
+    <NextLink
+      href={buildUrl('/watchlist', network)}
+      variant="noUnderline"
+      onClick={() => {
+        if (hydrated) {
+          markAllViewed();
+        }
+      }}
+    >
       <Flex
         alignItems="center"
         gap={2}

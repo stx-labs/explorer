@@ -3,7 +3,7 @@
 import { useGlobalContext } from '@/common/context/useGlobalContext';
 import { useDebounce } from '@/common/hooks/useDebounce';
 import {
-  WATCHLIST_TX_INITIAL_LIMIT,
+  WATCHLIST_TX_ITEMS_PER_PAGE,
   useWatchlistBalancesBatch,
   useWatchlistTransactionQueries,
 } from '@/common/queries/useWatchlistQueries';
@@ -12,6 +12,9 @@ import { buildUrl } from '@/common/utils/buildUrl';
 import { microToStacks, microToStacksFormatted, truncateStxAddress } from '@/common/utils/utils';
 import { Checkbox } from '@/components/ui/checkbox';
 import { NativeSelectField, NativeSelectRoot } from '@/components/ui/native-select';
+import { WatchlistDraggableRow } from '@/features/watchlist/components/WatchlistDraggableRow';
+import { WatchlistDragHandle } from '@/features/watchlist/components/WatchlistDragHandle';
+import { useWatchlistHtml5RowReorder } from '@/features/watchlist/hooks/useWatchlistDragAndDrop';
 import { RemoveFromWatchlistDialog } from '@/features/watchlist/RemoveFromWatchlistDialog';
 import { buildPortfolioSummary, sumMicroStxStrings } from '@/features/watchlist/portfolio-utils';
 import { saveNotificationsDisabled } from '@/features/watchlist/storage';
@@ -21,7 +24,9 @@ import {
   unwrapAddressTransactionRow,
 } from '@/features/watchlist/unifiedTxMap';
 import { useWatchlist } from '@/features/watchlist/useWatchlist';
+import { WATCHLIST_DND_ENABLED } from '@/features/watchlist/watchlist-dnd-flag';
 import { setWatchlistNotificationsDisabled } from '@/features/watchlist/watchlist-slice';
+import { arrayMove } from '@/features/watchlist/utils/reorderUtils';
 import {
   WATCHLIST_STX_USD_PRICE,
   formatWatchlistUsdFromMicroStx,
@@ -32,6 +37,7 @@ import { Text } from '@/ui/Text';
 import { Tooltip } from '@/ui/Tooltip';
 import {
   Box,
+  ButtonGroup,
   Card,
   Flex,
   Grid,
@@ -41,6 +47,7 @@ import {
   Skeleton,
   Stack,
   Table,
+  useBreakpointValue,
   useClipboard,
 } from '@chakra-ui/react';
 import {
@@ -97,11 +104,7 @@ function WatchlistTableAddressCell({
           {truncateStxAddress(principal)}
         </Text>
       </Stack>
-      <Tooltip
-        content={copied ? 'Copied!' : 'Copy address'}
-        open={copied}
-        variant="redesignPrimary"
-      >
+      <Tooltip content={copied ? 'Copied!' : 'Copy address'} open={copied}>
         <Button
           type="button"
           variant="unstyled"
@@ -150,13 +153,39 @@ const SORT_OPTIONS = [
 /** `title` / tooltip hint when balance or tx count failed to load */
 const WATCHLIST_CELL_LOAD_ERROR_TITLE = 'Ошибка загрузки';
 
+type FeedQueryLike = {
+  isSuccess: boolean;
+  data?: { results?: unknown[]; total?: number };
+};
+
+function watchlistAddressTxQueryHasNextPage(
+  q: FeedQueryLike | undefined,
+  page: number,
+  pageSize: number
+): boolean {
+  if (!q?.isSuccess) return false;
+  const results = q.data?.results?.length ?? 0;
+  const total = q.data?.total ?? 0;
+  const offset = (page - 1) * pageSize;
+  if (results === 0 || results < pageSize) return false;
+  if (total > 0) return offset + results < total;
+  return true;
+}
+
 export default function WatchlistPageClient() {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const queryClient = useQueryClient();
-  const { activeNetwork: network } = useGlobalContext();
+  const { activeNetwork: network, activeNetworkKey } = useGlobalContext();
 
-  const { sortedItems, hydrated, notificationsDisabled, remove, markAllViewed } = useWatchlist();
+  const {
+    sortedItems,
+    hydrated,
+    notificationsDisabled,
+    remove,
+    markAllViewed,
+    reorderRowsByPrincipalOrder,
+  } = useWatchlist();
 
   const principals = useMemo(() => sortedItems.map(i => i.principal), [sortedItems]);
   const hasAddresses = principals.length > 0;
@@ -171,16 +200,16 @@ export default function WatchlistPageClient() {
     isBalanceFetching,
   } = useWatchlistBalancesBatch(principals, hydrated && hasAddresses);
 
-  const [txFeedLimit, setTxFeedLimit] = useState(WATCHLIST_TX_INITIAL_LIMIT);
-  /** After refresh, block auto load-more until the user scrolls (avoids chained loads from scroll restoration). */
-  const txInfiniteScrollReadyRef = useRef(false);
-  const txFeedLoadLockRef = useRef(false);
-  const txFeedSentinelRef = useRef<HTMLDivElement | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const combinedTxSectionRef = useRef<HTMLDivElement | null>(null);
+  const isFirstTxFilterEffectRef = useRef(true);
+
+  const txFeedOffset = (currentPage - 1) * WATCHLIST_TX_ITEMS_PER_PAGE;
 
   const feedQueries = useWatchlistTransactionQueries(
     principals,
-    txFeedLimit,
-    0,
+    WATCHLIST_TX_ITEMS_PER_PAGE,
+    txFeedOffset,
     hydrated && hasAddresses
   );
 
@@ -197,30 +226,24 @@ export default function WatchlistPageClient() {
   const [txFilterPrincipal, setTxFilterPrincipal] = useState<string>('all');
 
   useEffect(() => {
-    setTxFeedLimit(WATCHLIST_TX_INITIAL_LIMIT);
-    txInfiniteScrollReadyRef.current = false;
-    txFeedLoadLockRef.current = false;
+    setCurrentPage(1);
+    if (isFirstTxFilterEffectRef.current) {
+      isFirstTxFilterEffectRef.current = false;
+    } else {
+      const el = combinedTxSectionRef.current;
+      if (el && typeof el.scrollIntoView === 'function') {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
   }, [txFilterType, txFilterPrincipal]);
 
   useEffect(() => {
-    const onScroll = () => {
-      txInfiniteScrollReadyRef.current = true;
-    };
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
+    setCurrentPage(1);
+  }, [sortKey]);
 
   useEffect(() => {
-    const onPageShow = (e: PageTransitionEvent) => {
-      if (e.persisted) {
-        setTxFeedLimit(WATCHLIST_TX_INITIAL_LIMIT);
-        txInfiniteScrollReadyRef.current = false;
-        txFeedLoadLockRef.current = false;
-      }
-    };
-    window.addEventListener('pageshow', onPageShow);
-    return () => window.removeEventListener('pageshow', onPageShow);
-  }, []);
+    setCurrentPage(1);
+  }, [activeNetworkKey]);
 
   const [removeOpen, setRemoveOpen] = useState(false);
   const [removeTarget, setRemoveTarget] = useState<string | null>(null);
@@ -230,45 +253,43 @@ export default function WatchlistPageClient() {
     return Math.max(balanceLastUpdated, 0, ...feedTimes);
   }, [balanceLastUpdated, feedQueries]);
 
-  const portfolio = useMemo(() => {
+  const itemByPrincipal = useMemo(
+    () => new Map(sortedItems.map(i => [i.principal, i] as const)),
+    [sortedItems]
+  );
+
+  const { portfolio, distribution, distributionTotalStx } = useMemo(() => {
     const microBalances = principals.map(p =>
       balancesReady ? (balanceByPrincipal[p]?.stx?.balance ?? '0') : '0'
     );
     const totalMicro = sumMicroStxStrings(microBalances);
-    return buildPortfolioSummary(
+    const portfolioInner = buildPortfolioSummary(
       totalMicro,
       WATCHLIST_STX_USD_PRICE,
       principals.length,
       lastUpdated
     );
-  }, [balanceByPrincipal, balancesReady, principals, lastUpdated]);
-
-  const distribution = useMemo(() => {
-    const stxNums = principals.map(p => {
-      const micro = balancesReady ? (balanceByPrincipal[p]?.stx?.balance ?? '0') : '0';
-      return microToStacks(micro);
-    });
+    const stxNums = microBalances.map(m => microToStacks(m));
     const totalStxNum = stxNums.reduce((a, b) => a + b, 0);
-    return principals.map((p, i) => ({
+    const distributionInner = principals.map((p, i) => ({
       principal: p,
       stx: stxNums[i],
       pct: totalStxNum > 0 ? (stxNums[i] / totalStxNum) * 100 : 0,
     }));
-  }, [principals, balanceByPrincipal, balancesReady]);
+    return {
+      portfolio: portfolioInner,
+      distribution: distributionInner,
+      distributionTotalStx: totalStxNum,
+    };
+  }, [balanceByPrincipal, balancesReady, principals, lastUpdated]);
 
   const palette = ['accent.stacks-400', 'accent.bitcoin-500', 'accent.testnet-500', 'iconPrimary'];
-
-  const distributionTotalStx = useMemo(
-    () => distribution.reduce((s, d) => s + d.stx, 0),
-    [distribution]
-  );
 
   const tableRows = useMemo(() => {
     const needle = debouncedSearch.trim().toLowerCase();
     const balancePending = !balancesReady && !anyBalanceError;
-    let rows = principals.map(p => {
-      const item = sortedItems.find(x => x.principal === p)!;
-      const pi = principals.indexOf(p);
+    let rows = principals.map((p, pi) => {
+      const item = itemByPrincipal.get(p)!;
       const bal = balancesReady ? (balanceByPrincipal[p]?.stx?.balance ?? '0') : '0';
       const micro = bal;
       const stxNum = balancesReady ? microToStacks(micro) : 0;
@@ -317,9 +338,9 @@ export default function WatchlistPageClient() {
           if (a.balancePending !== b.balancePending) return a.balancePending ? 1 : -1;
           return a.usd - b.usd;
         case 'added_desc':
-          return b.item.addedAt - a.item.addedAt;
+          return (a.item.order ?? 0) - (b.item.order ?? 0);
         case 'added_asc':
-          return a.item.addedAt - b.item.addedAt;
+          return (b.item.order ?? 0) - (a.item.order ?? 0);
         case 'label_asc': {
           const la = (a.item.bnsName || a.principal).toLowerCase();
           const lb = (b.item.bnsName || b.principal).toLowerCase();
@@ -339,8 +360,34 @@ export default function WatchlistPageClient() {
     feedQueries,
     principals,
     sortKey,
-    sortedItems,
+    itemByPrincipal,
   ]);
+
+  const principalSelectItems = useMemo(
+    () =>
+      principals.map(p => ({
+        value: p,
+        label: itemByPrincipal.get(p)?.bnsName || truncateStxAddress(p),
+      })),
+    [principals, itemByPrincipal]
+  );
+
+  const isMdUp = useBreakpointValue({ base: false, md: true }) ?? false;
+  const canDragReorder =
+    WATCHLIST_DND_ENABLED &&
+    isMdUp &&
+    sortKey === 'added_desc' &&
+    !debouncedSearch.trim();
+
+  const rowDnd = useWatchlistHtml5RowReorder(canDragReorder);
+
+  const onReorderRows = useCallback(
+    (from: number, to: number) => {
+      const ids = tableRows.map(r => r.principal);
+      void reorderRowsByPrincipalOrder(arrayMove(ids, from, to));
+    },
+    [tableRows, reorderRowsByPrincipalOrder]
+  );
 
   const unifiedTransactions: UnifiedTransaction[] = useMemo(() => {
     const out: UnifiedTransaction[] = [];
@@ -372,57 +419,56 @@ export default function WatchlistPageClient() {
 
   const anyError = anyBalanceError || feedQueries.some(q => q.isError);
 
-  const canLoadMoreTx = useMemo(() => {
+  const isTxFeedFetching = useMemo(
+    () => feedQueries.some(q => q.isFetching),
+    [feedQueries]
+  );
+
+  /** Pending new page / initial load only — avoid flashing skeleton on interval refetch. */
+  const txFeedShowSkeleton = useMemo(() => {
+    if (!hydrated || !hasAddresses || principals.length === 0) return false;
+    return principals.some((_, i) => feedQueries[i]?.isPending);
+  }, [feedQueries, hasAddresses, hydrated, principals]);
+
+  const hasNextTxPage = useMemo(() => {
     if (!hydrated || !hasAddresses) return false;
-    return feedQueries.some(q => q.isSuccess && (q.data?.results?.length ?? 0) >= txFeedLimit);
-  }, [feedQueries, txFeedLimit, hasAddresses, hydrated]);
-
-  const isTxFeedFetching = feedQueries.some(q => q.isFetching);
-
-  const showTxFeedEndMessage = useMemo(() => {
-    if (!hydrated || !hasAddresses || canLoadMoreTx || isTxFeedFetching) return false;
-    if (!feedQueries.some(q => q.isSuccess)) return false;
-    if (feedQueries.length > 0 && feedQueries.every(q => q.isError)) return false;
-    return true;
-  }, [hydrated, hasAddresses, canLoadMoreTx, isTxFeedFetching, feedQueries]);
-
-  const canLoadMoreTxRef = useRef(canLoadMoreTx);
-  const isTxFeedFetchingRef = useRef(isTxFeedFetching);
-  canLoadMoreTxRef.current = canLoadMoreTx;
-  isTxFeedFetchingRef.current = isTxFeedFetching;
-
-  useEffect(() => {
-    if (!isTxFeedFetching) {
-      txFeedLoadLockRef.current = false;
+    if (txFilterPrincipal !== 'all') {
+      const i = principals.indexOf(txFilterPrincipal);
+      if (i < 0) return false;
+      return watchlistAddressTxQueryHasNextPage(
+        feedQueries[i],
+        currentPage,
+        WATCHLIST_TX_ITEMS_PER_PAGE
+      );
     }
-  }, [isTxFeedFetching]);
+    return principals.some((_, i) =>
+      watchlistAddressTxQueryHasNextPage(
+        feedQueries[i],
+        currentPage,
+        WATCHLIST_TX_ITEMS_PER_PAGE
+      )
+    );
+  }, [currentPage, feedQueries, hasAddresses, hydrated, principals, txFilterPrincipal]);
+
+  const showTxPagination = useMemo(() => {
+    if (!hydrated || !hasAddresses) return false;
+    if (currentPage > 1) return true;
+    return hasNextTxPage || unifiedTransactions.length >= WATCHLIST_TX_ITEMS_PER_PAGE;
+  }, [currentPage, hasAddresses, hasNextTxPage, hydrated, unifiedTransactions.length]);
 
   useEffect(() => {
     if (!hydrated || !hasAddresses) return;
-    const node = txFeedSentinelRef.current;
-    if (!node || typeof IntersectionObserver === 'undefined') return;
-
-    const observer = new IntersectionObserver(
-      entries => {
-        const hit = entries.some(e => e.isIntersecting);
-        if (
-          !hit ||
-          !txInfiniteScrollReadyRef.current ||
-          !canLoadMoreTxRef.current ||
-          isTxFeedFetchingRef.current ||
-          txFeedLoadLockRef.current
-        ) {
-          return;
-        }
-        txFeedLoadLockRef.current = true;
-        setTxFeedLimit(prev => prev + WATCHLIST_TX_INITIAL_LIMIT);
-      },
-      { root: null, rootMargin: '120px', threshold: 0 }
-    );
-
-    observer.observe(node);
-    return () => observer.disconnect();
-  }, [hydrated, hasAddresses]);
+    if (feedQueries.some(q => q.isFetching)) return;
+    if (currentPage > 1 && unifiedTransactions.length === 0) {
+      setCurrentPage(p => Math.max(1, p - 1));
+    }
+  }, [
+    currentPage,
+    feedQueries,
+    hasAddresses,
+    hydrated,
+    unifiedTransactions.length,
+  ]);
 
   const onRetry = useCallback(() => {
     void queryClient.invalidateQueries();
@@ -739,6 +785,9 @@ export default function WatchlistPageClient() {
           <Table.Root size="sm" layerStyle="simple" css={{ tableLayout: 'auto', width: 'full' }}>
             <Table.Header>
               <Table.Row>
+                {WATCHLIST_DND_ENABLED ? (
+                  <Table.ColumnHeader w="40px" aria-label="Reorder watchlist rows" />
+                ) : null}
                 <Table.ColumnHeader>Address</Table.ColumnHeader>
                 <Table.ColumnHeader>STX</Table.ColumnHeader>
                 <Table.ColumnHeader>USD (STX)</Table.ColumnHeader>
@@ -748,8 +797,28 @@ export default function WatchlistPageClient() {
               </Table.Row>
             </Table.Header>
             <Table.Body>
-              {tableRows.map(row => (
-                <Table.Row key={row.principal}>
+              {tableRows.map((row, rowIndex) => (
+                <WatchlistDraggableRow
+                  key={row.principal}
+                  rowIndex={rowIndex}
+                  dndEnabled={canDragReorder}
+                  dragSourceIndex={rowDnd.dragSourceIndex}
+                  dropTargetIndex={rowDnd.dropTargetIndex}
+                  onDragOver={rowDnd.handleDragOver}
+                  onDragLeave={rowDnd.handleDragLeave}
+                  onDrop={(e, i) => rowDnd.handleDrop(e, i, onReorderRows)}
+                  onDragEnd={rowDnd.handleDragEnd}
+                >
+                  {WATCHLIST_DND_ENABLED ? (
+                    <Table.Cell>
+                      <WatchlistDragHandle
+                        rowIndex={rowIndex}
+                        active={canDragReorder}
+                        onDragStart={rowDnd.handleDragStart}
+                        onDragEnd={rowDnd.handleDragEnd}
+                      />
+                    </Table.Cell>
+                  ) : null}
                   <Table.Cell>
                     <WatchlistTableAddressCell
                       principal={row.principal}
@@ -799,14 +868,14 @@ export default function WatchlistPageClient() {
                       Remove
                     </Button>
                   </Table.Cell>
-                </Table.Row>
+                </WatchlistDraggableRow>
               ))}
             </Table.Body>
           </Table.Root>
         </Box>
       </Stack>
 
-      <Stack gap={4}>
+      <Stack ref={combinedTxSectionRef} gap={4}>
         <Text textStyle="heading-md" color="textPrimary">
           Combined transactions
         </Text>
@@ -828,13 +897,7 @@ export default function WatchlistPageClient() {
           <NativeSelectRoot width={{ base: 'full', md: '260px' }}>
             <NativeSelectField
               value={txFilterPrincipal}
-              items={[
-                { value: 'all', label: 'All watchlist addresses' },
-                ...principals.map(p => ({
-                  value: p,
-                  label: sortedItems.find(i => i.principal === p)?.bnsName || truncateStxAddress(p),
-                })),
-              ]}
+              items={[{ value: 'all', label: 'All watchlist addresses' }, ...principalSelectItems]}
               onChange={(e: ChangeEvent<HTMLSelectElement>) => {
                 setTxFilterPrincipal(e.target.value);
               }}
@@ -842,110 +905,128 @@ export default function WatchlistPageClient() {
           </NativeSelectRoot>
         </Flex>
 
-        <Stack gap={6}>
-          {GROUP_ORDER.map(group => {
-            const txs = groupedTx[group];
-            if (!txs.length) return null;
-            return (
-              <Stack key={group} gap={3}>
-                <Text textStyle="heading-sm" color="textSecondary">
-                  {GROUP_LABEL[group]}
-                </Text>
-                <Stack gap={2}>
-                  {txs.map(tx => (
-                    <Card.Root
-                      key={`${tx.principal}-${tx.txId}`}
-                      bg="surfaceSecondary"
-                      borderRadius="redesign.lg"
-                    >
-                      <Card.Body p={4}>
-                        <Flex justifyContent="space-between" flexWrap="wrap" gap={3}>
-                          <Stack gap={1} minW={0}>
-                            <NextLink
-                              href={buildUrl(`/txid/${tx.txId}`, network)}
-                              variant="noUnderline"
-                            >
-                              <Text textStyle="text-medium-sm" color="accent.stacks-600" truncate>
-                                {tx.txId}
-                              </Text>
-                            </NextLink>
-                            <Flex
-                              alignItems="center"
-                              gap={1.5}
-                              flexWrap="wrap"
-                              textStyle="text-regular-xs"
-                              color="textSecondary"
-                            >
-                              <Text as="span">{tx.type}</Text>
-                              <Text as="span">·</Text>
-                              <Flex
-                                as="span"
-                                alignItems="center"
-                                aria-label={tx.direction === 'in' ? 'Incoming' : 'Outgoing'}
+        {txFeedShowSkeleton ? (
+          <Stack gap={3} data-testid="watchlist-tx-loading">
+            <Skeleton height="96px" w="full" borderRadius="redesign.lg" />
+            <Skeleton height="96px" w="full" borderRadius="redesign.lg" />
+            <Skeleton height="96px" w="full" borderRadius="redesign.lg" />
+          </Stack>
+        ) : (
+          <Stack gap={6}>
+            {GROUP_ORDER.map(group => {
+              const txs = groupedTx[group];
+              if (!txs.length) return null;
+              return (
+                <Stack key={group} gap={3}>
+                  <Text textStyle="heading-sm" color="textSecondary">
+                    {GROUP_LABEL[group]}
+                  </Text>
+                  <Stack gap={2}>
+                    {txs.map(tx => (
+                      <Card.Root
+                        key={`${tx.principal}-${tx.txId}`}
+                        bg="surfaceSecondary"
+                        borderRadius="redesign.lg"
+                      >
+                        <Card.Body p={4}>
+                          <Flex justifyContent="space-between" flexWrap="wrap" gap={3}>
+                            <Stack gap={1} minW={0}>
+                              <NextLink
+                                href={buildUrl(`/txid/${tx.txId}`, network)}
+                                variant="noUnderline"
                               >
-                                <Icon
-                                  h={3.5}
-                                  w={3.5}
-                                  color={tx.direction === 'in' ? 'feedback.green-500' : 'iconError'}
+                                <Text textStyle="text-medium-sm" color="accent.stacks-600" truncate>
+                                  {tx.txId}
+                                </Text>
+                              </NextLink>
+                              <Flex
+                                alignItems="center"
+                                gap={1.5}
+                                flexWrap="wrap"
+                                textStyle="text-regular-xs"
+                                color="textSecondary"
+                              >
+                                <Text as="span">{tx.type}</Text>
+                                <Text as="span">·</Text>
+                                <Flex
+                                  as="span"
+                                  alignItems="center"
+                                  aria-label={tx.direction === 'in' ? 'Incoming' : 'Outgoing'}
                                 >
-                                  {tx.direction === 'in' ? (
-                                    <ArrowDownLeft weight="bold" />
-                                  ) : (
-                                    <ArrowUpRight weight="bold" />
-                                  )}
-                                </Icon>
+                                  <Icon
+                                    h={3.5}
+                                    w={3.5}
+                                    color={tx.direction === 'in' ? 'feedback.green-500' : 'iconError'}
+                                  >
+                                    {tx.direction === 'in' ? (
+                                      <ArrowDownLeft weight="bold" />
+                                    ) : (
+                                      <ArrowUpRight weight="bold" />
+                                    )}
+                                  </Icon>
+                                </Flex>
+                                <Text as="span">·</Text>
+                                <Text as="span">
+                                  watched{' '}
+                                  {itemByPrincipal.get(tx.principal)?.bnsName ||
+                                    truncateStxAddress(tx.principal)}
+                                </Text>
                               </Flex>
-                              <Text as="span">·</Text>
-                              <Text as="span">
-                                watched{' '}
-                                {sortedItems.find(i => i.principal === tx.principal)?.bnsName ||
-                                  truncateStxAddress(tx.principal)}
+                            </Stack>
+                            <Stack alignItems="flex-end" gap={1}>
+                              <Text textStyle="text-medium-sm">
+                                {tx.amount !== '0' ? `${microToStacksFormatted(tx.amount)} STX` : '—'}
                               </Text>
-                            </Flex>
-                          </Stack>
-                          <Stack alignItems="flex-end" gap={1}>
-                            <Text textStyle="text-medium-sm">
-                              {tx.amount !== '0' ? `${microToStacksFormatted(tx.amount)} STX` : '—'}
-                            </Text>
-                            <Text textStyle="text-regular-xs" color="textSecondary">
-                              {formatWatchlistUsdFromMicroStx(tx.amount)}
-                            </Text>
-                            <Text
-                              textStyle="text-regular-xs"
-                              color="textSecondary"
-                              suppressHydrationWarning
-                            >
-                              {tx.timestamp
-                                ? new Date(tx.timestamp * 1000).toLocaleString()
-                                : 'Pending'}
-                            </Text>
-                          </Stack>
-                        </Flex>
-                      </Card.Body>
-                    </Card.Root>
-                  ))}
+                              <Text textStyle="text-regular-xs" color="textSecondary">
+                                {formatWatchlistUsdFromMicroStx(tx.amount)}
+                              </Text>
+                              <Text
+                                textStyle="text-regular-xs"
+                                color="textSecondary"
+                                suppressHydrationWarning
+                              >
+                                {tx.timestamp
+                                  ? new Date(tx.timestamp * 1000).toLocaleString()
+                                  : 'Pending'}
+                              </Text>
+                            </Stack>
+                          </Flex>
+                        </Card.Body>
+                      </Card.Root>
+                    ))}
+                  </Stack>
                 </Stack>
-              </Stack>
-            );
-          })}
-        </Stack>
+              );
+            })}
+          </Stack>
+        )}
 
-        {isTxFeedFetching && canLoadMoreTx ? (
-          <Skeleton
-            height="48px"
-            w="full"
-            maxW="md"
-            borderRadius="redesign.md"
-            alignSelf="center"
-          />
-        ) : null}
-
-        <Box ref={txFeedSentinelRef} h="1px" w="full" aria-hidden />
-
-        {showTxFeedEndMessage ? (
-          <Text textStyle="text-regular-sm" color="textSecondary" textAlign="center">
-            Все транзакции загружены
-          </Text>
+        {showTxPagination ? (
+          <Flex justifyContent="center" w="full" data-testid="watchlist-tx-pagination">
+            <ButtonGroup attached size="sm" variant="outline">
+              <Button
+                variant="redesignTertiary"
+                size="small"
+                aria-label="Previous page"
+                disabled={currentPage <= 1 || isTxFeedFetching}
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              >
+                Previous
+              </Button>
+              <Button variant="redesignTertiary" size="small" pointerEvents="none" tabIndex={-1}>
+                {currentPage}
+              </Button>
+              <Button
+                variant="redesignTertiary"
+                size="small"
+                aria-label="Next page"
+                disabled={!hasNextTxPage || isTxFeedFetching}
+                onClick={() => setCurrentPage(p => p + 1)}
+              >
+                Next
+              </Button>
+            </ButtonGroup>
+          </Flex>
         ) : null}
       </Stack>
 
@@ -954,8 +1035,7 @@ export default function WatchlistPageClient() {
         onOpenChange={setRemoveOpen}
         addressLabel={
           removeTarget
-            ? sortedItems.find(i => i.principal === removeTarget)?.bnsName ||
-              truncateStxAddress(removeTarget)
+            ? itemByPrincipal.get(removeTarget)?.bnsName || truncateStxAddress(removeTarget)
             : ''
         }
         onConfirm={confirmRemove}

@@ -1,6 +1,10 @@
 import type { WatchlistItem } from './types';
 import { WATCHLIST_NOTIFY_DISABLED_KEY, WATCHLIST_STORAGE_KEY } from './types';
 
+/** Shown when persisting the watchlist fails (e.g. `QuotaExceededError`). */
+export const WATCHLIST_STORAGE_QUOTA_TOAST_MESSAGE =
+  'Не удалось сохранить избранное: переполнено хранилище браузера.';
+
 function isWatchlistItem(value: unknown): value is WatchlistItem {
   if (!value || typeof value !== 'object') return false;
   const v = value as WatchlistItem;
@@ -8,7 +12,8 @@ function isWatchlistItem(value: unknown): value is WatchlistItem {
     typeof v.principal === 'string' &&
     typeof v.addedAt === 'number' &&
     (v.bnsName === undefined || typeof v.bnsName === 'string') &&
-    (v.lastViewedAt === undefined || typeof v.lastViewedAt === 'number')
+    (v.lastViewedAt === undefined || typeof v.lastViewedAt === 'number') &&
+    (v.order === undefined || typeof v.order === 'number')
   );
 }
 

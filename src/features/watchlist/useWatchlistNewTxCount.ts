@@ -1,12 +1,65 @@
 'use client';
 
+import { useEffect, useMemo, useRef, useState } from 'react';
+
 import {
   WATCHLIST_TX_INITIAL_LIMIT,
   useWatchlistTransactionQueries,
 } from '@/common/queries/useWatchlistQueries';
 
-import { getTxUnixSeconds, unwrapAddressTransactionRow } from './unifiedTxMap';
+import { computeDedupedNewTxCount, logWatchlistBadgeDebug } from './watchlistNewTxCountUtils';
 import { useWatchlist } from './useWatchlist';
+
+const BADGE_THROTTLE_MS = 5000;
+const DEV = process.env.NODE_ENV === 'development';
+
+/**
+ * Throttle **increases** in the displayed count (rapid refetches / tab churn).
+ * Drops to zero or a lower count apply immediately so clearing `/watchlist` feels instant.
+ */
+function useThrottledWatchlistBadgeCount(raw: number): number {
+  const [display, setDisplay] = useState(raw);
+  const lastIncreaseEmittedAtRef = useRef(0);
+  const pendingIncreaseRef = useRef(raw);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    pendingIncreaseRef.current = raw;
+
+    if (raw === 0 || raw < display) {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+      setDisplay(raw);
+      lastIncreaseEmittedAtRef.current = Date.now();
+      return;
+    }
+
+    if (raw === display) {
+      return;
+    }
+
+    const now = Date.now();
+    const elapsed = now - lastIncreaseEmittedAtRef.current;
+    if (elapsed >= BADGE_THROTTLE_MS) {
+      lastIncreaseEmittedAtRef.current = now;
+      setDisplay(raw);
+      return;
+    }
+
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    timeoutRef.current = setTimeout(() => {
+      lastIncreaseEmittedAtRef.current = Date.now();
+      setDisplay(pendingIncreaseRef.current);
+      timeoutRef.current = null;
+    }, BADGE_THROTTLE_MS - elapsed);
+
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+  }, [raw, display]);
+
+  return display;
+}
 
 export function useWatchlistNewTxCount() {
   const { sortedItems, hydrated } = useWatchlist();
@@ -19,20 +72,18 @@ export function useWatchlistNewTxCount() {
     enabled
   );
 
-  if (!enabled) return 0;
+  const rawCount = useMemo(
+    () => (enabled ? computeDedupedNewTxCount(sortedItems, queries) : 0),
+    [enabled, sortedItems, queries]
+  );
 
-  let count = 0;
-  sortedItems.forEach((item, index) => {
-    const results = queries[index]?.data?.results;
-    if (!results?.length) return;
-    const baseline = item.lastViewedAt ?? item.addedAt;
-    for (const row of results) {
-      const { tx } = unwrapAddressTransactionRow(row);
-      const ts = getTxUnixSeconds(tx);
-      if (ts !== null && ts * 1000 > baseline) {
-        count += 1;
-      }
+  const prevRawRef = useRef(rawCount);
+  useEffect(() => {
+    if (DEV && prevRawRef.current !== rawCount) {
+      logWatchlistBadgeDebug('raw count changed', { from: prevRawRef.current, to: rawCount });
+      prevRawRef.current = rawCount;
     }
-  });
-  return count;
+  }, [rawCount]);
+
+  return useThrottledWatchlistBadgeCount(rawCount);
 }

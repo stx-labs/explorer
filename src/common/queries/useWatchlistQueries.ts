@@ -10,7 +10,9 @@ import { useGlobalContext } from '../context/useGlobalContext';
 import { getAddressTxsQueryKey } from './useAddressConfirmedTxsWithTransfersInfinite';
 import { fetchWatchlistBalancesForClient } from './watchlistBalancesBatch';
 
-export const WATCHLIST_TX_INITIAL_LIMIT = 20;
+/** Page size for watchlist address tx API calls (combined feed uses the same per-address window). */
+export const WATCHLIST_TX_ITEMS_PER_PAGE = 20;
+export const WATCHLIST_TX_INITIAL_LIMIT = WATCHLIST_TX_ITEMS_PER_PAGE;
 
 export const WATCHLIST_QUERY_STALE_MS = 30_000;
 export const WATCHLIST_QUERY_GC_MS = 300_000;
@@ -32,7 +34,7 @@ export function useWatchlistBalancesBatch(principals: string[], enabled: boolean
     staleTime: WATCHLIST_QUERY_STALE_MS,
     gcTime: WATCHLIST_QUERY_GC_MS,
     refetchInterval: 30_000,
-    refetchOnWindowFocus: true,
+    refetchOnWindowFocus: false,
     retry: 2,
     retryDelay: 1000,
     placeholderData: previousData => previousData,
@@ -79,9 +81,10 @@ export function useWatchlistTransactionQueries(
   enabled: boolean
 ) {
   const apiClient = useApiClient();
+  const { activeNetworkKey: baseUrl } = useGlobalContext();
   return useQueries({
     queries: principals.map(principal => ({
-      queryKey: [...getAddressTxsQueryKey(principal, limit, offset), 'watchlist'],
+      queryKey: [...getAddressTxsQueryKey(principal, limit, offset), baseUrl, 'watchlist'],
       queryFn: () => fetchAddressTransactions(apiClient, principal, limit, offset),
       staleTime: WATCHLIST_QUERY_STALE_MS,
       gcTime: WATCHLIST_QUERY_GC_MS,

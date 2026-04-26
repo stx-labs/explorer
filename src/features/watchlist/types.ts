@@ -3,6 +3,8 @@ export interface WatchlistItem {
   bnsName?: string;
   addedAt: number;
   lastViewedAt?: number;
+  /** Lower = higher in the list (manual order). Assigned on load / add / drag. */
+  order?: number;
 }
 
 export interface PortfolioSummary {

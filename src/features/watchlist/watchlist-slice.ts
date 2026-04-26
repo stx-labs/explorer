@@ -54,7 +54,6 @@ export const watchlistSlice = createSlice({
       const now = Date.now();
       state.items = state.items.map(i => ({ ...i, lastViewedAt: now }));
     },
-    /** WONT_FIX (MVP): drag-and-drop order not exposed in UI; reducer kept for slice shape stability. */
     reorderWatchlist: (state, action: PayloadAction<WatchlistItem[]>) => {
       state.items = action.payload;
     },
@@ -71,5 +70,6 @@ export const {
   updateWatchlistItem,
   markWatchlistAddressViewed,
   markAllWatchlistViewed,
+  reorderWatchlist,
   setWatchlistNotificationsDisabled,
 } = watchlistSlice.actions;

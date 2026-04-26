@@ -3,6 +3,7 @@
 import { useAppDispatch } from '@/common/state/hooks';
 import { useEffect } from 'react';
 
+import { ensureWatchlistOrders } from './utils/reorderUtils';
 import { hydrateWatchlist } from './watchlist-slice';
 import { loadNotificationsDisabled, loadWatchlistFromStorage } from './storage';
 
@@ -11,7 +12,7 @@ export function WatchlistPersistence() {
   const dispatch = useAppDispatch();
 
   useEffect(() => {
-    const items = loadWatchlistFromStorage();
+    const items = ensureWatchlistOrders(loadWatchlistFromStorage());
     const notificationsDisabled = loadNotificationsDisabled();
     dispatch(hydrateWatchlist({ items, notificationsDisabled }));
   }, [dispatch]);
