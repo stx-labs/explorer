@@ -11,16 +11,8 @@ import { useAppDispatch } from '@/common/state/hooks';
 import { buildUrl } from '@/common/utils/buildUrl';
 import { microToStacks, microToStacksFormatted, truncateStxAddress } from '@/common/utils/utils';
 import { Checkbox } from '@/components/ui/checkbox';
-import {
-  DialogBackdrop,
-  DialogBody,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogRoot,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import { NativeSelectField, NativeSelectRoot } from '@/components/ui/native-select';
+import { RemoveFromWatchlistDialog } from '@/features/watchlist/RemoveFromWatchlistDialog';
 import { buildPortfolioSummary, sumMicroStxStrings } from '@/features/watchlist/portfolio-utils';
 import { saveNotificationsDisabled } from '@/features/watchlist/storage';
 import type { UnifiedTransaction, UnifiedTxType } from '@/features/watchlist/types';
@@ -315,7 +307,6 @@ export default function WatchlistPageClient() {
       remove(removeTarget);
     }
     setRemoveTarget(null);
-    setRemoveOpen(false);
   };
 
   if (!hydrated) {
@@ -778,33 +769,17 @@ export default function WatchlistPageClient() {
         ) : null}
       </Stack>
 
-      <DialogRoot open={removeOpen} onOpenChange={e => setRemoveOpen(e.open)} placement="center">
-        <DialogBackdrop />
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Remove from watchlist?</DialogTitle>
-          </DialogHeader>
-          <DialogBody>
-            <Text textStyle="text-regular-sm" color="textPrimary">
-              Удалить{' '}
-              <Text as="span" fontWeight="semibold">
-                {removeTarget
-                  ? sortedItems.find(i => i.principal === removeTarget)?.bnsName || removeTarget
-                  : ''}
-              </Text>{' '}
-              из избранного?
-            </Text>
-          </DialogBody>
-          <DialogFooter gap={3}>
-            <Button variant="redesignTertiary" onClick={() => setRemoveOpen(false)}>
-              Cancel
-            </Button>
-            <Button variant="redesignPrimary" onClick={confirmRemove}>
-              Remove
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </DialogRoot>
+      <RemoveFromWatchlistDialog
+        open={removeOpen}
+        onOpenChange={setRemoveOpen}
+        addressLabel={
+          removeTarget
+            ? sortedItems.find(i => i.principal === removeTarget)?.bnsName ||
+              truncateStxAddress(removeTarget)
+            : ''
+        }
+        onConfirm={confirmRemove}
+      />
     </Stack>
   );
 }
