@@ -86,7 +86,7 @@ export function useWatchlistTransactionQueries(
       staleTime: WATCHLIST_QUERY_STALE_MS,
       gcTime: WATCHLIST_QUERY_GC_MS,
       refetchInterval: 30_000,
-      refetchOnWindowFocus: true,
+      refetchOnWindowFocus: false,
       retry: 2,
       retryDelay: 1000,
       placeholderData: (previousData: AddressTransactionsV2ListResponse | undefined) =>

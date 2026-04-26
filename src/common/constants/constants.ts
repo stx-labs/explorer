@@ -67,6 +67,3 @@ export const SUBNETS_PARENT_NETWORK_IDS = {
 };
 
 export const PAGE_MAX_WIDTH = '1580px';
-
-/** Fixed STX/USD rate for explorer USD display (no live price feeds). */
-export const FIXED_STX_USD = 0.23;

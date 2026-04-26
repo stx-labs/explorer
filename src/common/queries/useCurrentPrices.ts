@@ -1,9 +1,9 @@
 'use client';
 
-import { FIXED_STX_USD } from '../constants/constants';
+import { STX_PRICE_USD } from '@/lib/crypto-prices.config';
 
 const stxPriceQueryResult = {
-  data: FIXED_STX_USD,
+  data: STX_PRICE_USD,
   isLoading: false,
   error: null,
 } as const;

@@ -1,3 +1,4 @@
+import { STX_PRICE_USD } from '@/lib/crypto-prices.config';
 import BigNumber from 'bignumber.js';
 import { c32addressDecode } from 'c32check';
 import dayjs from 'dayjs';
@@ -13,7 +14,7 @@ import {
   Transaction,
 } from '@stacks/stacks-blockchain-api-types';
 
-import { BNS_EXTENSIONS, FIXED_STX_USD } from '../constants/constants';
+import { BNS_EXTENSIONS } from '../constants/constants';
 import { GenericResponseType } from '../hooks/useInfiniteQueryResult';
 import { ContractCallTxs } from '../types/tx';
 
@@ -250,7 +251,7 @@ export const getUsdValue = (
   stxPrice: number,
   isInMicroStacks = false
 ): string => {
-  const rate = stxPrice > 0 ? stxPrice : FIXED_STX_USD;
+  const rate = stxPrice > 0 ? stxPrice : STX_PRICE_USD;
   const amountInStx = isInMicroStacks ? microToStacks(stxAmount) : stxAmount;
   const usd = amountInStx * rate;
   return usd > 0 && usd < 0.01 ? '<$0.01' : usdFormatter.format(usd);

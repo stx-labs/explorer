@@ -1,5 +1,6 @@
 'use client';
 
+import { BTC_PRICE_USD, STX_PRICE_USD } from '@/lib/crypto-prices.config';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { FC, ReactNode, createContext, useCallback, useEffect, useState } from 'react';
 import { useCookies } from 'react-cookie';
@@ -54,7 +55,7 @@ export const GlobalContext = createContext<GlobalContext>({
   networks: {},
   stacksApiSocketClientInfo: null,
   apiClient: getApiClient(NetworkModeUrlMap[NetworkModes.Mainnet]),
-  tokenPrice: { btcPrice: 0, stxPrice: 0 },
+  tokenPrice: { btcPrice: BTC_PRICE_USD, stxPrice: STX_PRICE_USD },
 });
 
 export const GlobalContextProvider: FC<{
