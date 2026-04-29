@@ -75,12 +75,15 @@ export const validateTxId = (txId?: string): boolean => {
   return /^0x[a-fA-F0-9]{64}$/.test(txId);
 };
 
+const CONTRACT_NAME_REGEX = /^[a-zA-Z]([a-zA-Z0-9]|[-_]){0,127}$|^__transient$/;
+
 export const validateStacksContractId = (contractId?: string): boolean => {
   try {
     if (!contractId) return false;
     const [address, contract, ...rest] = contractId.split('.');
     if (!address || !contract) return false;
     if (rest.length > 0) return false;
+    if (!CONTRACT_NAME_REGEX.test(contract)) return false;
     c32addressDecode(address);
     return true;
   } catch (e) {
