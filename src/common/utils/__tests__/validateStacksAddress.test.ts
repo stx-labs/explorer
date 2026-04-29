@@ -67,6 +67,10 @@ describe('validateStacksContractId', () => {
       'SP2J6ZY48GV1EZ5V2V5RB9MP66SW86PYKKNRV9EJ7.', // missing contract name
       undefined, // undefined
       'TP2J6ZY48GV1EZ5V2V5RB9MP66SW86PYKKNRV9EJ7.contract-name', // wrong prefix
+      'SP2J6ZY48GV1EZ5V2V5RB9MP66SW86PYKKNRV9EJ7.usdcx-:usdcx-token', // colon not allowed in contract name
+      'SP2J6ZY48GV1EZ5V2V5RB9MP66SW86PYKKNRV9EJ7.1contract', // contract name must start with a letter
+      'SP2J6ZY48GV1EZ5V2V5RB9MP66SW86PYKKNRV9EJ7.-contract', // contract name must start with a letter
+      'SP2J6ZY48GV1EZ5V2V5RB9MP66SW86PYKKNRV9EJ7.contract!', // disallowed punctuation
     ];
 
     invalidContractIds.forEach(contractId => {
