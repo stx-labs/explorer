@@ -4,7 +4,26 @@ import {
   ContractCallTransaction,
   MempoolContractCallTransaction,
 } from '@stacks/stacks-blockchain-api-types';
-import { cvToJSON, hexToCV } from '@stacks/transactions';
+import { Cl, ClarityType, cvToJSON, hexToCV } from '@stacks/transactions';
+
+export interface PrettyFunctionResult {
+  display: string;
+  decoded: boolean;
+  success?: boolean;
+}
+
+export function prettyFunctionResult(hex: string): PrettyFunctionResult {
+  try {
+    const cv = hexToCV(hex);
+    const display = Cl.stringify(cv, 2);
+    let success: boolean | undefined;
+    if (cv.type === ClarityType.ResponseOk) success = true;
+    else if (cv.type === ClarityType.ResponseErr) success = false;
+    return { display, decoded: true, success };
+  } catch {
+    return { display: `Unable to decode value:\n${hex}`, decoded: false };
+  }
+}
 
 /**
  * Returns true if the type string is a tuple type ('tuple' or '(tuple ...)').
