@@ -11,16 +11,14 @@ import {
   ContractCallTransaction,
   MempoolContractCallTransaction,
 } from '@stacks/stacks-blockchain-api-types';
-import { ClarityAbiFunction, cvToJSON, hexToCV } from '@stacks/transactions';
+import { ClarityAbiFunction } from '@stacks/transactions';
 
 import { FunctionArgsTable } from './FunctionArgsTable';
 import { FunctionCallForm } from './FunctionCallForm';
 import { FunctionListItem } from './FunctionListItem';
-import { FunctionResultNonTuple } from './FunctionResultNonTuple';
+import { FunctionResultPretty } from './FunctionResultPretty';
 import { FunctionResultStatus } from './FunctionResultStatus';
-import { FunctionResultsTable } from './FunctionResultTable';
-import { FunctionResultType } from './FunctionResultType';
-import { getContractCallTxFunctionArgs, isTupleType } from './utils';
+import { getContractCallTxFunctionArgs } from './utils';
 
 function FunctionTitle({
   fnAbi,
@@ -44,9 +42,6 @@ function FunctionTitle({
 
 function FunctionResult({ tx }: { tx: ContractCallTransaction | MempoolContractCallTransaction }) {
   if (!isConfirmedTx(tx) || !tx.tx_result) return null;
-  const result = tx.tx_result;
-  const { success, type, value } = cvToJSON(hexToCV(result.hex));
-  const hasType = !type?.includes('UnknownType');
 
   return (
     <SectionTabsContentContainer px={6}>
@@ -54,33 +49,17 @@ function FunctionResult({ tx }: { tx: ContractCallTransaction | MempoolContractC
         templateColumns={{ base: 'minmax(0, 1fr)', md: '80px minmax(0, 1fr)' }}
         gap={3}
         columnGap={12}
-        alignItems="center"
+        alignItems="start"
       >
-        {isTupleType(value?.type) ? (
-          <>
-            <Box pt={5}>
-              <Text textStyle="text-medium-sm" color="textSecondary">
-                Result
-              </Text>
-            </Box>
-            <Stack alignItems="flex-start">
-              <FunctionResultType tx={tx} />
-              <FunctionResultsTable tx={tx} />
-            </Stack>
-          </>
-        ) : (
-          <>
-            <Flex h="full" alignItems="center">
-              <Text textStyle="text-medium-sm" color="textSecondary">
-                Result
-              </Text>
-            </Flex>
-            <Flex alignItems="center" gap={2}>
-              <FunctionResultStatus tx={tx} />
-              <FunctionResultNonTuple tx={tx} />
-            </Flex>
-          </>
-        )}
+        <Box pt={2}>
+          <Text textStyle="text-medium-sm" color="textSecondary">
+            Result
+          </Text>
+        </Box>
+        <Stack alignItems="stretch" gap={2} minW={0}>
+          <FunctionResultStatus tx={tx} />
+          <FunctionResultPretty tx={tx} />
+        </Stack>
       </Grid>
     </SectionTabsContentContainer>
   );
