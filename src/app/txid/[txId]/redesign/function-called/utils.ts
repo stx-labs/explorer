@@ -4,7 +4,24 @@ import {
   ContractCallTransaction,
   MempoolContractCallTransaction,
 } from '@stacks/stacks-blockchain-api-types';
-import { cvToJSON, hexToCV } from '@stacks/transactions';
+import { Cl, cvToJSON, hexToCV } from '@stacks/transactions';
+
+const MAX_HEX_FALLBACK_LENGTH = 512;
+
+export interface PrettyFunctionResult {
+  display: string;
+  ok: boolean;
+}
+
+export function prettyFunctionResult(hex: string): PrettyFunctionResult {
+  try {
+    return { display: Cl.stringify(hexToCV(hex), 2), ok: true };
+  } catch {
+    const truncated =
+      hex.length > MAX_HEX_FALLBACK_LENGTH ? `${hex.slice(0, MAX_HEX_FALLBACK_LENGTH)}…` : hex;
+    return { display: `Unable to decode value:\n${truncated}`, ok: false };
+  }
+}
 
 /**
  * Returns true if the type string is a tuple type ('tuple' or '(tuple ...)').

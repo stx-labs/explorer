@@ -16,7 +16,7 @@ import { ClarityAbiFunction } from '@stacks/transactions';
 import { FunctionArgsTable } from './FunctionArgsTable';
 import { FunctionCallForm } from './FunctionCallForm';
 import { FunctionListItem } from './FunctionListItem';
-import { FunctionResultPretty } from './FunctionResultPretty';
+import { FUNCTION_RESULT_LABEL_ID, FunctionResultPretty } from './FunctionResultPretty';
 import { FunctionResultStatus } from './FunctionResultStatus';
 import { getContractCallTxFunctionArgs } from './utils';
 
@@ -52,7 +52,7 @@ function FunctionResult({ tx }: { tx: ContractCallTransaction | MempoolContractC
         alignItems="start"
       >
         <Box pt={2}>
-          <Text textStyle="text-medium-sm" color="textSecondary">
+          <Text id={FUNCTION_RESULT_LABEL_ID} textStyle="text-medium-sm" color="textSecondary">
             Result
           </Text>
         </Box>
