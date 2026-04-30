@@ -8,7 +8,7 @@ import { Cl, ClarityType, cvToJSON, hexToCV } from '@stacks/transactions';
 
 export interface PrettyFunctionResult {
   display: string;
-  ok: boolean;
+  decoded: boolean;
   success?: boolean;
 }
 
@@ -19,9 +19,9 @@ export function prettyFunctionResult(hex: string): PrettyFunctionResult {
     let success: boolean | undefined;
     if (cv.type === ClarityType.ResponseOk) success = true;
     else if (cv.type === ClarityType.ResponseErr) success = false;
-    return { display, ok: true, success };
+    return { display, decoded: true, success };
   } catch {
-    return { display: `Unable to decode value:\n${hex}`, ok: false };
+    return { display: `Unable to decode value:\n${hex}`, decoded: false };
   }
 }
 
