@@ -4,22 +4,24 @@ import {
   ContractCallTransaction,
   MempoolContractCallTransaction,
 } from '@stacks/stacks-blockchain-api-types';
-import { Cl, cvToJSON, hexToCV } from '@stacks/transactions';
-
-const MAX_HEX_FALLBACK_LENGTH = 512;
+import { Cl, ClarityType, cvToJSON, hexToCV } from '@stacks/transactions';
 
 export interface PrettyFunctionResult {
   display: string;
   ok: boolean;
+  success?: boolean;
 }
 
 export function prettyFunctionResult(hex: string): PrettyFunctionResult {
   try {
-    return { display: Cl.stringify(hexToCV(hex), 2), ok: true };
+    const cv = hexToCV(hex);
+    const display = Cl.stringify(cv, 2);
+    let success: boolean | undefined;
+    if (cv.type === ClarityType.ResponseOk) success = true;
+    else if (cv.type === ClarityType.ResponseErr) success = false;
+    return { display, ok: true, success };
   } catch {
-    const truncated =
-      hex.length > MAX_HEX_FALLBACK_LENGTH ? `${hex.slice(0, MAX_HEX_FALLBACK_LENGTH)}…` : hex;
-    return { display: `Unable to decode value:\n${truncated}`, ok: false };
+    return { display: `Unable to decode value:\n${hex}`, ok: false };
   }
 }
 

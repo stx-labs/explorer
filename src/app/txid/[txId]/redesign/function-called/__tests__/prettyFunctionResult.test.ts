@@ -1,23 +1,31 @@
-import { cvToHex, uintCV } from '@stacks/transactions';
+import { cvToHex, responseErrorCV, responseOkCV, uintCV } from '@stacks/transactions';
 
 import { prettyFunctionResult } from '../utils';
 
 describe('prettyFunctionResult', () => {
   it('returns the pretty-printed clarity value on success', () => {
-    expect(prettyFunctionResult(cvToHex(uintCV(42)))).toEqual({ display: 'u42', ok: true });
+    expect(prettyFunctionResult(cvToHex(uintCV(42)))).toEqual({
+      display: 'u42',
+      ok: true,
+      success: undefined,
+    });
   });
 
-  it('returns a fallback message on malformed hex', () => {
+  it('reports response-ok status', () => {
+    const result = prettyFunctionResult(cvToHex(responseOkCV(uintCV(1))));
+    expect(result.ok).toBe(true);
+    expect(result.success).toBe(true);
+  });
+
+  it('reports response-err status', () => {
+    const result = prettyFunctionResult(cvToHex(responseErrorCV(uintCV(1))));
+    expect(result.ok).toBe(true);
+    expect(result.success).toBe(false);
+  });
+
+  it('returns the full raw hex in the fallback on malformed input', () => {
     const result = prettyFunctionResult('not-hex');
     expect(result.ok).toBe(false);
-    expect(result.display).toContain('Unable to decode');
-  });
-
-  it('truncates the raw hex in the fallback', () => {
-    const longHex = 'a'.repeat(1000);
-    const result = prettyFunctionResult(longHex);
-    expect(result.ok).toBe(false);
-    expect(result.display.length).toBeLessThan(longHex.length);
-    expect(result.display).toContain('…');
+    expect(result.display).toBe('Unable to decode value:\nnot-hex');
   });
 });

@@ -1,15 +1,9 @@
 import { RowCopyButton } from '@/app/txid/[txId]/redesign/tx-summary/SummaryItem';
 import { Box, Flex } from '@chakra-ui/react';
 
-import { ContractCallTransaction } from '@stacks/stacks-blockchain-api-types';
-
-import { prettyFunctionResult } from './utils';
-
 export const FUNCTION_RESULT_LABEL_ID = 'function-result-label';
 
-export function FunctionResultPretty({ tx }: { tx: ContractCallTransaction }) {
-  const { display } = prettyFunctionResult(tx.tx_result.hex);
-
+export function FunctionResultPretty({ display }: { display: string }) {
   return (
     <Flex alignItems="flex-start" gap={2} w="full" minW={0}>
       <Box

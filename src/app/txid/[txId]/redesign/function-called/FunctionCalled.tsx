@@ -18,7 +18,7 @@ import { FunctionCallForm } from './FunctionCallForm';
 import { FunctionListItem } from './FunctionListItem';
 import { FUNCTION_RESULT_LABEL_ID, FunctionResultPretty } from './FunctionResultPretty';
 import { FunctionResultStatus } from './FunctionResultStatus';
-import { getContractCallTxFunctionArgs } from './utils';
+import { getContractCallTxFunctionArgs, prettyFunctionResult } from './utils';
 
 function FunctionTitle({
   fnAbi,
@@ -42,6 +42,7 @@ function FunctionTitle({
 
 function FunctionResult({ tx }: { tx: ContractCallTransaction | MempoolContractCallTransaction }) {
   if (!isConfirmedTx(tx) || !tx.tx_result) return null;
+  const { display, success } = prettyFunctionResult(tx.tx_result.hex);
 
   return (
     <SectionTabsContentContainer px={6}>
@@ -57,8 +58,8 @@ function FunctionResult({ tx }: { tx: ContractCallTransaction | MempoolContractC
           </Text>
         </Box>
         <Stack alignItems="stretch" gap={2} minW={0}>
-          <FunctionResultStatus tx={tx} />
-          <FunctionResultPretty tx={tx} />
+          <FunctionResultStatus success={success} />
+          <FunctionResultPretty display={display} />
         </Stack>
       </Grid>
     </SectionTabsContentContainer>
