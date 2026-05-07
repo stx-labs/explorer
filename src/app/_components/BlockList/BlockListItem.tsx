@@ -6,11 +6,7 @@ import { Block } from '@stacks/stacks-blockchain-api-types';
 
 import { BtcStxBlockLinks } from '../../../common/components/BtcStxBlockLinks';
 import { TwoColsListItem } from '../../../common/components/TwoColumnsListItem';
-import {
-  addSepBetweenStrings,
-  toRelativeTime,
-  truncateMiddleDeprecated,
-} from '../../../common/utils/utils';
+import { toRelativeTime, truncateMiddleDeprecated } from '../../../common/utils/utils';
 import { Caption } from '../../../ui/typography';
 
 export const BlockListItem: React.FC<{ block: Block } & FlexProps> = React.memo(
@@ -34,16 +30,15 @@ export const BlockListItem: React.FC<{ block: Block } & FlexProps> = React.memo(
           ),
           subtitle: (
             <Caption display="block" color={'textSubdued'}>
-              {addSepBetweenStrings([
-                `${block?.microblocks_accepted?.length || 0} ${pluralize(
-                  'microblock',
-                  block?.microblocks_accepted?.length || 0
-                )}`,
-              ]) +
-                ' · ' +
-                addSepBetweenStrings([
-                  `${block.txs?.length || 0} ${pluralize('transaction', block.txs?.length || 0)}`,
-                ])}
+              {(() => {
+                const microblockCount = block?.microblocks_accepted?.length ?? 0;
+                const txCount = block.txs?.length ?? 0;
+                const txSegment = `${txCount} ${pluralize('transaction', txCount)}`;
+                // Nakamoto blocks have no microblocks; only render the chip when relevant.
+                return microblockCount > 0
+                  ? `${microblockCount} ${pluralize('microblock', microblockCount)} · ${txSegment}`
+                  : txSegment;
+              })()}
             </Caption>
           ),
         }}

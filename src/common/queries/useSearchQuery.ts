@@ -4,6 +4,7 @@ import { UTCDate } from '@date-fns/utc';
 import { useQuery } from '@tanstack/react-query';
 import { getNameInfo } from 'bns-v2-sdk';
 
+import { OperationResponse } from '@stacks/blockchain-api-client';
 import { Block, Transaction, TransactionType } from '@stacks/stacks-blockchain-api-types';
 
 import { callApiWithErrorHandling } from '../../api/callApiWithErrorHandling';
@@ -22,12 +23,14 @@ import {
 import { buildUrl } from '../utils/buildUrl';
 import { hasBnsExtension, isNumeric } from '../utils/utils';
 
-function blockToSearchResult(block: Block): FoundResult {
+type NakamotoBlock = OperationResponse['/extended/v2/blocks/{height_or_hash}'];
+
+export function blockToSearchResult(block: NakamotoBlock): FoundResult {
   const blockResult: BlockSearchResult = {
     entity_id: block.hash,
     entity_type: SearchResultType.BlockHash,
-    block_data: block,
-    tx_count: block.txs?.length || 0,
+    block_data: block as unknown as Partial<Block>,
+    tx_count: block.tx_count ?? 0,
   };
   return {
     found: true,
@@ -420,9 +423,9 @@ export function useSearchQuery(id: string, isRedesign?: boolean) {
           const height = parseInt(id);
           const block = await callApiWithErrorHandling(
             apiClient,
-            '/extended/v1/block/by_height/{height}',
+            '/extended/v2/blocks/{height_or_hash}',
             {
-              params: { path: { height } },
+              params: { path: { height_or_hash: height } },
             }
           );
           if (block) {

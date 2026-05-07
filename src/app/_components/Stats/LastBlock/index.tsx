@@ -11,7 +11,7 @@ function LastBlockBase(props: StackProps) {
   const { data: blocks } = useSuspenseBlockListInfinite();
   const lastBlockHeight = blocks?.pages?.[0]?.results?.[0]?.height;
   const lastBurnBlockHeight = blocks?.pages?.[0]?.results?.[0]?.burn_block_height;
-  const lastBlockTxsCount = blocks?.pages?.[0]?.results?.[0]?.txs?.length;
+  const lastBlockTxsCount = blocks?.pages?.[0]?.results?.[0]?.tx_count;
 
   return (
     <StatSection

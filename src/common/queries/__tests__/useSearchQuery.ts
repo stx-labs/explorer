@@ -1,6 +1,8 @@
 import { Network } from '../../types/network';
+import { SearchResultType } from '../../types/search-results';
 import {
   advancedSearchConfig,
+  blockToSearchResult,
   buildAdvancedSearchQuery,
   formatTransactionType,
   getSearchPageUrl,
@@ -248,5 +250,47 @@ describe('formatTransactionType', () => {
 
   test('should handle empty string', () => {
     expect(formatTransactionType('')).toBe('');
+  });
+});
+
+describe('blockToSearchResult', () => {
+  const baseBlock = {
+    canonical: true,
+    height: 12345,
+    hash: '0xabc',
+    block_time: 0,
+    block_time_iso: '',
+    tenure_height: 0,
+    index_block_hash: '',
+    parent_block_hash: '',
+    parent_index_block_hash: '',
+    burn_block_time: 0,
+    burn_block_time_iso: '',
+    burn_block_hash: '',
+    burn_block_height: 0,
+    miner_txid: '',
+    tx_count: 7,
+    execution_cost_read_count: 0,
+    execution_cost_read_length: 0,
+    execution_cost_runtime: 0,
+    execution_cost_write_count: 0,
+    execution_cost_write_length: 0,
+  };
+
+  test('maps tx_count and hash through to the result', () => {
+    const result = blockToSearchResult(baseBlock);
+    expect(result.found).toBe(true);
+    expect(result.result.entity_type).toBe(SearchResultType.BlockHash);
+    expect(result.result.entity_id).toBe('0xabc');
+    if (result.result.entity_type === SearchResultType.BlockHash) {
+      expect(result.result.tx_count).toBe(7);
+    }
+  });
+
+  test('falls back to 0 when tx_count is missing', () => {
+    const result = blockToSearchResult({ ...baseBlock, tx_count: undefined as unknown as number });
+    if (result.result.entity_type === SearchResultType.BlockHash) {
+      expect(result.result.tx_count).toBe(0);
+    }
   });
 });

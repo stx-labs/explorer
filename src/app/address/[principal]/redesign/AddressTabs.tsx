@@ -14,6 +14,7 @@ import {
   ADDRESS_ID_PAGE_FUNGIBLE_TOKENS_LIMIT,
 } from '@/common/components/table/table-examples/consts';
 import { useAddressTxs } from '@/common/queries/useAddressConfirmedTxsWithTransfersInfinite';
+import { useNftHoldings } from '@/common/queries/useNftHoldings';
 import { TabsContent, TabsList, TabsRoot } from '@/ui/Tabs';
 import { useSearchParams } from 'next/navigation';
 import { useMemo, useState } from 'react';
@@ -43,9 +44,11 @@ export const AddressTabs = ({ principal }: { principal: string }) => {
   const totalAddressFungibleTokens = Object.entries(
     initialAddressBalancesData?.fungible_tokens || {}
   ).length;
-  const totalAddressNonFungibleTokens = Object.entries(
-    initialAddressBalancesData?.non_fungible_tokens || {}
-  ).reduce((acc, [_, nft]) => acc + (Number(nft?.count) || 0), 0);
+
+  // NFT counts come from the dedicated holdings endpoint — there is no v2
+  // /balances/nft to roll into AddressBalanceResponse.
+  const { data: nftHoldings } = useNftHoldings(principal, 1, 0);
+  const totalAddressNonFungibleTokens = nftHoldings?.total ?? 0;
 
   const searchParams = useSearchParams();
   const tabParam = searchParams.get('tab');

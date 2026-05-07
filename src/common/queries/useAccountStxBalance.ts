@@ -9,9 +9,13 @@ export function useAccountStxBalance(principal: string) {
   return useQuery({
     queryKey: ['stx-balance', principal],
     queryFn: async () => {
-      return await callApiWithErrorHandling(apiClient, '/extended/v1/address/{principal}/stx', {
-        params: { path: { principal } },
-      });
+      return await callApiWithErrorHandling(
+        apiClient,
+        '/extended/v2/addresses/{principal}/balances/stx',
+        {
+          params: { path: { principal } },
+        }
+      );
     },
     staleTime: THREE_MINUTES,
   });

@@ -24,7 +24,7 @@ interface NftItem {
 }
 
 export function NFTTable() {
-  const { principal, initialAddressBalancesData } = useAddressIdPageData();
+  const { principal } = useAddressIdPageData();
 
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
@@ -44,10 +44,7 @@ export function NFTTable() {
     window?.scrollTo(0, 0); // Smooth scroll to top
   }, []);
 
-  const totalRows = Object.entries(initialAddressBalancesData?.non_fungible_tokens || {}).reduce(
-    (acc, [_, nft]) => acc + (Number(nft?.count) || 0),
-    0
-  );
+  const totalRows = nftHoldings?.total ?? 0;
 
   const shouldShowPagination = totalRows > ITEMS_PER_PAGE;
 
