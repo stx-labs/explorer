@@ -1,4 +1,4 @@
-import { stacksAPIFetch } from '@/api/stacksAPIFetch';
+import { stacksAPIFetch, stacksAPIFetchJson } from '@/api/stacksAPIFetch';
 import { LUNAR_CRUSH_API_KEY } from '@/common/constants/env';
 import { PoxInfo } from '@/common/queries/usePoxInforRaw';
 import { LunarCrushCoinRedesign } from '@/common/types/lunarCrush';
@@ -27,16 +27,6 @@ type AddressTransactionsResponse =
 
 type FtMetadataResponse =
   operations['getFtMetadata']['responses']['200']['content']['application/json'];
-
-async function fetchJson<T>(url: string, init?: RequestInit, errorContext?: string): Promise<T> {
-  const response = await stacksAPIFetch(url, init);
-  if (!response.ok) {
-    throw new Error(
-      `${errorContext ?? 'Request failed'}: ${response.status} ${response.statusText}`
-    );
-  }
-  return (await response.json()) as T;
-}
 
 export const getAddressBalancesTag = (principal: string) => `address-balances-${principal}`;
 export const getAddressLatestNonceTag = (principal: string) => `address-latest-nonce-${principal}`;
@@ -75,14 +65,14 @@ export async function fetchAddressBalances(
   const encodedPrincipal = encodeURIComponent(principal);
 
   const [stxResponse, fungibleTokens] = await Promise.all([
-    fetchJson<StxBalanceResponse>(
+    stacksAPIFetchJson<StxBalanceResponse>(
       `${apiUrl}/extended/v2/addresses/${encodedPrincipal}/balances/stx`,
       fetchOptions,
       'Failed to fetch STX balance'
     ),
     fetchAllFtBalances(
       offset =>
-        fetchJson<FtBalancesResponse>(
+        stacksAPIFetchJson<FtBalancesResponse>(
           `${apiUrl}/extended/v2/addresses/${encodedPrincipal}/balances/ft?limit=${FT_BALANCES_PAGE_SIZE}&offset=${offset}`,
           fetchOptions,
           'Failed to fetch FT balances page'
@@ -114,8 +104,6 @@ export async function fetchAddressBalances(
       burnchain_unlock_height: stxResponse.burnchain_unlock_height,
     },
     fungible_tokens: fungibleTokens,
-    // No NFT balances endpoint exists; NFT data is fetched separately via
-    // /extended/v1/tokens/nft/holdings (see useNftHoldings).
     non_fungible_tokens: {},
   };
 }
@@ -188,7 +176,7 @@ export async function fetchRecentTransactions(
   apiUrl: string,
   principal: string
 ): Promise<AddressTransactionsListResponse> {
-  const data = await fetchJson<AddressTransactionsResponse>(
+  const data = await stacksAPIFetchJson<AddressTransactionsResponse>(
     `${apiUrl}/extended/v2/addresses/${encodeURIComponent(principal)}/transactions?limit=${ADDRESS_RECENT_TRANSACTIONS_LIMIT}`,
     {
       cache: 'default',

@@ -45,8 +45,6 @@ export const AddressTabs = ({ principal }: { principal: string }) => {
     initialAddressBalancesData?.fungible_tokens || {}
   ).length;
 
-  // NFT counts come from the dedicated holdings endpoint — there is no v2
-  // /balances/nft to roll into AddressBalanceResponse.
   const { data: nftHoldings } = useNftHoldings(principal, 1, 0);
   const totalAddressNonFungibleTokens = nftHoldings?.total ?? 0;
 

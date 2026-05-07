@@ -2,8 +2,6 @@ import { FtBalance } from '@stacks/stacks-blockchain-api-types';
 
 export const FT_BALANCES_PAGE_SIZE = 200;
 
-// Cap the parallel page fan-out for whale addresses (e.g. >1000 distinct FTs).
-// Without a cap, a 5000-FT address would issue 25 simultaneous requests.
 const MAX_CONCURRENT_PAGES = 5;
 
 export interface FtBalancesPage {
@@ -12,8 +10,6 @@ export interface FtBalancesPage {
 }
 
 export interface FetchAllFtBalancesOptions {
-  // Called when a non-first page rejects so the caller can log without aborting.
-  // First-page errors are intentionally allowed to escalate to the caller.
   onPageError?: (error: unknown, offset: number) => void;
 }
 

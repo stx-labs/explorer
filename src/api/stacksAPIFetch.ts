@@ -18,3 +18,15 @@ export async function stacksAPIFetch(url: string, options: RequestInit = {}) {
     headers: reqHeaders,
   });
 }
+
+export async function stacksAPIFetchJson<T>(
+  url: string,
+  options: RequestInit = {},
+  errorContext = 'Stacks API request failed'
+): Promise<T> {
+  const response = await stacksAPIFetch(url, options);
+  if (!response.ok) {
+    throw new Error(`${errorContext}: ${response.status} ${response.statusText}`);
+  }
+  return (await response.json()) as T;
+}

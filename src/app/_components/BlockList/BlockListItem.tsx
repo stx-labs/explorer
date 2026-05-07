@@ -34,7 +34,6 @@ export const BlockListItem: React.FC<{ block: Block } & FlexProps> = React.memo(
                 const microblockCount = block?.microblocks_accepted?.length ?? 0;
                 const txCount = block.txs?.length ?? 0;
                 const txSegment = `${txCount} ${pluralize('transaction', txCount)}`;
-                // Nakamoto blocks have no microblocks; only render the chip when relevant.
                 return microblockCount > 0
                   ? `${microblockCount} ${pluralize('microblock', microblockCount)} · ${txSegment}`
                   : txSegment;

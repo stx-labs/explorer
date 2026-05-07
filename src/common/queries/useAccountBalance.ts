@@ -52,8 +52,6 @@ async function fetchAddressBalances(
       burnchain_unlock_height: stx.burnchain_unlock_height,
     },
     fungible_tokens: fungibleTokens,
-    // No NFT balances endpoint exists; NFT data is fetched separately via
-    // /extended/v1/tokens/nft/holdings (see useNftHoldings).
     non_fungible_tokens: {},
   };
 }
