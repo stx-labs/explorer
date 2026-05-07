@@ -2,12 +2,9 @@
 
 import { InfiniteData, useQueryClient } from '@tanstack/react-query';
 
-import {
-  AddressBalanceResponse,
-  AddressTransaction,
-  AddressTransactionsListResponse,
-} from '@stacks/stacks-blockchain-api-types';
+import { AddressBalanceResponse, AddressTransaction } from '@stacks/stacks-blockchain-api-types';
 
+import { GenericResponseType } from '../../../common/hooks/useInfiniteQueryResult';
 import { microStxToStx, microToStacksFormatted } from '../../../common/utils/utils';
 import { useFilterAndSortState } from '../../txsFilterAndSort/useFilterAndSortState';
 
@@ -30,7 +27,7 @@ export const useTxsCSVData = () => {
 
   const getTxsCSVData = (address: string): CSVDownloadObjectType[] => {
     const txsQueryData = queryClient.getQueriesData<
-      InfiniteData<AddressTransactionsListResponse & { results: AddressTransaction[] }>
+      InfiniteData<GenericResponseType<AddressTransaction>>
     >({
       queryKey: ['addressConfirmedTxsWithTransfersInfinite', address],
     });

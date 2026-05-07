@@ -42,7 +42,7 @@ describe('useTxsCSVData Custom Hook', () => {
 
     const formatTxsData = result.current.formatTxsCSVData(
       addressTxsMockData.pages[0].results as unknown as AddressTransaction[],
-      mockAddress
+      addressBalanceMockData.stx.balance
     );
 
     expect(formatTxsData.length).toBe(addressTxsMockData.pages[0].results.length);

@@ -8,7 +8,6 @@ import { OperationResponse } from '@stacks/blockchain-api-client';
 import {
   AddressBalanceResponse,
   AddressNonces,
-  AddressTransaction,
   AddressTransactionsListResponse,
   BnsNamesOwnByAddressResponse,
   BurnchainRewardsTotal,
@@ -16,6 +15,8 @@ import {
 
 type StxBalanceResponse = OperationResponse['/extended/v2/addresses/{principal}/balances/stx'];
 type FtBalancesResponse = OperationResponse['/extended/v2/addresses/{principal}/balances/ft'];
+type AddressTransactionsResponse =
+  OperationResponse['/extended/v2/addresses/{address}/transactions'];
 
 export const getAddressBalancesTag = (principal: string) => `address-balances-${principal}`;
 export const getAddressLatestNonceTag = (principal: string) => `address-latest-nonce-${principal}`;
@@ -183,9 +184,7 @@ export async function fetchRecentTransactions(
   apiUrl: string,
   principal: string
 ): Promise<AddressTransactionsListResponse> {
-  const data = await stacksAPIFetchJson<
-    { results?: AddressTransaction[] } & Record<string, unknown>
-  >(
+  const data = await stacksAPIFetchJson<AddressTransactionsResponse>(
     `${apiUrl}/extended/v2/addresses/${encodeURIComponent(principal)}/transactions?limit=${ADDRESS_RECENT_TRANSACTIONS_LIMIT}`,
     {
       cache: 'default',

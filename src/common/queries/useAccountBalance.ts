@@ -3,7 +3,7 @@ import { useQuery, useSuspenseQuery } from '@tanstack/react-query';
 import { AddressBalanceResponse } from '@stacks/stacks-blockchain-api-types';
 
 import { callApiWithErrorHandling } from '../../api/callApiWithErrorHandling';
-import { getApiClient } from '../../api/getApiClient';
+import type { getApiClient } from '../../api/getApiClient';
 import { useApiClient } from '../../api/useApiClient';
 import { logError } from '../utils/error-utils';
 import { FT_BALANCES_PAGE_SIZE, fetchAllFtBalances } from '../utils/ft-balances';
