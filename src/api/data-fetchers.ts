@@ -1,10 +1,12 @@
-import { stacksAPIFetch } from '@/api/stacksAPIFetch';
+import { stacksAPIFetch, stacksAPIFetchJson } from '@/api/stacksAPIFetch';
 import { LUNAR_CRUSH_API_KEY } from '@/common/constants/env';
 import { PoxInfo } from '@/common/queries/usePoxInforRaw';
 import { LunarCrushCoinRedesign } from '@/common/types/lunarCrush';
 import { logError } from '@/common/utils/error-utils';
+import { FT_BALANCES_PAGE_SIZE, fetchAllFtBalances } from '@/common/utils/ft-balances';
 import { validateAssettId } from '@/common/utils/utils';
 
+import { OperationResponse } from '@stacks/blockchain-api-client';
 import {
   AddressBalanceResponse,
   AddressNonces,
@@ -17,6 +19,11 @@ import {
   Transaction,
 } from '@stacks/stacks-blockchain-api-types';
 import type { operations } from '@stacks/token-metadata-api-client/lib/generated/schema';
+
+type StxBalanceResponse = OperationResponse['/extended/v2/addresses/{principal}/balances/stx'];
+type FtBalancesResponse = OperationResponse['/extended/v2/addresses/{principal}/balances/ft'];
+type AddressTransactionsResponse =
+  OperationResponse['/extended/v2/addresses/{address}/transactions'];
 
 type FtMetadataResponse =
   operations['getFtMetadata']['responses']['200']['content']['application/json'];
@@ -48,16 +55,57 @@ export async function fetchAddressBalances(
   apiUrl: string,
   principal: string
 ): Promise<AddressBalanceResponse> {
-  const response = await stacksAPIFetch(`${apiUrl}/extended/v1/address/${principal}/balances`, {
+  const fetchOptions: RequestInit = {
     cache: 'default',
     next: {
       revalidate: ADDRESS_BALANCES_REVALIDATION_TIMEOUT_IN_SECONDS,
       tags: [getAddressBalancesTag(principal)],
     },
-  });
+  };
+  const encodedPrincipal = encodeURIComponent(principal);
 
-  const balanceResponse: AddressBalanceResponse = await response.json();
-  return balanceResponse;
+  const [stxResponse, fungibleTokens] = await Promise.all([
+    stacksAPIFetchJson<StxBalanceResponse>(
+      `${apiUrl}/extended/v2/addresses/${encodedPrincipal}/balances/stx`,
+      fetchOptions,
+      'Failed to fetch STX balance'
+    ),
+    fetchAllFtBalances(
+      offset =>
+        stacksAPIFetchJson<FtBalancesResponse>(
+          `${apiUrl}/extended/v2/addresses/${encodedPrincipal}/balances/ft?limit=${FT_BALANCES_PAGE_SIZE}&offset=${offset}`,
+          fetchOptions,
+          'Failed to fetch FT balances page'
+        ),
+      {
+        onPageError: (error, offset) => {
+          logError(
+            error instanceof Error ? error : new Error(String(error)),
+            'fetchAllFtBalances:page',
+            { principal, offset },
+            'warning'
+          );
+        },
+      }
+    ),
+  ]);
+
+  return {
+    stx: {
+      balance: stxResponse.balance,
+      total_sent: stxResponse.total_sent ?? '0',
+      total_received: stxResponse.total_received ?? '0',
+      total_fees_sent: stxResponse.total_fees_sent ?? '0',
+      total_miner_rewards_received: stxResponse.total_miner_rewards_received,
+      lock_tx_id: stxResponse.lock_tx_id,
+      locked: stxResponse.locked,
+      lock_height: stxResponse.lock_height,
+      burnchain_lock_height: stxResponse.burnchain_lock_height,
+      burnchain_unlock_height: stxResponse.burnchain_unlock_height,
+    },
+    fungible_tokens: fungibleTokens,
+    non_fungible_tokens: {},
+  };
 }
 
 export async function fetchAddressLatestNonce(
@@ -128,19 +176,22 @@ export async function fetchRecentTransactions(
   apiUrl: string,
   principal: string
 ): Promise<AddressTransactionsListResponse> {
-  const response = await stacksAPIFetch(
-    `${apiUrl}/extended/v1/address/${principal}/transactions?limit=${ADDRESS_RECENT_TRANSACTIONS_LIMIT}`,
+  const data = await stacksAPIFetchJson<AddressTransactionsResponse>(
+    `${apiUrl}/extended/v2/addresses/${encodeURIComponent(principal)}/transactions?limit=${ADDRESS_RECENT_TRANSACTIONS_LIMIT}`,
     {
       cache: 'default',
       next: {
         revalidate: RECENT_TRANSACTIONS_REVALIDATION_TIMEOUT_IN_SECONDS,
         tags: [getAddressRecentTransactionsTag(principal)],
       },
-    }
+    },
+    'Failed to fetch recent transactions'
   );
 
-  const recentTransactionsResponse: AddressTransactionsListResponse = await response.json();
-  return recentTransactionsResponse;
+  return {
+    ...data,
+    results: (data.results ?? []).map(item => item.tx),
+  } as AddressTransactionsListResponse;
 }
 
 export async function fetchTokenMetadata(

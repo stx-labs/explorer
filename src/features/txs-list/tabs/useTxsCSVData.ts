@@ -2,12 +2,9 @@
 
 import { InfiniteData, useQueryClient } from '@tanstack/react-query';
 
-import {
-  AddressBalanceResponse,
-  AddressTransactionWithTransfers,
-  AddressTransactionsWithTransfersListResponse,
-} from '@stacks/stacks-blockchain-api-types';
+import { AddressBalanceResponse, AddressTransaction } from '@stacks/stacks-blockchain-api-types';
 
+import { GenericResponseType } from '../../../common/hooks/useInfiniteQueryResult';
 import { microStxToStx, microToStacksFormatted } from '../../../common/utils/utils';
 import { useFilterAndSortState } from '../../txsFilterAndSort/useFilterAndSortState';
 
@@ -30,7 +27,7 @@ export const useTxsCSVData = () => {
 
   const getTxsCSVData = (address: string): CSVDownloadObjectType[] => {
     const txsQueryData = queryClient.getQueriesData<
-      InfiniteData<AddressTransactionsWithTransfersListResponse>
+      InfiniteData<GenericResponseType<AddressTransaction>>
     >({
       queryKey: ['addressConfirmedTxsWithTransfersInfinite', address],
     });
@@ -41,12 +38,9 @@ export const useTxsCSVData = () => {
 
     const balance = addressBalanceQueryData[0][1]?.stx.balance;
 
-    const txs = txsQueryData[0][1]?.pages.reduce<AddressTransactionWithTransfers[]>(
-      (acc, { results }) => {
-        return acc.concat(results);
-      },
-      []
-    );
+    const txs = txsQueryData[0][1]?.pages.reduce<AddressTransaction[]>((acc, { results }) => {
+      return acc.concat(results);
+    }, []);
 
     const filteredTxs = !activeFilters.length
       ? txs
@@ -56,7 +50,7 @@ export const useTxsCSVData = () => {
   };
 
   const formatTxsCSVData = (
-    txs: AddressTransactionWithTransfers[],
+    txs: AddressTransaction[],
     balance: string | number
   ): CSVDownloadObjectType[] => {
     let stxBalance = Number(balance);

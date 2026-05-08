@@ -11,7 +11,6 @@ import {
 import {
   AddressTransaction,
   AddressTransactionEvent,
-  AddressTransactionWithTransfers,
   AddressTransactionsListResponse,
 } from '@stacks/stacks-blockchain-api-types';
 
@@ -80,21 +79,18 @@ export function useAddressConfirmedTxsWithTransfers(
   limit = DEFAULT_LIST_LIMIT,
   offset = 0,
   options: any = {}
-): UseQueryResult<GenericResponseType<AddressTransactionWithTransfers>> {
+): UseQueryResult<GenericResponseType<AddressTransaction>> {
   const apiClient = useApiClient();
   return useQuery({
     queryKey: getAddressConfirmedTxsWithTransfersQueryKey(principal, limit, offset),
     queryFn: async () => {
       return await callApiWithErrorHandling(
         apiClient,
-        '/extended/v1/address/{principal}/transactions_with_transfers',
+        '/extended/v2/addresses/{address}/transactions',
         {
           params: {
-            query: {
-              limit,
-              offset,
-            },
-            path: { principal },
+            query: { limit, offset },
+            path: { address: principal },
           },
         }
       );
@@ -106,7 +102,7 @@ export function useAddressConfirmedTxsWithTransfers(
 export function useAddressConfirmedTxsWithTransfersInfinite(
   principal?: string,
   options: any = {}
-): UseInfiniteQueryResult<InfiniteData<GenericResponseType<AddressTransactionWithTransfers>>> {
+): UseInfiniteQueryResult<InfiniteData<GenericResponseType<AddressTransaction>>> {
   const apiClient = useApiClient();
   return useInfiniteQuery({
     queryKey: [ADDRESS_CONFIRMED_TXS_WITH_TRANSFERS_INFINITE_QUERY_KEY, principal],
@@ -114,10 +110,10 @@ export function useAddressConfirmedTxsWithTransfersInfinite(
       if (!principal) return undefined;
       return await callApiWithErrorHandling(
         apiClient,
-        '/extended/v1/address/{principal}/transactions_with_transfers',
+        '/extended/v2/addresses/{address}/transactions',
         {
           params: {
-            path: { principal },
+            path: { address: principal },
             query: { limit: DEFAULT_LIST_LIMIT, offset: pageParam || 0 },
           },
         }

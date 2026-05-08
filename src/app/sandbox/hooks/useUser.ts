@@ -3,10 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { connect, disconnect, getLocalStorage, isConnected } from '@stacks/connect';
-import {
-  AddressTransactionWithTransfers,
-  MempoolTransaction,
-} from '@stacks/stacks-blockchain-api-types';
+import { AddressTransaction, MempoolTransaction } from '@stacks/stacks-blockchain-api-types';
 
 import { useGlobalContext } from '../../../common/context/useGlobalContext';
 import { useInfiniteQueryResult } from '../../../common/hooks/useInfiniteQueryResult';
@@ -101,7 +98,7 @@ export function useUser() {
   const { data: balance } = useAccountBalance(stxAddress);
 
   const transactionsWithTransfers =
-    useInfiniteQueryResult<AddressTransactionWithTransfers>(confirmedTxsResponse);
+    useInfiniteQueryResult<AddressTransaction>(confirmedTxsResponse);
   const txs = useMemo(
     () => transactionsWithTransfers.map(tx => tx.tx),
     [transactionsWithTransfers]

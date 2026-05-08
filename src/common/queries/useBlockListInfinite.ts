@@ -5,23 +5,24 @@ import {
   useSuspenseInfiniteQuery,
 } from '@tanstack/react-query';
 
-import { Block } from '@stacks/stacks-blockchain-api-types';
+import { OperationResponse } from '@stacks/blockchain-api-client';
 
 import { callApiWithErrorHandling } from '../../api/callApiWithErrorHandling';
 import { useApiClient } from '../../api/useApiClient';
 import { DEFAULT_LIST_LIMIT } from '../constants/constants';
-import { GenericResponseType } from '../hooks/useInfiniteQueryResult';
 import { getNextPageParam } from '../utils/utils';
 import { TWO_MINUTES } from './query-stale-time';
 
 export const BLOCK_LIST_QUERY_KEY = 'blockListInfinite';
+
+type BlocksResponse = OperationResponse['/extended/v2/blocks/'];
 
 export const useSuspenseBlockListInfinite = (limit = DEFAULT_LIST_LIMIT) => {
   const apiClient = useApiClient();
   return useSuspenseInfiniteQuery({
     queryKey: [BLOCK_LIST_QUERY_KEY, limit],
     queryFn: async ({ pageParam }: { pageParam: number }) => {
-      return await callApiWithErrorHandling(apiClient, '/extended/v1/block/', {
+      return await callApiWithErrorHandling(apiClient, '/extended/v2/blocks/', {
         params: { query: { limit, offset: pageParam || 0 } },
       });
     },
@@ -46,7 +47,7 @@ export const useBlockListInfinite = (
   return useInfiniteQuery({
     queryKey: [BLOCK_LIST_QUERY_KEY, limit],
     queryFn: async ({ pageParam }: { pageParam: number }) => {
-      return await callApiWithErrorHandling(apiClient, '/extended/v1/block/', {
+      return await callApiWithErrorHandling(apiClient, '/extended/v2/blocks/', {
         params: { query: { limit, offset: pageParam || 0 } },
       });
     },
@@ -64,13 +65,13 @@ export const useBlockListInfinite = (
 export const useBlockList = (
   limit = DEFAULT_LIST_LIMIT,
   options?: any
-): UseQueryResult<GenericResponseType<Block>> => {
+): UseQueryResult<BlocksResponse> => {
   const apiClient = useApiClient();
 
   return useQuery({
     queryKey: [BLOCK_LIST_QUERY_KEY, limit],
     queryFn: async () => {
-      return await callApiWithErrorHandling(apiClient, '/extended/v1/block/', {
+      return await callApiWithErrorHandling(apiClient, '/extended/v2/blocks/', {
         params: { query: { limit } },
       });
     },

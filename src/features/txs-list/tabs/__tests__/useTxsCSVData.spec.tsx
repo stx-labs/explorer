@@ -2,7 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook } from '@testing-library/react';
 import { Provider } from 'react-redux';
 
-import { AddressTransactionWithTransfers } from '@stacks/stacks-blockchain-api-types';
+import { AddressTransaction } from '@stacks/stacks-blockchain-api-types';
 
 import {
   addressBalanceMockData,
@@ -41,8 +41,8 @@ describe('useTxsCSVData Custom Hook', () => {
     const { result } = renderHook(() => useTxsCSVData(), { wrapper });
 
     const formatTxsData = result.current.formatTxsCSVData(
-      addressTxsMockData.pages[0].results as AddressTransactionWithTransfers[],
-      mockAddress
+      addressTxsMockData.pages[0].results as unknown as AddressTransaction[],
+      addressBalanceMockData.stx.balance
     );
 
     expect(formatTxsData.length).toBe(addressTxsMockData.pages[0].results.length);
