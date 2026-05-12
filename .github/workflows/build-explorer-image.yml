@@ -139,13 +139,21 @@ jobs:
           labels: ${{ steps.docker_metadata.outputs.labels }}
           push: true
           secrets: |
-            sentry_auth_token=${{ secrets.SENTRY_AUTH_TOKEN }}
-          build-args: |
-            RELEASE_TAG_NAME=${{ github.sha }}
-            NEXT_PUBLIC_SENTRY_DSN=${{ secrets.NEXT_PUBLIC_SENTRY_DSN }}
             SENTRY_AUTH_TOKEN=${{ secrets.SENTRY_AUTH_TOKEN }}
+          build-args: |
+            NEXT_PUBLIC_RELEASE_TAG_NAME=${{ github.sha }}
+            NEXT_PUBLIC_SENTRY_DSN=${{ secrets.NEXT_PUBLIC_SENTRY_DSN }}
             SENTRY_PROJECT=${{ vars.SENTRY_PROJECT }}
             SENTRY_ORG=${{ vars.SENTRY_ORG }}
+            NEXT_PUBLIC_CONNECT_AUTH_ORIGIN=${{ vars.NEXT_PUBLIC_CONNECT_AUTH_ORIGIN }}
+            NEXT_PUBLIC_MAINNET_API_SERVER=${{ vars.NEXT_PUBLIC_MAINNET_API_SERVER }}
+            NEXT_PUBLIC_MAINNET_BTC_ADDRESS_BASE_URL=${{ vars.NEXT_PUBLIC_MAINNET_BTC_ADDRESS_BASE_URL }}
+            NEXT_PUBLIC_MAINNET_BTC_BLOCK_BASE_URL=${{ vars.NEXT_PUBLIC_MAINNET_BTC_BLOCK_BASE_URL }}
+            NEXT_PUBLIC_MAINNET_BTC_TX_BASE_URL=${{ vars.NEXT_PUBLIC_MAINNET_BTC_TX_BASE_URL }}
+            NEXT_PUBLIC_TESTNET_API_SERVER=${{ vars.NEXT_PUBLIC_TESTNET_API_SERVER }}
+            NEXT_PUBLIC_TESTNET_BTC_ADDRESS_BASE_URL=${{ vars.NEXT_PUBLIC_TESTNET_BTC_ADDRESS_BASE_URL }}
+            NEXT_PUBLIC_TESTNET_BTC_BLOCK_BASE_URL=${{ vars.NEXT_PUBLIC_TESTNET_BTC_BLOCK_BASE_URL }}
+            NEXT_PUBLIC_TESTNET_BTC_TX_BASE_URL=${{ vars.NEXT_PUBLIC_TESTNET_BTC_TX_BASE_URL }}
 
       - name: Generate artifact attestation
         id: generate_attestation
