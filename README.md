@@ -3,25 +3,29 @@
 ![CI/CD](https://github.com/blockstack/explorer/actions/workflows/ci.yml/badge.svg)
 [![codecov](https://codecov.io/gh/hirosystems/explorer/branch/main/graph/badge.svg?token=03EGMFTMO0)](https://app.codecov.io/gh/hirosystems/explorer)
 
-| Environment | Status                                                                                      |
-| ----------- | ------------------------------------------------------------------------------------------- |
-| Prod        | ![Prod App Status](https://argo-cd.hiro.tools/api/badge?name=explorer&revision=true)        |
+| Environment | Status                                                                                       |
+| ----------- | -------------------------------------------------------------------------------------------- |
+| Prod        | ![Prod App Status](https://argo-cd.hiro.tools/api/badge?name=explorer&revision=true)       |
 | Staging     | ![Staging App Status](https://argo-cd.stg.hiro.tools/api/badge?name=explorer&revision=true) |
 | Dev         | ![Dev App Status](https://argo-cd.dev.hiro.tools/api/badge?name=explorer&revision=true)     |
 
-# Stacks Explorer
-
 The [Stacks Explorer](https://explorer.hiro.so/) is an observability tool that helps users, developers, miners, and investors understand the Stacks Blockchain. It's built with [React](https://reactjs.org/), [next.js](https://nextjs.org/) and [Chakra UI](https://chakra-ui.com/).
 
-This README will guide you through the process of setting up and running the Stacks Explorer locally and how to contribute to the project.
+## Runtime instrumentation updates
+
+Recent improvements in `instrumentation.ts` include:
+
+- centralized startup instrumentation for cleaner runtime initialization
+- safer environment-aware loading (to avoid unnecessary/noisy setup in unsupported contexts)
+- improved reliability of telemetry and error reporting hooks during app boot
 
 ## Bugs and feature requests
 
 If you encounter a bug or have a feature request for the Stacks Explorer, we encourage you to follow the steps below:
 
-1.  **Search for existing issues:** Before submitting a new issue, please search [existing and closed issues](https://github.com/hirosystems/explorer/issues) to check if a similar problem or feature request has already been reported.
-1.  **Open a new issue:** If it hasn't been addressed, please [open a new issue](https://github.com/hirosystems/explorer/issues/new/choose). Choose the appropriate issue template and provide as much detail as possible, including steps to reproduce the bug or a clear description of the requested feature.
-1.  **Evaluation SLA:** Our team reads and evaluates all the issues and pull requests. We are available Monday to Friday and we make a best effort to respond within 7 business days
+1. **Search for existing issues:** Before submitting a new issue, please search [existing and closed issues](https://github.com/hirosystems/explorer/issues) to check if a similar problem or feature request has already been reported.
+2. **Open a new issue:** If it hasn't been addressed, please [open a new issue](https://github.com/hirosystems/explorer/issues/new/choose). Choose the appropriate issue template and provide as much detail as possible, including steps to reproduce the bug or a clear description of the requested feature.
+3. **Evaluation SLA:** Our team reads and evaluates all the issues and pull requests. We are available Monday to Friday and we make a best effort to respond within 7 business days.
 
 Please **do not** use the issue tracker for personal support requests or to ask for the status of a transaction. You'll find help at the [#support Discord channel](https://discord.com/channels/621759717756370964/625538774230892545).
 
@@ -42,10 +46,8 @@ Read our [contributing guide](https://github.com/hirosystems/explorer/blob/main/
 Join our community and stay connected with the latest updates and discussions:
 
 - [Join our Discord community chat](https://discord.com/invite/pPwMzMx9k8) to engage with other users, ask questions, and participate in discussions.
-
 - [Visit hiro.so](https://www.hiro.so/) for updates and subscribing to the mailing list.
-
-- Follow [Hiro on Twitter.](https://twitter.com/hirosystems)
+- Follow [Hiro on Twitter](https://twitter.com/hirosystems).
 
 ## License
 
