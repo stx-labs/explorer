@@ -6,7 +6,7 @@ on:
       environment:
         description: "Environment name"
         required: true
-        default: environment/explorer-staging
+        default: environment/staging
         type: choice
         options:
           - environment/staging
