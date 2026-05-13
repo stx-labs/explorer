@@ -1,13 +1,35 @@
 import * as Sentry from '@sentry/nextjs';
 
-export async function register() {
-  if (process.env.NEXT_RUNTIME === 'nodejs') {
-    await import('../sentry.server.config');
-  }
+type Runtime = 'nodejs' | 'edge';
 
-  if (process.env.NEXT_RUNTIME === 'edge') {
-    await import('../sentry.edge.config');
-  }
+declare global {
+  // eslint-disable-next-line no-var
+  var __sentryInstrumentationInitialized__: Partial<Record<Runtime, boolean>> | undefined;
 }
 
-export const onRequestError = Sentry.captureRequestError;
+const runtimeConfigMap: Record<Runtime, string> = {
+  nodejs: '../sentry.server.config',
+  edge: '../sentry.edge.config',
+};
+
+function getCurrentRuntime(): Runtime | null {
+  const runtime = process.env.NEXT_RUNTIME;
+  return runtime === 'nodejs' || runtime === 'edge' ? runtime : null;
+}
+
+async function loadSentryConfig(runtime: Runtime): Promise<void> {
+  globalThis.__sentryInstrumentationInitialized__ ??= {};
+  if (globalThis.__sentryInstrumentationInitialized__[runtime]) return;
+
+  await import(runtimeConfigMap[runtime]);
+  globalThis.__sentryInstrumentationInitialized__[runtime] = true;
+}
+
+export async function register(): Promise<void> {
+  const runtime = getCurrentRuntime();
+  if (!runtime) return;
+  await loadSentryConfig(runtime);
+}
+
+export const onRequestError: typeof Sentry.captureRequestError = (...args) =>
+  Sentry.captureRequestError(...args);
