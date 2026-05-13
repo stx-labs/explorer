@@ -9,8 +9,8 @@ on:
         default: environment/explorer-staging
         type: choice
         options:
-          - environment/explorer-staging
-          - environment/explorer-production
+          - environment/staging
+          - environment/production
   pull_request:
     branches:
       - main
@@ -42,7 +42,7 @@ jobs:
       - name: Resolve Environment
         id: set_env
         run: |
-          ALLOWED_ENVS=("environment/explorer-staging" "environment/explorer-production")
+          ALLOWED_ENVS=("environment/staging" "environment/production")
 
           is_allowed_env() {
             local candidate="$1"
