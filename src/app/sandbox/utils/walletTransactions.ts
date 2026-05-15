@@ -23,10 +23,8 @@ const formatClarityArgs = (args: any[]): any[] => {
 
 const handleUserRejection = (error: any, operation: string) => {
   if (error?.message?.includes('User rejected') || error?.message?.includes('rejected')) {
-    console.log(`User rejected ${operation} request`);
     return null;
   }
-  console.error(`${operation} failed:`, error);
   logError(error, `Sandbox ${operation}`, { operation }, 'error');
   throw error;
 };

@@ -6,6 +6,12 @@ Sentry.init({
   tracesSampleRate: 0.1,
   debug: false,
   environment: process.env.VERCEL_ENV || process.env.NODE_ENV,
+  initialScope: {
+    tags: {
+      'app.name': 'stacks-explorer',
+      'app.runtime': 'client',
+    },
+  },
 
   // Drop errors whose message matches these patterns. The parenthesized domain format
   // (e.g. "Failed to fetch (www.google-analytics.com)") is added by Sentry's fetch

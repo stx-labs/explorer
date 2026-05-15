@@ -5,6 +5,7 @@ import { ErrorBoundary } from 'react-error-boundary';
 
 import { useGlobalContext } from '../../../common/context/useGlobalContext';
 import { useUnresolvedIncidents } from '../../../common/queries/useUnresolvedIncidents';
+import { logError } from '../../../common/utils/error-utils';
 import { Text } from '../../../ui/Text';
 import { TextLink } from '../../../ui/TextLink';
 import { StatusBarBase } from './StatusBarBase';
@@ -67,7 +68,7 @@ export function IncidentsStatusBar(props: StackProps) {
         <ErrorBoundary
           fallbackRender={() => null}
           onError={error => {
-            console.log(error);
+            logError(error, 'incidents-status-bar', undefined, 'warning');
           }}
           onReset={reset}
         >

@@ -6,4 +6,10 @@ Sentry.init({
   tracesSampleRate: 0.1,
   debug: false,
   environment: process.env.VERCEL_ENV || process.env.NODE_ENV,
+  initialScope: {
+    tags: {
+      'app.name': 'stacks-explorer',
+      'app.runtime': 'edge',
+    },
+  },
 });

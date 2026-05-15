@@ -1,5 +1,6 @@
 'use client';
 
+import * as Sentry from '@sentry/nextjs';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { FC, ReactNode, createContext, useCallback, useEffect, useState } from 'react';
 import { useCookies } from 'react-cookie';
@@ -233,6 +234,12 @@ export const GlobalContextProvider: FC<{
     connect: connectStacksApiSocket,
     disconnect: disconnectStacksApiSocket,
   } = useStacksApiSocketClient(activeNetworkKey);
+
+  const activeNetwork = networks[activeNetworkKey];
+  useEffect(() => {
+    Sentry.setTag('network.mode', activeNetwork?.mode);
+    Sentry.setTag('network.url', activeNetworkKey);
+  }, [activeNetwork?.mode, activeNetworkKey]);
 
   return (
     <GlobalContext.Provider

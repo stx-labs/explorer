@@ -4,6 +4,7 @@ import { Grid, Stack, useBreakpointValue } from '@chakra-ui/react';
 import { useParams } from 'next/navigation';
 import { ReactNode } from 'react';
 
+import { logError } from '../../../common/utils/error-utils';
 import { PageTitle } from '../../_components/PageTitle';
 import { AssociatedAddressesTable } from './AssociatedAddressesTable';
 import { SignerStats } from './SignerStats';
@@ -52,8 +53,13 @@ export default function PageClient() {
   const params = useParams<{ signerKey: string }>();
 
   if (!params) {
-    console.error('params is undefined. This component should receive params from its parent.');
-    return null; // or some error UI
+    logError(
+      new Error('signer page: params is undefined'),
+      'signer-page-no-params',
+      undefined,
+      'warning'
+    );
+    return null;
   }
 
   const { signerKey } = params;

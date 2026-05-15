@@ -25,7 +25,6 @@ export const sandboxSlice = createSlice({
   initialState,
   reducers: {
     disconnect: state => {
-      console.log('[debug] disconnect');
       state.userData = undefined;
       state.showRightPanel = false;
     },
