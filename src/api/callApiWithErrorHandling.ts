@@ -9,6 +9,18 @@ import { getErrorMessage } from './getErrorMessage';
 import { useApiClient } from './useApiClient';
 
 const ERROR_TRANSACTION_NAME = 'api-call-error';
+const ERROR_BODY_MAX_LENGTH = 2048;
+
+function truncateErrorBody(body: unknown): string {
+  try {
+    const str = typeof body === 'string' ? body : JSON.stringify(body);
+    return str.length > ERROR_BODY_MAX_LENGTH
+      ? `${str.slice(0, ERROR_BODY_MAX_LENGTH)}…[truncated]`
+      : str;
+  } catch {
+    return '[unserializable]';
+  }
+}
 
 type ExtractPath<Endpoint extends keyof paths> = paths[Endpoint];
 
@@ -41,7 +53,7 @@ export async function callApiWithErrorHandling<Endpoint extends PathsWithMethod<
     logError(
       apiError,
       ERROR_TRANSACTION_NAME,
-      { apiUrl, apiParams, status, errorBody: error },
+      { apiParams, status, errorBody: truncateErrorBody(error) },
       getApiErrorSeverity(status),
       { fingerprint: getApiErrorFingerprint(endpoint, method, status) },
       {

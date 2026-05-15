@@ -40,3 +40,13 @@ export function isLocalhost(url: string): boolean {
     return false;
   }
 }
+
+export function sanitizeNetworkUrlForTag(url: string | undefined): string {
+  if (!url) return 'unknown';
+  try {
+    const parsed = new URL(url);
+    return `${parsed.protocol}//${parsed.host}${parsed.pathname.replace(/\/$/, '')}`;
+  } catch {
+    return 'invalid';
+  }
+}

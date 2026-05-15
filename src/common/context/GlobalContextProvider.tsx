@@ -25,6 +25,7 @@ import { useDevnetRedirect } from '../hooks/useDevnetRedirect';
 import { ONE_HOUR } from '../queries/query-stale-time';
 import { Network, NetworkModes } from '../types/network';
 import { TokenPrice } from '../types/tokenPrice';
+import { sanitizeNetworkUrlForTag } from '../utils/network-utils';
 import { removeTrailingSlash } from '../utils/utils';
 
 function filterNetworks(
@@ -237,8 +238,9 @@ export const GlobalContextProvider: FC<{
 
   const activeNetwork = networks[activeNetworkKey];
   useEffect(() => {
-    Sentry.setTag('network.mode', activeNetwork?.mode);
-    Sentry.setTag('network.url', activeNetworkKey);
+    if (!activeNetwork?.mode) return;
+    Sentry.setTag('network.mode', activeNetwork.mode);
+    Sentry.setTag('network.url', sanitizeNetworkUrlForTag(activeNetworkKey));
   }, [activeNetwork?.mode, activeNetworkKey]);
 
   return (
