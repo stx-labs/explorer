@@ -126,7 +126,7 @@ jobs:
             ${{ steps.ecr_login.outputs.registry }}/${{ vars.AWS_ECR_REPOSITORY }}
           tags: |
             type=raw,value=explorer-${{ github.sha }}
-            type=raw,value=latest,enable=${{ needs.resolve-env.outputs.environment == 'environment/explorer-mainnet' }}
+            type=raw,value=latest,enable=${{ needs.resolve-env.outputs.environment == 'environment/production' }}
 
       - name: Build and Push
         id: docker_build
