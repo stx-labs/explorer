@@ -46,6 +46,7 @@ describe('ApiError', () => {
       method: 'GET',
     });
     expect(err).toBeInstanceOf(Error);
+    expect(err).toBeInstanceOf(ApiError);
     expect(err.name).toBe('ApiError');
     expect(err.message).toBe('Not Found (404)');
     expect(err.status).toBe(404);

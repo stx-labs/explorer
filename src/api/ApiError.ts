@@ -1,4 +1,4 @@
-import * as Sentry from '@sentry/nextjs';
+import type { SeverityLevel } from '@sentry/nextjs';
 
 export class ApiError extends Error {
   readonly status?: number;
@@ -7,6 +7,10 @@ export class ApiError extends Error {
 
   constructor(params: { message: string; status?: number; endpoint: string; method: string }) {
     super(params.message);
+    // tsconfig target is ES5; extending built-ins like Error breaks the
+    // prototype chain after transpile, which makes `instanceof ApiError`
+    // return false. Restore the prototype explicitly.
+    Object.setPrototypeOf(this, ApiError.prototype);
     this.name = 'ApiError';
     this.status = params.status;
     this.endpoint = params.endpoint;
@@ -14,7 +18,7 @@ export class ApiError extends Error {
   }
 }
 
-export function getApiErrorSeverity(status?: number): Sentry.SeverityLevel {
+export function getApiErrorSeverity(status?: number): SeverityLevel {
   if (status === undefined) return 'error';
   if (status >= 500) return 'error';
   if (status >= 400) return 'warning';
