@@ -42,4 +42,14 @@ test.describe('/address page', () => {
       });
     });
   });
+
+  test.describe('Pending tab', () => {
+    test('renders unconditionally and is reachable via ?tab=pending', async ({ page }) => {
+      const network = Object.keys(addresses)[0];
+      const type = Object.keys((addresses as any)[network])[0];
+      const address = (addresses as any)[network][type][0];
+      await page.goto(`/address/${address}?chain=${network}&tab=pending`);
+      await expect(page.getByRole('tab', { name: 'Pending' })).toBeVisible();
+    });
+  });
 });
