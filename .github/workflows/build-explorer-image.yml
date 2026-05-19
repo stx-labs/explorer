@@ -15,10 +15,6 @@ on:
     branches:
       - main
 
-concurrency:
-  group: docker-build-explorer-${{ github.ref }}
-  cancel-in-progress: true
-
 permissions:
   id-token: write
   contents: read
@@ -102,6 +98,9 @@ jobs:
     needs: resolve-env
     if: needs.resolve-env.outputs.should_run == 'true'
     environment: ${{ needs.resolve-env.outputs.environment }}
+    concurrency:
+      group: docker-build-explorer-${{ needs.resolve-env.outputs.environment }}-${{ github.ref }}
+      cancel-in-progress: true
     steps:
       - name: Configure AWS Credentials via OIDC
         id: configure_aws
