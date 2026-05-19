@@ -53,7 +53,8 @@ export function logErrorInSentry(
   transactionName: string,
   extraData?: { [key: string]: any },
   level?: Sentry.SeverityLevel,
-  tags?: Record<string, string>
+  tags?: Record<string, string>,
+  fingerprint?: string[]
 ) {
   Sentry.captureException(error, scope => {
     scope.setLevel(level || 'error');
@@ -68,12 +69,16 @@ export function logErrorInSentry(
         scope.setTag(key, value);
       }
     }
+    if (fingerprint && fingerprint.length > 0) {
+      scope.setFingerprint(fingerprint);
+    }
     return scope;
   });
 }
 
 type LogErrorOptions = Record<string, any> & {
   logToConsoleOnly?: boolean;
+  fingerprint?: string[];
 };
 
 export function logError(
@@ -98,6 +103,7 @@ export function logError(
     transactionName,
     { ...updatedExtraData },
     sentrySeverityLevel,
-    tags
+    tags,
+    options?.fingerprint
   );
 }

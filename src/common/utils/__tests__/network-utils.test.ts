@@ -1,6 +1,11 @@
 import { DEFAULT_DEVNET_SERVER } from '../../constants/constants';
 import { Network, NetworkModes } from '../../types/network';
-import { getConnectNetworkString, isHiroSubdomain, isLocalhost } from '../network-utils';
+import {
+  getConnectNetworkString,
+  isHiroSubdomain,
+  isLocalhost,
+  sanitizeNetworkUrlForTag,
+} from '../network-utils';
 
 describe('getApiUrl', () => {
   const originalEnv = process.env;
@@ -191,5 +196,37 @@ describe('getConnectNetworkString', () => {
       mode: NetworkModes.Testnet,
     };
     expect(getConnectNetworkString(network)).toBe('testnet');
+  });
+});
+
+describe('sanitizeNetworkUrlForTag', () => {
+  it('strips query string with auth tokens', () => {
+    expect(sanitizeNetworkUrlForTag('https://api.hiro.so?token=secret')).toBe(
+      'https://api.hiro.so'
+    );
+  });
+
+  it('strips userinfo (basic auth)', () => {
+    expect(sanitizeNetworkUrlForTag('https://user:pass@api.hiro.so/path')).toBe(
+      'https://api.hiro.so/path'
+    );
+  });
+
+  it('preserves protocol, host, and pathname', () => {
+    expect(sanitizeNetworkUrlForTag('https://api.example.com:8080/v2')).toBe(
+      'https://api.example.com:8080/v2'
+    );
+  });
+
+  it('drops trailing slash for stable cardinality', () => {
+    expect(sanitizeNetworkUrlForTag('https://api.hiro.so/')).toBe('https://api.hiro.so');
+  });
+
+  it('returns "unknown" for undefined', () => {
+    expect(sanitizeNetworkUrlForTag(undefined)).toBe('unknown');
+  });
+
+  it('returns "invalid" for malformed input', () => {
+    expect(sanitizeNetworkUrlForTag('not a url')).toBe('invalid');
   });
 });

@@ -9,6 +9,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Block, NakamotoBlock } from '@stacks/stacks-blockchain-api-types';
 
 import { useGlobalContext } from '../../../common/context/useGlobalContext';
+import { logError } from '../../../common/utils/error-utils';
 import { useSubscribeBlocks } from '../BlockList/Sockets/useSubscribeBlocks';
 import { RECENT_BTC_BLOCKS_COUNT, RECENT_STX_BLOCKS_COUNT } from './consts';
 
@@ -130,7 +131,12 @@ export function useRecentBlocks(recentBlocksType: RecentBlocksType) {
 
   // Subscribe to new blocks
   useSubscribeBlocks(socketEnabled, handleNewBlock, error => {
-    console.log('Error subscribing to blocks', error);
+    logError(
+      error instanceof Error ? error : new Error(String(error)),
+      'recent-blocks-socket-subscribe',
+      undefined,
+      'warning'
+    );
   });
 
   return {
