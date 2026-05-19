@@ -1,4 +1,5 @@
-import { expect, test, Page } from '@playwright/test';
+import { Page, expect, test } from '@playwright/test';
+
 import { addresses, emptyAddresses } from './addresses-test-vector';
 
 async function hasTransactions(page: Page) {
@@ -40,6 +41,18 @@ test.describe('/address page', () => {
           });
         });
       });
+    });
+  });
+
+  test.describe('Pending tab', () => {
+    test('renders unconditionally and is reachable via ?tab=pending', async ({ page }) => {
+      const network = Object.keys(addresses)[0];
+      const type = Object.keys((addresses as any)[network])[0];
+      const address = (addresses as any)[network][type][0];
+      await page.goto(`/address/${address}?chain=${network}&tab=pending`);
+      const pendingTab = page.getByRole('tab', { name: 'Pending' });
+      await expect(pendingTab).toBeVisible();
+      await expect(pendingTab).toHaveAttribute('aria-selected', 'true');
     });
   });
 });

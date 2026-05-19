@@ -15,6 +15,7 @@ import {
 } from '@/common/components/table/table-examples/consts';
 import { useAddressTxs } from '@/common/queries/useAddressConfirmedTxsWithTransfersInfinite';
 import { useNftHoldings } from '@/common/queries/useNftHoldings';
+import { AddressMempoolTxsList } from '@/features/txs-list/AddressMempoolTxsList';
 import { TabsContent, TabsList, TabsRoot } from '@/ui/Tabs';
 import { useSearchParams } from 'next/navigation';
 import { useMemo, useState } from 'react';
@@ -26,6 +27,7 @@ import { NFTTable } from './NFTTable';
 enum AddressIdPageTab {
   Overview = 'overview',
   Transactions = 'transactions',
+  Pending = 'pending',
   Tokens = 'tokens',
   Collectibles = 'collectibles',
 }
@@ -95,6 +97,12 @@ export const AddressTabs = ({ principal }: { principal: string }) => {
               isActive={selectedTab === AddressIdPageTab.Transactions}
             />
           )}
+          <SectionTabsTrigger
+            key={AddressIdPageTab.Pending}
+            label={`Pending`}
+            value={AddressIdPageTab.Pending}
+            isActive={selectedTab === AddressIdPageTab.Pending}
+          />
           {totalAddressFungibleTokens > 0 && (
             <SectionTabsTrigger
               key={AddressIdPageTab.Tokens}
@@ -124,6 +132,9 @@ export const AddressTabs = ({ principal }: { principal: string }) => {
           pageSize={ADDRESS_ID_PAGE_ADDRESS_TXS_LIMIT}
           columnDefinitions={columnDefinitionsWithEvents}
         />
+      </TabsContent>
+      <TabsContent key={AddressIdPageTab.Pending} value={AddressIdPageTab.Pending}>
+        <AddressMempoolTxsList address={principal} />
       </TabsContent>
       <TabsContent key={AddressIdPageTab.Tokens} value={AddressIdPageTab.Tokens}>
         <FungibleTokensTableWithFilters
