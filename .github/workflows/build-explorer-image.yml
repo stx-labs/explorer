@@ -140,7 +140,7 @@ jobs:
           secrets: |
             SENTRY_AUTH_TOKEN=${{ secrets.SENTRY_AUTH_TOKEN }}
           build-args: |
-            NEXT_PUBLIC_RELEASE_TAG_NAME=${{ github.sha }}
+            RELEASE_TAG_NAME=${{ github.sha }}
             NEXT_PUBLIC_SENTRY_DSN=${{ secrets.NEXT_PUBLIC_SENTRY_DSN }}
             SENTRY_PROJECT=${{ vars.SENTRY_PROJECT }}
             SENTRY_ORG=${{ vars.SENTRY_ORG }}
