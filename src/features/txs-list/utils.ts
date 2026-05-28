@@ -4,12 +4,8 @@ import { TransactionStatus } from '../../common/constants/constants';
 import { TxStatus } from '../../common/types/tx';
 import { TransactionSummary } from '../../common/types/tx-v3';
 
-/**
- * The v3 transaction list endpoints only return confirmed, canonical transactions,
- * so status maps directly from the lean `status` field (no microblock/canonical flags).
- * Both non-success values in the v3 union (`abort_by_response`, `abort_by_post_condition`)
- * are failures.
- */
+// v3 list endpoints only return confirmed, canonical txs, so the microblock/non-canonical
+// states that getTransactionStatus handles can't occur here.
 export function getV3TxStatus(status: TransactionSummary['status']): TxStatus {
   if (status === 'success') return TransactionStatus.SUCCESS_ANCHOR_BLOCK;
   return TransactionStatus.FAILED;

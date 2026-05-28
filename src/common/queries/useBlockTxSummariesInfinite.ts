@@ -25,6 +25,7 @@ export function useSuspenseBlockTxSummariesInfinite(
         {
           params: {
             path: { height_or_hash: blockHashOrHeight },
+            // v3 only supports limit + cursor here; type/address/sort filters are not available
             query: {
               limit: MAX_BLOCK_TRANSACTIONS_PER_CALL,
               ...(pageParam ? { cursor: pageParam } : {}),
