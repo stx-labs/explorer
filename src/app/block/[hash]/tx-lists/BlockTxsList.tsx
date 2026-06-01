@@ -3,15 +3,13 @@
 import { Box, Flex } from '@chakra-ui/react';
 import * as React from 'react';
 
-import { Transaction } from '@stacks/stacks-blockchain-api-types';
-
 import { ListFooter } from '../../../../common/components/ListFooter';
 import { Section } from '../../../../common/components/Section';
 import { SkeletonGenericTransactionList } from '../../../../common/components/loaders/skeleton-transaction';
-import { useSuspenseInfiniteQueryResult } from '../../../../common/hooks/useInfiniteQueryResult';
-import { useSuspenseBlockTxsInfinite } from '../../../../common/queries/useBlockTxsInfinite';
-import { FilteredTxs } from '../../../../features/txs-list/FilteredTxs';
-import { TxListItem } from '../../../../features/txs-list/ListItem/TxListItem';
+import { useSuspenseCursorInfiniteQueryResult } from '../../../../common/hooks/useCursorInfiniteQueryResult';
+import { useSuspenseBlockTxSummariesInfinite } from '../../../../common/queries/useBlockTxSummariesInfinite';
+import { TransactionSummary } from '../../../../common/types/tx-v3';
+import { FilteredTxSummaries } from '../../../../features/txs-list/v3/FilteredTxSummaries';
 import { FilterButton } from '../../../../features/txsFilterAndSort/FilterButton';
 import { ShowValueMenu } from '../../../../features/txsFilterAndSort/ShowValueMenu';
 import { ExplorerErrorBoundary } from '../../../_components/ErrorBoundary';
@@ -22,8 +20,8 @@ interface BlockTxsListProps {
 }
 
 function BlockTxsListBase({ blockHash, limit }: BlockTxsListProps) {
-  const response = useSuspenseBlockTxsInfinite(blockHash);
-  const txs = useSuspenseInfiniteQueryResult<Transaction>(response, limit);
+  const response = useSuspenseBlockTxSummariesInfinite(blockHash);
+  const txs = useSuspenseCursorInfiniteQueryResult<TransactionSummary>(response, limit);
 
   if (response.isLoading) {
     return <SkeletonGenericTransactionList />;
@@ -41,7 +39,7 @@ function BlockTxsListBase({ blockHash, limit }: BlockTxsListProps) {
     >
       <Box flexGrow={1}>
         <Box position={'relative'}>
-          <FilteredTxs txs={txs} TxListItem={TxListItem} />
+          <FilteredTxSummaries txs={txs} />
           <ListFooter
             isLoading={response.isFetchingNextPage}
             hasNextPage={response.hasNextPage}
