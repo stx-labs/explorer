@@ -1,7 +1,9 @@
 import { TxLink } from '@/common/components/ExplorerLinks';
 import { TransactionStatus as TransactionStatusEnum } from '@/common/constants/constants';
+import { TransactionSummary } from '@/common/types/tx-v3';
 import { getTransactionStatus, getTxTitle } from '@/common/utils/transactions';
 import { truncateHex } from '@/common/utils/utils';
+import { getV3TxStatus, getV3TxTitle } from '@/features/txs-list/utils';
 import { TransactionTypeBadge } from '@/ui/Badge';
 import { Text } from '@/ui/Text';
 import { Tooltip } from '@/ui/Tooltip';
@@ -123,6 +125,18 @@ function getTxStatusBgColor(status: TransactionStatus | MempoolTransactionStatus
   }
 }
 
+function getTxStatusLabel(status: TransactionStatus | MempoolTransactionStatus) {
+  switch (status) {
+    case 'pending':
+      return 'Pending';
+    case 'abort_by_post_condition':
+    case 'abort_by_response':
+      return 'Failed';
+    default:
+      return status;
+  }
+}
+
 export const StatusTag = ({ status }: { status: TransactionStatus | MempoolTransactionStatus }) => {
   return (
     <Flex
@@ -132,6 +146,8 @@ export const StatusTag = ({ status }: { status: TransactionStatus | MempoolTrans
       py={1}
       bg={getTxStatusBgColor(status)}
       borderRadius="redesign.md"
+      role="img"
+      aria-label={`Transaction status: ${getTxStatusLabel(status)}`}
     >
       <Icon h={3} w={3} color={getTxStatusIconColor(status)}>
         {getTxStatusIcon(status)}
@@ -158,6 +174,27 @@ export const TransactionTitleCellRenderer = (tx: Transaction | MempoolTransactio
       <Flex alignItems="center" gap={1.5}>
         {content}
         <StatusTag status={tx.tx_status} />
+      </Flex>
+    );
+  }
+
+  return content;
+};
+
+export const TxSummaryTitleCellRenderer = (tx: TransactionSummary) => {
+  const title = getV3TxTitle(tx);
+  const content = (
+    <TxLink txId={tx.tx_id} variant="tableLink">
+      <EllipsisText textStyle="text-medium-sm">{title}</EllipsisText>
+    </TxLink>
+  );
+
+  // The v3 feed is confirmed-only, so there's no PENDING branch (unlike the v1 renderer above).
+  if (getV3TxStatus(tx.status) === TransactionStatusEnum.FAILED) {
+    return (
+      <Flex alignItems="center" gap={1.5}>
+        {content}
+        <StatusTag status={tx.status} />
       </Flex>
     );
   }

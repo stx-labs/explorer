@@ -24,6 +24,15 @@ export function UpdateTableBannerRow({ onClick, colSpan, message }: UpdateTableB
         },
       }}
       onClick={onClick}
+      onKeyDown={e => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onClick();
+        }
+      }}
+      role="button"
+      tabIndex={0}
+      aria-label={message}
       cursor="pointer"
       className="group"
     >

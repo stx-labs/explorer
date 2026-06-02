@@ -1,10 +1,10 @@
 import { FeeSection } from '@/app/_components/FeeSection';
 import { MempoolSection } from '@/app/_components/MempoolSection';
 import { NetworkModes } from '@/common/types/network';
+import { TransactionSummaryListResponse } from '@/common/types/tx-v3';
 import { logError } from '@/common/utils/error-utils';
 import { SampleTxsFeeEstimate, getSampleTxsFeeEstimate } from '@/common/utils/fee-utils';
 import { getApiUrl } from '@/common/utils/network-utils';
-import { CompressedTxTableData } from '@/common/utils/transaction-utils';
 import { Flex, Stack } from '@chakra-ui/react';
 
 import { NetworkOverview } from './_components/NetworkOverview/NetworkOverview';
@@ -18,7 +18,7 @@ import {
   UIStackingCycle,
   fetchCurrentStackingCycle,
   fetchRecentBlocks,
-  fetchRecentUITxs,
+  fetchRecentUITxSummaries,
   fetchUIMempoolStats,
 } from './data';
 import { CommonSearchParams } from './transactions/page';
@@ -34,7 +34,7 @@ export default async function HomeRedesign(props: { searchParams: Promise<HomeSe
 
   let recentBlocks: RecentBlocks | undefined;
   let stackingCycle: UIStackingCycle | undefined;
-  let initialTxTableData: CompressedTxTableData | undefined;
+  let initialTxTableData: TransactionSummaryListResponse | undefined;
   let mempoolStats: UIMempoolStats | undefined;
   let feeEstimates: SampleTxsFeeEstimate | undefined;
 
@@ -44,7 +44,7 @@ export default async function HomeRedesign(props: { searchParams: Promise<HomeSe
       : ([
           fetchRecentBlocks(chain, api),
           fetchCurrentStackingCycle(chain, api),
-          fetchRecentUITxs(chain, api),
+          fetchRecentUITxSummaries(chain, api),
           fetchUIMempoolStats(chain, api),
           getSampleTxsFeeEstimate(chain as 'mainnet' | 'testnet', apiUrl),
         ] as const);
