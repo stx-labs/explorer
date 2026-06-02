@@ -32,7 +32,8 @@ export const StxTokenTabs = () => {
     <TabsRoot
       variant="primary"
       size="redesignMd"
-      defaultValue={StxTokenTab.Overview}
+      value={selectedTab}
+      onValueChange={details => setSelectedTab(details.value as StxTokenTab)}
       gap={2}
       rowGap={2}
       borderRadius="redesign.xl"
@@ -45,20 +46,17 @@ export const StxTokenTabs = () => {
             label="Overview"
             value={StxTokenTab.Overview}
             isActive={selectedTab === StxTokenTab.Overview}
-            onClick={() => setSelectedTab(StxTokenTab.Overview)}
           />
           <SectionTabsTrigger
             label="Transactions"
             value={StxTokenTab.Transactions}
             isActive={selectedTab === StxTokenTab.Transactions}
-            onClick={() => setSelectedTab(StxTokenTab.Transactions)}
           />
           <SectionTabsTrigger
             label="Holders"
             secondaryLabel={totalHolders > 0 ? `(${totalHolders.toLocaleString()})` : ''}
             value={StxTokenTab.Holders}
             isActive={selectedTab === StxTokenTab.Holders}
-            onClick={() => setSelectedTab(StxTokenTab.Holders)}
           />
         </TabsList>
       </ScrollIndicator>

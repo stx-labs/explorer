@@ -20,14 +20,7 @@ import {
   STX_SYMBOL,
 } from './consts';
 import { fetchStxHolders, fetchStxSupply } from './data';
-
-// stx_supply returns supply in whole STX; convert to micro-STX (raw) so the
-// shared decimal-adjusting components divide it back by 10^STX_DECIMALS.
-function stxToMicro(stx: string | undefined): number | undefined {
-  if (!stx) return undefined;
-  const parsed = parseFloat(stx);
-  return Number.isFinite(parsed) ? Math.round(parsed * 10 ** STX_DECIMALS) : undefined;
-}
+import { stxToMicro } from './utils';
 
 export default async function (props: { searchParams: Promise<CommonSearchParams> }) {
   const searchParams = await props.searchParams;
