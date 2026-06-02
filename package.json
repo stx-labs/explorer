@@ -5,7 +5,7 @@
     "preinstall": "npx only-allow pnpm",
     "build": "pnpm chakra-types && next build --webpack",
     "build:analyze": "next telemetry disable && cross-env ANALYZE=true next build",
-    "dev": "next dev",
+    "dev": "next dev --webpack",
     "lint": "pnpm run lint:eslint && pnpm run lint:prettier",
     "lint:eslint": "eslint --ext .ts,.tsx ./src",
     "lint:fix": "eslint --ext .ts,.tsx ./src/ -f unix --fix && prettier --write src/**/*.{ts,tsx} *.js",
