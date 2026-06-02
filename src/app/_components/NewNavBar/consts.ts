@@ -11,6 +11,7 @@ export type PrimaryPageLabel =
   | 'Transactions'
   | 'Mempool'
   | 'sBTC'
+  | 'STX'
   | 'Stacking'
   | 'Signers'
   | 'Tokens'
@@ -24,6 +25,7 @@ export type PrimaryPageId =
   | 'transactions'
   | 'mempool'
   | 'sbtc'
+  | 'stx'
   | 'stacking'
   | 'signers'
   | 'tokens'
@@ -55,6 +57,11 @@ export const primaryPages: PrimaryPage[] = [
     id: 'sbtc',
     label: 'sBTC',
     href: '/token/SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token',
+  },
+  {
+    id: 'stx',
+    label: 'STX',
+    href: '/stx',
   },
   // {
   //   id: 'stacking',

@@ -16,7 +16,7 @@ export const StxOverviewTable = () => {
   return (
     <Table.Root w="full" h="fit-content">
       <Table.Body h="fit-content">
-        <SummaryItem label="Token name" value={tokenName} showCopyButton />
+        <SummaryItem label="Coin name" value={tokenName} showCopyButton />
         <SummaryItem
           label="Ticker"
           value={tokenSymbol}

@@ -8,7 +8,7 @@ import { StxTokenTabs } from './StxTokenTabs';
 export default function StxTokenPageRedesign() {
   return (
     <Stack gap={8}>
-      <TokenIdHeader />
+      <TokenIdHeader showTypeBadge={false} />
       <StxTokenTabs />
     </Stack>
   );

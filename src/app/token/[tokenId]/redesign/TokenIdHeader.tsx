@@ -139,8 +139,8 @@ const WarningIcon = ({
 
 export const TokenIdHeaderUnminimized = forwardRef<
   HTMLDivElement,
-  { name: string; symbol: string; imageUrl: string; contractId: string }
->(({ name, symbol, imageUrl, contractId }, ref) => {
+  { name: string; symbol: string; imageUrl: string; contractId: string; showTypeBadge?: boolean }
+>(({ name, symbol, imageUrl, contractId, showTypeBadge = true }, ref) => {
   return (
     <Flex
       bg={`linear-gradient(to bottom, var(--stacks-colors-redesign-border-primary), var(--stacks-colors-redesign-border-secondary))`}
@@ -150,7 +150,7 @@ export const TokenIdHeaderUnminimized = forwardRef<
       ref={ref}
     >
       <Stack p={4} gap={3} w="full" borderRadius="redesign.xl" bg="surfaceSecondary">
-        <TokenBadgeUnminimized />
+        {showTypeBadge && <TokenBadgeUnminimized />}
         <Flex gap={2} flexWrap="wrap" alignItems="center">
           <TokenImage url={imageUrl} alt={name} height={40} width={40} borderRadius="50%" />
           <TokenNameUnminimized name={name} />
@@ -167,11 +167,13 @@ export const TokenIdHeaderMinimized = ({
   symbol,
   imageUrl,
   contractId,
+  showTypeBadge = true,
 }: {
   name: string;
   symbol: string;
   imageUrl: string;
   contractId: string;
+  showTypeBadge?: boolean;
 }) => {
   return (
     <Flex
@@ -189,7 +191,7 @@ export const TokenIdHeaderMinimized = ({
         alignItems="center"
       >
         <Flex gap={1} alignItems="center">
-          <TokenBadgeMinimized />
+          {showTypeBadge && <TokenBadgeMinimized />}
           <Flex gap={2} alignItems="center">
             <TokenImage url={imageUrl} alt={name} height={24} width={24} borderRadius="50%" />
             <TokenNameMinimized name={name} />
@@ -202,7 +204,7 @@ export const TokenIdHeaderMinimized = ({
   );
 };
 
-export const TokenIdHeader = () => {
+export const TokenIdHeader = ({ showTypeBadge = true }: { showTypeBadge?: boolean } = {}) => {
   const { tokenId, tokenData } = useTokenIdPageData();
   const { name, symbol, imageUri } = tokenData || {};
   const { address, contract } = getAssetNameParts(tokenId || '');
@@ -218,6 +220,7 @@ export const TokenIdHeader = () => {
         imageUrl={imageUri || ''}
         ref={headerRef}
         contractId={contractId}
+        showTypeBadge={showTypeBadge}
       />
       <motion.div // TODO: move to shared component
         initial={{ opacity: 0, y: -20 }}
@@ -241,6 +244,7 @@ export const TokenIdHeader = () => {
             symbol={symbol || ''}
             imageUrl={imageUri || ''}
             contractId={contractId}
+            showTypeBadge={showTypeBadge}
           />
         </Box>
       </motion.div>

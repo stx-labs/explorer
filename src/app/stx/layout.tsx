@@ -1,7 +1,7 @@
+import { meta } from '@/common/constants/meta';
 import { Metadata, ResolvingMetadata } from 'next';
 import { ReactNode } from 'react';
 
-import { meta } from '../../../common/constants/meta';
 import { STX_NAME, STX_SYMBOL } from './consts';
 
 export async function generateMetadata(props: any, parent: ResolvingMetadata): Promise<Metadata> {
