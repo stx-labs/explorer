@@ -28,7 +28,15 @@ export default async function (props: { searchParams: Promise<CommonSearchParams
   const apiUrl = getApiUrl(chain || NetworkModes.Mainnet, api);
 
   let tokenPrice = { stxPrice: 0, btcPrice: 0 };
-  let tokenData: MergedTokenData | undefined;
+  // Always seed STX's static identity so the client context never falls back to
+  // fetching FT metadata for `stx` (it isn't a contract principal → would 404).
+  // Market/supply fields are layered on below when SSR runs.
+  let tokenData: MergedTokenData = {
+    name: STX_NAME,
+    symbol: STX_SYMBOL,
+    imageUri: STX_LOGO_URL,
+    decimals: STX_DECIMALS,
+  };
   let holders: FungibleTokenHolderList | undefined;
 
   const isSSRDisabled = searchParams?.ssr === 'false';
@@ -53,6 +61,7 @@ export default async function (props: { searchParams: Promise<CommonSearchParams
       holders = handleSettledResult(holdersResult, 'Failed to fetch STX holders');
 
       tokenData = {
+        ...tokenData,
         ...lunarCrush,
         name: STX_NAME,
         symbol: STX_SYMBOL,
