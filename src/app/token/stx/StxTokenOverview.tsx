@@ -8,14 +8,12 @@ import { Text } from '@/ui/Text';
 import { Grid, Stack } from '@chakra-ui/react';
 
 import { StxOverviewTable } from './StxOverviewTable';
-
-// All native STX transfers are `token_transfer` transactions.
-const STX_TX_FILTERS = { transactionType: ['token_transfer'] };
+import { STX_TX_FILTERS } from './consts';
 
 const RecentTransactions = () => (
   <Stack gap={3}>
-    <Text textStyle="heading-xs" color="textPrimary">
-      Recent transactions
+    <Text as="h2" textStyle="heading-xs" color="textPrimary">
+      Recent transfers
     </Text>
     <TxsTable
       initialData={undefined}

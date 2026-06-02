@@ -6,3 +6,7 @@ export const STX_LUNARCRUSH_ID = '830';
 export const STX_LOGO_URL = '/stx-square.svg';
 export const STX_NAME = 'Stacks';
 export const STX_SYMBOL = 'STX';
+
+// Native STX sends are `token_transfer` transactions; this filter powers the
+// Transfers tab and the Overview's recent-transfers list.
+export const STX_TX_FILTERS = { transactionType: ['token_transfer'] };

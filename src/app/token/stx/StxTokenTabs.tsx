@@ -2,28 +2,43 @@
 
 import { useTokenIdPageData } from '@/app/token/[tokenId]/redesign/context/TokenIdPageContext';
 import { ScrollIndicator } from '@/common/components/ScrollIndicator';
-import { SectionTabsTrigger } from '@/common/components/SectionTabs';
+import {
+  SectionTabsTrigger,
+  mapTabParamToEnum,
+  useDeepLinkTabOnValueChange,
+} from '@/common/components/SectionTabs';
 import { HoldersTable } from '@/common/components/table/table-examples/HoldersTable';
 import { TxsTable, defaultTableContainer } from '@/common/components/table/table-examples/TxsTable';
 import { DEFAULT_HOLDERS_TABLE_PAGE_SIZE } from '@/common/components/table/table-examples/consts';
 import { TabsContent, TabsList, TabsRoot } from '@/ui/Tabs';
-import { useState } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { useMemo, useState } from 'react';
 
 import { StxTokenOverview } from './StxTokenOverview';
-import { STX_ASSET_ID, STX_DECIMALS } from './consts';
+import { STX_ASSET_ID, STX_DECIMALS, STX_TX_FILTERS } from './consts';
 
 enum StxTokenTab {
   Overview = 'overview',
-  Transactions = 'transactions',
+  Transfers = 'transfers',
   Holders = 'holders',
 }
 
-// All native STX transfers are `token_transfer` transactions.
-const STX_TX_FILTERS = { transactionType: ['token_transfer'] };
-
 export const StxTokenTabs = () => {
-  const [selectedTab, setSelectedTab] = useState(StxTokenTab.Overview);
   const { holders } = useTokenIdPageData();
+
+  const searchParams = useSearchParams();
+  const tabParam = searchParams.get('tab');
+  const initialTab = useMemo(
+    () =>
+      mapTabParamToEnum<StxTokenTab>(
+        tabParam,
+        Object.values(StxTokenTab) as readonly StxTokenTab[],
+        StxTokenTab.Overview
+      ),
+    []
+  );
+  const [selectedTab, setSelectedTab] = useState(initialTab);
+  const deepLinkTabOnValueChange = useDeepLinkTabOnValueChange<StxTokenTab>({ setSelectedTab });
 
   const totalHolders = holders?.total || 0;
   const totalSupply = holders?.total_supply ? Number(holders.total_supply) : 0;
@@ -33,7 +48,7 @@ export const StxTokenTabs = () => {
       variant="primary"
       size="redesignMd"
       value={selectedTab}
-      onValueChange={details => setSelectedTab(details.value as StxTokenTab)}
+      onValueChange={({ value }) => deepLinkTabOnValueChange(value as StxTokenTab)}
       gap={2}
       rowGap={2}
       borderRadius="redesign.xl"
@@ -48,9 +63,9 @@ export const StxTokenTabs = () => {
             isActive={selectedTab === StxTokenTab.Overview}
           />
           <SectionTabsTrigger
-            label="Transactions"
-            value={StxTokenTab.Transactions}
-            isActive={selectedTab === StxTokenTab.Transactions}
+            label="Transfers"
+            value={StxTokenTab.Transfers}
+            isActive={selectedTab === StxTokenTab.Transfers}
           />
           <SectionTabsTrigger
             label="Holders"
@@ -63,7 +78,7 @@ export const StxTokenTabs = () => {
       <TabsContent value={StxTokenTab.Overview} w="100%">
         <StxTokenOverview />
       </TabsContent>
-      <TabsContent value={StxTokenTab.Transactions} w="100%">
+      <TabsContent value={StxTokenTab.Transfers} w="100%">
         <TxsTable
           initialData={undefined}
           filters={STX_TX_FILTERS}

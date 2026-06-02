@@ -9,6 +9,11 @@ describe('stxToMicro', () => {
     expect(stxToMicro('1')).toBe(1000000);
   });
 
+  test('rounds sub-micro-STX precision to the nearest micro-STX', () => {
+    expect(stxToMicro('0.0000009')).toBe(1);
+    expect(stxToMicro('0.0000004')).toBe(0);
+  });
+
   test('returns undefined for empty or invalid input', () => {
     expect(stxToMicro(undefined)).toBeUndefined();
     expect(stxToMicro('')).toBeUndefined();
