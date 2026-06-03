@@ -27,6 +27,8 @@ export function getV3TxTitle(tx: TransactionSummary): string {
       return 'Poison microblock transaction';
     case 'tenure_change':
       return `Tenure ${tx.tenure_change.cause} (#${tx.block.height})`;
+    default:
+      return (tx as TransactionSummary).tx_id;
   }
 }
 

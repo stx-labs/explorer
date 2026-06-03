@@ -62,15 +62,21 @@ export function TxSummaryTable({
 
   const [isSubscriptionActive, setIsSubscriptionActive] = useState(false);
   const [newTxsAvailable, setNewTxsAvailable] = useState(false);
+  const newTxsTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   useSubscribeTxs(isSubscriptionActive, () => {
     // Wait 5 seconds to let the API catch up to the websocket before offering a refresh.
-    setTimeout(() => setNewTxsAvailable(true), 5000);
+    if (newTxsTimer.current) return;
+    newTxsTimer.current = setTimeout(() => {
+      setNewTxsAvailable(true);
+      newTxsTimer.current = undefined;
+    }, 5000);
     setIsSubscriptionActive(false);
   });
   useEffect(() => {
     if (!newTxsAvailable) setIsSubscriptionActive(true);
   }, [newTxsAvailable]);
+  useEffect(() => () => clearTimeout(newTxsTimer.current), []);
 
   const rowData: TxSummaryTableData[] = useMemo(
     () =>
