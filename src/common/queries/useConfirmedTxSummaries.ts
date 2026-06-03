@@ -19,7 +19,6 @@ export function useConfirmedTxSummaries(
   return useQuery({
     queryKey: confirmedTxSummariesQueryKey(activeNetwork.networkId, limit),
     queryFn: async () =>
-      // v3 only supports limit + cursor here; type/address/sort filters are not available
       await callApiWithErrorHandling(apiClient, '/extended/v3/transactions', {
         params: { query: { limit } },
       }),

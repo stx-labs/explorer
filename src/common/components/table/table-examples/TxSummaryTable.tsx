@@ -46,9 +46,7 @@ export function TxSummaryTable({
   const { activeNetwork } = useGlobalContext();
   const isCacheSetWithInitialData = useRef(false);
 
-  // Seed the query cache with the server-fetched first page so the first client render
-  // matches SSR. See the equivalent note in TxsTable: react-query's initialData prop
-  // misbehaves across hydration, so the cache is set explicitly instead.
+  // react-query's initialData prop misbehaves across hydration, so seed the cache explicitly
   if (!isCacheSetWithInitialData.current && initialData) {
     queryClient.setQueryData(
       confirmedTxSummariesQueryKey(activeNetwork.networkId, pageSize),

@@ -279,8 +279,6 @@ export async function fetchRecentUITxSummaries(
   api?: string
 ): Promise<TransactionSummaryListResponse> {
   const apiUrl = getApiUrl(chain, api);
-  // stacksAPIFetchJson throws on non-2xx so an SSR error surfaces via page.tsx's catch/logError
-  // instead of seeding the query cache with an error body.
   return await stacksAPIFetchJson<TransactionSummaryListResponse>(
     `${apiUrl}/extended/v3/transactions?limit=${TXS_LIST_SIZE}`,
     {
