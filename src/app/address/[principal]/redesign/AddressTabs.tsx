@@ -31,7 +31,6 @@ import { NFTTable } from './NFTTable';
 const Source = dynamic(
   () => import('@/app/txid/[txId]/redesign/source/Source').then(module => module.Source),
   {
-    // 500px matches DEFAULT_EDITOR_HEIGHT; importing it from CodeEditor would pull Monaco into this bundle
     loading: () => <Skeleton minHeight="500px" w="full" borderRadius="redesign.xl" />,
     ssr: false,
   }

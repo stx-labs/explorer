@@ -69,7 +69,6 @@ const CodeEditorBase = forwardRef<any, CodeEditorProps>(({ code, ...editorProps 
           },
           readOnly: true,
           folding: true,
-          // let keyboard users tab out of the read-only editor instead of Monaco swallowing Tab
           tabFocusMode: true,
           automaticLayout: true,
           scrollBeyondLastLine: false,

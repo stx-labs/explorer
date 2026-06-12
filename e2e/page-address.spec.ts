@@ -57,7 +57,6 @@ test.describe('/address page', () => {
   });
 
   test.describe('Source code tab', () => {
-    // Boot contract: deployed by the boot address, guaranteed to exist on mainnet forever
     const contractId = 'SP000000000000000000002Q6VF78.pox-4';
 
     test('renders for a contract principal and is reachable via ?tab=sourceCode', async ({
