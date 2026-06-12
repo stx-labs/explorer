@@ -69,6 +69,7 @@ const CodeEditorBase = forwardRef<any, CodeEditorProps>(({ code, ...editorProps 
           },
           readOnly: true,
           folding: true,
+          tabFocusMode: true,
           automaticLayout: true,
           scrollBeyondLastLine: false,
           scrollbar: {
@@ -120,6 +121,7 @@ export function withControls(
                 w: 3.5,
               }}
               buttonProps={{
+                'aria-label': 'Copy source code',
                 variant: 'redesignPrimary',
                 p: 1.5,
                 h: BUTTONS_HEIGHT,
@@ -131,7 +133,8 @@ export function withControls(
           {hasExpandButton && (
             <Button
               variant="redesignPrimary"
-              aria-label={'expand source code'}
+              aria-label={isCodeHeightExpanded ? 'collapse source code' : 'expand source code'}
+              aria-expanded={isCodeHeightExpanded}
               onClick={toggleHeight}
               p={1.5}
               h={BUTTONS_HEIGHT}

@@ -55,4 +55,41 @@ test.describe('/address page', () => {
       await expect(pendingTab).toHaveAttribute('aria-selected', 'true');
     });
   });
+
+  test.describe('Source code tab', () => {
+    const contractId = 'SP000000000000000000002Q6VF78.pox-4';
+
+    test('renders for a contract principal and is reachable via ?tab=sourceCode', async ({
+      page,
+    }) => {
+      await page.goto(`/address/${contractId}?chain=mainnet&tab=sourceCode`);
+      const sourceTab = page.getByRole('tab', { name: 'Source code' });
+      await expect(sourceTab).toBeVisible();
+      await expect(sourceTab).toHaveAttribute('aria-selected', 'true');
+      const viewDeployment = page.getByRole('link', { name: 'View deployment' });
+      await expect(viewDeployment).toBeVisible();
+      await expect(viewDeployment).toHaveAttribute('href', /\/txid\/0x[0-9a-f]{64}/);
+    });
+
+    test('is not rendered for a standard address and ?tab=sourceCode falls back to Overview', async ({
+      page,
+    }) => {
+      const network = Object.keys(addresses)[0];
+      const type = Object.keys((addresses as any)[network])[0];
+      const address = (addresses as any)[network][type][0];
+      await page.goto(`/address/${address}?chain=${network}&tab=sourceCode`);
+      const overviewTab = page.getByRole('tab', { name: 'Overview' });
+      await expect(overviewTab).toHaveAttribute('aria-selected', 'true');
+      await expect(page.getByRole('tab', { name: 'Source code' })).toHaveCount(0);
+    });
+
+    test('shows a not-found message for a shape-valid but nonexistent contract id', async ({
+      page,
+    }) => {
+      await page.goto(
+        `/address/SP000000000000000000002Q6VF78.not-a-real-contract?chain=mainnet&tab=sourceCode`
+      );
+      await expect(page.getByText(/was not found on the current network/)).toBeVisible();
+    });
+  });
 });
