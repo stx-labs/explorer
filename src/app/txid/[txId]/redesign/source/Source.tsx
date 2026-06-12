@@ -18,10 +18,14 @@ const CodeEditorWithControls = withControls(CodeEditor, true, true);
 export function Source({ contractId }: { contractId: string }) {
   const { data: txContract, isLoading, isError, error, refetch } = useContractById(contractId);
   const sourceCode = txContract?.source_code;
+  const deployTxId = txContract?.tx_id;
   const network = useGlobalContext().activeNetwork;
-  const url = buildUrl(`/txid/${encodeURIComponent(contractId)}`, network);
+  const url = buildUrl(`/txid/${encodeURIComponent(deployTxId || contractId)}`, network);
   const pathname = usePathname();
-  const needLink = !url.includes(pathname);
+  const isDeployTxPage =
+    pathname.startsWith('/txid/') &&
+    (pathname.includes(contractId) || (!!deployTxId && pathname.includes(deployTxId)));
+  const needLink = !isDeployTxPage;
 
   if (isLoading) {
     return <Skeleton minHeight={DEFAULT_EDITOR_HEIGHT} w="full" borderRadius="redesign.xl" />;

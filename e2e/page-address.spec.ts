@@ -66,7 +66,9 @@ test.describe('/address page', () => {
       const sourceTab = page.getByRole('tab', { name: 'Source code' });
       await expect(sourceTab).toBeVisible();
       await expect(sourceTab).toHaveAttribute('aria-selected', 'true');
-      await expect(page.getByRole('link', { name: 'View deployment' })).toBeVisible();
+      const viewDeployment = page.getByRole('link', { name: 'View deployment' });
+      await expect(viewDeployment).toBeVisible();
+      await expect(viewDeployment).toHaveAttribute('href', /\/txid\/0x[0-9a-f]{64}/);
     });
 
     test('is not rendered for a standard address and ?tab=sourceCode falls back to Overview', async ({
