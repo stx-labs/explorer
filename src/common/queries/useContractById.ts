@@ -8,7 +8,6 @@ import {
 } from '@tanstack/react-query';
 
 import { callApiWithErrorHandling } from '../../api/callApiWithErrorHandling';
-import { getErrorMessage } from '../../api/getErrorMessage';
 import { useApiClient } from '../../api/useApiClient';
 import { ContractWithParsedAbi } from '../types/contract';
 
@@ -21,12 +20,13 @@ export function useContractById(
     queryKey: ['contractById', contractId],
     queryFn: async () => {
       if (!contractId) return undefined;
-      const { data: contract, error } = await apiClient.GET('/extended/v1/contract/{contract_id}', {
-        params: { path: { contract_id: contractId } },
-      });
-      if (error) {
-        throw new Error(getErrorMessage(error));
-      }
+      const contract = await callApiWithErrorHandling(
+        apiClient,
+        '/extended/v1/contract/{contract_id}',
+        {
+          params: { path: { contract_id: contractId } },
+        }
+      );
       return {
         ...contract,
         abi: contract.abi ? JSON.parse(contract.abi) : undefined,

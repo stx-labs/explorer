@@ -1,3 +1,4 @@
+import { ExplorerErrorBoundary } from '@/app/_components/ErrorBoundary';
 import { ScrollIndicator } from '@/common/components/ScrollIndicator';
 import {
   SectionTabsTrigger,
@@ -15,8 +16,11 @@ import {
 } from '@/common/components/table/table-examples/consts';
 import { useAddressTxs } from '@/common/queries/useAddressConfirmedTxsWithTransfersInfinite';
 import { useNftHoldings } from '@/common/queries/useNftHoldings';
+import { validateStacksContractId } from '@/common/utils/utils';
+import { Skeleton } from '@/components/ui/skeleton';
 import { AddressMempoolTxsList } from '@/features/txs-list/AddressMempoolTxsList';
 import { TabsContent, TabsList, TabsRoot } from '@/ui/Tabs';
+import dynamic from 'next/dynamic';
 import { useSearchParams } from 'next/navigation';
 import { useMemo, useState } from 'react';
 
@@ -24,12 +28,22 @@ import { useAddressIdPageData } from '../AddressIdPageContext';
 import { AddressOverview } from './AddressOverview';
 import { NFTTable } from './NFTTable';
 
+const Source = dynamic(
+  () => import('@/app/txid/[txId]/redesign/source/Source').then(module => module.Source),
+  {
+    // 500px matches DEFAULT_EDITOR_HEIGHT; importing it from CodeEditor would pull Monaco into this bundle
+    loading: () => <Skeleton minHeight="500px" w="full" borderRadius="redesign.xl" />,
+    ssr: false,
+  }
+);
+
 enum AddressIdPageTab {
   Overview = 'overview',
   Transactions = 'transactions',
   Pending = 'pending',
   Tokens = 'tokens',
   Collectibles = 'collectibles',
+  SourceCode = 'sourceCode',
 }
 
 export const AddressTabs = ({ principal }: { principal: string }) => {
@@ -50,13 +64,17 @@ export const AddressTabs = ({ principal }: { principal: string }) => {
   const { data: nftHoldings } = useNftHoldings(principal, 1, 0);
   const totalAddressNonFungibleTokens = nftHoldings?.total ?? 0;
 
+  const isContract = validateStacksContractId(principal);
+
   const searchParams = useSearchParams();
   const tabParam = searchParams.get('tab');
   const initialTab = useMemo(
     () =>
       mapTabParamToEnum<AddressIdPageTab>(
         tabParam,
-        Object.values(AddressIdPageTab) as readonly AddressIdPageTab[],
+        (Object.values(AddressIdPageTab) as readonly AddressIdPageTab[]).filter(
+          tab => isContract || tab !== AddressIdPageTab.SourceCode
+        ),
         AddressIdPageTab.Overview
       ),
     []
@@ -121,6 +139,14 @@ export const AddressTabs = ({ principal }: { principal: string }) => {
               isActive={selectedTab === AddressIdPageTab.Collectibles}
             />
           )}
+          {isContract && (
+            <SectionTabsTrigger
+              key={AddressIdPageTab.SourceCode}
+              label="Source code"
+              value={AddressIdPageTab.SourceCode}
+              isActive={selectedTab === AddressIdPageTab.SourceCode}
+            />
+          )}
         </TabsList>
       </ScrollIndicator>
       <TabsContent key={AddressIdPageTab.Overview} value={AddressIdPageTab.Overview} w="100%">
@@ -145,6 +171,13 @@ export const AddressTabs = ({ principal }: { principal: string }) => {
       <TabsContent key={AddressIdPageTab.Collectibles} value={AddressIdPageTab.Collectibles}>
         <NFTTable />
       </TabsContent>
+      {isContract && (
+        <TabsContent key={AddressIdPageTab.SourceCode} value={AddressIdPageTab.SourceCode} w="100%">
+          <ExplorerErrorBoundary tryAgainButton>
+            <Source contractId={principal} />
+          </ExplorerErrorBoundary>
+        </TabsContent>
+      )}
     </TabsRoot>
   );
 };
