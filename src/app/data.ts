@@ -1,9 +1,9 @@
-import { stacksAPIFetch } from '@/api/stacksAPIFetch';
+import { stacksAPIFetch, stacksAPIFetchJson } from '@/api/stacksAPIFetch';
 import { GenericResponseType } from '@/common/hooks/useInfiniteQueryResult';
 import { PoxInfo } from '@/common/queries/usePoxInforRaw';
+import { TransactionSummaryListResponse } from '@/common/types/tx-v3';
 import { NUM_TEN_MINUTES_IN_DAY } from '@/common/utils/consts';
 import { getApiUrl } from '@/common/utils/network-utils';
-import { CompressedTxTableData, compressTransactions } from '@/common/utils/transaction-utils';
 import { MICROSTACKS_IN_STACKS } from '@/common/utils/utils';
 
 import {
@@ -274,10 +274,13 @@ export async function fetchRecentBlocks(chain: string, api?: string): Promise<Re
   };
 }
 
-export async function fetchRecentTxs(chain: string, api?: string) {
+export async function fetchRecentUITxSummaries(
+  chain: string,
+  api?: string
+): Promise<TransactionSummaryListResponse> {
   const apiUrl = getApiUrl(chain, api);
-  const response = await stacksAPIFetch(
-    `${apiUrl}/extended/v1/tx/?limit=${TXS_LIST_SIZE}&offset=0`,
+  return await stacksAPIFetchJson<TransactionSummaryListResponse>(
+    `${apiUrl}/extended/v3/transactions?limit=${TXS_LIST_SIZE}`,
     {
       cache: 'default',
       next: {
@@ -286,19 +289,6 @@ export async function fetchRecentTxs(chain: string, api?: string) {
       },
     }
   );
-  return response;
-}
-
-export async function fetchRecentUITxs(
-  chain: string,
-  api?: string
-): Promise<CompressedTxTableData> {
-  const response = await fetchRecentTxs(chain, api);
-  const data = await response.json();
-  return {
-    ...data,
-    results: compressTransactions(data.results),
-  };
 }
 
 export async function fetchUIMempoolStats(chain: string, api?: string): Promise<UIMempoolStats> {

@@ -3,19 +3,22 @@
 import { AddressLinkCellRenderer } from '@/common/components/table/CommonTableCellRenderers';
 import { DefaultTableColumnHeader } from '@/common/components/table/TableComponents';
 import {
+  TxSummaryTable,
+  TxSummaryTableData,
+} from '@/common/components/table/table-examples/TxSummaryTable';
+import {
   TimeStampCellRenderer,
-  TransactionTitleCellRenderer,
   TxLinkCellRenderer,
+  TxSummaryTitleCellRenderer,
   TxTypeCellRenderer,
 } from '@/common/components/table/table-examples/TxTableCellRenderers';
 import {
   TxTableAddressColumnData,
-  TxTableData,
-  TxsTable,
   defaultTableContainer,
 } from '@/common/components/table/table-examples/TxsTable';
 import { TxTableColumns } from '@/common/components/table/table-examples/types';
 import { useGlobalContext } from '@/common/context/useGlobalContext';
+import { TransactionSummary, TransactionSummaryListResponse } from '@/common/types/tx-v3';
 import { buildUrl } from '@/common/utils/buildUrl';
 import { formatTimestampLocalized, formatTimestampToRelativeTime } from '@/common/utils/time-utils';
 import { ButtonLink } from '@/ui/ButtonLink';
@@ -23,16 +26,14 @@ import { Text } from '@/ui/Text';
 import { Flex, Stack } from '@chakra-ui/react';
 import { ColumnDef, Header } from '@tanstack/react-table';
 
-import { MempoolTransaction, Transaction } from '@stacks/stacks-blockchain-api-types';
-
 import { TXS_LIST_SIZE } from '../consts';
 
-export const columnDefinitions: ColumnDef<TxTableData>[] = [
+export const columnDefinitions: ColumnDef<TxSummaryTableData>[] = [
   {
     id: TxTableColumns.Transaction,
     header: 'Transaction',
     accessorKey: TxTableColumns.Transaction,
-    cell: info => TransactionTitleCellRenderer(info.getValue() as Transaction | MempoolTransaction),
+    cell: info => TxSummaryTitleCellRenderer(info.getValue() as TransactionSummary),
     enableSorting: false,
   },
   {
@@ -65,7 +66,7 @@ export const columnDefinitions: ColumnDef<TxTableData>[] = [
   },
   {
     id: TxTableColumns.BlockTime,
-    header: ({ header }: { header: Header<TxTableData, unknown> }) => (
+    header: ({ header }: { header: Header<TxSummaryTableData, unknown> }) => (
       <Flex alignItems="center" justifyContent="flex-end" w="full">
         <DefaultTableColumnHeader header={header}>Timestamp</DefaultTableColumnHeader>
       </Flex>
@@ -84,7 +85,11 @@ export const columnDefinitions: ColumnDef<TxTableData>[] = [
   },
 ];
 
-export const TxsSection = ({ initialTxTableData }: { initialTxTableData: any }) => {
+export const TxsSection = ({
+  initialTxTableData,
+}: {
+  initialTxTableData: TransactionSummaryListResponse | undefined;
+}) => {
   const network = useGlobalContext().activeNetwork;
 
   return (
@@ -102,9 +107,8 @@ export const TxsSection = ({ initialTxTableData }: { initialTxTableData: any }) 
           View all transactions
         </ButtonLink>
       </Flex>
-      <TxsTable
+      <TxSummaryTable
         initialData={initialTxTableData}
-        disablePagination
         pageSize={TXS_LIST_SIZE}
         columnDefinitions={columnDefinitions}
         tableContainer={defaultTableContainer}
