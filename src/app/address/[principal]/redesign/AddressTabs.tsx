@@ -6,16 +6,9 @@ import {
   useDeepLinkTabOnValueChange,
 } from '@/common/components/SectionTabs';
 import { FungibleTokensTableWithFilters } from '@/common/components/table/fungible-tokens-table/FungibleTokensTableWithFilters';
-import {
-  AddressTxsTable,
-  columnDefinitionsWithEvents,
-} from '@/common/components/table/table-examples/AddressTxsTable';
-import {
-  ADDRESS_ID_PAGE_ADDRESS_TXS_LIMIT,
-  ADDRESS_ID_PAGE_FUNGIBLE_TOKENS_LIMIT,
-} from '@/common/components/table/table-examples/consts';
-import { useAddressTxs } from '@/common/queries/useAddressConfirmedTxsWithTransfersInfinite';
+import { ADDRESS_ID_PAGE_FUNGIBLE_TOKENS_LIMIT } from '@/common/components/table/table-examples/consts';
 import { useNftHoldings } from '@/common/queries/useNftHoldings';
+import { usePrincipalTxSummaries } from '@/common/queries/usePrincipalTxSummaries';
 import { validateStacksContractId } from '@/common/utils/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AddressMempoolTxsList } from '@/features/txs-list/AddressMempoolTxsList';
@@ -25,6 +18,7 @@ import { useSearchParams } from 'next/navigation';
 import { useMemo, useState } from 'react';
 
 import { useAddressIdPageData } from '../AddressIdPageContext';
+import { AddressConfirmedTxs } from '../tx-lists/AddressConfirmedTxs';
 import { AddressOverview } from './AddressOverview';
 import { NFTTable } from './NFTTable';
 
@@ -53,7 +47,7 @@ export const AddressTabs = ({ principal }: { principal: string }) => {
   const { initialAddressBalancesData } = useAddressIdPageData();
 
   // TODO: Temporarily fetching client-side - re-enable SSR when API performance is fixed
-  const { data: transactionsData } = useAddressTxs(principal, 1, 0);
+  const { data: transactionsData } = usePrincipalTxSummaries(principal, 1);
   const totalAddressTransactions = transactionsData?.total || 0;
 
   const totalAddressFungibleTokens = Object.entries(
@@ -152,11 +146,7 @@ export const AddressTabs = ({ principal }: { principal: string }) => {
         <AddressOverview />
       </TabsContent>
       <TabsContent key={AddressIdPageTab.Transactions} value={AddressIdPageTab.Transactions}>
-        <AddressTxsTable
-          principal={principal}
-          pageSize={ADDRESS_ID_PAGE_ADDRESS_TXS_LIMIT}
-          columnDefinitions={columnDefinitionsWithEvents}
-        />
+        <AddressConfirmedTxs principal={principal} />
       </TabsContent>
       <TabsContent key={AddressIdPageTab.Pending} value={AddressIdPageTab.Pending}>
         <AddressMempoolTxsList address={principal} />
