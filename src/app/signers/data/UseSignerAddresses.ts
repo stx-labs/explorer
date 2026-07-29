@@ -56,7 +56,7 @@ const fetchStackers = async (
   cycleId: number,
   signerKey: string,
   pageParam: number,
-  options: { limit: number; offset: number } = { limit: DEFAULT_LIST_LIMIT, offset: 0 }
+  options: { limit?: number; offset?: number } = { limit: DEFAULT_LIST_LIMIT, offset: 0 }
 ): Promise<GenericResponseType<SignersStackersData>> => {
   const limit = options.limit || DEFAULT_LIST_LIMIT;
   const offset = pageParam || 0;
@@ -75,18 +75,22 @@ const fetchStackers = async (
 export function useSuspenseSignerStackersInfinite(
   cycleId: number,
   signerKey: string,
-  options: { limit: number; offset: number } = { limit: DEFAULT_LIST_LIMIT, offset: 0 }
+  options: { limit?: number; offset?: number; enabled?: boolean } = {
+    limit: DEFAULT_LIST_LIMIT,
+    offset: 0,
+  }
 ): UseInfiniteQueryResult<InfiniteData<GenericResponseType<SignersStackersData>>> {
   const { url: activeNetworkUrl } = useGlobalContext().activeNetwork;
+  const { enabled = true, ...fetchOptions } = options;
 
   return useInfiniteQuery<GenericResponseType<SignersStackersData>>({
-    queryKey: [SIGNER_STACKERS_INFINITE_QUERY_KEY, cycleId, signerKey],
+    queryKey: [SIGNER_STACKERS_INFINITE_QUERY_KEY, activeNetworkUrl, cycleId, signerKey],
     queryFn: ({ pageParam = 0 }) =>
-      fetchStackers(activeNetworkUrl, cycleId, signerKey, pageParam as number, options),
+      fetchStackers(activeNetworkUrl, cycleId, signerKey, pageParam as number, fetchOptions),
     getNextPageParam,
     initialPageParam: 0,
     staleTime: TWO_MINUTES,
-    enabled: !!cycleId && !!signerKey,
-    ...options,
+    enabled: !!cycleId && !!signerKey && enabled,
+    ...fetchOptions,
   });
 }

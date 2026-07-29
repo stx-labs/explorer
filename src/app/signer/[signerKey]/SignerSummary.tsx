@@ -5,10 +5,13 @@ import { ExplorerErrorBoundary } from '../../../app/_components/ErrorBoundary';
 import { KeyValueHorizontal } from '../../../common/components/KeyValueHorizontal';
 import { Section } from '../../../common/components/Section';
 import { Value } from '../../../common/components/Value';
+import { useSuspensePoxInfoRaw } from '../../../common/queries/usePoxInforRaw';
 import { microToStacksFormatted } from '../../../common/utils/utils';
 import { useSuspenseCurrentStackingCycle } from '../../_components/Stats/CurrentStackingCycle/useCurrentStackingCycle';
 import { getEntityName } from '../../signers/SignersTable';
 import { useSuspensePoxSigner } from '../../signers/data/UseSigner';
+import { useStakingSignerStakersForKey } from '../../signers/data/useStakingSigners';
+import { formatStakerTypeSplit, isPox5Contract } from '../../signers/utils';
 import { SignerSummarySkeleton } from './skeleton';
 
 interface SignerSummaryProps {
@@ -26,10 +29,23 @@ export const SignerSummaryLayout = ({ children }: { children: ReactNode }) => {
 export const SignerSummaryBase = ({ signerKey }: SignerSummaryProps) => {
   const { currentCycleId } = useSuspenseCurrentStackingCycle();
   const { data: signerData } = useSuspensePoxSigner(currentCycleId, signerKey);
-  const numAssociatedAddresses =
-    signerData?.solo_stacker_count != null && signerData?.pooled_stacker_count != null
-      ? signerData.solo_stacker_count + signerData.pooled_stacker_count
-      : '';
+  const { data: poxInfo } = useSuspensePoxInfoRaw();
+  const isPox5 = isPox5Contract(poxInfo?.contract_id);
+  const { counts, isLoaded, isError } = useStakingSignerStakersForKey(signerKey, isPox5);
+
+  let numAssociatedAddresses: string | number = '';
+  if (isPox5) {
+    if (isError) {
+      numAssociatedAddresses = '-';
+    } else if (isLoaded) {
+      numAssociatedAddresses =
+        counts.total > 0 && counts.split
+          ? `${counts.total} (${formatStakerTypeSplit(counts.split)})`
+          : counts.total;
+    }
+  } else if (signerData?.solo_stacker_count != null && signerData?.pooled_stacker_count != null) {
+    numAssociatedAddresses = signerData.solo_stacker_count + signerData.pooled_stacker_count;
+  }
 
   return (
     <Section title="Summary">
