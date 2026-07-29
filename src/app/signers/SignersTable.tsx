@@ -11,7 +11,9 @@ import {
   useInfiniteQueryResult,
   useSuspenseInfiniteQueryResult,
 } from '../../common/hooks/useInfiniteQueryResult';
+import { useSuspensePoxInfoRaw } from '../../common/queries/usePoxInforRaw';
 import { truncateMiddleDeprecated } from '../../common/utils/utils';
+import { Skeleton } from '../../components/ui/skeleton';
 import { Text } from '../../ui/Text';
 import { ScrollableBox } from '../_components/BlockList/ScrollableDiv';
 import { ExplorerErrorBoundary } from '../_components/ErrorBoundary';
@@ -25,8 +27,24 @@ import {
   useSignerMetricsSignersForCycle,
 } from './data/signer-metrics-hooks';
 import { PoxSigner, useSuspensePoxSigners } from './data/useSigners';
+import { useStakingSignerStakers, useStakingSigners } from './data/useStakingSigners';
 import { SignersTableSkeleton } from './skeleton';
-import { getSignerKeyName } from './utils';
+import {
+  StakerCounts,
+  buildSignerKeyToManagersMap,
+  computeStakerCounts,
+  formatStakerTypeSplit,
+  getPoxContractFirstCycleId,
+  getSignerKeyName,
+  isPox5Contract,
+} from './utils';
+
+// Rendering states for the Addresses cell on pox-5 networks; undefined means
+// the legacy v2-derived numStackers should be shown instead
+export type AddressesCellData =
+  | { status: 'loading' }
+  | { status: 'unavailable' }
+  | { status: 'ready'; counts: StakerCounts };
 
 const StyledTable = styled(Table.Root)`
   th {
@@ -126,6 +144,7 @@ export const SignerTableRow = ({
   votingPower,
   stxStaked,
   numStackers,
+  addressesData,
   latency,
   approved,
   rejected,
@@ -134,6 +153,7 @@ export const SignerTableRow = ({
   index: number;
   isFirst: boolean;
   isLast: boolean;
+  addressesData?: AddressesCellData;
 } & SignerRowInfo) => {
   const [isSignerKeyHovered, setIsSignerKeyHovered] = useState(false);
 
@@ -182,9 +202,28 @@ export const SignerTableRow = ({
         </Text>
       </Table.Cell>
       <Table.Cell py={3} px={6}>
-        <Text whiteSpace="nowrap" fontSize="sm" pl={2}>
-          {numStackers}
-        </Text>
+        {!addressesData ? (
+          <Text whiteSpace="nowrap" fontSize="sm" pl={2}>
+            {numStackers}
+          </Text>
+        ) : addressesData.status === 'loading' ? (
+          <Skeleton height={4} width={10} ml={2} />
+        ) : addressesData.status === 'unavailable' ? (
+          <Text whiteSpace="nowrap" fontSize="sm" pl={2}>
+            -
+          </Text>
+        ) : (
+          <Flex direction="column" pl={2}>
+            <Text whiteSpace="nowrap" fontSize="sm">
+              {addressesData.counts.total}
+            </Text>
+            {addressesData.counts.total > 0 && addressesData.counts.split && (
+              <Text whiteSpace="nowrap" fontSize="xs" color="textSubdued">
+                {formatStakerTypeSplit(addressesData.counts.split)}
+              </Text>
+            )}
+          </Flex>
+        )}
       </Table.Cell>
       <Table.Cell py={3} px={6}>
         <Text whiteSpace="nowrap" fontSize="sm">
@@ -293,6 +332,60 @@ const SignersTableBase = () => {
   const signersMetrics =
     useInfiniteQueryResult<SignerMetricsSignerForCycle>(signersMetricsResponse);
 
+  const { data: poxInfo } = useSuspensePoxInfoRaw();
+  const isPox5 = isPox5Contract(poxInfo?.contract_id);
+  const selectedCycleId = parseInt(selectedCycle);
+  const isCurrentCycleSelected = selectedCycleId === currentCycleId;
+  // On a transitioned chain, cycles that ran before pox-5 keep their valid
+  // v2-derived counts
+  const pox5FirstCycleId = getPoxContractFirstCycleId(poxInfo?.contract_versions, 'pox-5');
+  const useLegacyCounts =
+    !isPox5 || (pox5FirstCycleId !== undefined && selectedCycleId < pox5FirstCycleId);
+
+  const { data: stakingSigners, isError: isStakingSignersError } = useStakingSigners(
+    isPox5 && isCurrentCycleSelected
+  );
+  const signerKeyToManagers = useMemo(
+    () => buildSignerKeyToManagersMap(stakingSigners ?? []),
+    [stakingSigners]
+  );
+  const signerManagers = useMemo(
+    () =>
+      isPox5 && isCurrentCycleSelected
+        ? Array.from(
+            new Set(
+              signers.flatMap(signer => signerKeyToManagers[signer.signing_key.toLowerCase()] ?? [])
+            )
+          )
+        : [],
+    [isPox5, isCurrentCycleSelected, signers, signerKeyToManagers]
+  );
+  const { byManager: stakersByManager, isError: isStakersError } =
+    useStakingSignerStakers(signerManagers);
+
+  const getAddressesData = useCallback(
+    (signerKey: string): AddressesCellData => {
+      // The v3 staking API reflects current state only, so counts can't be
+      // reconstructed for other pox-5 cycles
+      if (!isCurrentCycleSelected) return { status: 'unavailable' };
+      if (isStakingSignersError || isStakersError) return { status: 'unavailable' };
+      if (!stakingSigners) return { status: 'loading' };
+      const managers = signerKeyToManagers[signerKey.toLowerCase()] ?? [];
+      if (managers.length === 0) return { status: 'unavailable' };
+      const pages = managers.map(manager => stakersByManager[manager]);
+      if (pages.some(page => !page)) return { status: 'loading' };
+      return { status: 'ready', counts: computeStakerCounts(pages) };
+    },
+    [
+      isCurrentCycleSelected,
+      isStakingSignersError,
+      isStakersError,
+      stakingSigners,
+      signerKeyToManagers,
+      stakersByManager,
+    ]
+  );
+
   const signersData = useMemo(() => {
     return signers
       .map(signer => {
@@ -340,6 +433,7 @@ const SignersTableBase = () => {
           key={`signers-table-row-${signer.signerKey}`}
           index={i}
           {...signersData[i]}
+          addressesData={useLegacyCounts ? undefined : getAddressesData(signer.signerKey)}
           isFirst={i === 0}
           isLast={i === signers.length - 1}
         />
