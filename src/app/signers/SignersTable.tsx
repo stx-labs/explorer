@@ -147,6 +147,7 @@ export function getEntityName(signerKey: string) {
 
 const SignerManagerLink = ({ manager }: { manager: string }) => {
   const [isHovered, setIsHovered] = useState(false);
+  const truncatedManager = truncateStxContractId(manager, 4, 5, 24, 8);
 
   return (
     <Flex
@@ -155,14 +156,14 @@ const SignerManagerLink = ({ manager }: { manager: string }) => {
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      {truncateStxContractId(manager, 4, 5, 24, 8) ? (
+      {truncatedManager ? (
         <TxLink
           txId={manager}
           fontSize="sm"
           whiteSpace="nowrap"
           _hover={{ textDecoration: 'underline' }}
         >
-          {truncateStxContractId(manager, 4, 5, 24, 8)}
+          {truncatedManager}
         </TxLink>
       ) : (
         // Not a valid contract id, so there is no /txid page to link to
@@ -179,6 +180,7 @@ const SignerManagerLink = ({ manager }: { manager: string }) => {
           opacity: isHovered ? 1 : 0,
           position: 'relative',
           transition: 'opacity 0.4s ease-in-out',
+          '&:focus-visible': { opacity: 1 },
         }}
       />
     </Flex>
