@@ -5,14 +5,14 @@ import styled from '@emotion/styled';
 import { ReactNode, Suspense, useCallback, useMemo, useState } from 'react';
 
 import { CopyButton } from '../../common/components/CopyButton';
-import { ExplorerLink } from '../../common/components/ExplorerLinks';
+import { ExplorerLink, TxLink } from '../../common/components/ExplorerLinks';
 import { Section } from '../../common/components/Section';
 import {
   useInfiniteQueryResult,
   useSuspenseInfiniteQueryResult,
 } from '../../common/hooks/useInfiniteQueryResult';
 import { useSuspensePoxInfoRaw } from '../../common/queries/usePoxInforRaw';
-import { truncateMiddleDeprecated } from '../../common/utils/utils';
+import { truncateMiddleDeprecated, truncateStxContractId } from '../../common/utils/utils';
 import { Skeleton } from '../../components/ui/skeleton';
 import { Text } from '../../ui/Text';
 import { ScrollableBox } from '../_components/BlockList/ScrollableDiv';
@@ -119,22 +119,73 @@ export function formatSignerLatency(latencyInMs: number, missing: number): strin
   return `${(latencyInMs / 1000).toFixed(2)}s`;
 }
 
-export const SignersTableHeaders = () => (
-  <Table.Row>
-    {signersTableHeaders.map((header, i) => (
-      <SignersTableHeader
-        key={`signers-table-header-${header}`}
-        headerTitle={header}
-        isFirst={i === 0}
-      />
-    ))}
-  </Table.Row>
-);
+export const SignersTableHeaders = ({
+  showSignerManager = false,
+}: {
+  showSignerManager?: boolean;
+}) => {
+  const headers = showSignerManager
+    ? [...signersTableHeaders.slice(0, 2), 'Signer manager', ...signersTableHeaders.slice(2)]
+    : signersTableHeaders;
+  return (
+    <Table.Row>
+      {headers.map((header, i) => (
+        <SignersTableHeader
+          key={`signers-table-header-${header}`}
+          headerTitle={header}
+          isFirst={i === 0}
+        />
+      ))}
+    </Table.Row>
+  );
+};
 
 export function getEntityName(signerKey: string) {
   const entityName = removeStackingDaoFromName(getSignerKeyName(signerKey));
   return entityName === 'unknown' ? '-' : entityName;
 }
+
+const SignerManagerLink = ({ manager }: { manager: string }) => {
+  const [isHovered, setIsHovered] = useState(false);
+  const truncatedManager = truncateStxContractId(manager, 4, 5, 24, 8);
+
+  return (
+    <Flex
+      gap={2}
+      alignItems="center"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      {truncatedManager ? (
+        <TxLink
+          txId={manager}
+          fontSize="sm"
+          whiteSpace="nowrap"
+          _hover={{ textDecoration: 'underline' }}
+        >
+          {truncatedManager}
+        </TxLink>
+      ) : (
+        // Not a valid contract id, so there is no /txid page to link to
+        <Text fontSize="sm" whiteSpace="nowrap">
+          {truncateMiddleDeprecated(manager)}
+        </Text>
+      )}
+      <CopyButton
+        initialValue={manager}
+        aria-label={`copy ${manager}`}
+        h={5}
+        w={5}
+        css={{
+          opacity: isHovered ? 1 : 0,
+          position: 'relative',
+          transition: 'opacity 0.4s ease-in-out',
+          '&:focus-visible': { opacity: 1 },
+        }}
+      />
+    </Flex>
+  );
+};
 
 export const SignerTableRow = ({
   index,
@@ -145,6 +196,7 @@ export const SignerTableRow = ({
   stxStaked,
   numStackers,
   addressesData,
+  signerManagers,
   latency,
   approved,
   rejected,
@@ -154,6 +206,8 @@ export const SignerTableRow = ({
   isFirst: boolean;
   isLast: boolean;
   addressesData?: AddressesCellData;
+  // pox-5 only; undefined = hide the column, null = still loading
+  signerManagers?: string[] | null;
 } & SignerRowInfo) => {
   const [isSignerKeyHovered, setIsSignerKeyHovered] = useState(false);
 
@@ -201,6 +255,23 @@ export const SignerTableRow = ({
           {getEntityName(signerKey)}
         </Text>
       </Table.Cell>
+      {signerManagers !== undefined && (
+        <Table.Cell py={3} px={6}>
+          {signerManagers === null ? (
+            <Skeleton height={4} width={28} ml={2} />
+          ) : signerManagers.length === 0 ? (
+            <Text whiteSpace="nowrap" fontSize="sm" pl={2}>
+              -
+            </Text>
+          ) : (
+            <Flex direction="column" gap={1} pl={2}>
+              {signerManagers.map(manager => (
+                <SignerManagerLink key={manager} manager={manager} />
+              ))}
+            </Flex>
+          )}
+        </Table.Cell>
+      )}
       <Table.Cell py={3} px={6}>
         {!addressesData ? (
           <Text whiteSpace="nowrap" fontSize="sm" pl={2}>
@@ -427,13 +498,26 @@ const SignersTableBase = () => {
         </Flex>
       }
       title={<Text fontWeight="medium">{signersData.length} Active Signers</Text>}
-      signersTableHeaders={<SignersTableHeaders />}
+      signersTableHeaders={
+        // Manager registrations are current state, so the column would
+        // misattribute today's managers to historical cycles
+        <SignersTableHeaders showSignerManager={isPox5 && isCurrentCycleSelected} />
+      }
       signersTableRows={signersData.map((signer, i) => (
         <SignerTableRow
           key={`signers-table-row-${signer.signerKey}`}
           index={i}
           {...signersData[i]}
           addressesData={useLegacyCounts ? undefined : getAddressesData(signer.signerKey)}
+          signerManagers={
+            !isPox5 || !isCurrentCycleSelected
+              ? undefined
+              : isStakingSignersError
+                ? []
+                : !stakingSigners
+                  ? null
+                  : (signerKeyToManagers[signer.signerKey.toLowerCase()] ?? [])
+          }
           isFirst={i === 0}
           isLast={i === signers.length - 1}
         />
