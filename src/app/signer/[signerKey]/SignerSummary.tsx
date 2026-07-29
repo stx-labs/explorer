@@ -1,7 +1,8 @@
-import { Stack } from '@chakra-ui/react';
+import { Flex, Stack } from '@chakra-ui/react';
 import { ReactNode, Suspense } from 'react';
 
 import { ExplorerErrorBoundary } from '../../../app/_components/ErrorBoundary';
+import { TxLink } from '../../../common/components/ExplorerLinks';
 import { KeyValueHorizontal } from '../../../common/components/KeyValueHorizontal';
 import { Section } from '../../../common/components/Section';
 import { Value } from '../../../common/components/Value';
@@ -31,7 +32,10 @@ export const SignerSummaryBase = ({ signerKey }: SignerSummaryProps) => {
   const { data: signerData } = useSuspensePoxSigner(currentCycleId, signerKey);
   const { data: poxInfo } = useSuspensePoxInfoRaw();
   const isPox5 = isPox5Contract(poxInfo?.contract_id);
-  const { counts, isLoaded, isError } = useStakingSignerStakersForKey(signerKey, isPox5);
+  const { counts, signerManagers, isLoaded, isError } = useStakingSignerStakersForKey(
+    signerKey,
+    isPox5
+  );
 
   let numAssociatedAddresses: string | number = '';
   if (isPox5) {
@@ -60,6 +64,34 @@ export const SignerSummaryBase = ({ signerKey }: SignerSummaryProps) => {
           value={<Value>{getEntityName(signerData?.signing_key)}</Value>}
           copyValue={getEntityName(signerData?.signing_key)}
         />
+        {isPox5 && (
+          <KeyValueHorizontal
+            label={'Signer Manager'}
+            value={
+              isError ? (
+                <Value>-</Value>
+              ) : !isLoaded ? (
+                <Value>{''}</Value>
+              ) : signerManagers.length > 0 ? (
+                <Flex direction="column" gap={1}>
+                  {signerManagers.map(manager => (
+                    <TxLink
+                      key={manager}
+                      txId={manager}
+                      fontSize="sm"
+                      _hover={{ textDecoration: 'underline' }}
+                    >
+                      {manager}
+                    </TxLink>
+                  ))}
+                </Flex>
+              ) : (
+                <Value>-</Value>
+              )
+            }
+            copyValue={isLoaded ? signerManagers.join(', ') : ''}
+          />
+        )}
         <KeyValueHorizontal
           label={'Voting Power'}
           value={<Value>{signerData?.weight_percent?.toFixed(2) ?? ''}%</Value>}

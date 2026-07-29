@@ -36,9 +36,10 @@ describe('getPoxContractFirstCycleId', () => {
 });
 
 describe('buildSignerKeyToManagersMap', () => {
-  test('groups managers sharing a signing key and normalizes key casing', () => {
+  test('groups managers sharing a signing key, normalizes key casing, dedupes managers', () => {
     const map = buildSignerKeyToManagersMap([
       { signer: 'ST1.manager-a', signer_key: '0xAABB' },
+      { signer: 'ST2.manager-b', signer_key: '0xaabb' },
       { signer: 'ST2.manager-b', signer_key: '0xaabb' },
       { signer: 'ST3.manager-c', signer_key: '0xccdd' },
     ]);

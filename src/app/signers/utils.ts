@@ -28,7 +28,9 @@ export function buildSignerKeyToManagersMap(signers: StakingSigner[]): Record<st
     if (!acc[key]) {
       acc[key] = [];
     }
-    acc[key].push(signer);
+    if (!acc[key].includes(signer)) {
+      acc[key].push(signer);
+    }
     return acc;
   }, Object.create(null));
 }
