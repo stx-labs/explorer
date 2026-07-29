@@ -91,6 +91,5 @@ export function useSuspenseSignerStackersInfinite(
     initialPageParam: 0,
     staleTime: TWO_MINUTES,
     enabled: !!cycleId && !!signerKey && enabled,
-    ...fetchOptions,
   });
 }
