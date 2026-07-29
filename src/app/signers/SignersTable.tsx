@@ -411,7 +411,9 @@ const SignersTableBase = () => {
   const useLegacyCounts =
     !isPox5 || (pox5FirstCycleId !== undefined && selectedCycleId < pox5FirstCycleId);
 
-  const { data: stakingSigners, isError: isStakingSignersError } = useStakingSigners(isPox5);
+  const { data: stakingSigners, isError: isStakingSignersError } = useStakingSigners(
+    isPox5 && isCurrentCycleSelected
+  );
   const signerKeyToManagers = useMemo(
     () => buildSignerKeyToManagersMap(stakingSigners ?? []),
     [stakingSigners]

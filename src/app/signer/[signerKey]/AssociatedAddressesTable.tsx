@@ -150,13 +150,21 @@ export const AssociatedAddressesTableBase = ({ signerKey }: { signerKey: string 
     const visibleStakers = pox5Stakers.slice(0, visibleCount);
     return (
       <AssociatedAddressesTableLayout
-        addresses={visibleStakers.map((staker, i) => (
-          <AssociatedStakerListItem
-            key={staker.staker}
-            staker={staker}
-            isLast={i === visibleStakers.length - 1}
-          />
-        ))}
+        addresses={
+          visibleStakers.length === 0 ? (
+            <Text fontSize={'sm'} color="textSubdued" py={6}>
+              No associated addresses.
+            </Text>
+          ) : (
+            visibleStakers.map((staker, i) => (
+              <AssociatedStakerListItem
+                key={staker.staker}
+                staker={staker}
+                isLast={i === visibleStakers.length - 1}
+              />
+            ))
+          )
+        }
         footer={
           <ListFooter
             label="addresses"
