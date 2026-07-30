@@ -1,12 +1,14 @@
 import { AmountCellRenderer, AssetType } from '@/common/components/table/CommonTableCellRenderers';
 
-import { PostCondition } from '@stacks/stacks-blockchain-api-types';
+import { PostConditionWithStaking, getAmount } from './post-condition-table-utils';
 
-import { getAmount } from './post-condition-table-utils';
-
-export function getAssetTypeFromPostConditionType(postConditionType: PostCondition['type']) {
+export function getAssetTypeFromPostConditionType(
+  postConditionType: PostConditionWithStaking['type']
+) {
   switch (postConditionType) {
     case 'stx':
+    // Staking post-conditions lock STX, so the amount renders as STX
+    case 'staking':
       return AssetType.STX;
     case 'fungible':
       return AssetType.FUNGIBLE;
@@ -18,14 +20,18 @@ export function getAssetTypeFromPostConditionType(postConditionType: PostConditi
 }
 
 export interface PostConditionAmountData {
-  postCondition: PostCondition;
+  postCondition: PostConditionWithStaking;
   ftDecimals?: number;
 }
 
 function getPostConditionAmountCellData(data: PostConditionAmountData) {
   const { postCondition, ftDecimals } = data;
   const postConditionType = postCondition.type;
-  const { asset_name: assetName } = postConditionType !== 'stx' ? postCondition.asset : {};
+  // Only fungible and non_fungible post-conditions have an `asset` field
+  const assetName =
+    postCondition.type === 'fungible' || postCondition.type === 'non_fungible'
+      ? postCondition.asset.asset_name
+      : undefined;
   const amount = getAmount(postCondition);
 
   return {
