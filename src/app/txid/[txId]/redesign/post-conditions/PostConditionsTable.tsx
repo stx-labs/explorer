@@ -15,13 +15,10 @@ import { Flex } from '@chakra-ui/react';
 import { ColumnDef, Header } from '@tanstack/react-table';
 import { useMemo } from 'react';
 
-import type { Transaction } from '@stacks/blockchain-api-client';
 import {
   ContractCallTransaction,
   MempoolContractCallTransaction,
   MempoolSmartContractTransaction,
-  PostCondition,
-  PostConditionFungibleConditionCode,
   SmartContractTransaction,
 } from '@stacks/stacks-blockchain-api-types';
 
@@ -29,6 +26,7 @@ import {
   PostConditionAmountCellRenderer,
   PostConditionAmountData,
 } from './PostConditionsTableCellRenderers';
+import { PostConditionWithStaking, getPostConditionCellText } from './post-condition-table-utils';
 
 enum PostConditionsTableColumns {
   From = 'from',
@@ -95,43 +93,6 @@ const columnDefinitions: ColumnDef<PostConditionsTableData>[] = [
   },
 ];
 
-type PostConditionNonFungibleConditionCode = Extract<
-  Transaction['post_conditions'][number],
-  { type: 'non_fungible' }
->['condition_code'];
-
-type PostConditionConditionCode =
-  | PostConditionFungibleConditionCode
-  | PostConditionNonFungibleConditionCode;
-
-function getPostConditionCellText(postConditionCode: PostConditionConditionCode): string {
-  if (postConditionCode === 'sent_equal_to') {
-    return 'Transfers exactly';
-  }
-  if (postConditionCode === 'sent_greater_than') {
-    return 'Transfers more than';
-  }
-  if (postConditionCode === 'sent_greater_than_or_equal_to') {
-    return 'Transfers at least';
-  }
-  if (postConditionCode === 'sent_less_than') {
-    return 'Transfers less than';
-  }
-  if (postConditionCode === 'sent_less_than_or_equal_to') {
-    return 'Transfers at most';
-  }
-  if (postConditionCode === 'sent') {
-    return 'Must transfer';
-  }
-  if (postConditionCode === 'not_sent') {
-    return 'Must not transfer';
-  }
-  if (postConditionCode === 'maybe_sent') {
-    return 'May transfer';
-  }
-  return 'Undefined post condition code';
-}
-
 type TxWithPostConditions =
   | ContractCallTransaction
   | MempoolContractCallTransaction
@@ -139,7 +100,7 @@ type TxWithPostConditions =
   | MempoolSmartContractTransaction;
 
 export function PostConditionsTable({ tx }: { tx: TxWithPostConditions }) {
-  const { post_conditions: postConditions } = tx;
+  const postConditions: PostConditionWithStaking[] = tx.post_conditions;
   const senderAddress = tx.sender_address;
   const isContract = validateStacksContractId(senderAddress);
 
@@ -184,7 +145,8 @@ export function PostConditionsTable({ tx }: { tx: TxWithPostConditions }) {
       return {
         [PostConditionsTableColumns.From]: from,
         [PostConditionsTableColumns.Condition]: getPostConditionCellText(
-          postCondition.condition_code
+          postCondition.condition_code,
+          postCondition.type
         ),
         [PostConditionsTableColumns.AssetAmount]: { postCondition, ftDecimals },
         [PostConditionsTableColumns.Principal]: principalAddress,
