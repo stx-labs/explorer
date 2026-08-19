@@ -1,4 +1,5 @@
-import { SBTC_ASSET_ID } from '@/app/token/[tokenId]/consts';
+import { getSbtcAssetId } from '@/app/token/[tokenId]/consts';
+import { NetworkModes } from '@/common/types/network';
 import { isRiskyToken } from '@/common/utils/fungible-token-utils';
 import { getAssetNameParts } from '@/common/utils/utils';
 
@@ -347,20 +348,24 @@ describe('filterBalancesBySearchTerm (if exported)', () => {
 });
 
 describe('putSBTCFirst (if exported)', () => {
-  it.skip('should move SBTC to first position', () => {
-    const mockBalancesWithSBTC = [
-      { ...mockFtBalance1, asset_identifier: 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.token1' },
-      { ...mockFtBalance2, asset_identifier: SBTC_ASSET_ID },
-      {
-        ...mockFtBalanceZero,
-        asset_identifier: 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.token3',
-      },
-    ];
+  it.each([NetworkModes.Mainnet, NetworkModes.Testnet])(
+    'should move %s SBTC to first position',
+    networkMode => {
+      const sbtcAssetId = getSbtcAssetId(networkMode);
+      const mockBalancesWithSBTC = [
+        { ...mockFtBalance1, asset_identifier: 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.token1' },
+        { ...mockFtBalance2, asset_identifier: sbtcAssetId },
+        {
+          ...mockFtBalanceZero,
+          asset_identifier: 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.token3',
+        },
+      ];
 
-    const result = putSBTCFirst(mockBalancesWithSBTC);
-    expect(result[0].asset_identifier).toBe(SBTC_ASSET_ID);
-    expect(result).toHaveLength(3);
-  });
+      const result = putSBTCFirst(mockBalancesWithSBTC);
+      expect(result[0].asset_identifier).toBe(sbtcAssetId);
+      expect(result).toHaveLength(3);
+    }
+  );
 
   it('should not modify array when SBTC is not present', () => {
     const mockBalancesWithoutSBTC = [

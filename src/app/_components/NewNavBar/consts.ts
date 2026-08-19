@@ -1,3 +1,6 @@
+import { getSbtcContractId } from '@/app/token/[tokenId]/consts';
+import { NetworkModes } from '@/common/types/network';
+
 export type PrimaryPage = {
   id: PrimaryPageId;
   label: PrimaryPageLabel;
@@ -32,7 +35,7 @@ export type PrimaryPageId =
   | 'nfts'
   | 'analytics';
 
-export const primaryPages: PrimaryPage[] = [
+export const getPrimaryPages = (networkMode: NetworkModes): PrimaryPage[] => [
   {
     id: 'home',
     label: 'Home',
@@ -56,7 +59,7 @@ export const primaryPages: PrimaryPage[] = [
   {
     id: 'sbtc',
     label: 'sBTC',
-    href: '/token/SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token',
+    href: `/token/${getSbtcContractId(networkMode)}`,
   },
   {
     id: 'stx',

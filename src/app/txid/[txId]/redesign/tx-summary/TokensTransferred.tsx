@@ -1,4 +1,4 @@
-import { SBTC_ASSET_ID, SBTC_DECIMALS } from '@/app/token/[tokenId]/consts';
+import { SBTC_DECIMALS, isSbtcAssetId } from '@/app/token/[tokenId]/consts';
 import { AddressLink, TokenLink } from '@/common/components/ExplorerLinks';
 import { useFtMetadata } from '@/common/queries/useFtMetadata';
 import { ftDecimals, getAssetNameParts, truncateMiddle } from '@/common/utils/utils';
@@ -29,7 +29,7 @@ export const TokenTransferItem: FC<TokenTransferItemProps> = ({ event }) => {
   const ftContractId = ftAssetParts
     ? `${ftAssetParts.address}.${ftAssetParts.contract}`
     : undefined;
-  const isSbtc = ftAssetId === SBTC_ASSET_ID;
+  const isSbtc = isSbtcAssetId(ftAssetId);
 
   const { data: ftMetadata } = useFtMetadata(ftContractId, { enabled: isFt && !isSbtc });
 

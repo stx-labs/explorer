@@ -26,6 +26,7 @@ import {
 } from '@stacks/stacks-blockchain-api-types';
 
 import TokenIdPageRedesign from './PageClient';
+import { getSbtcNetworkMode } from './consts';
 import { getTokenDataFromLunarCrush, getTokenDataFromStacksApi, mergeTokenData } from './page-data';
 import { TokenIdPageDataProvider } from './redesign/context/TokenIdPageContext';
 import { MergedTokenData } from './types';
@@ -41,13 +42,22 @@ export default async function (props: {
   const searchParams = await props.searchParams;
 
   const { chain, api } = searchParams;
-  const apiUrl = getApiUrl(chain || NetworkModes.Mainnet, api);
+  const networkMode = chain || NetworkModes.Mainnet;
+  const apiUrl = getApiUrl(networkMode, api);
 
   const params = await props.params;
 
   const { tokenId } = params;
 
   if (!validateStacksContractId(tokenId)) {
+    const { notFound } = await import('next/navigation');
+    notFound();
+  }
+
+  // sBTC is deployed under a different principal on each network. Another
+  // network's sBTC contract does not exist here, so don't render a page for it.
+  const sbtcNetworkMode = getSbtcNetworkMode(tokenId);
+  if (sbtcNetworkMode && sbtcNetworkMode !== networkMode) {
     const { notFound } = await import('next/navigation');
     notFound();
   }
