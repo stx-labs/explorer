@@ -1,6 +1,10 @@
 'use client';
 
+import { getSbtcContractId } from '@/app/token/[tokenId]/consts';
 import { TransactionStatus as TransactionStatusEnum } from '@/common/constants/constants';
+import { useGlobalContext } from '@/common/context/useGlobalContext';
+import { NetworkModes } from '@/common/types/network';
+import { buildUrl } from '@/common/utils/buildUrl';
 import { getTransactionStatus } from '@/common/utils/transactions';
 import { Alert } from '@/components/ui/alert';
 import { Link } from '@/ui/Link';
@@ -215,6 +219,9 @@ export function RiskyTokenAlert() {
 }
 
 export function NotSBTCTokenAlert() {
+  const network = useGlobalContext().activeNetwork;
+  const networkLabel = network.mode === NetworkModes.Testnet ? 'Testnet' : 'Mainnet';
+
   return (
     <Alert
       status="info"
@@ -222,12 +229,11 @@ export function NotSBTCTokenAlert() {
         <Text textStyle="text-regular-xs" color="textPrimary">
           This is not&nbsp;
           <Link
-            href="https://explorer.hiro.so/token/SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token?chain=mainnet"
-            color="black"
+            href={buildUrl(`/token/${getSbtcContractId(network.mode)}`, network)}
             textDecoration="underline"
           >
             <Text textStyle="text-regular-xs" color="textPrimary" whiteSpace="nowrap">
-              the official sBTC token
+              the official sBTC token on {networkLabel}
             </Text>
           </Link>
           &nbsp; and may be a scam. Engaging with unverified tokens could result in loss of funds.

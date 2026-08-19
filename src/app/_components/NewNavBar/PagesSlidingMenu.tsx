@@ -1,3 +1,6 @@
+import { getSbtcContractId } from '@/app/token/[tokenId]/consts';
+import { useGlobalContext } from '@/common/context/useGlobalContext';
+import { NetworkModes } from '@/common/types/network';
 import { Text } from '@/ui/Text';
 import { Flex, Icon, Separator, Stack } from '@chakra-ui/react';
 import { CaretUpDown, List } from '@phosphor-icons/react';
@@ -6,12 +9,19 @@ import { useMemo, useState } from 'react';
 
 import { SlidingMenu } from '../../../common/components/SlidingMenu';
 import { PrimaryPageLink, SecondaryPageLink } from './PagesLinks';
-import { PrimaryPageLabel, primaryPages, secondaryPages } from './consts';
+import { PrimaryPageLabel, getPrimaryPages, secondaryPages } from './consts';
 
-const getPageLabelFromPath = (path: string): PrimaryPageLabel => {
+const TOKEN_PATH_PREFIX = '/token/';
+
+const getPageLabelFromPath = (path: string, networkMode: NetworkModes): PrimaryPageLabel => {
   if (path === '/transactions') return 'Transactions';
   if (path === '/tokens') return 'Tokens';
-  if (path === '/token/SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token') return 'sBTC';
+  if (
+    path.startsWith(TOKEN_PATH_PREFIX) &&
+    decodeURIComponent(path.slice(TOKEN_PATH_PREFIX.length)) === getSbtcContractId(networkMode)
+  ) {
+    return 'sBTC';
+  }
   if (path === '/signers') return 'Signers';
   if (path === '/blocks') return 'Blocks';
   if (path === '/mempool') return 'Mempool';
@@ -28,13 +38,14 @@ const triggerHeight = 10;
 export const PagesSlidingMenu = () => {
   const [isOpen, setIsOpen] = useState(false);
   const path = usePathname();
-  const pageLabel = getPageLabelFromPath(path);
+  const networkMode = useGlobalContext().activeNetwork.mode;
+  const pageLabel = getPageLabelFromPath(path, networkMode);
 
   const menuContent = useMemo(() => {
     return (
       <Stack gap={2}>
         <Stack gap={0}>
-          {primaryPages
+          {getPrimaryPages(networkMode)
             .filter(page => page.label !== pageLabel)
             .map(page => (
               <PrimaryPageLink page={page} key={page.id} onClick={() => setIsOpen(false)} />
@@ -48,7 +59,7 @@ export const PagesSlidingMenu = () => {
         </Stack>
       </Stack>
     );
-  }, [pageLabel]);
+  }, [pageLabel, networkMode]);
 
   return (
     <SlidingMenu

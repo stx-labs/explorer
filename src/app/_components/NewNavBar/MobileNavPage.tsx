@@ -1,3 +1,4 @@
+import { useGlobalContext } from '@/common/context/useGlobalContext';
 import { Text } from '@/ui/Text';
 import { Box, Flex, Icon, Stack, useDisclosure } from '@chakra-ui/react';
 import { CaretLeft, CaretRight, X } from '@phosphor-icons/react';
@@ -8,7 +9,7 @@ import { SharedMobileNavBar } from './NavBar';
 import { PrimaryPageLink, SecondaryPageLink } from './PagesLinks';
 import { Prices } from './Prices';
 import { SettingsPopoverContent } from './SettingsPopover';
-import { primaryPages, secondaryPages } from './consts';
+import { getPrimaryPages, secondaryPages } from './consts';
 
 const topOpacityDuration = 0.3;
 
@@ -19,6 +20,8 @@ const MobileContentTop = ({
   isSettingsMenuOpen: boolean;
   onClose: () => void;
 }) => {
+  const networkMode = useGlobalContext().activeNetwork.mode;
+
   return (
     <Box position="relative">
       <AnimatePresence>
@@ -37,7 +40,7 @@ const MobileContentTop = ({
           }}
         >
           <Box position="absolute" top={0} left={0} w="full">
-            {primaryPages.map(page => (
+            {getPrimaryPages(networkMode).map(page => (
               <PrimaryPageLink page={page} onClick={onClose} key={page.id} />
             ))}
           </Box>

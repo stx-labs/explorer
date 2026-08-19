@@ -1,8 +1,32 @@
-export const sbtcDepositAddress = 'SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4';
-export const sbtcContractAddress = 'SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token';
-export const sbtcWidthdrawlContractAddress =
-  'SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-withdrawal';
-export const SBTC_ASSET_ID = 'SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token::sbtc-token';
+import { NetworkModes } from '@/common/types/network';
+
+const SBTC_DEPLOYER_ADDRESSES: Record<NetworkModes, string> = {
+  [NetworkModes.Mainnet]: 'SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4',
+  [NetworkModes.Testnet]: 'SN3VMHXEN64ZZF71JQ5VESXDWTR301XTTXGF4J8F1',
+};
+
+const SBTC_NETWORK_MODES = [NetworkModes.Mainnet, NetworkModes.Testnet] as const;
+
+export const getSbtcContractId = (networkMode: NetworkModes) =>
+  `${SBTC_DEPLOYER_ADDRESSES[networkMode] ?? SBTC_DEPLOYER_ADDRESSES[NetworkModes.Mainnet]}.sbtc-token`;
+
+export const getSbtcAssetId = (networkMode: NetworkModes) =>
+  `${getSbtcContractId(networkMode)}::sbtc-token`;
+
+const SBTC_CONTRACT_IDS = SBTC_NETWORK_MODES.map(getSbtcContractId);
+const SBTC_ASSET_IDS = SBTC_NETWORK_MODES.map(getSbtcAssetId);
+
+/** True for the official sBTC token contract of any network */
+export const isSbtcContractId = (contractId?: string) =>
+  !!contractId && SBTC_CONTRACT_IDS.includes(contractId);
+
+/** True for the official sBTC asset identifier of any network */
+export const isSbtcAssetId = (assetId?: string) => !!assetId && SBTC_ASSET_IDS.includes(assetId);
+
+/** The network a given contract id is the official sBTC token for, if any */
+export const getSbtcNetworkMode = (contractId?: string): NetworkModes | undefined =>
+  SBTC_NETWORK_MODES.find(networkMode => getSbtcContractId(networkMode) === contractId);
+
 export const SBTC_DECIMALS = 8;
 export const DROID_CONTRACT_ADDRESS = 'SP2EEV5QBZA454MSMW9W3WJNRXVJF36VPV17FFKYH.DROID';
 const zsbtcContractAddress = 'SP2VCQJGH7PHP2DJK7Z0V48AGBHQAW3R3ZW1QF4N.zsbtc-token';
@@ -28,6 +52,6 @@ export const VERIFIED_TOKENS = [
   DROID_CONTRACT_ADDRESS,
   zsbtcContractAddress,
   zestSbtcVaultContractAddress,
-  sbtcContractAddress,
+  ...SBTC_CONTRACT_IDS,
   usdcxContractAddress,
 ];

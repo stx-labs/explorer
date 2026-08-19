@@ -1,3 +1,5 @@
+import { getSbtcContractId } from '@/app/token/[tokenId]/consts';
+import { buildUrl } from '@/common/utils/buildUrl';
 import { useFilterParams } from '@/common/utils/search-param-utils';
 import {
   Box,
@@ -178,7 +180,6 @@ function QuickLinkButton({ children, href }: { children: ReactNode; href: string
 
 function QuickLinks() {
   const network = useGlobalContext().activeNetwork;
-  const isMainnet = network.mode === 'mainnet';
 
   return (
     <Stack
@@ -193,13 +194,9 @@ function QuickLinks() {
         Quick links
       </Text>
       <Flex gap={2} flexWrap="wrap">
-        {isMainnet && (
-          <QuickLinkButton
-            href={'/token/SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token?chain=mainnet'}
-          >
-            sBTC
-          </QuickLinkButton>
-        )}
+        <QuickLinkButton href={buildUrl(`/token/${getSbtcContractId(network.mode)}`, network)}>
+          sBTC
+        </QuickLinkButton>
         <QuickLinkButton href={'/blocks'}>Blocks</QuickLinkButton>
         <QuickLinkButton href={'/transactions'}>Transactions</QuickLinkButton>
         <QuickLinkButton href={'/signers'}>Signers</QuickLinkButton>

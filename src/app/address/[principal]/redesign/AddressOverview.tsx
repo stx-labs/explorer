@@ -1,4 +1,4 @@
-import { SBTC_ASSET_ID, SBTC_DECIMALS } from '@/app/token/[tokenId]/consts';
+import { SBTC_DECIMALS, isSbtcAssetId } from '@/app/token/[tokenId]/consts';
 import {
   PriceSummaryItemValue,
   RowCopyButton,
@@ -130,7 +130,8 @@ export function BalanceCard({
   const totalBalanceUsdValue = isStxBalanceDefined ? totalBalanceStx * stxPrice : 0;
 
   const fungibleTokenBalances = balancesData?.fungible_tokens;
-  const sbtcBalance = fungibleTokenBalances?.[SBTC_ASSET_ID]?.balance;
+  const sbtcAssetId = Object.keys(fungibleTokenBalances ?? {}).find(isSbtcAssetId);
+  const sbtcBalance = sbtcAssetId ? fungibleTokenBalances?.[sbtcAssetId]?.balance : undefined;
   const isSbtcBalanceDefined = sbtcBalance !== undefined && !isNaN(parseFloat(sbtcBalance));
   const sbtcBalanceNumber = isSbtcBalanceDefined
     ? getFtDecimalAdjustedBalance(sbtcBalance, SBTC_DECIMALS)

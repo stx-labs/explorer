@@ -1,4 +1,7 @@
+import { getSbtcContractId } from '@/app/token/[tokenId]/consts';
 import { ExplorerLink } from '@/common/components/ExplorerLinks';
+import { useGlobalContext } from '@/common/context/useGlobalContext';
+import { NetworkModes } from '@/common/types/network';
 import { HiroIcon } from '@/ui/icons/HiroIcon';
 import { StacksNameAndLogoIcon } from '@/ui/icons/StacksNameAndLogoIcon';
 import { Box, Flex, Grid, Icon, Stack, Text } from '@chakra-ui/react';
@@ -12,7 +15,7 @@ interface Link {
   href: string;
 }
 
-const rightSideLinks: Link[] = [
+const getRightSideLinks = (networkMode: NetworkModes): Link[] => [
   {
     label: 'Home',
     href: '/',
@@ -27,7 +30,7 @@ const rightSideLinks: Link[] = [
   },
   {
     label: 'sBTC',
-    href: '/token/SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token',
+    href: `/token/${getSbtcContractId(networkMode)}`,
   },
   // {
   //   label: 'Stacking',
@@ -77,6 +80,9 @@ const leftSideLinks: Link[] = [
 const xPadding = 8;
 
 const TopFooterContent = () => {
+  const networkMode = useGlobalContext().activeNetwork.mode;
+  const rightSideLinks = getRightSideLinks(networkMode);
+
   return (
     <>
       <Box hideBelow="lg" className="top-footer-content-hide-below-lg">
