@@ -16,7 +16,7 @@ import {
   compressMempoolTransaction,
   compressTransaction,
 } from '@/common/utils/transaction-utils';
-import { validateStacksContractId } from '@/common/utils/utils';
+import { isAddressForNetworkMode, validateStacksContractId } from '@/common/utils/utils';
 
 import {
   ContractInterfaceResponse,
@@ -53,6 +53,11 @@ export default async function (props: {
   const { tokenId } = params;
 
   if (!validateStacksContractId(tokenId)) {
+    const { notFound } = await import('next/navigation');
+    notFound();
+  }
+
+  if (networkMode && !isAddressForNetworkMode(tokenId.split('.')[0], networkMode)) {
     const { notFound } = await import('next/navigation');
     notFound();
   }

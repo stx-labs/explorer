@@ -1,5 +1,5 @@
 import BigNumber from 'bignumber.js';
-import { c32addressDecode } from 'c32check';
+import { c32addressDecode, versions } from 'c32check';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import updateLocale from 'dayjs/plugin/updateLocale';
@@ -15,6 +15,7 @@ import {
 
 import { BNS_EXTENSIONS } from '../constants/constants';
 import { GenericResponseType } from '../hooks/useInfiniteQueryResult';
+import { NetworkModes } from '../types/network';
 import { ContractCallTxs } from '../types/tx';
 
 dayjs.extend(relativeTime);
@@ -56,6 +57,17 @@ export const validateStacksAddress = (stacksAddress?: string): boolean => {
     if (!stacksAddress) return false;
     c32addressDecode(stacksAddress);
     return true;
+  } catch (e) {
+    return false;
+  }
+};
+
+export const isAddressForNetworkMode = (address: string, networkMode: NetworkModes): boolean => {
+  try {
+    const [version] = c32addressDecode(address);
+    const { p2pkh, p2sh } =
+      networkMode === NetworkModes.Mainnet ? versions.mainnet : versions.testnet;
+    return version === p2pkh || version === p2sh;
   } catch (e) {
     return false;
   }
