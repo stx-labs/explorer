@@ -1,4 +1,4 @@
-import { SBTC_ASSET_ID, SBTC_DECIMALS } from '@/app/token/[tokenId]/consts';
+import { SBTC_DECIMALS, getSbtcAssetId } from '@/app/token/[tokenId]/consts';
 import {
   PriceSummaryItemValue,
   RowCopyButton,
@@ -10,6 +10,7 @@ import { SectionTabsContentContainer } from '@/common/components/SectionTabs';
 import { StackingCardItem } from '@/common/components/id-pages/Overview';
 import { AddressTxsTable } from '@/common/components/table/table-examples/AddressTxsTable';
 import { ADDRESS_ID_PAGE_RECENT_ADDRESS_TXS_LIMIT } from '@/common/components/table/table-examples/consts';
+import { useSbtcNetworkMode } from '@/common/hooks/useSbtcNetworkMode';
 import { getFtDecimalAdjustedBalance, microToStacks } from '@/common/utils/utils';
 import { SimpleTag } from '@/ui/Badge';
 import { Button } from '@/ui/Button';
@@ -79,6 +80,7 @@ const BalanceItem = ({
   tokenBalanceUsdValue: number;
   tokenBalanceType: TokenBalanceType;
 }) => {
+  const tokenTicker = tokenBalanceType === 'stx' ? 'STX' : 'sBTC';
   const formattedTokenBalance = tokenBalance.toLocaleString('en-US', {
     minimumFractionDigits: 0,
     maximumFractionDigits: 6,
@@ -98,13 +100,16 @@ const BalanceItem = ({
           </Icon>
         </Circle>
         <Text textStyle="heading-sm" color="textPrimary" whiteSpace="nowrap">
-          {formattedTokenBalance} {tokenBalanceType === 'stx' ? 'STX' : 'sBTC'}
+          {formattedTokenBalance} {tokenTicker}
         </Text>
-        <RowCopyButton value={tokenBalance.toString()} ariaLabel={`copy balance`} />
+        <RowCopyButton value={tokenBalance.toString()} ariaLabel={`copy ${tokenTicker} balance`} />
       </Flex>
       <Flex>
         <SimpleTag label={`${formattedTokenBalanceValue}`} />
-        <RowCopyButton value={tokenBalanceUsdValue.toString()} ariaLabel={`copy balance`} />
+        <RowCopyButton
+          value={tokenBalanceUsdValue.toString()}
+          ariaLabel={`copy ${tokenTicker} balance USD value`}
+        />
       </Flex>
     </Stack>
   );
@@ -123,6 +128,7 @@ export function BalanceCard({
   showAvailableSection?: boolean;
   principal?: string;
 }) {
+  const sbtcAssetId = getSbtcAssetId(useSbtcNetworkMode());
   const totalBalanceMicroStx = balancesData?.stx?.balance;
   const isStxBalanceDefined =
     totalBalanceMicroStx !== undefined && !isNaN(parseFloat(totalBalanceMicroStx));
@@ -130,7 +136,7 @@ export function BalanceCard({
   const totalBalanceUsdValue = isStxBalanceDefined ? totalBalanceStx * stxPrice : 0;
 
   const fungibleTokenBalances = balancesData?.fungible_tokens;
-  const sbtcBalance = fungibleTokenBalances?.[SBTC_ASSET_ID]?.balance;
+  const sbtcBalance = sbtcAssetId ? fungibleTokenBalances?.[sbtcAssetId]?.balance : undefined;
   const isSbtcBalanceDefined = sbtcBalance !== undefined && !isNaN(parseFloat(sbtcBalance));
   const sbtcBalanceNumber = isSbtcBalanceDefined
     ? getFtDecimalAdjustedBalance(sbtcBalance, SBTC_DECIMALS)

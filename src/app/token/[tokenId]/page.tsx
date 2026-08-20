@@ -42,6 +42,13 @@ export default async function (props: {
 
   const { chain, api } = searchParams;
   const apiUrl = getApiUrl(chain || NetworkModes.Mainnet, api);
+  // A custom `api` node decides the network, not the `chain` param, and we can't know which
+  // without querying it — so treat the network as unidentified rather than assuming mainnet.
+  const networkMode = api
+    ? undefined
+    : chain === NetworkModes.Testnet
+      ? NetworkModes.Testnet
+      : NetworkModes.Mainnet;
 
   const params = await props.params;
 
@@ -79,7 +86,11 @@ export default async function (props: {
       ] = await Promise.allSettled([
         getTokenPrice(),
         getTokenDataFromStacksApi(tokenId, apiUrl),
-        getTokenDataFromLunarCrush(tokenId),
+        // LunarCrush is keyed by contract id with no notion of network, so it would report
+        // mainnet market data for a testnet contract that happens to share an id shape
+        networkMode === NetworkModes.Mainnet
+          ? getTokenDataFromLunarCrush(tokenId)
+          : Promise.resolve(undefined),
         fetchContractInfo(apiUrl, tokenId),
         fetchRecentTransactions(apiUrl, tokenId),
       ]);
@@ -121,7 +132,13 @@ export default async function (props: {
       const tx = handleSettledResult(txResult, 'Failed to fetch transaction');
       holders = handleSettledResult(holdersResult, 'Failed to fetch holders');
 
-      tokenData = mergeTokenData(tokenDataFromStacksApi, tokenDataFromLunarCrush, holders, tokenId);
+      tokenData = mergeTokenData(
+        tokenDataFromStacksApi,
+        tokenDataFromLunarCrush,
+        holders,
+        tokenId,
+        networkMode
+      );
 
       txBlockTime =
         tx && isConfirmedTx<Transaction, MempoolTransaction>(tx) ? tx.block_time : undefined;
@@ -142,7 +159,7 @@ export default async function (props: {
       logError(
         error as Error,
         'Token Id page server-side fetch for initial data',
-        { tokenId, tokenPrice, initialAddressRecentTransactionsData, chain, api },
+        { tokenId, tokenPrice, initialAddressRecentTransactionsData, chain, api, networkMode },
         'error'
       );
     }

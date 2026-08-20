@@ -1,3 +1,5 @@
+import { NetworkModes } from '@/common/types/network';
+
 import type { operations } from '@stacks/token-metadata-api-client/lib/generated/schema';
 
 import {
@@ -19,7 +21,7 @@ jest.mock('@/app/token/[tokenId]/consts', () => ({
     'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.risky-token',
     'ST2PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.scam-coin',
   ],
-  VERIFIED_TOKENS: [
+  getVerifiedTokens: () => [
     'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.verified-token',
     'ST2PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.trusted-coin',
   ],
@@ -74,27 +76,39 @@ describe('deriveTokenTickerFromAssetId', () => {
 
 describe('isVerifiedToken', () => {
   it('should return true for verified tokens', () => {
-    const result = isVerifiedToken('ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.verified-token');
+    const result = isVerifiedToken(
+      'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.verified-token',
+      NetworkModes.Mainnet
+    );
     expect(result).toBe(true);
   });
 
   it('should return true for another verified token', () => {
-    const result = isVerifiedToken('ST2PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.trusted-coin');
+    const result = isVerifiedToken(
+      'ST2PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.trusted-coin',
+      NetworkModes.Mainnet
+    );
     expect(result).toBe(true);
   });
 
   it('should return false for non-verified tokens', () => {
-    const result = isVerifiedToken('ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.unknown-token');
+    const result = isVerifiedToken(
+      'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.unknown-token',
+      NetworkModes.Mainnet
+    );
     expect(result).toBe(false);
   });
 
   it('should return false for empty string', () => {
-    const result = isVerifiedToken('');
+    const result = isVerifiedToken('', NetworkModes.Mainnet);
     expect(result).toBe(false);
   });
 
   it('should be case sensitive', () => {
-    const result = isVerifiedToken('ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.VERIFIED-TOKEN');
+    const result = isVerifiedToken(
+      'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.VERIFIED-TOKEN',
+      NetworkModes.Mainnet
+    );
     expect(result).toBe(false);
   });
 });

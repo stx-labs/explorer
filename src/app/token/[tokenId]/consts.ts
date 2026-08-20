@@ -1,9 +1,41 @@
-export const sbtcDepositAddress = 'SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4';
-export const sbtcContractAddress = 'SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token';
-export const sbtcWidthdrawlContractAddress =
-  'SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-withdrawal';
-export const SBTC_ASSET_ID = 'SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token::sbtc-token';
+import { NetworkModeUrlMap } from '@/common/constants/network';
+import { Network, NetworkModes } from '@/common/types/network';
+
+// The sBTC contracts are deployed by a multisig, so the deployer differs per network.
+// The testnet deployment is recreated on every testnet reset — when it changes, verify the new
+// address by checking that the whole suite (sbtc-token, -deposit, -withdrawal, -registry,
+// -bootstrap-signers) is deployed under it.
+const SBTC_DEPLOYERS: Record<NetworkModes, string> = {
+  [NetworkModes.Mainnet]: 'SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4',
+  [NetworkModes.Testnet]: 'SN3VMHXEN64ZZF71JQ5VESXDWTR301XTTXGF4J8F1',
+};
+
 export const SBTC_DECIMALS = 8;
+
+export const MAINNET_SBTC_CONTRACT_ADDRESS = `${SBTC_DEPLOYERS[NetworkModes.Mainnet]}.sbtc-token`;
+
+/**
+ * The network mode whose sBTC deployment we actually know, or `undefined` when we don't.
+ *
+ * `mode` alone is not a network identity: devnet, subnets and user-added nodes all report
+ * `testnet`, and `activeNetwork` is `{}` (so `mode` is `undefined` despite its type) until a
+ * custom network resolves. Returning a deployer there would point links at a contract that
+ * network doesn't have, so callers get `undefined` and no sBTC contract is resolved.
+ */
+export function getSbtcNetworkMode(network: Network | undefined): NetworkModes | undefined {
+  if (!network?.mode) return undefined;
+  return network.url === NetworkModeUrlMap[network.mode] ? network.mode : undefined;
+}
+
+export function getSbtcContractAddress(networkMode: NetworkModes | undefined) {
+  return networkMode ? `${SBTC_DEPLOYERS[networkMode]}.sbtc-token` : undefined;
+}
+
+export function getSbtcAssetId(networkMode: NetworkModes | undefined) {
+  const contractAddress = getSbtcContractAddress(networkMode);
+  return contractAddress ? `${contractAddress}::sbtc-token` : undefined;
+}
+
 export const DROID_CONTRACT_ADDRESS = 'SP2EEV5QBZA454MSMW9W3WJNRXVJF36VPV17FFKYH.DROID';
 const zsbtcContractAddress = 'SP2VCQJGH7PHP2DJK7Z0V48AGBHQAW3R3ZW1QF4N.zsbtc-token';
 const zestSbtcVaultContractAddress = 'SP1A27KFY4XERQCCRCARCYD1CC5N7M6688BSYADJ7.v0-vault-sbtc';
@@ -24,10 +56,17 @@ export const RISKY_NFT_RULES = [
   /\.StacksDao$/, // Exact match for contract names ending with .StacksDao (case sensitive)
 ];
 export const LEGIT_SBTC_DERIVATIVES = [zsbtcContractAddress, zestSbtcVaultContractAddress];
-export const VERIFIED_TOKENS = [
+
+// Mainnet-only curated list. Contract ids are network-scoped by their address prefix, so the
+// mainnet entries can never match a testnet contract and are safe to keep in both.
+const VERIFIED_TOKENS = [
   DROID_CONTRACT_ADDRESS,
   zsbtcContractAddress,
   zestSbtcVaultContractAddress,
-  sbtcContractAddress,
   usdcxContractAddress,
 ];
+
+export function getVerifiedTokens(networkMode: NetworkModes | undefined) {
+  const sbtcContractAddress = getSbtcContractAddress(networkMode);
+  return sbtcContractAddress ? [...VERIFIED_TOKENS, sbtcContractAddress] : VERIFIED_TOKENS;
+}

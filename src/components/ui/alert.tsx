@@ -30,7 +30,15 @@ export const Alert = React.forwardRef<HTMLDivElement, AlertProps>(function Alert
     ...rest
   } = props;
   return (
-    <ChakraAlert.Root ref={ref} status={status} alignItems="stretch" {...rest}>
+    <ChakraAlert.Root
+      ref={ref}
+      // Chakra's Alert.Root is a plain div. Error alerts are inserted after hydration once the
+      // network resolves, so without a live region a screen reader never hears them.
+      role={status === 'error' ? 'alert' : 'status'}
+      status={status}
+      alignItems="stretch"
+      {...rest}
+    >
       {startElement}
       {icon && (
         <ChakraAlert.Indicator alignSelf="stretch" display="flex" alignItems="center">

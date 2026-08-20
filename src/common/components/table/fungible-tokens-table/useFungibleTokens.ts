@@ -1,7 +1,9 @@
-import { SBTC_ASSET_ID } from '@/app/token/[tokenId]/consts';
+import { getSbtcAssetId } from '@/app/token/[tokenId]/consts';
+import { useSbtcNetworkMode } from '@/common/hooks/useSbtcNetworkMode';
 import { THIRTY_SECONDS } from '@/common/queries/query-stale-time';
 import { useAccountBalance } from '@/common/queries/useAccountBalance';
 import { useFungibleTokensMetadata } from '@/common/queries/useFtMetadata';
+import { NetworkModes } from '@/common/types/network';
 import { isRiskyToken } from '@/common/utils/fungible-token-utils';
 import { getAssetNameParts } from '@/common/utils/utils';
 import { useMemo } from 'react';
@@ -125,10 +127,17 @@ export function filterBalances(
   return filteredByZeroBalanceTokens;
 }
 
-export function putSBTCFirst(balances: FtBalanceWithAssetId[]): FtBalanceWithAssetId[] {
-  const sbtc = balances.find(balance => balance.asset_identifier === SBTC_ASSET_ID);
+export function putSBTCFirst(
+  balances: FtBalanceWithAssetId[],
+  networkMode: NetworkModes | undefined
+): FtBalanceWithAssetId[] {
+  const sbtcAssetId = getSbtcAssetId(networkMode);
+  if (!sbtcAssetId) {
+    return balances;
+  }
+  const sbtc = balances.find(balance => balance.asset_identifier === sbtcAssetId);
   if (sbtc) {
-    balances = balances.filter(balance => balance.asset_identifier !== SBTC_ASSET_ID);
+    balances = balances.filter(balance => balance.asset_identifier !== sbtcAssetId);
     balances.unshift(sbtc);
   }
   return balances;
@@ -147,6 +156,7 @@ export function useFungibleTokensTableData(
   hideSuspiciousTokens?: boolean | undefined,
   hideZeroBalanceTokens?: boolean | undefined
 ) {
+  const networkMode = useSbtcNetworkMode();
   let {
     data: balances,
     isFetching: isFetchingBalances,
@@ -172,8 +182,8 @@ export function useFungibleTokensTableData(
   }, [positiveDefinedBalancesArray, searchTerm, hideSuspiciousTokens, hideZeroBalanceTokens]);
 
   const balancesWithSBTCFirst = useMemo(() => {
-    return putSBTCFirst(filteredBalancesArray);
-  }, [filteredBalancesArray]);
+    return putSBTCFirst(filteredBalancesArray, networkMode);
+  }, [filteredBalancesArray, networkMode]);
 
   const paginatedBalances = useMemo(() => {
     return paginate(balancesWithSBTCFirst, limit, offset);

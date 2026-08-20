@@ -1,3 +1,5 @@
+import { useSbtcNetworkMode } from '@/common/hooks/useSbtcNetworkMode';
+import { NetworkModes } from '@/common/types/network';
 import { Text } from '@/ui/Text';
 import { Flex, Icon, Separator, Stack } from '@chakra-ui/react';
 import { CaretUpDown, List } from '@phosphor-icons/react';
@@ -6,12 +8,15 @@ import { useMemo, useState } from 'react';
 
 import { SlidingMenu } from '../../../common/components/SlidingMenu';
 import { PrimaryPageLink, SecondaryPageLink } from './PagesLinks';
-import { PrimaryPageLabel, primaryPages, secondaryPages } from './consts';
+import { PrimaryPageLabel, getPrimaryPages, getSbtcTokenPagePath, secondaryPages } from './consts';
 
-const getPageLabelFromPath = (path: string): PrimaryPageLabel => {
+const getPageLabelFromPath = (
+  path: string,
+  networkMode: NetworkModes | undefined
+): PrimaryPageLabel => {
   if (path === '/transactions') return 'Transactions';
   if (path === '/tokens') return 'Tokens';
-  if (path === '/token/SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token') return 'sBTC';
+  if (path === getSbtcTokenPagePath(networkMode)) return 'sBTC';
   if (path === '/signers') return 'Signers';
   if (path === '/blocks') return 'Blocks';
   if (path === '/mempool') return 'Mempool';
@@ -28,13 +33,14 @@ const triggerHeight = 10;
 export const PagesSlidingMenu = () => {
   const [isOpen, setIsOpen] = useState(false);
   const path = usePathname();
-  const pageLabel = getPageLabelFromPath(path);
+  const networkMode = useSbtcNetworkMode();
+  const pageLabel = getPageLabelFromPath(path, networkMode);
 
   const menuContent = useMemo(() => {
     return (
       <Stack gap={2}>
         <Stack gap={0}>
-          {primaryPages
+          {getPrimaryPages(networkMode)
             .filter(page => page.label !== pageLabel)
             .map(page => (
               <PrimaryPageLink page={page} key={page.id} onClick={() => setIsOpen(false)} />
@@ -48,7 +54,7 @@ export const PagesSlidingMenu = () => {
         </Stack>
       </Stack>
     );
-  }, [pageLabel]);
+  }, [pageLabel, networkMode]);
 
   return (
     <SlidingMenu

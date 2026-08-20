@@ -1,4 +1,6 @@
 import { ExplorerLink } from '@/common/components/ExplorerLinks';
+import { useSbtcNetworkMode } from '@/common/hooks/useSbtcNetworkMode';
+import { NetworkModes } from '@/common/types/network';
 import { HiroIcon } from '@/ui/icons/HiroIcon';
 import { StacksNameAndLogoIcon } from '@/ui/icons/StacksNameAndLogoIcon';
 import { Box, Flex, Grid, Icon, Stack, Text } from '@chakra-ui/react';
@@ -6,58 +8,62 @@ import { Box, Flex, Grid, Icon, Stack, Text } from '@chakra-ui/react';
 import { PAGE_MAX_WIDTH } from '../../common/constants/constants';
 import { Link } from '../../ui/Link';
 import { StacksSmiley } from './Footer/StacksSmiley';
+import { getSbtcTokenPagePath } from './NewNavBar/consts';
 
 interface Link {
   label: string;
   href: string;
 }
 
-const rightSideLinks: Link[] = [
-  {
-    label: 'Home',
-    href: '/',
-  },
-  {
-    label: 'Blocks',
-    href: '/blocks',
-  },
-  {
-    label: 'Transactions',
-    href: '/transactions',
-  },
-  {
-    label: 'sBTC',
-    href: '/token/SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token',
-  },
-  // {
-  //   label: 'Stacking',
-  //   href: '/stacking',
-  // },
-  {
-    label: 'Mempool',
-    href: '/mempool',
-  },
-  {
-    label: 'Signers',
-    href: '/signers',
-  },
-  {
-    label: 'Tokens',
-    href: '/tokens',
-  },
-  // {
-  //   label: 'NFTs',
-  //   href: '/nfts',
-  // },
-  // {
-  //   label: 'Analytics',
-  //   href: '/analytics',
-  // },
-  {
-    label: 'Search',
-    href: '/search',
-  },
-];
+const sbtcLink = (networkMode: NetworkModes | undefined): Link | undefined => {
+  const href = getSbtcTokenPagePath(networkMode);
+  return href ? { label: 'sBTC', href } : undefined;
+};
+
+const getRightSideLinks = (networkMode: NetworkModes | undefined): Link[] =>
+  [
+    {
+      label: 'Home',
+      href: '/',
+    },
+    {
+      label: 'Blocks',
+      href: '/blocks',
+    },
+    {
+      label: 'Transactions',
+      href: '/transactions',
+    },
+    sbtcLink(networkMode),
+    // {
+    //   label: 'Stacking',
+    //   href: '/stacking',
+    // },
+    {
+      label: 'Mempool',
+      href: '/mempool',
+    },
+    {
+      label: 'Signers',
+      href: '/signers',
+    },
+    {
+      label: 'Tokens',
+      href: '/tokens',
+    },
+    // {
+    //   label: 'NFTs',
+    //   href: '/nfts',
+    // },
+    // {
+    //   label: 'Analytics',
+    //   href: '/analytics',
+    // },
+    {
+      label: 'Search',
+      href: '/search',
+    },
+  ].filter((link): link is Link => link !== undefined);
 
 const leftSideLinks: Link[] = [
   {
@@ -76,24 +82,27 @@ const leftSideLinks: Link[] = [
 
 const xPadding = 8;
 
+const FooterLink = ({ link }: { link: Link }) => (
+  <ExplorerLink href={link.href} fontWeight="medium" fontSize="xs">
+    {link.label}
+  </ExplorerLink>
+);
+
 const TopFooterContent = () => {
+  const rightSideLinks = getRightSideLinks(useSbtcNetworkMode());
   return (
     <>
       <Box hideBelow="lg" className="top-footer-content-hide-below-lg">
         <Flex justifyContent="space-between">
           <Flex gap={4}>
             {rightSideLinks.map(link => (
-              <ExplorerLink key={link.label} href={link.href} fontWeight="medium" fontSize="xs">
-                {link.label}
-              </ExplorerLink>
+              <FooterLink key={link.label} link={link} />
             ))}
           </Flex>
 
           <Flex gap={4}>
             {leftSideLinks.map(link => (
-              <ExplorerLink key={link.label} href={link.href} fontWeight="medium" fontSize="xs">
-                {link.label}
-              </ExplorerLink>
+              <FooterLink key={link.label} link={link} />
             ))}
           </Flex>
         </Flex>
@@ -101,9 +110,7 @@ const TopFooterContent = () => {
       <Box hideFrom="lg" className="top-footer-content-hide-from-lg">
         <Grid templateColumns={['repeat(2, 1fr)', 'repeat(2, 1fr)', 'repeat(3, 1fr)']} gap={4}>
           {rightSideLinks.concat(leftSideLinks).map(link => (
-            <ExplorerLink key={link.label} href={link.href} fontWeight="medium" fontSize="xs">
-              {link.label}
-            </ExplorerLink>
+            <FooterLink key={link.label} link={link} />
           ))}
         </Grid>
       </Box>
