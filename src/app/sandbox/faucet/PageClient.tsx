@@ -51,7 +51,8 @@ const Faucet: NextPage = () => {
   const { mutate: runFaucetStx, error, isSuccess, isPending } = useFaucet();
 
   React.useEffect(() => {
-    if (stxAddress) setAddress(stxAddress);
+    if (!stxAddress) return;
+    setAddress(current => current || stxAddress);
   }, [stxAddress]);
 
   const addressError = getRecipientAddressError(address.trim(), networkMode);
@@ -59,17 +60,16 @@ const Faucet: NextPage = () => {
 
   const requestStx = (stacking?: boolean) => {
     setShowValidation(true);
-    if (addressError) return;
+    if (addressError) return false;
     runFaucetStx({ address: address.trim(), stacking });
+    return true;
   };
 
   const handleStackingRequest = () => {
-    if (stackingIndex <= 3) {
-      setIndex(i => ++i);
-      if (stackingIndex === 3) {
-        requestStx(true);
-      }
-    }
+    if (stackingIndex > 3) return;
+    // Only advance once the request actually goes out, so the confirmation copy can't lie
+    if (stackingIndex === 3 && !requestStx(true)) return;
+    setIndex(i => i + 1);
   };
   const getStackingLabel = () => {
     switch (stackingIndex) {
