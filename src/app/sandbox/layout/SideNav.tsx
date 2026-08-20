@@ -8,13 +8,11 @@ import { buildUrl } from '../../../common/utils/buildUrl';
 import ClarityIcon from '../../../ui/icons/ClarityIcon';
 import FunctionXIcon from '../../../ui/icons/FunctionX';
 import StxIcon from '../../../ui/icons/StxIcon';
-import { useUser } from '../hooks/useUser';
 import { NavItem } from './NavItem';
 
 export const SideNav: React.FC<StackProps> = () => {
   const network = useGlobalContext().activeNetwork;
   const pathname = usePathname();
-  const { isConnected } = useUser();
 
   return (
     <Stack borderRight={`1px solid var(--stacks-colors-border-secondary)`} gap={0}>
@@ -48,7 +46,7 @@ export const SideNav: React.FC<StackProps> = () => {
         }
         isSelected={pathname?.startsWith('/sandbox/transfer')}
       />
-      {isConnected && network.mode === 'testnet' && (
+      {network.mode === 'testnet' && (
         <NavItem
           label={'Testnet Faucet'}
           url={buildUrl(`/sandbox/faucet`, network)}

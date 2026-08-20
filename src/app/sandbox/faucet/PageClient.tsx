@@ -4,8 +4,12 @@ import { HStack, Icon, Stack } from '@chakra-ui/react';
 import { NextPage } from 'next';
 import React from 'react';
 
+import { useGlobalContext } from '../../../common/context/useGlobalContext';
 import { useFaucet } from '../../../common/queries/useFaucet';
+import { NetworkModes } from '../../../common/types/network';
+import { isAddressForNetworkMode, validateStacksAddress } from '../../../common/utils/utils';
 import { Button } from '../../../ui/Button';
+import { Input } from '../../../ui/Input';
 import { Text } from '../../../ui/Text';
 import StxIcon from '../../../ui/icons/StxIcon';
 import { Title } from '../../../ui/typography';
@@ -29,16 +33,41 @@ function getErrorMessage(error: any) {
   }
 }
 
+export function getRecipientAddressError(address: string, networkMode: NetworkModes) {
+  if (!address) return 'Enter a Stacks address.';
+  if (!validateStacksAddress(address)) return 'This is not a valid Stacks address.';
+  if (!isAddressForNetworkMode(address, networkMode)) {
+    return `This is not a ${networkMode} address.`;
+  }
+  return undefined;
+}
+
 const Faucet: NextPage = () => {
   const { stxAddress } = useUser();
+  const networkMode = useGlobalContext().activeNetwork.mode;
+  const [address, setAddress] = React.useState('');
+  const [showValidation, setShowValidation] = React.useState(false);
   const [stackingIndex, setIndex] = React.useState(0);
-  const { mutate: runFaucetStx, error, isSuccess } = useFaucet();
+  const { mutate: runFaucetStx, error, isSuccess, isPending } = useFaucet();
+
+  React.useEffect(() => {
+    if (stxAddress) setAddress(stxAddress);
+  }, [stxAddress]);
+
+  const addressError = getRecipientAddressError(address.trim(), networkMode);
   const errorMessage = getErrorMessage(error);
+
+  const requestStx = (stacking?: boolean) => {
+    setShowValidation(true);
+    if (addressError) return;
+    runFaucetStx({ address: address.trim(), stacking });
+  };
+
   const handleStackingRequest = () => {
     if (stackingIndex <= 3) {
       setIndex(i => ++i);
-      if (stackingIndex === 3 && !!stxAddress) {
-        void runFaucetStx({ address: stxAddress, stacking: true });
+      if (stackingIndex === 3) {
+        requestStx(true);
       }
     }
   };
@@ -71,12 +100,23 @@ const Faucet: NextPage = () => {
           <Text>💰</Text>
         </HStack>
       ) : null}
-      <Stack gap={4}>
-        <Button
-          variant={'primary'}
-          mx="auto"
-          onClick={() => !!stxAddress && runFaucetStx({ address: stxAddress })}
-        >
+      <Stack gap={4} width="full" maxWidth="440px">
+        <Stack gap={1}>
+          <Input
+            value={address}
+            onChange={e => setAddress(e.target.value)}
+            onBlur={() => setShowValidation(true)}
+            placeholder={`Enter a ${networkMode} Stacks address`}
+            aria-label="Recipient Stacks address"
+            aria-invalid={showValidation && !!addressError}
+          />
+          {showValidation && addressError ? (
+            <Text fontSize={'xs'} color={'error'}>
+              {addressError}
+            </Text>
+          ) : null}
+        </Stack>
+        <Button variant={'primary'} mx="auto" loading={isPending} onClick={() => requestStx()}>
           Request STX
         </Button>
         <Button

@@ -3,7 +3,7 @@
 import { Flex, Grid, HStack, Icon } from '@chakra-ui/react';
 import { List, User } from '@phosphor-icons/react';
 import dynamic from 'next/dynamic';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { ReactNode } from 'react';
 
 import { Circle } from '../../common/components/Circle';
@@ -30,6 +30,9 @@ export function Wrapper({ children }: { children: ReactNode }) {
   const dispatch = useAppDispatch();
   const { isConnected, userData, connect, stxAddress } = useUser();
   const router = useRouter();
+  const pathname = usePathname();
+  // The faucet only needs a recipient address; the other sandbox pages sign transactions.
+  const requiresWallet = !pathname?.startsWith('/sandbox/faucet');
   const { activeNetwork } = useGlobalContext();
   const showRightPanel = useAppSelector(selectShowRightPanel);
 
@@ -81,7 +84,7 @@ export function Wrapper({ children }: { children: ReactNode }) {
           minHeight={'768px'}
         >
           <SideNav />
-          {isConnected ? children : <ConnectToStacks />}
+          {isConnected || !requiresWallet ? children : <ConnectToStacks />}
           {showRightPanel ? <RightPanel /> : null}
         </Grid>
       </Section>
