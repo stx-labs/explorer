@@ -42,8 +42,6 @@ export const TokenLink = forwardRef<HTMLAnchorElement, Partial<LinkProps> & { to
   }
 );
 
-// The tokenId is deliberately not a prop: this renders inside the "not the official sBTC token"
-// warning, so a caller must not be able to repoint what the UI presents as official.
 export const SbtcTokenLink = forwardRef<
   HTMLAnchorElement,
   Omit<Partial<LinkProps>, 'href'> & { fallbackTokenId: string }

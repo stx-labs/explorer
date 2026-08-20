@@ -48,7 +48,6 @@ export const useSuspenseTokens = (
     { address: sbtcContractAddress },
     { enabled: shouldAddPinnedTokens && !!sbtcContractAddress }
   );
-  // USDCx is a mainnet-only contract, so querying it anywhere else is a guaranteed-empty request
   const usdcxResponse = useFtTokens(
     { address: usdcxContractAddress },
     { enabled: shouldAddPinnedTokens && isMainnet }

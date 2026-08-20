@@ -67,7 +67,6 @@ export function RowCopyButton({ value, ariaLabel }: { value: string; ariaLabel: 
       buttonProps={{
         ...DEFAULT_BUTTON_STYLING,
         p: 1.5,
-        // CopyButtonRedesign only forwards buttonProps, so a bare aria-label would be dropped
         'aria-label': ariaLabel,
       }}
     />

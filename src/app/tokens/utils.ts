@@ -34,8 +34,6 @@ export function showSBTCTokenAlert(
   contractId: string,
   networkMode: NetworkModes | undefined
 ) {
-  // networkMode is undefined on devnet/custom nodes, where we don't know the sBTC deployer. isSBTC
-  // is false there, so nothing can be confirmed official and the alert shows.
   return (
     referencesSBTC(tokenName, tokenSymbol) &&
     !isSBTC(contractId, networkMode) &&

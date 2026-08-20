@@ -42,8 +42,6 @@ export default async function (props: {
 
   const { chain, api } = searchParams;
   const apiUrl = getApiUrl(chain || NetworkModes.Mainnet, api);
-  // A custom `api` node decides the network, not the `chain` param, and we can't know which
-  // without querying it — so treat the network as unidentified rather than assuming mainnet.
   const networkMode = api
     ? undefined
     : chain === NetworkModes.Testnet
@@ -86,8 +84,6 @@ export default async function (props: {
       ] = await Promise.allSettled([
         getTokenPrice(),
         getTokenDataFromStacksApi(tokenId, apiUrl),
-        // LunarCrush is keyed by contract id with no notion of network, so it would report
-        // mainnet market data for a testnet contract that happens to share an id shape
         networkMode === NetworkModes.Mainnet
           ? getTokenDataFromLunarCrush(tokenId)
           : Promise.resolve(undefined),

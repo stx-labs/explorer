@@ -77,7 +77,6 @@ describe('showSBTCTokenAlert', () => {
   });
 
   it('warns on a network whose sBTC deployment is unknown', () => {
-    // nothing can be confirmed official on devnet/custom nodes, so nothing is treated as official
     expect(showSBTCTokenAlert('sBTC', 'sBTC', TESTNET_SBTC, undefined)).toBe(true);
   });
 

@@ -17,8 +17,6 @@ jest.mock('@/app/txid/[txId]/redesign/Alert', () => ({
 const TESTNET_SBTC = 'SN3VMHXEN64ZZF71JQ5VESXDWTR301XTTXGF4J8F1.sbtc-token';
 const mockPageData = useTokenIdPageData as jest.MockedFunction<typeof useTokenIdPageData>;
 
-// The original bug: TokenAlert derived the contract id from `assetId`, which is undefined when the
-// contract isn't on the active network, yielding the literal "." and a scam banner on real sBTC.
 describe('TokenAlert', () => {
   it("does not warn on the active network's official sBTC, even without an assetId", () => {
     mockPageData.mockReturnValue({
