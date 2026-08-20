@@ -86,58 +86,64 @@ export const IconCellRenderer = (value: ReactNode) => {
   );
 };
 
-function getTxStatusIcon(status: TransactionStatus | MempoolTransactionStatus) {
+type TxStatusTagStatus =
+  | TransactionStatus
+  | MempoolTransactionStatus
+  | TransactionSummary['status'];
+
+function getTxStatusIcon(status: TxStatusTagStatus) {
   switch (status) {
     case 'pending':
       return <Clock />;
     case 'abort_by_post_condition':
-      return <XCircle />;
     case 'abort_by_response':
+    case 'problematic_skipped':
       return <XCircle />;
     default:
       return <Question />;
   }
 }
 
-function getTxStatusIconColor(status: TransactionStatus | MempoolTransactionStatus) {
+function getTxStatusIconColor(status: TxStatusTagStatus) {
   switch (status) {
     case 'pending':
       return 'feedback.bronze-600';
     case 'abort_by_post_condition':
-      return 'feedback.red-600';
     case 'abort_by_response':
+    case 'problematic_skipped':
       return 'feedback.red-600';
     default:
       return 'iconSecondary';
   }
 }
 
-function getTxStatusBgColor(status: TransactionStatus | MempoolTransactionStatus) {
+function getTxStatusBgColor(status: TxStatusTagStatus) {
   switch (status) {
     case 'pending':
       return 'transactionStatus.pending';
     case 'abort_by_post_condition':
-      return 'transactionStatus.failed';
     case 'abort_by_response':
+    case 'problematic_skipped':
       return 'transactionStatus.failed';
     default:
       return 'surfaceSecondary';
   }
 }
 
-function getTxStatusLabel(status: TransactionStatus | MempoolTransactionStatus) {
+function getTxStatusLabel(status: TxStatusTagStatus) {
   switch (status) {
     case 'pending':
       return 'Pending';
     case 'abort_by_post_condition':
     case 'abort_by_response':
+    case 'problematic_skipped':
       return 'Failed';
     default:
       return status;
   }
 }
 
-export const StatusTag = ({ status }: { status: TransactionStatus | MempoolTransactionStatus }) => {
+export const StatusTag = ({ status }: { status: TxStatusTagStatus }) => {
   return (
     <Flex
       alignItems="center"

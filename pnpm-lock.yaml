@@ -69,8 +69,8 @@ importers:
         specifier: 7.1.0
         version: 7.1.0
       '@stacks/blockchain-api-client':
-        specifier: 9.0.0-next.36
-        version: 9.0.0-next.36
+        specifier: 9.0.2
+        version: 9.0.2
       '@stacks/common':
         specifier: 7.0.2
         version: 7.0.2
@@ -2786,8 +2786,8 @@ packages:
   '@stacks/auth@7.1.0':
     resolution: {integrity: sha512-I2Wlk2ucM0roXSF7aDUThyLQan3PIkqC7QQ1ZL1ulorha7IraqubasJX8j/q/ZE58z9gQnPOf0ayf0r0ocNOuQ==}
 
-  '@stacks/blockchain-api-client@9.0.0-next.36':
-    resolution: {integrity: sha512-uNE36sHSZJXpobWQjGhs7l/SepqFVAj0zI9SNw+V2VWPGVr+x5c4+kOpQyekym/2JRpsQ0V6m7DJvWzMpSF2Yw==}
+  '@stacks/blockchain-api-client@9.0.2':
+    resolution: {integrity: sha512-5e52LJNsO0eBFK+mx0u6d3vCdDzMDNb7n2o8QFIhnIlh9/2mJn/rpN1AFGzZZVeybVaOdvK9BzeTmkdlLltshg==}
 
   '@stacks/common@6.16.0':
     resolution: {integrity: sha512-PnzvhrdGRMVZvxTulitlYafSK4l02gPCBBoI9QEoTqgSnv62oaOXhYAUUkTMFKxdHW1seVEwZsrahuXiZPIAwg==}
@@ -11532,7 +11532,7 @@ snapshots:
     transitivePeerDependencies:
       - encoding
 
-  '@stacks/blockchain-api-client@9.0.0-next.36':
+  '@stacks/blockchain-api-client@9.0.2':
     dependencies:
       '@types/node': 20.14.14
       eventemitter3: 4.0.7
