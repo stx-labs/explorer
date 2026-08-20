@@ -14,8 +14,6 @@ import { logError } from '../../common/utils/error-utils';
 import { ColorModeProvider } from '../../components/ui/color-mode';
 import { system } from '../../ui/theme/theme';
 
-// Mutations resolve their rejection into `mutation.error`, so nothing reaches Sentry on its own.
-// Without this a broken faucet or sandbox broadcast fails silently for every user.
 const mutationCache = new MutationCache({
   onError: (error, _variables, _context, mutation) => {
     const apiError = error instanceof ApiError ? error : undefined;

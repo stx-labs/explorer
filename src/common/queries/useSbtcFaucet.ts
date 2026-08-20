@@ -19,7 +19,6 @@ export function useSbtcFaucet() {
             address,
           },
         },
-        // The endpoint takes no body, so don't advertise a JSON one it would fail to parse
         headers: { 'Content-Type': null },
       });
 
@@ -33,7 +32,6 @@ export function useSbtcFaucet() {
       }
       return data;
     },
-    // The recipient is an arbitrary address, so key the refresh off the request, not the wallet
     onSuccess: (_data, { address }) => {
       void queryClient.invalidateQueries({ queryKey: getAccountBalanceQueryKey(address) });
       void queryClient.invalidateQueries({ queryKey: ['addressMempoolTxsInfinite', address] });

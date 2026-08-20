@@ -29,8 +29,6 @@ const RightPanel = dynamic(() => import('./layout/RightPanel').then(mod => mod.R
 
 export const FAUCET_PATHNAME = '/sandbox/faucet';
 
-// The faucet only needs a recipient address; every other sandbox page signs transactions, so an
-// exact match keeps a future /sandbox/faucet-* route from inheriting the exemption.
 export function getRequiresWallet(pathname: string | null | undefined) {
   return pathname !== FAUCET_PATHNAME;
 }
@@ -49,8 +47,6 @@ export function Wrapper({ children }: { children: ReactNode }) {
     return null;
   }
 
-  // Both faucet endpoints are testnet-only, so on mainnet the page would offer a form and curl
-  // commands for endpoints that always 403.
   if (!requiresWallet && activeNetwork.mode === NetworkModes.Mainnet) {
     void router.replace(`/sandbox/deploy${getQueryParams(activeNetwork)}`);
     return null;

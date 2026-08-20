@@ -64,8 +64,6 @@ const Faucet: NextPage = () => {
 
   React.useEffect(() => {
     if (!stxAddress) return;
-    // Only replace the field while it still holds what we put there, so a typed address survives
-    // a wallet connecting or switching accounts.
     setAddress(current => {
       if (current && current !== lastPrefilled.current) return current;
       lastPrefilled.current = stxAddress;
@@ -99,7 +97,6 @@ const Faucet: NextPage = () => {
 
   const handleStackingRequest = () => {
     if (stackingIndex > 3) return;
-    // Only advance once the request actually goes out, so the confirmation copy can't lie
     if (stackingIndex === 3 && !requestStx(true)) return;
     setIndex(i => i + 1);
   };

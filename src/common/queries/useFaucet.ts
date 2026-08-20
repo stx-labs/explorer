@@ -36,7 +36,6 @@ export function useFaucet() {
       }
       return data;
     },
-    // The recipient is an arbitrary address, so key the refresh off the request, not the wallet
     onSuccess: (_data, { address }) => {
       void queryClient.invalidateQueries({ queryKey: getAccountBalanceQueryKey(address) });
       void queryClient.invalidateQueries({ queryKey: ['addressMempoolTxsInfinite', address] });
