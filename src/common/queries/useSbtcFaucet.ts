@@ -1,14 +1,19 @@
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 
+import { ApiError } from '../../api/ApiError';
 import { getErrorMessage } from '../../api/getErrorMessage';
 import { useApiClient } from '../../api/useApiClient';
+import { getAccountBalanceQueryKey } from './useAccountBalance';
+
+const ENDPOINT = '/extended/v1/faucets/sbtc';
 
 export function useSbtcFaucet() {
   const apiClient = useApiClient();
+  const queryClient = useQueryClient();
   return useMutation({
+    mutationKey: ['faucet', 'sbtc'],
     mutationFn: async ({ address }: { address: string }) => {
-      if (!address) return undefined;
-      const { data, error } = await apiClient.POST(`/extended/v1/faucets/sbtc`, {
+      const { data, error, response } = await apiClient.POST(ENDPOINT, {
         params: {
           query: {
             address,
@@ -19,9 +24,19 @@ export function useSbtcFaucet() {
       });
 
       if (error) {
-        throw new Error(getErrorMessage(error));
+        throw new ApiError({
+          message: getErrorMessage(error),
+          status: response?.status,
+          endpoint: ENDPOINT,
+          method: 'POST',
+        });
       }
       return data;
+    },
+    // The recipient is an arbitrary address, so key the refresh off the request, not the wallet
+    onSuccess: (_data, { address }) => {
+      void queryClient.invalidateQueries({ queryKey: getAccountBalanceQueryKey(address) });
+      void queryClient.invalidateQueries({ queryKey: ['addressMempoolTxsInfinite', address] });
     },
   });
 }

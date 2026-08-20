@@ -10,6 +10,7 @@ import { Circle } from '../../common/components/Circle';
 import { Section } from '../../common/components/Section';
 import { useGlobalContext } from '../../common/context/useGlobalContext';
 import { useAppDispatch, useAppSelector } from '../../common/state/hooks';
+import { NetworkModes } from '../../common/types/network';
 import { getQueryParams } from '../../common/utils/buildUrl';
 import { Button } from '../../ui/Button';
 import { IconButton } from '../../ui/IconButton';
@@ -26,18 +27,32 @@ const RightPanel = dynamic(() => import('./layout/RightPanel').then(mod => mod.R
   loading: () => <RightPanelSkeleton />,
 });
 
+export const FAUCET_PATHNAME = '/sandbox/faucet';
+
+// The faucet only needs a recipient address; every other sandbox page signs transactions, so an
+// exact match keeps a future /sandbox/faucet-* route from inheriting the exemption.
+export function getRequiresWallet(pathname: string | null | undefined) {
+  return pathname !== FAUCET_PATHNAME;
+}
+
 export function Wrapper({ children }: { children: ReactNode }) {
   const dispatch = useAppDispatch();
   const { isConnected, userData, connect, stxAddress } = useUser();
   const router = useRouter();
   const pathname = usePathname();
-  // The faucet only needs a recipient address; the other sandbox pages sign transactions.
-  const requiresWallet = !pathname?.startsWith('/sandbox/faucet');
+  const requiresWallet = getRequiresWallet(pathname);
   const { activeNetwork } = useGlobalContext();
   const showRightPanel = useAppSelector(selectShowRightPanel);
 
   if (activeNetwork.isSubnet) {
     void router.replace(`/${getQueryParams(activeNetwork)}`);
+    return null;
+  }
+
+  // Both faucet endpoints are testnet-only, so on mainnet the page would offer a form and curl
+  // commands for endpoints that always 403.
+  if (!requiresWallet && activeNetwork.mode === NetworkModes.Mainnet) {
+    void router.replace(`/sandbox/deploy${getQueryParams(activeNetwork)}`);
     return null;
   }
 
