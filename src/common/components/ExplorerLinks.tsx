@@ -1,9 +1,11 @@
 'use client';
 
+import { getSbtcContractAddress } from '@/app/token/[tokenId]/consts';
 import { Link, LinkProps } from '@chakra-ui/react';
 import { forwardRef } from 'react';
 
 import { useGlobalContext } from '../context/useGlobalContext';
+import { useSbtcNetworkMode } from '../hooks/useSbtcNetworkMode';
 import { buildUrl } from '../utils/buildUrl';
 
 export const ExplorerLink = forwardRef<HTMLAnchorElement, LinkProps & { openInNewTab?: boolean }>(
@@ -39,6 +41,14 @@ export const TokenLink = forwardRef<HTMLAnchorElement, Partial<LinkProps> & { to
     return <ExplorerLink ref={ref} href={`/token/${encodeURIComponent(tokenId)}`} {...rest} />;
   }
 );
+
+export const SbtcTokenLink = forwardRef<
+  HTMLAnchorElement,
+  Omit<Partial<LinkProps>, 'href'> & { fallbackTokenId: string }
+>(({ fallbackTokenId, ...rest }, ref) => {
+  const contractAddress = getSbtcContractAddress(useSbtcNetworkMode()) ?? fallbackTokenId;
+  return <TokenLink ref={ref} {...rest} tokenId={contractAddress} />;
+});
 
 export const BlockLink = forwardRef<HTMLAnchorElement, Partial<LinkProps> & { hash: string }>(
   ({ hash, ...rest }, ref) => {

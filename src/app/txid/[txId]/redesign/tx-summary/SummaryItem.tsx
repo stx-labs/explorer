@@ -59,7 +59,6 @@ export function RowCopyButton({ value, ariaLabel }: { value: string; ariaLabel: 
   return (
     <CopyButtonRedesign
       initialValue={value}
-      aria-label={ariaLabel}
       iconProps={{
         ...DEFAULT_ICON_STYLING,
         height: 3.5,
@@ -68,6 +67,7 @@ export function RowCopyButton({ value, ariaLabel }: { value: string; ariaLabel: 
       buttonProps={{
         ...DEFAULT_BUTTON_STYLING,
         p: 1.5,
+        'aria-label': ariaLabel,
       }}
     />
   );

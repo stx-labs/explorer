@@ -1,5 +1,7 @@
 'use client';
 
+import { MAINNET_SBTC_CONTRACT_ADDRESS } from '@/app/token/[tokenId]/consts';
+import { SbtcTokenLink } from '@/common/components/ExplorerLinks';
 import { TransactionStatus as TransactionStatusEnum } from '@/common/constants/constants';
 import { getTransactionStatus } from '@/common/utils/transactions';
 import { Alert } from '@/components/ui/alert';
@@ -217,19 +219,15 @@ export function RiskyTokenAlert() {
 export function NotSBTCTokenAlert() {
   return (
     <Alert
-      status="info"
+      status="error"
       description={
         <Text textStyle="text-regular-xs" color="textPrimary">
           This is not&nbsp;
-          <Link
-            href="https://explorer.hiro.so/token/SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token?chain=mainnet"
-            color="black"
-            textDecoration="underline"
-          >
+          <SbtcTokenLink fallbackTokenId={MAINNET_SBTC_CONTRACT_ADDRESS} textDecoration="underline">
             <Text textStyle="text-regular-xs" color="textPrimary" whiteSpace="nowrap">
               the official sBTC token
             </Text>
-          </Link>
+          </SbtcTokenLink>
           &nbsp; and may be a scam. Engaging with unverified tokens could result in loss of funds.
         </Text>
       }

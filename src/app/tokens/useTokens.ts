@@ -1,5 +1,6 @@
 'use client';
 
+import { NetworkModes } from '@/common/types/network';
 import { useCallback, useMemo } from 'react';
 
 import type { operations } from '@stacks/token-metadata-api-client/lib/generated/schema';
@@ -8,8 +9,9 @@ import {
   useInfiniteQueryResult,
   useSuspenseInfiniteQueryResult,
 } from '../../common/hooks/useInfiniteQueryResult';
+import { useSbtcNetworkMode } from '../../common/hooks/useSbtcNetworkMode';
 import { useFtTokens, useSuspenseFtTokens } from '../../common/queries/useFtTokens';
-import { sbtcContractAddress, usdcxContractAddress } from '../token/[tokenId]/consts';
+import { getSbtcContractAddress, usdcxContractAddress } from '../token/[tokenId]/consts';
 
 type FtBasicMetadataResponse =
   operations['getFungibleTokens']['responses']['200']['content']['application/json']['results'][number];
@@ -22,6 +24,9 @@ export const useSuspenseTokens = (
   hasMore: boolean;
   loadMore: () => void;
 } => {
+  const sbtcNetworkMode = useSbtcNetworkMode();
+  const sbtcContractAddress = getSbtcContractAddress(sbtcNetworkMode);
+  const isMainnet = sbtcNetworkMode === NetworkModes.Mainnet;
   const searchByNameResponse = useSuspenseFtTokens({ name: debouncedSearchTerm || undefined });
 
   const searchBySymbol = !!debouncedSearchTerm;
@@ -41,11 +46,11 @@ export const useSuspenseTokens = (
   const shouldAddPinnedTokens = useMemo(() => !debouncedSearchTerm, [debouncedSearchTerm]); // Only add pinned tokens if no search term is provided. If they are searched, they will be added by default. If a search term that is not a pinned token is provided, they should not be added.
   const sbtcResponse = useFtTokens(
     { address: sbtcContractAddress },
-    { enabled: shouldAddPinnedTokens }
+    { enabled: shouldAddPinnedTokens && !!sbtcContractAddress }
   );
   const usdcxResponse = useFtTokens(
     { address: usdcxContractAddress },
-    { enabled: shouldAddPinnedTokens }
+    { enabled: shouldAddPinnedTokens && isMainnet }
   );
 
   const ftTokensSearchedByName =

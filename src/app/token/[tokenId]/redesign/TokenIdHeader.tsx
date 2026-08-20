@@ -3,6 +3,7 @@
 import { showRiskyTokenAlert, showSBTCTokenAlert } from '@/app/tokens/utils';
 import { TokenImage } from '@/common/components/table/fungible-tokens-table/FungibleTokensTableCellRenderers';
 import { useIsInViewport } from '@/common/hooks/useIsInViewport';
+import { useSbtcNetworkMode } from '@/common/hooks/useSbtcNetworkMode';
 import { getAssetNameParts } from '@/common/utils/utils';
 import { DefaultBadge, DefaultBadgeIcon, DefaultBadgeLabel } from '@/ui/Badge';
 import { Text, TextProps } from '@/ui/Text';
@@ -120,13 +121,14 @@ const WarningIcon = ({
   tokenSymbol: string;
   contractId: string;
 }) => {
+  const networkMode = useSbtcNetworkMode();
   const icon = (
     <Icon h={4.5} w={4.5} color="iconError">
       <Warning weight="fill" />
     </Icon>
   );
 
-  if (showSBTCTokenAlert(tokenName, tokenSymbol, contractId)) {
+  if (showSBTCTokenAlert(tokenName, tokenSymbol, contractId, networkMode)) {
     return icon;
   }
 

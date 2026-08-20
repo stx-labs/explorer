@@ -1,4 +1,10 @@
-import { validateStacksAddress, validateStacksContractId, validateTxId } from '../utils';
+import { NetworkModes } from '../../types/network';
+import {
+  isAddressForNetworkMode,
+  validateStacksAddress,
+  validateStacksContractId,
+  validateTxId,
+} from '../utils';
 
 describe('validateStacksAddress', () => {
   it('returns true for valid mainnet addresses', () => {
@@ -111,5 +117,35 @@ describe('validateTxId', () => {
     invalidTxIds.forEach(txId => {
       expect(validateTxId(txId)).toBe(false);
     });
+  });
+});
+
+describe('isAddressForNetworkMode', () => {
+  it('matches single-sig and multisig addresses to their own network', () => {
+    expect(
+      isAddressForNetworkMode('SP2J6ZY48GV1EZ5V2V5RB9MP66SW86PYKKNRV9EJ7', NetworkModes.Mainnet)
+    ).toBe(true);
+    expect(
+      isAddressForNetworkMode('SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4', NetworkModes.Mainnet)
+    ).toBe(true);
+    expect(
+      isAddressForNetworkMode('ST221Z6TDTC5E0BYR2V624Q2ST6R0Q71T78WTAX6H', NetworkModes.Testnet)
+    ).toBe(true);
+    expect(
+      isAddressForNetworkMode('SN3VMHXEN64ZZF71JQ5VESXDWTR301XTTXGF4J8F1', NetworkModes.Testnet)
+    ).toBe(true);
+  });
+
+  it('rejects an address belonging to the other network', () => {
+    expect(
+      isAddressForNetworkMode('SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4', NetworkModes.Testnet)
+    ).toBe(false);
+    expect(
+      isAddressForNetworkMode('ST221Z6TDTC5E0BYR2V624Q2ST6R0Q71T78WTAX6H', NetworkModes.Mainnet)
+    ).toBe(false);
+  });
+
+  it('rejects an undecodable address', () => {
+    expect(isAddressForNetworkMode('not-an-address', NetworkModes.Mainnet)).toBe(false);
   });
 });

@@ -1,7 +1,8 @@
-import { RISKY_TOKENS, VERIFIED_TOKENS } from '@/app/token/[tokenId]/consts';
+import { RISKY_TOKENS, getVerifiedTokens } from '@/app/token/[tokenId]/consts';
 
 import type { operations } from '@stacks/token-metadata-api-client/lib/generated/schema';
 
+import { NetworkModes } from '../types/network';
 import { bigintPow } from './number-utils';
 
 type Metadata = NonNullable<
@@ -24,8 +25,8 @@ export const deriveTokenTickerFromAssetId = (assetId: string) => {
   return ticker;
 };
 
-export function isVerifiedToken(tokenId: string) {
-  return VERIFIED_TOKENS.includes(tokenId);
+export function isVerifiedToken(tokenId: string, networkMode: NetworkModes | undefined) {
+  return getVerifiedTokens(networkMode).includes(tokenId);
 }
 
 export function isRiskyToken(tokenId: string) {

@@ -1,4 +1,5 @@
-import { RISKY_TOKENS, VERIFIED_TOKENS } from '@/app/token/[tokenId]/consts';
+import { RISKY_TOKENS, getVerifiedTokens } from '@/app/token/[tokenId]/consts';
+import { useSbtcNetworkMode } from '@/common/hooks/useSbtcNetworkMode';
 import { Flex, Icon, Table } from '@chakra-ui/react';
 import { SealCheck, Warning } from '@phosphor-icons/react';
 import { FC, useMemo } from 'react';
@@ -17,15 +18,16 @@ type FtBasicMetadataResponse =
 export const TokenRow: FC<{
   ftToken: FtBasicMetadataResponse;
 }> = ({ ftToken }) => {
+  const networkMode = useSbtcNetworkMode();
   const name = ftToken.name || 'FT Token';
   const symbol = ftToken.symbol || '';
   const contractId = ftToken.contract_principal;
 
   const includesSbtc = referencesSBTC(name, symbol);
-  const isSbtc = isSBTC(contractId);
+  const isSbtc = isSBTC(contractId, networkMode);
 
   const tokenBadge = useMemo(() => {
-    if (isSbtc || VERIFIED_TOKENS.includes(contractId)) {
+    if (isSbtc || getVerifiedTokens(networkMode).includes(contractId)) {
       return (
         <Flex
           px={1.5}
@@ -56,7 +58,7 @@ export const TokenRow: FC<{
       );
     }
     return null;
-  }, [contractId, includesSbtc, isSbtc]);
+  }, [contractId, includesSbtc, isSbtc, networkMode]);
 
   return (
     <Table.Row>

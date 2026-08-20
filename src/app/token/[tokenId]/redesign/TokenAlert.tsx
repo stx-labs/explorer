@@ -2,20 +2,19 @@
 
 import { showRiskyTokenAlert, showSBTCTokenAlert } from '@/app/tokens/utils';
 import { NotSBTCTokenAlert, RiskyTokenAlert } from '@/app/txid/[txId]/redesign/Alert';
-import { getAssetNameParts } from '@/common/utils/utils';
+import { useSbtcNetworkMode } from '@/common/hooks/useSbtcNetworkMode';
 
 import { useTokenIdPageData } from './context/TokenIdPageContext';
 
 export function TokenAlert() {
-  const { assetId, tokenData } = useTokenIdPageData();
-  const { address, contract } = getAssetNameParts(assetId || '');
-  const contractId = `${address}.${contract}`;
+  const { tokenId, tokenData } = useTokenIdPageData();
+  const networkMode = useSbtcNetworkMode();
 
-  if (showSBTCTokenAlert(tokenData?.name || '', tokenData?.symbol || '', contractId)) {
+  if (showSBTCTokenAlert(tokenData?.name || '', tokenData?.symbol || '', tokenId, networkMode)) {
     return <NotSBTCTokenAlert />;
   }
 
-  if (showRiskyTokenAlert(contractId)) {
+  if (showRiskyTokenAlert(tokenId)) {
     return <RiskyTokenAlert />;
   }
 

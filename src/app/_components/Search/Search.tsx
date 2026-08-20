@@ -1,3 +1,4 @@
+import { ExplorerLink } from '@/common/components/ExplorerLinks';
 import { useFilterParams } from '@/common/utils/search-param-utils';
 import {
   Box,
@@ -6,7 +7,6 @@ import {
   HStack,
   Icon,
   IconButton,
-  Link,
   Spinner,
   Stack,
   StackProps,
@@ -17,6 +17,7 @@ import * as React from 'react';
 import { ReactNode, useCallback, useEffect } from 'react';
 
 import { useGlobalContext } from '../../../common/context/useGlobalContext';
+import { useSbtcNetworkMode } from '../../../common/hooks/useSbtcNetworkMode';
 import {
   advancedSearchConfig,
   advancedSearchKeywords,
@@ -59,6 +60,7 @@ import { Button } from '../../../ui/Button';
 import { Input, InputProps } from '../../../ui/Input';
 import { Kbd } from '../../../ui/Kbd';
 import { Text } from '../../../ui/Text';
+import { getSbtcTokenPagePath } from '../NewNavBar/consts';
 import {
   BlockResultItem,
   BnsResultItem,
@@ -163,7 +165,7 @@ function KeywordsPreview() {
 
 function QuickLinkButton({ children, href }: { children: ReactNode; href: string }) {
   return (
-    <Link href={href} variant="noUnderline">
+    <ExplorerLink href={href} variant="noUnderline">
       <Button variant={'redesignTertiary'} size={'small'} alignItems="center">
         <Text textStyle="text-medium-xs" color="textSecondary">
           {children}
@@ -172,13 +174,12 @@ function QuickLinkButton({ children, href }: { children: ReactNode; href: string
           <ArrowRight />
         </Icon>
       </Button>
-    </Link>
+    </ExplorerLink>
   );
 }
 
 function QuickLinks() {
-  const network = useGlobalContext().activeNetwork;
-  const isMainnet = network.mode === 'mainnet';
+  const sbtcTokenPagePath = getSbtcTokenPagePath(useSbtcNetworkMode());
 
   return (
     <Stack
@@ -193,13 +194,7 @@ function QuickLinks() {
         Quick links
       </Text>
       <Flex gap={2} flexWrap="wrap">
-        {isMainnet && (
-          <QuickLinkButton
-            href={'/token/SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token?chain=mainnet'}
-          >
-            sBTC
-          </QuickLinkButton>
-        )}
+        {sbtcTokenPagePath && <QuickLinkButton href={sbtcTokenPagePath}>sBTC</QuickLinkButton>}
         <QuickLinkButton href={'/blocks'}>Blocks</QuickLinkButton>
         <QuickLinkButton href={'/transactions'}>Transactions</QuickLinkButton>
         <QuickLinkButton href={'/signers'}>Signers</QuickLinkButton>

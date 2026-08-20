@@ -16,7 +16,7 @@ import {
   compressMempoolTransaction,
   compressTransaction,
 } from '@/common/utils/transaction-utils';
-import { validateStacksContractId } from '@/common/utils/utils';
+import { isAddressForNetworkMode, validateStacksContractId } from '@/common/utils/utils';
 
 import {
   ContractInterfaceResponse,
@@ -42,12 +42,22 @@ export default async function (props: {
 
   const { chain, api } = searchParams;
   const apiUrl = getApiUrl(chain || NetworkModes.Mainnet, api);
+  const networkMode = api
+    ? undefined
+    : chain === NetworkModes.Testnet
+      ? NetworkModes.Testnet
+      : NetworkModes.Mainnet;
 
   const params = await props.params;
 
   const { tokenId } = params;
 
   if (!validateStacksContractId(tokenId)) {
+    const { notFound } = await import('next/navigation');
+    notFound();
+  }
+
+  if (networkMode && !isAddressForNetworkMode(tokenId.split('.')[0], networkMode)) {
     const { notFound } = await import('next/navigation');
     notFound();
   }
@@ -79,7 +89,9 @@ export default async function (props: {
       ] = await Promise.allSettled([
         getTokenPrice(),
         getTokenDataFromStacksApi(tokenId, apiUrl),
-        getTokenDataFromLunarCrush(tokenId),
+        networkMode === NetworkModes.Mainnet
+          ? getTokenDataFromLunarCrush(tokenId)
+          : Promise.resolve(undefined),
         fetchContractInfo(apiUrl, tokenId),
         fetchRecentTransactions(apiUrl, tokenId),
       ]);
@@ -121,7 +133,13 @@ export default async function (props: {
       const tx = handleSettledResult(txResult, 'Failed to fetch transaction');
       holders = handleSettledResult(holdersResult, 'Failed to fetch holders');
 
-      tokenData = mergeTokenData(tokenDataFromStacksApi, tokenDataFromLunarCrush, holders, tokenId);
+      tokenData = mergeTokenData(
+        tokenDataFromStacksApi,
+        tokenDataFromLunarCrush,
+        holders,
+        tokenId,
+        networkMode
+      );
 
       txBlockTime =
         tx && isConfirmedTx<Transaction, MempoolTransaction>(tx) ? tx.block_time : undefined;
@@ -142,7 +160,7 @@ export default async function (props: {
       logError(
         error as Error,
         'Token Id page server-side fetch for initial data',
-        { tokenId, tokenPrice, initialAddressRecentTransactionsData, chain, api },
+        { tokenId, tokenPrice, initialAddressRecentTransactionsData, chain, api, networkMode },
         'error'
       );
     }

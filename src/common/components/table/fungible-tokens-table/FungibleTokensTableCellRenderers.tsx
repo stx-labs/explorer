@@ -1,6 +1,7 @@
 import { TokenVideo } from '@/app/address/[principal]/TokenBalanceCard/TokenVideo';
 import { useImageContentType } from '@/app/address/[principal]/TokenBalanceCard/useImageUrl';
 import { TokenLink } from '@/common/components/ExplorerLinks';
+import { useSbtcNetworkMode } from '@/common/hooks/useSbtcNetworkMode';
 import { isRiskyToken, isVerifiedToken } from '@/common/utils/fungible-token-utils';
 import { SimpleTag } from '@/ui/Badge';
 import { Flex, Icon } from '@chakra-ui/react';
@@ -21,7 +22,8 @@ export function DefaultTokenAvatar({ asset }: { asset: string }) {
 
 export function FungibleTokenCellRenderer(value: FungibleTokenTableTokenColumnData) {
   const { name, ticker, tokenId, imageUrl } = value;
-  const isVerified = isVerifiedToken(tokenId);
+  const networkMode = useSbtcNetworkMode();
+  const isVerified = isVerifiedToken(tokenId, networkMode);
   const isRisky = isRiskyToken(tokenId);
   const { url, contentType } = useImageContentType(imageUrl);
 
