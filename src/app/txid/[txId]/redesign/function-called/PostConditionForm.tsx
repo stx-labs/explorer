@@ -5,7 +5,7 @@ import { Box, Field, Stack } from '@chakra-ui/react';
 import { FormikErrors } from 'formik';
 import { ChangeEvent, useMemo } from 'react';
 
-import { PostConditionMode } from '@stacks/transactions';
+import { PostConditionMode, PostConditionType } from '@stacks/transactions';
 
 import { FormikSetFieldValueFunction, FunctionFormikState } from './FunctionCallForm';
 import {
@@ -38,21 +38,26 @@ export function PostConditionForm({
     ): T extends React.ChangeEvent<any> ? void : (e: string | React.ChangeEvent<any>) => void;
   };
 }) {
+  // Formik holds whatever the Select wrote, which can be the string form of the
+  // enum. getPostConditionConditionCodeOptions compares with ===, so without this
+  // coercion PoX and Non-Fungible silently fall through to the fungible codes and
+  // their post-conditions can never be built.
+  const postConditionType =
+    values.postConditionType != null
+      ? (Number(values.postConditionType) as PostConditionType)
+      : undefined;
+
   const postConditionConditionCodeOptions = useMemo(() => {
-    return values.postConditionType != null
-      ? getPostConditionConditionCodeOptions(values.postConditionType)
-      : [];
-  }, [values.postConditionType]);
+    return postConditionType != null ? getPostConditionConditionCodeOptions(postConditionType) : [];
+  }, [postConditionType]);
 
   const postConditionTypeParameters = useMemo(() => {
-    return values.postConditionType != null
-      ? postConditionParameterMap[values.postConditionType]
-      : [];
-  }, [values.postConditionType]);
+    return postConditionType != null ? postConditionParameterMap[postConditionType] : [];
+  }, [postConditionType]);
 
   return (
     <>
-      {values.postConditionMode === PostConditionMode.Deny && (
+      {values.postConditionMode !== PostConditionMode.Allow && (
         <Stack gap={4}>
           <Stack gap={2}>
             <Select<PostConditionTypeValue, PostConditionTypeLabel>

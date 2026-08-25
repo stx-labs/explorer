@@ -1,7 +1,6 @@
 'use client';
 
-import { Box, Flex, Icon, Stack } from '@chakra-ui/react';
-import { Info } from '@phosphor-icons/react';
+import { Box, Flex, Stack } from '@chakra-ui/react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Form, Formik, FormikErrors } from 'formik';
 import { ChangeEvent, FC, ReactNode, useMemo, useState } from 'react';
@@ -18,13 +17,20 @@ import {
 } from '@stacks/transactions';
 
 import { Section } from '../../../../common/components/Section';
+import { Select } from '../../../../common/components/Select';
 import { useGlobalContext } from '../../../../common/context/useGlobalContext';
+import { logError } from '../../../../common/utils/error-utils';
 import { getConnectNetworkString } from '../../../../common/utils/network-utils';
+import {
+  postConditionModeDescriptions,
+  postConditionModeFromName,
+  postConditionModeNames,
+  postConditionModeOptions,
+} from '../../../../common/utils/post-condition-mode-utils';
 import { showFn } from '../../../../common/utils/sandbox';
-import { Switch } from '../../../../components/ui/switch';
+import { Alert } from '../../../../components/ui/alert';
 import { Button } from '../../../../ui/Button';
 import { Text } from '../../../../ui/Text';
-import { Tooltip } from '../../../../ui/Tooltip';
 import { ListValueType, NonTupleValueType, TupleValueType, ValueType } from '../../types/values';
 import { encodeOptional, encodeOptionalTuple, encodeTuple, getTuple } from '../../utils';
 import { callContract } from '../../utils/walletTransactions';
@@ -192,35 +198,47 @@ export const FunctionView: FC<FunctionViewProps> = ({ fn, contractId, cancelButt
           postConditionAssetName,
         } = values;
 
+        // Resolved once: two consumers below read this, and an undefined mode
+        // must not let one attach post-conditions while the other sends 'allow'
+        const submittedPostConditionMode = postConditionMode ?? PostConditionMode.Deny;
+
         if (fn.access === 'public') {
-          await callContract({
-            contract: contractId,
-            functionName: fn.name,
-            functionArgs: Object.values(final),
-            network: getConnectNetworkString(network),
-            postConditions:
-              postConditionMode === PostConditionMode.Allow
-                ? undefined
-                : postConditionType == null
-                  ? []
-                  : getPostCondition({
-                      postConditionType,
-                      postConditionAddress,
-                      postConditionConditionCode,
-                      postConditionAmount,
-                      postConditionAssetAddress,
-                      postConditionAssetContractName,
-                      postConditionAssetName,
-                    }),
-            postConditionMode: postConditionMode === PostConditionMode.Allow ? 'allow' : 'deny',
-          });
-          void queryClient.invalidateQueries({ queryKey: ['addressMempoolTxsInfinite'] });
+          try {
+            await callContract({
+              contract: contractId,
+              functionName: fn.name,
+              functionArgs: Object.values(final),
+              network: getConnectNetworkString(network),
+              postConditions:
+                submittedPostConditionMode === PostConditionMode.Allow
+                  ? undefined
+                  : postConditionType == null
+                    ? []
+                    : getPostCondition({
+                        postConditionType,
+                        postConditionAddress,
+                        postConditionConditionCode,
+                        postConditionAmount,
+                        postConditionAssetAddress,
+                        postConditionAssetContractName,
+                        postConditionAssetName,
+                      }),
+              postConditionMode: postConditionModeNames[submittedPostConditionMode],
+            });
+            void queryClient.invalidateQueries({ queryKey: ['addressMempoolTxsInfinite'] });
+          } catch (error) {
+            logError(error as Error, 'Error submitting sandbox contract call', {
+              contractId,
+              functionName: fn.name,
+            });
+          }
         } else {
           setReadonlyValue(Object.values(final));
         }
       }}
     >
       {({ handleSubmit, handleChange, values, errors, setFieldValue }) => {
+        const postConditionMode = values.postConditionMode ?? PostConditionMode.Allow;
         return (
           <Section
             overflowY="visible"
@@ -239,33 +257,28 @@ export const FunctionView: FC<FunctionViewProps> = ({ fn, contractId, cancelButt
               <Box p={4}>
                 <Form onSubmit={handleSubmit}>
                   <Stack gap={4}>
-                    <Flex justifyContent="flex-end" alignItems="center" gap={2}>
-                      <Text fontSize="sm">
-                        {values.postConditionMode === PostConditionMode.Deny
-                          ? 'Deny Mode'
-                          : 'Allow Mode'}
-                      </Text>
-                      <Switch
-                        variant="redesignPrimary"
-                        size="small"
-                        id="post-condition-mode"
-                        disabled={isReadOnly}
-                        onChange={() => {
-                          setFieldValue(
-                            'postConditionMode',
-                            values.postConditionMode === PostConditionMode.Deny
-                              ? PostConditionMode.Allow
-                              : PostConditionMode.Deny
-                          );
-                        }}
-                        checked={values.postConditionMode === PostConditionMode.Allow}
-                      />
-                      <Tooltip content="Allow mode is less secure than Deny mode. Allow mode permits asset transfers that are not covered by post conditions. In Deny mode no other asset transfers are permitted besides those named in the post conditions">
-                        <Icon h={5} w={5}>
-                          <Info />
-                        </Icon>
-                      </Tooltip>
-                    </Flex>
+                    {!isReadOnly && (
+                      <Stack gap={3}>
+                        <Flex justifyContent="flex-end" alignItems="center" gap={2} flexWrap="wrap">
+                          <Text fontSize="sm">Post-conditions:</Text>
+                          <Select
+                            defaultValue={[postConditionModeNames[postConditionMode]]}
+                            items={postConditionModeOptions}
+                            label="Post-condition mode"
+                            onValueChange={details => {
+                              const mode = postConditionModeFromName(details.value[0]);
+                              if (mode == null) return;
+                              setFieldValue('postConditionMode', mode);
+                            }}
+                            size="sm"
+                          />
+                        </Flex>
+                        <Alert
+                          status="neutral"
+                          description={postConditionModeDescriptions[postConditionMode]}
+                        />
+                      </Stack>
+                    )}
                     {fn.args.length && (
                       <>
                         {fn.args.map(({ name, type }) => (

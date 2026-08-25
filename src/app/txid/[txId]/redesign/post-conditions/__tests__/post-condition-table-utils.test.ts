@@ -33,6 +33,11 @@ describe('getAmount', () => {
     expect(getAmount(pc)).toBe('1100000');
   });
 
+  test('returns empty string for pox, which has no amount', () => {
+    const pc: any = { type: 'pox', condition_code: 'performed' };
+    expect(getAmount(pc)).toBe('');
+  });
+
   test('returns empty string for unknown type', () => {
     const pc: any = { type: 'unknown', amount: '1000' };
     expect(getAmount(pc)).toBe('');
@@ -54,7 +59,14 @@ describe('getPostConditionCellText', () => {
     expect(getPostConditionCellText('not_sent', 'staking')).toBe('Must not stake');
   });
 
+  test('uses PoX action wording for pox post-conditions', () => {
+    expect(getPostConditionCellText('not_performed', 'pox')).toBe('Must not perform PoX action');
+    expect(getPostConditionCellText('maybe_performed', 'pox')).toBe('May perform PoX action');
+    expect(getPostConditionCellText('performed', 'pox')).toBe('Must perform PoX action');
+  });
+
   test('falls back for unknown condition codes', () => {
     expect(getPostConditionCellText('bogus' as any, 'stx')).toBe('Undefined post condition code');
+    expect(getPostConditionCellText('bogus' as any, 'pox')).toBe('Undefined post condition code');
   });
 });

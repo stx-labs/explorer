@@ -4,7 +4,7 @@ import { logError } from '@/common/utils/error-utils';
 
 import { request } from '@stacks/connect';
 import { NetworkString } from '@stacks/connect/dist/types/methods';
-import { Cl, PostCondition, PostConditionModeName } from '@stacks/transactions';
+import { Cl, PostCondition, PostConditionModeName, postConditionToHex } from '@stacks/transactions';
 
 const formatClarityArgs = (args: any[]): any[] => {
   return args.map(arg => {
@@ -86,7 +86,13 @@ export const callContract = async (params: {
       functionName: params.functionName,
       functionArgs: clarityArgs,
       network: params.network || 'mainnet',
-      postConditions: params.postConditions,
+      // Serialize here rather than handing objects to connect: 8.1.9 only knows
+      // stx/ft/nft post-conditions and routes anything else — the pox-5 staking
+      // and pox types — through Cl.serialize, which throws. This produces the
+      // same hex connect would, and stays correct once it can do it itself.
+      postConditions: params.postConditions?.map(postCondition =>
+        typeof postCondition === 'string' ? postCondition : postConditionToHex(postCondition)
+      ),
       postConditionMode: params.postConditionMode,
     });
 

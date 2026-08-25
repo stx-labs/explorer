@@ -15,7 +15,18 @@ export interface StakingPostCondition {
   amount: string;
 }
 
-export type PostConditionWithStaking = PostCondition | StakingPostCondition;
+export type PoxPostConditionConditionCode = 'not_performed' | 'maybe_performed' | 'performed';
+
+// pox-5 also adds a `pox` post-condition covering PoX actions that don't change
+// locking status (unstake, update-bond-registration, ...). It carries neither an
+// asset nor an amount, only whether the action may happen.
+export interface PoxPostCondition {
+  type: 'pox';
+  principal: PostConditionPrincipal;
+  condition_code: PoxPostConditionConditionCode;
+}
+
+export type ExtendedPostCondition = PostCondition | StakingPostCondition | PoxPostCondition;
 
 type PostConditionNonFungibleConditionCode = Extract<
   Transaction['post_conditions'][number],
@@ -24,9 +35,10 @@ type PostConditionNonFungibleConditionCode = Extract<
 
 export type PostConditionConditionCode =
   | PostConditionFungibleConditionCode
-  | PostConditionNonFungibleConditionCode;
+  | PostConditionNonFungibleConditionCode
+  | PoxPostConditionConditionCode;
 
-export function getAmount(postCondition: PostConditionWithStaking): string {
+export function getAmount(postCondition: ExtendedPostCondition): string {
   if (postCondition.type === 'stx') {
     return postCondition.amount || '';
   }
@@ -43,10 +55,27 @@ export function getAmount(postCondition: PostConditionWithStaking): string {
   return '';
 }
 
+function getPoxPostConditionCellText(postConditionCode: PostConditionConditionCode): string {
+  if (postConditionCode === 'not_performed') {
+    return 'Must not perform PoX action';
+  }
+  if (postConditionCode === 'maybe_performed') {
+    return 'May perform PoX action';
+  }
+  if (postConditionCode === 'performed') {
+    return 'Must perform PoX action';
+  }
+  return 'Undefined post condition code';
+}
+
 export function getPostConditionCellText(
   postConditionCode: PostConditionConditionCode,
-  postConditionType: PostConditionWithStaking['type']
+  postConditionType: ExtendedPostCondition['type']
 ): string {
+  if (postConditionType === 'pox') {
+    return getPoxPostConditionCellText(postConditionCode);
+  }
+
   const verb = postConditionType === 'staking' ? 'stake' : 'transfer';
   const verbThirdPerson = postConditionType === 'staking' ? 'Stakes' : 'Transfers';
   if (postConditionCode === 'sent_equal_to') {

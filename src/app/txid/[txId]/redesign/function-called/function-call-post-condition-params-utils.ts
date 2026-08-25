@@ -1,6 +1,5 @@
 import { logError } from '@/common/utils/error-utils';
 import { isUint128 } from '@/common/utils/number-utils';
-import { reverseRecord } from '@/common/utils/object-utils';
 
 import {
   Cl,
@@ -13,13 +12,20 @@ import {
   PostCondition,
   PostConditionMode,
   PostConditionType,
+  PoxComparator,
+  PoxConditionCode,
+  PoxPostCondition,
+  StakingPostCondition,
   StxPostCondition,
   validateStacksAddress,
 } from '@stacks/transactions';
 
 import { FunctionFormikState } from './FunctionCallForm';
 
-export type PostConditionConditionCode = FungibleConditionCode | NonFungibleConditionCode;
+export type PostConditionConditionCode =
+  | FungibleConditionCode
+  | NonFungibleConditionCode
+  | PoxConditionCode;
 
 export function isFungibleConditionCode(
   code: PostConditionConditionCode
@@ -50,6 +56,23 @@ export function fungibleConditionCodeToComparator(code: FungibleConditionCode): 
   }
 }
 
+export function isPoxConditionCode(code: PostConditionConditionCode): code is PoxConditionCode {
+  return Object.values(PoxConditionCode).includes(code as PoxConditionCode);
+}
+
+export function poxConditionCodeToComparator(code: PoxConditionCode): PoxComparator {
+  switch (code) {
+    case PoxConditionCode.WillNotPerform:
+      return 'will-not-perform';
+    case PoxConditionCode.MayPerform:
+      return 'may-perform';
+    case PoxConditionCode.WillPerform:
+      return 'will-perform';
+    default:
+      return 'will-perform';
+  }
+}
+
 export function nonFungibleConditionCodeToComparator(
   code: NonFungibleConditionCode
 ): NonFungibleComparator {
@@ -58,13 +81,34 @@ export function nonFungibleConditionCodeToComparator(
       return 'sent';
     case NonFungibleConditionCode.DoesNotSend:
       return 'not-sent';
+    case NonFungibleConditionCode.MaybeSent:
+      return 'maybe-sent';
     default:
       return 'sent';
   }
 }
 
+// STX, Fungible and Staking all take fungible condition codes; NonFungible and PoX
+// have their own. Without this check a code left over from a previously selected
+// type passes validation, matches no branch in getPostCondition, and the call is
+// submitted in deny mode with no post-conditions at all.
+export function isConditionCodeValidForType(
+  postConditionType: PostConditionType,
+  code: PostConditionConditionCode
+): boolean {
+  if (postConditionType === PostConditionType.NonFungible) {
+    return isNonFungibleConditionCode(code);
+  }
+  if (postConditionType === PostConditionType.PoX) {
+    return isPoxConditionCode(code);
+  }
+  return isFungibleConditionCode(code);
+}
+
 export interface PostConditionParameters {
-  postConditionMode?: PostConditionMode;
+  // Required: both forms always initialize it, and leaving it optional forced
+  // every consumer into a fallback, one of which silently downgraded Deny to Allow
+  postConditionMode: PostConditionMode;
   postConditionType?: PostConditionType;
   postConditionAddress?: string;
   postConditionConditionCode?: PostConditionConditionCode;
@@ -99,7 +143,18 @@ export const postConditionParameterMap: Record<
     'postConditionAssetContractName',
     'postConditionAssetName',
   ],
+  // pox-5 staking and PoX post-conditions constrain the principal itself rather
+  // than an asset, so they take no asset parameters
+  [PostConditionType.Staking]: [
+    'postConditionAddress',
+    'postConditionConditionCode',
+    'postConditionAmount',
+  ],
+  [PostConditionType.PoX]: ['postConditionAddress', 'postConditionConditionCode'],
 };
+
+// Building a post condition doesn't depend on the mode; only the form does
+export type PostConditionBuilderParameters = Omit<PostConditionParameters, 'postConditionMode'>;
 
 export const postConditionParametersThatUseSelect: (keyof PostConditionParameters)[] = [
   'postConditionMode',
@@ -134,7 +189,7 @@ export const postConditionParameterLabels: Record<string, string> = {
 };
 
 // Validation functions for each post condition type
-function validateStxPostConditionParams(params: PostConditionParameters): boolean {
+function validateStxPostConditionParams(params: PostConditionBuilderParameters): boolean {
   const {
     postConditionType,
     postConditionAddress,
@@ -152,7 +207,7 @@ function validateStxPostConditionParams(params: PostConditionParameters): boolea
   );
 }
 
-function validateFungiblePostConditionParams(params: PostConditionParameters): boolean {
+function validateFungiblePostConditionParams(params: PostConditionBuilderParameters): boolean {
   const {
     postConditionType,
     postConditionAddress,
@@ -176,7 +231,7 @@ function validateFungiblePostConditionParams(params: PostConditionParameters): b
   );
 }
 
-function validateNonFungiblePostConditionParams(params: PostConditionParameters): boolean {
+function validateNonFungiblePostConditionParams(params: PostConditionBuilderParameters): boolean {
   const {
     postConditionType,
     postConditionAddress,
@@ -197,14 +252,45 @@ function validateNonFungiblePostConditionParams(params: PostConditionParameters)
   );
 }
 
+function validateStakingPostConditionParams(params: PostConditionBuilderParameters): boolean {
+  const {
+    postConditionType,
+    postConditionAddress,
+    postConditionConditionCode,
+    postConditionAmount,
+  } = params;
+
+  return (
+    postConditionType === PostConditionType.Staking &&
+    !!postConditionAddress &&
+    !!postConditionConditionCode &&
+    postConditionAmount != null &&
+    isUint128(postConditionAmount) &&
+    isFungibleConditionCode(postConditionConditionCode)
+  );
+}
+
+function validatePoxPostConditionParams(params: PostConditionBuilderParameters): boolean {
+  const { postConditionType, postConditionAddress, postConditionConditionCode } = params;
+
+  return (
+    postConditionType === PostConditionType.PoX &&
+    !!postConditionAddress &&
+    !!postConditionConditionCode &&
+    isPoxConditionCode(postConditionConditionCode)
+  );
+}
+
 enum PCType {
   STX = 'stx-postcondition',
   Fungible = 'ft-postcondition',
   NonFungible = 'nft-postcondition',
+  Staking = 'staking-postcondition',
+  PoX = 'pox-postcondition',
 }
 
 // Post condition creation functions
-function createStxPostCondition(params: PostConditionParameters): StxPostCondition {
+function createStxPostCondition(params: PostConditionBuilderParameters): StxPostCondition {
   const { postConditionAddress, postConditionConditionCode, postConditionAmount } = params;
 
   return {
@@ -217,7 +303,9 @@ function createStxPostCondition(params: PostConditionParameters): StxPostConditi
   } as StxPostCondition;
 }
 
-function createFungiblePostCondition(params: PostConditionParameters): FungiblePostCondition {
+function createFungiblePostCondition(
+  params: PostConditionBuilderParameters
+): FungiblePostCondition {
   const {
     postConditionAddress,
     postConditionConditionCode,
@@ -238,7 +326,9 @@ function createFungiblePostCondition(params: PostConditionParameters): FungibleP
   } as FungiblePostCondition;
 }
 
-function createNonFungiblePostCondition(params: PostConditionParameters): NonFungiblePostCondition {
+function createNonFungiblePostCondition(
+  params: PostConditionBuilderParameters
+): NonFungiblePostCondition {
   const {
     postConditionAddress,
     postConditionConditionCode,
@@ -257,8 +347,31 @@ function createNonFungiblePostCondition(params: PostConditionParameters): NonFun
     assetId: Cl.stringUtf8(postConditionAssetName!),
   } as NonFungiblePostCondition;
 }
+function createStakingPostCondition(params: PostConditionBuilderParameters): StakingPostCondition {
+  const { postConditionAddress, postConditionConditionCode, postConditionAmount } = params;
+
+  return {
+    type: PCType.Staking,
+    address: postConditionAddress!,
+    condition: fungibleConditionCodeToComparator(
+      postConditionConditionCode as FungibleConditionCode
+    ),
+    amount: postConditionAmount!.toString(),
+  } as StakingPostCondition;
+}
+
+function createPoxPostCondition(params: PostConditionBuilderParameters): PoxPostCondition {
+  const { postConditionAddress, postConditionConditionCode } = params;
+
+  return {
+    type: PCType.PoX,
+    address: postConditionAddress!,
+    condition: poxConditionCodeToComparator(postConditionConditionCode as PoxConditionCode),
+  } as PoxPostCondition;
+}
+
 export function getPostCondition(
-  postConditionParameters: PostConditionParameters
+  postConditionParameters: PostConditionBuilderParameters
 ): PostCondition | undefined {
   // STX Post Condition
   if (validateStxPostConditionParams(postConditionParameters)) {
@@ -273,6 +386,16 @@ export function getPostCondition(
   // Non-Fungible Token Post Condition
   if (validateNonFungiblePostConditionParams(postConditionParameters)) {
     return createNonFungiblePostCondition(postConditionParameters);
+  }
+
+  // Staking Post Condition (pox-5)
+  if (validateStakingPostConditionParams(postConditionParameters)) {
+    return createStakingPostCondition(postConditionParameters);
+  }
+
+  // PoX Post Condition (pox-5)
+  if (validatePoxPostConditionParams(postConditionParameters)) {
+    return createPoxPostCondition(postConditionParameters);
   }
 
   // Handle error case
@@ -311,6 +434,16 @@ export const checkPostConditionParameters = (
       errors[key] = 'Invalid Stacks address';
       return;
     }
+    if (
+      key === 'postConditionConditionCode' &&
+      !isConditionCodeValidForType(
+        formikState.postConditionType as PostConditionType,
+        formikState[key]
+      )
+    ) {
+      errors[key] = 'Condition code does not match the selected post condition type';
+      return;
+    }
     if (key === 'postConditionAmount') {
       if (
         typeof formikState[key] !== 'number' ||
@@ -333,27 +466,44 @@ export interface Option<V extends string, L extends string> {
 export type PostConditionTypeLabel =
   | 'STX Post Condition'
   | 'Fungible Post Condition'
-  | 'Non-Fungible Post Condition';
+  | 'Non-Fungible Post Condition'
+  | 'Staking Post Condition'
+  | 'PoX Post Condition';
 
 export const PostConditionTypeLabelMap: Record<PostConditionType, PostConditionTypeLabel> = {
   [PostConditionType.STX]: 'STX Post Condition',
   [PostConditionType.Fungible]: 'Fungible Post Condition',
   [PostConditionType.NonFungible]: 'Non-Fungible Post Condition',
+  [PostConditionType.Staking]: 'Staking Post Condition',
+  [PostConditionType.PoX]: 'PoX Post Condition',
 };
 
 export type PostConditionTypeValue =
   | 'stx-post-condition'
   | 'fungible-post-condition'
-  | 'non-fungible-post-condition';
+  | 'non-fungible-post-condition'
+  | 'staking-post-condition'
+  | 'pox-post-condition';
 
 export const PostConditionTypeValueMap: Record<PostConditionType, PostConditionTypeValue> = {
   [PostConditionType.STX]: 'stx-post-condition',
   [PostConditionType.Fungible]: 'fungible-post-condition',
   [PostConditionType.NonFungible]: 'non-fungible-post-condition',
+  [PostConditionType.Staking]: 'staking-post-condition',
+  [PostConditionType.PoX]: 'pox-post-condition',
 };
 
+// Spelled out rather than reversed: `reverseRecord` goes through `Object.entries`,
+// which stringifies the numeric enum values, and a string type silently fails every
+// `=== PostConditionType.X` comparison in getPostCondition.
 export const PostConditionTypeValueMapReversed: Record<PostConditionTypeValue, PostConditionType> =
-  reverseRecord(PostConditionTypeValueMap);
+  {
+    'stx-post-condition': PostConditionType.STX,
+    'fungible-post-condition': PostConditionType.Fungible,
+    'non-fungible-post-condition': PostConditionType.NonFungible,
+    'staking-post-condition': PostConditionType.Staking,
+    'pox-post-condition': PostConditionType.PoX,
+  };
 
 export const PostConditionTypeOptions = [
   {
@@ -368,16 +518,28 @@ export const PostConditionTypeOptions = [
     label: PostConditionTypeLabelMap[PostConditionType.NonFungible],
     value: PostConditionTypeValueMap[PostConditionType.NonFungible],
   },
+  {
+    label: PostConditionTypeLabelMap[PostConditionType.Staking],
+    value: PostConditionTypeValueMap[PostConditionType.Staking],
+  },
+  {
+    label: PostConditionTypeLabelMap[PostConditionType.PoX],
+    value: PostConditionTypeValueMap[PostConditionType.PoX],
+  },
 ];
 
 export type PostConditionConditionCodeLabel =
   | 'Does not send'
   | 'Sends'
+  | 'May send'
   | 'Equal'
   | 'Greater'
   | 'GreaterEqual'
   | 'Less'
-  | 'LessEqual';
+  | 'LessEqual'
+  | 'Will not perform'
+  | 'May perform'
+  | 'Will perform';
 
 export const PostConditionConditionCodeLabelMap: Record<
   PostConditionConditionCode,
@@ -385,21 +547,29 @@ export const PostConditionConditionCodeLabelMap: Record<
 > = {
   [NonFungibleConditionCode.DoesNotSend]: 'Does not send',
   [NonFungibleConditionCode.Sends]: 'Sends',
+  [NonFungibleConditionCode.MaybeSent]: 'May send',
   [FungibleConditionCode.Equal]: 'Equal',
   [FungibleConditionCode.Greater]: 'Greater',
   [FungibleConditionCode.GreaterEqual]: 'GreaterEqual',
   [FungibleConditionCode.Less]: 'Less',
   [FungibleConditionCode.LessEqual]: 'LessEqual',
+  [PoxConditionCode.WillNotPerform]: 'Will not perform',
+  [PoxConditionCode.MayPerform]: 'May perform',
+  [PoxConditionCode.WillPerform]: 'Will perform',
 };
 
 export type PostConditionConditionCodeValue =
   | 'does-not-send'
   | 'sends'
+  | 'may-send'
   | 'equal'
   | 'greater'
   | 'greater-equal'
   | 'less'
-  | 'less-equal';
+  | 'less-equal'
+  | 'will-not-perform'
+  | 'may-perform'
+  | 'will-perform';
 
 export const PostConditionConditionCodeValueMap: Record<
   PostConditionConditionCode,
@@ -407,17 +577,34 @@ export const PostConditionConditionCodeValueMap: Record<
 > = {
   [NonFungibleConditionCode.DoesNotSend]: 'does-not-send',
   [NonFungibleConditionCode.Sends]: 'sends',
+  [NonFungibleConditionCode.MaybeSent]: 'may-send',
   [FungibleConditionCode.Equal]: 'equal',
   [FungibleConditionCode.Greater]: 'greater',
   [FungibleConditionCode.GreaterEqual]: 'greater-equal',
   [FungibleConditionCode.Less]: 'less',
   [FungibleConditionCode.LessEqual]: 'less-equal',
+  [PoxConditionCode.WillNotPerform]: 'will-not-perform',
+  [PoxConditionCode.MayPerform]: 'may-perform',
+  [PoxConditionCode.WillPerform]: 'will-perform',
 };
 
+// Spelled out for the same reason as PostConditionTypeValueMapReversed above
 export const PostConditionConditionCodeValueMapReversed: Record<
   PostConditionConditionCodeValue,
   PostConditionConditionCode
-> = reverseRecord(PostConditionConditionCodeValueMap);
+> = {
+  'does-not-send': NonFungibleConditionCode.DoesNotSend,
+  sends: NonFungibleConditionCode.Sends,
+  'may-send': NonFungibleConditionCode.MaybeSent,
+  equal: FungibleConditionCode.Equal,
+  greater: FungibleConditionCode.Greater,
+  'greater-equal': FungibleConditionCode.GreaterEqual,
+  less: FungibleConditionCode.Less,
+  'less-equal': FungibleConditionCode.LessEqual,
+  'will-not-perform': PoxConditionCode.WillNotPerform,
+  'may-perform': PoxConditionCode.MayPerform,
+  'will-perform': PoxConditionCode.WillPerform,
+};
 
 export function getPostConditionConditionCodeOptions(
   postConditionType: PostConditionType
@@ -431,6 +618,26 @@ export function getPostConditionConditionCodeOptions(
       {
         label: PostConditionConditionCodeLabelMap[NonFungibleConditionCode.Sends],
         value: PostConditionConditionCodeValueMap[NonFungibleConditionCode.Sends],
+      },
+      {
+        label: PostConditionConditionCodeLabelMap[NonFungibleConditionCode.MaybeSent],
+        value: PostConditionConditionCodeValueMap[NonFungibleConditionCode.MaybeSent],
+      },
+    ];
+  }
+  if (postConditionType === PostConditionType.PoX) {
+    return [
+      {
+        label: PostConditionConditionCodeLabelMap[PoxConditionCode.WillNotPerform],
+        value: PostConditionConditionCodeValueMap[PoxConditionCode.WillNotPerform],
+      },
+      {
+        label: PostConditionConditionCodeLabelMap[PoxConditionCode.MayPerform],
+        value: PostConditionConditionCodeValueMap[PoxConditionCode.MayPerform],
+      },
+      {
+        label: PostConditionConditionCodeLabelMap[PoxConditionCode.WillPerform],
+        value: PostConditionConditionCodeValueMap[PoxConditionCode.WillPerform],
       },
     ];
   }
@@ -484,7 +691,10 @@ export function extractPostConditionParams(values: FunctionFormikState): PostCon
   } = values;
 
   return {
-    postConditionMode: postConditionMode != null ? Number(postConditionMode) : undefined,
+    // Fall back to the most restrictive mode: an absent mode must never widen
+    // what a signed transaction is allowed to move
+    postConditionMode:
+      postConditionMode != null ? Number(postConditionMode) : PostConditionMode.Deny,
     postConditionType: postConditionType != null ? Number(postConditionType) : undefined,
     postConditionAddress,
     postConditionConditionCode:

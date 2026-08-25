@@ -1,7 +1,7 @@
 import { Box, Flex, Icon, Stack } from '@chakra-ui/react';
 import { CaretDown } from '@phosphor-icons/react';
 import { Field, FormikErrors } from 'formik';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 
 import {
   Cl,
@@ -15,6 +15,10 @@ import {
   PostCondition,
   PostConditionMode,
   PostConditionType,
+  PoxComparator,
+  PoxConditionCode,
+  PoxPostCondition,
+  StakingPostCondition,
   StxPostCondition,
   isClarityAbiOptional,
   isClarityAbiPrimitive,
@@ -29,7 +33,10 @@ import { Caption } from '../../../../ui/typography';
 import { NonTupleValueType } from '../../types/values';
 import { FormikSetFieldValueFunction, FunctionFormikState } from './FunctionView';
 
-type PostConditionConditionCode = FungibleConditionCode | NonFungibleConditionCode;
+type PostConditionConditionCode =
+  | FungibleConditionCode
+  | NonFungibleConditionCode
+  | PoxConditionCode;
 
 function isFungibleConditionCode(code: PostConditionConditionCode): code is FungibleConditionCode {
   return Object.values(FungibleConditionCode).includes(code as FungibleConditionCode);
@@ -58,6 +65,36 @@ function fungibleConditionCodeToComparator(code: FungibleConditionCode): Fungibl
   }
 }
 
+function isConditionCodeValidForType(
+  postConditionType: PostConditionType,
+  code: PostConditionConditionCode
+): boolean {
+  if (postConditionType === PostConditionType.NonFungible) {
+    return isNonFungibleConditionCode(code);
+  }
+  if (postConditionType === PostConditionType.PoX) {
+    return isPoxConditionCode(code);
+  }
+  return isFungibleConditionCode(code);
+}
+
+function isPoxConditionCode(code: PostConditionConditionCode): code is PoxConditionCode {
+  return Object.values(PoxConditionCode).includes(code as PoxConditionCode);
+}
+
+function poxConditionCodeToComparator(code: PoxConditionCode): PoxComparator {
+  switch (code) {
+    case PoxConditionCode.WillNotPerform:
+      return 'will-not-perform';
+    case PoxConditionCode.MayPerform:
+      return 'may-perform';
+    case PoxConditionCode.WillPerform:
+      return 'will-perform';
+    default:
+      return 'will-perform';
+  }
+}
+
 function nonFungibleConditionCodeToComparator(
   code: NonFungibleConditionCode
 ): NonFungibleComparator {
@@ -66,6 +103,8 @@ function nonFungibleConditionCodeToComparator(
       return 'sent';
     case NonFungibleConditionCode.DoesNotSend:
       return 'not-sent';
+    case NonFungibleConditionCode.MaybeSent:
+      return 'maybe-sent';
     default:
       return 'sent';
   }
@@ -105,6 +144,14 @@ export const postConditionParameterMap: Record<PostConditionType, PostConditionP
     'postConditionAssetContractName',
     'postConditionAssetName',
   ],
+  // pox-5 staking and PoX post-conditions constrain the principal itself rather
+  // than an asset, so they take no asset parameters
+  [PostConditionType.Staking]: [
+    'postConditionAddress',
+    'postConditionConditionCode',
+    'postConditionAmount',
+  ],
+  [PostConditionType.PoX]: ['postConditionAddress', 'postConditionConditionCode'],
 };
 
 export function isPostConditionParameter(key: string): key is keyof PostConditionParameters {
@@ -134,6 +181,8 @@ export const PostConditionOptions = [
   { label: 'STX Post Condition', value: PostConditionType.STX },
   { label: 'Fungible Post Condition', value: PostConditionType.Fungible },
   { label: 'Non-Fungible Post Condition', value: PostConditionType.NonFungible },
+  { label: 'Staking Post Condition', value: PostConditionType.Staking },
+  { label: 'PoX Post Condition', value: PostConditionType.PoX },
 ];
 
 export function getPostCondition(
@@ -199,14 +248,43 @@ export function getPostCondition(
       assetId: Cl.stringUtf8(postConditionAssetName),
     } as NonFungiblePostCondition;
   } else if (
+    postConditionType === PostConditionType.Staking &&
+    postConditionAddress &&
+    postConditionConditionCode &&
+    postConditionAmount != null &&
+    isUint128(postConditionAmount) &&
+    isFungibleConditionCode(postConditionConditionCode)
+  ) {
+    postCondition = {
+      type: 'staking-postcondition',
+      address: postConditionAddress,
+      condition: fungibleConditionCodeToComparator(postConditionConditionCode),
+      amount: postConditionAmount.toString(),
+    } as StakingPostCondition;
+  } else if (
+    postConditionType === PostConditionType.PoX &&
+    postConditionAddress &&
+    postConditionConditionCode &&
+    isPoxConditionCode(postConditionConditionCode)
+  ) {
+    postCondition = {
+      type: 'pox-postcondition',
+      address: postConditionAddress,
+      condition: poxConditionCodeToComparator(postConditionConditionCode),
+    } as PoxPostCondition;
+  } else if (
     postConditionType !== PostConditionType.STX &&
     postConditionType !== PostConditionType.Fungible &&
-    postConditionType !== PostConditionType.NonFungible
+    postConditionType !== PostConditionType.NonFungible &&
+    postConditionType !== PostConditionType.Staking &&
+    postConditionType !== PostConditionType.PoX
   ) {
     throw new Error(`There is no post condition type that matches ${postConditionType}`);
   }
 
-  return [postCondition as PostCondition];
+  // Nothing matched: return an empty list rather than [undefined], which
+  // callContract would otherwise try to serialize
+  return postCondition ? [postCondition as PostCondition] : [];
 }
 
 export const checkFunctionParameters = (fn: ClarityAbiFunction, values: FunctionFormikState) => {
@@ -258,6 +336,16 @@ export const checkPostConditionParameters = (
       errors[key] = 'Invalid Stacks address';
       return;
     }
+    if (
+      key === 'postConditionConditionCode' &&
+      !isConditionCodeValidForType(
+        formikState.postConditionType as PostConditionType,
+        formikState[key]
+      )
+    ) {
+      errors[key] = 'Condition code does not match the selected post condition type';
+      return;
+    }
     if (key === 'postConditionAmount') {
       if (
         typeof formikState[key] !== 'number' ||
@@ -289,6 +377,26 @@ function getPostConditionConditionCodeOptions(
       {
         label: 'Sends',
         value: NonFungibleConditionCode.Sends,
+      },
+      {
+        label: 'May send',
+        value: NonFungibleConditionCode.MaybeSent,
+      },
+    ];
+  }
+  if (postConditionType === PostConditionType.PoX) {
+    return [
+      {
+        label: 'Will not perform',
+        value: PoxConditionCode.WillNotPerform,
+      },
+      {
+        label: 'May perform',
+        value: PoxConditionCode.MayPerform,
+      },
+      {
+        label: 'Will perform',
+        value: PoxConditionCode.WillPerform,
       },
     ];
   }
@@ -367,15 +475,6 @@ export function PostConditionTypeMenu({ onChange }: { onChange: (option: any) =>
     label: 'Select a post condition',
     value: undefined,
   });
-  const options = useMemo(
-    () => [
-      { label: 'STX Post Condition', value: PostConditionType.STX },
-      { label: 'Fungible Post Condition', value: PostConditionType.Fungible },
-      { label: 'Non-Fungible Post Condition', value: PostConditionType.NonFungible },
-    ],
-    []
-  );
-
   return (
     <MenuRoot>
       <Flex gap={2} alignItems="center">
@@ -394,7 +493,7 @@ export function PostConditionTypeMenu({ onChange }: { onChange: (option: any) =>
         </MenuTrigger>
       </Flex>
       <MenuContent>
-        {options.map(option => (
+        {PostConditionOptions.map(option => (
           <MenuItem
             key={option.label}
             onClick={e => {
@@ -425,7 +524,7 @@ export function PostConditionForm({
 }) {
   return (
     <>
-      {values.postConditionMode === PostConditionMode.Deny && (
+      {values.postConditionMode !== PostConditionMode.Allow && (
         <Stack gap={4}>
           <Stack gap={2}>
             <PostConditionTypeMenu

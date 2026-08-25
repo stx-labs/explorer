@@ -1,7 +1,12 @@
-import { FungibleConditionCode, PostConditionMode, PostConditionType } from '@stacks/transactions';
+import {
+  FungibleConditionCode,
+  PostConditionMode,
+  PostConditionType,
+  PoxConditionCode,
+} from '@stacks/transactions';
 
 import { FunctionFormikState } from '../FunctionView';
-import { checkPostConditionParameters } from '../PostConditionForm';
+import { checkPostConditionParameters, getPostCondition } from '../PostConditionForm';
 
 describe('checkPostConditionParameters', () => {
   // TODO: fix this test
@@ -118,5 +123,39 @@ describe('checkPostConditionParameters', () => {
       postConditionAddress: 'Invalid Stacks address',
       postConditionAssetContractName: 'Asset Contract Name is required',
     });
+  });
+});
+
+describe('getPostCondition', () => {
+  const address = 'SP2J6ZY48GV1EZ5V2V5RB9MP66SW86PYKKNRV9EJ7';
+
+  it('builds the pox-5 staking and pox post conditions', () => {
+    expect(
+      getPostCondition({
+        postConditionType: PostConditionType.Staking,
+        postConditionAddress: address,
+        postConditionConditionCode: FungibleConditionCode.LessEqual,
+        postConditionAmount: 1100000,
+      })
+    ).toEqual([{ type: 'staking-postcondition', address, condition: 'lte', amount: '1100000' }]);
+
+    expect(
+      getPostCondition({
+        postConditionType: PostConditionType.PoX,
+        postConditionAddress: address,
+        postConditionConditionCode: PoxConditionCode.WillPerform,
+      })
+    ).toEqual([{ type: 'pox-postcondition', address, condition: 'will-perform' }]);
+  });
+
+  it('returns an empty list rather than [undefined] when nothing matches', () => {
+    expect(
+      getPostCondition({
+        postConditionType: PostConditionType.PoX,
+        postConditionAddress: address,
+        // a code left behind by an earlier fungible selection
+        postConditionConditionCode: FungibleConditionCode.Equal,
+      })
+    ).toEqual([]);
   });
 });
