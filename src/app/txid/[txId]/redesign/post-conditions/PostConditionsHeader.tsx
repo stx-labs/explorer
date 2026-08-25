@@ -30,7 +30,10 @@ export function PostConditionsHeader({
 }: {
   postConditionMode: PostConditionMode | 'originator';
 }) {
-  const { label, description } = postConditionModeMap[postConditionMode];
+  const { label, description } = postConditionModeMap[postConditionMode] ?? {
+    label: postConditionMode,
+    description: 'This transaction uses a post-condition mode the explorer does not recognize yet.',
+  };
   return (
     <Flex
       gap={2.5}
