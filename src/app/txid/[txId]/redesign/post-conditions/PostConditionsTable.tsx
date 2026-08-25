@@ -58,12 +58,6 @@ const columnDefinitions: ColumnDef<PostConditionsTableData>[] = [
       <EllipsisText textStyle="text-medium-sm">{info.getValue() as string}</EllipsisText>
     ),
     enableSorting: false,
-    // Sized to clear the longest string this column can render — the
-    // "Undefined post condition code" fallback at ~200px, ahead of the new
-    // "Must not perform PoX action" at ~187px. EllipsisText has no tooltip, so
-    // anything that overflows is lost rather than recoverable. The binding case
-    // is the narrow viewport, where the table is space-constrained and the
-    // column is pinned to exactly this width with 8px/side cell padding.
     minSize: 230,
     maxSize: 230,
   },

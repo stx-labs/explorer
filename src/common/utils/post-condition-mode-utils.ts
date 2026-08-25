@@ -6,9 +6,6 @@ export const postConditionModeNames: Record<PostConditionMode, PostConditionMode
   [PostConditionMode.Deny]: 'deny',
 };
 
-// Spelled out rather than derived, so the modes stay numbers: reversing a record
-// keyed by a numeric enum yields string values, and a string mode silently fails
-// every `=== PostConditionMode.X` comparison downstream.
 const postConditionModeByName: Record<PostConditionModeName, PostConditionMode> = {
   allow: PostConditionMode.Allow,
   originator: PostConditionMode.Originator,
@@ -16,14 +13,11 @@ const postConditionModeByName: Record<PostConditionModeName, PostConditionMode> 
 };
 
 export function postConditionModeFromName(name: string | undefined): PostConditionMode | undefined {
-  // hasOwn, not a bare index: a bare lookup returns inherited members for keys
-  // like 'constructor', which are non-null and so slip past callers' null checks
   return name != null && Object.hasOwn(postConditionModeByName, name)
     ? postConditionModeByName[name as PostConditionModeName]
     : undefined;
 }
 
-// Ordered least to most restrictive, so the modes read as a spectrum in the picker
 export const postConditionModeOptions: { value: PostConditionModeName; label: string }[] = [
   { value: 'allow', label: 'Allow mode' },
   { value: 'originator', label: 'Originator mode' },

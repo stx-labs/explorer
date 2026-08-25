@@ -198,8 +198,6 @@ export const FunctionView: FC<FunctionViewProps> = ({ fn, contractId, cancelButt
           postConditionAssetName,
         } = values;
 
-        // Resolved once: two consumers below read this, and an undefined mode
-        // must not let one attach post-conditions while the other sends 'allow'
         const submittedPostConditionMode = postConditionMode ?? PostConditionMode.Deny;
 
         if (fn.access === 'public') {

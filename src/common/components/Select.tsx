@@ -31,9 +31,6 @@ export function Select<V extends string, L extends string>({
   defaultValue?: V[];
   placeholder?: string;
   selectProps?: SelectRootProps<V, L>;
-  // Accessible name for the control. The underlying select always emits
-  // aria-labelledby pointing at its label, so without one that reference dangles
-  // and the trigger announces only its current value.
   label?: string;
 } & SelectVariantProps) {
   const positioning = selectProps?.positioning;

@@ -17,9 +17,6 @@ export interface StakingPostCondition {
 
 export type PoxPostConditionConditionCode = 'not_performed' | 'maybe_performed' | 'performed';
 
-// pox-5 also adds a `pox` post-condition covering PoX actions that don't change
-// locking status (unstake, update-bond-registration, ...). It carries neither an
-// asset nor an amount, only whether the action may happen.
 export interface PoxPostCondition {
   type: 'pox';
   principal: PostConditionPrincipal;

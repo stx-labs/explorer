@@ -153,7 +153,6 @@ describe('getPostCondition', () => {
       getPostCondition({
         postConditionType: PostConditionType.PoX,
         postConditionAddress: address,
-        // a code left behind by an earlier fungible selection
         postConditionConditionCode: FungibleConditionCode.Equal,
       })
     ).toEqual([]);

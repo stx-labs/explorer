@@ -38,10 +38,6 @@ export function PostConditionForm({
     ): T extends React.ChangeEvent<any> ? void : (e: string | React.ChangeEvent<any>) => void;
   };
 }) {
-  // Formik holds whatever the Select wrote, which can be the string form of the
-  // enum. getPostConditionConditionCodeOptions compares with ===, so without this
-  // coercion PoX and Non-Fungible silently fall through to the fungible codes and
-  // their post-conditions can never be built.
   const postConditionType =
     values.postConditionType != null
       ? (Number(values.postConditionType) as PostConditionType)

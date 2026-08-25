@@ -88,10 +88,6 @@ export function nonFungibleConditionCodeToComparator(
   }
 }
 
-// STX, Fungible and Staking all take fungible condition codes; NonFungible and PoX
-// have their own. Without this check a code left over from a previously selected
-// type passes validation, matches no branch in getPostCondition, and the call is
-// submitted in deny mode with no post-conditions at all.
 export function isConditionCodeValidForType(
   postConditionType: PostConditionType,
   code: PostConditionConditionCode
@@ -106,8 +102,6 @@ export function isConditionCodeValidForType(
 }
 
 export interface PostConditionParameters {
-  // Required: both forms always initialize it, and leaving it optional forced
-  // every consumer into a fallback, one of which silently downgraded Deny to Allow
   postConditionMode: PostConditionMode;
   postConditionType?: PostConditionType;
   postConditionAddress?: string;
@@ -143,8 +137,6 @@ export const postConditionParameterMap: Record<
     'postConditionAssetContractName',
     'postConditionAssetName',
   ],
-  // pox-5 staking and PoX post-conditions constrain the principal itself rather
-  // than an asset, so they take no asset parameters
   [PostConditionType.Staking]: [
     'postConditionAddress',
     'postConditionConditionCode',
@@ -153,7 +145,6 @@ export const postConditionParameterMap: Record<
   [PostConditionType.PoX]: ['postConditionAddress', 'postConditionConditionCode'],
 };
 
-// Building a post condition doesn't depend on the mode; only the form does
 export type PostConditionBuilderParameters = Omit<PostConditionParameters, 'postConditionMode'>;
 
 export const postConditionParametersThatUseSelect: (keyof PostConditionParameters)[] = [
@@ -388,12 +379,10 @@ export function getPostCondition(
     return createNonFungiblePostCondition(postConditionParameters);
   }
 
-  // Staking Post Condition (pox-5)
   if (validateStakingPostConditionParams(postConditionParameters)) {
     return createStakingPostCondition(postConditionParameters);
   }
 
-  // PoX Post Condition (pox-5)
   if (validatePoxPostConditionParams(postConditionParameters)) {
     return createPoxPostCondition(postConditionParameters);
   }
@@ -493,9 +482,6 @@ export const PostConditionTypeValueMap: Record<PostConditionType, PostConditionT
   [PostConditionType.PoX]: 'pox-post-condition',
 };
 
-// Spelled out rather than reversed: `reverseRecord` goes through `Object.entries`,
-// which stringifies the numeric enum values, and a string type silently fails every
-// `=== PostConditionType.X` comparison in getPostCondition.
 export const PostConditionTypeValueMapReversed: Record<PostConditionTypeValue, PostConditionType> =
   {
     'stx-post-condition': PostConditionType.STX,
@@ -588,7 +574,6 @@ export const PostConditionConditionCodeValueMap: Record<
   [PoxConditionCode.WillPerform]: 'will-perform',
 };
 
-// Spelled out for the same reason as PostConditionTypeValueMapReversed above
 export const PostConditionConditionCodeValueMapReversed: Record<
   PostConditionConditionCodeValue,
   PostConditionConditionCode
@@ -691,8 +676,6 @@ export function extractPostConditionParams(values: FunctionFormikState): PostCon
   } = values;
 
   return {
-    // Fall back to the most restrictive mode: an absent mode must never widen
-    // what a signed transaction is allowed to move
     postConditionMode:
       postConditionMode != null ? Number(postConditionMode) : PostConditionMode.Deny,
     postConditionType: postConditionType != null ? Number(postConditionType) : undefined,

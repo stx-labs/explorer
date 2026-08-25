@@ -30,8 +30,6 @@ export function PostConditionsHeader({
 }: {
   postConditionMode: PostConditionMode | 'originator';
 }) {
-  // A mode the API adds before the explorer knows it should not take down the
-  // whole transaction page
   const { label, description } = postConditionModeMap[postConditionMode] ?? {
     label: postConditionMode,
     description: 'This transaction uses a post-condition mode the explorer does not recognize yet.',

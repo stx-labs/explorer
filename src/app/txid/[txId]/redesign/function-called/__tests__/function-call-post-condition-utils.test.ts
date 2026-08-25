@@ -482,7 +482,6 @@ describe('condition code / post condition type pairing', () => {
       postConditionMode: PostConditionMode.Deny,
       postConditionType: PostConditionType.PoX,
       postConditionAddress: 'SP2J6ZY48GV1EZ5V2V5RB9MP66SW86PYKKNRV9EJ7',
-      // left behind by an earlier fungible selection
       postConditionConditionCode: FungibleConditionCode.Equal,
     });
 
@@ -493,9 +492,6 @@ describe('condition code / post condition type pairing', () => {
 });
 
 describe('wallet serialization', () => {
-  // connect 8.1.9 cannot serialize the pox-5 types itself, so callContract hands it
-  // hex. These assert the objects we build survive that step, and carry the wire
-  // type ids SIP-044 specifies: 0x03 staking, 0x04 pox.
   it('serializes a staking post condition to wire type 0x03', () => {
     const pc = getPostCondition({
       postConditionType: PostConditionType.Staking,

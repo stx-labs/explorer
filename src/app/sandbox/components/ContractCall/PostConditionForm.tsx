@@ -144,8 +144,6 @@ export const postConditionParameterMap: Record<PostConditionType, PostConditionP
     'postConditionAssetContractName',
     'postConditionAssetName',
   ],
-  // pox-5 staking and PoX post-conditions constrain the principal itself rather
-  // than an asset, so they take no asset parameters
   [PostConditionType.Staking]: [
     'postConditionAddress',
     'postConditionConditionCode',
@@ -282,8 +280,6 @@ export function getPostCondition(
     throw new Error(`There is no post condition type that matches ${postConditionType}`);
   }
 
-  // Nothing matched: return an empty list rather than [undefined], which
-  // callContract would otherwise try to serialize
   return postCondition ? [postCondition as PostCondition] : [];
 }
 
