@@ -1,7 +1,6 @@
 import {
   SelectContent,
   SelectControl,
-  SelectHiddenSelect,
   SelectItem,
   SelectLabel,
   SelectRoot,
@@ -81,7 +80,6 @@ export function Select<V extends string, L extends string>({
           <SelectLabel>{label}</SelectLabel>
         </VisuallyHidden>
       ) : null}
-      <SelectHiddenSelect />
       <SelectControl
         ref={controlRef}
         open={open}
