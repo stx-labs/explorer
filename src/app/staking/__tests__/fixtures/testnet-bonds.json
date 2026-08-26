@@ -1,0 +1,138 @@
+[
+  {
+    "index": 4,
+    "pox_version": "pox5",
+    "status": "upcoming",
+    "parameters": {
+      "target_rate_bps": 1000,
+      "stx_value_ratio": 1000,
+      "minimum_stx_ratio": 500,
+      "btc_capacity": "13986724000"
+    },
+    "registrations": {
+      "allowed_count": 90,
+      "registered_count": 0
+    },
+    "schedule": {
+      "activation": {
+        "bitcoin_height": 10800,
+        "pox_cycle": 12
+      },
+      "unlock": {
+        "bitcoin_height": 21600,
+        "pox_cycle": 24
+      }
+    },
+    "balances": {
+      "locked": {
+        "btc": "0",
+        "stx": "0"
+      },
+      "paid_out": {
+        "btc": "0"
+      }
+    }
+  },
+  {
+    "index": 3,
+    "pox_version": "pox5",
+    "status": "active",
+    "parameters": {
+      "target_rate_bps": 1000,
+      "stx_value_ratio": 1000,
+      "minimum_stx_ratio": 500,
+      "btc_capacity": "13686724000"
+    },
+    "registrations": {
+      "allowed_count": 87,
+      "registered_count": 1
+    },
+    "schedule": {
+      "activation": {
+        "bitcoin_height": 9000,
+        "pox_cycle": 10
+      },
+      "unlock": {
+        "bitcoin_height": 19800,
+        "pox_cycle": 22
+      }
+    },
+    "balances": {
+      "locked": {
+        "btc": "19500",
+        "stx": "1009750"
+      },
+      "paid_out": {
+        "btc": "0"
+      }
+    }
+  },
+  {
+    "index": 2,
+    "pox_version": "pox5",
+    "status": "active",
+    "parameters": {
+      "target_rate_bps": 1000,
+      "stx_value_ratio": 1000,
+      "minimum_stx_ratio": 500,
+      "btc_capacity": "13076724000"
+    },
+    "registrations": {
+      "allowed_count": 80,
+      "registered_count": 0
+    },
+    "schedule": {
+      "activation": {
+        "bitcoin_height": 7200,
+        "pox_cycle": 8
+      },
+      "unlock": {
+        "bitcoin_height": 18000,
+        "pox_cycle": 20
+      }
+    },
+    "balances": {
+      "locked": {
+        "btc": "0",
+        "stx": "0"
+      },
+      "paid_out": {
+        "btc": "0"
+      }
+    }
+  },
+  {
+    "index": 1,
+    "pox_version": "pox5",
+    "status": "active",
+    "parameters": {
+      "target_rate_bps": 1000,
+      "stx_value_ratio": 1000,
+      "minimum_stx_ratio": 500,
+      "btc_capacity": "12853104000"
+    },
+    "registrations": {
+      "allowed_count": 66,
+      "registered_count": 0
+    },
+    "schedule": {
+      "activation": {
+        "bitcoin_height": 5400,
+        "pox_cycle": 6
+      },
+      "unlock": {
+        "bitcoin_height": 16200,
+        "pox_cycle": 18
+      }
+    },
+    "balances": {
+      "locked": {
+        "btc": "0",
+        "stx": "0"
+      },
+      "paid_out": {
+        "btc": "0"
+      }
+    }
+  }
+]
