@@ -54,7 +54,6 @@
     "@stacks/network": "7.0.2",
     "@stacks/token-metadata-api-client": "2.2.1",
     "@stacks/transactions": "7.6.0",
-    "@storybook/addon-themes": "8.6.18",
     "@tanstack/react-query": "5.69.0",
     "@tanstack/react-table": "8.21.3",
     "@types/react-redux": "7.1.34",
@@ -111,6 +110,7 @@
     "@storybook/addon-interactions": "8.6.18",
     "@storybook/addon-links": "8.6.18",
     "@storybook/addon-onboarding": "8.6.18",
+    "@storybook/addon-themes": "8.6.18",
     "@storybook/addon-viewport": "8.6.18",
     "@storybook/blocks": "8.6.18",
     "@storybook/experimental-nextjs-vite": "8.6.18",
@@ -167,20 +167,6 @@
       "@semantic-release/github"
     ]
   },
-  "resolutions": {
-    "eslint": "8.54.0",
-    "@stacks/transactions": "7.6.0",
-    "bn.js": "5.2.5",
-    "buffer": "6.0.3",
-    "schema-inspector": "2.0.0",
-    "ssri": "8.0.1",
-    "@types/react": "19.2.0",
-    "@types/react-dom": "19.2.0",
-    "axios": "1.20.0",
-    "uuid": "11.1.1",
-    "vite": "6.4.3",
-    "sharp": "0.35.4"
-  },
   "browser": {
     "fs": false,
     "path": false,
@@ -188,5 +174,21 @@
     "net": false,
     "tls": false,
     "crypto": false
+  },
+  "pnpm": {
+    "overrides": {
+      "eslint": "8.54.0",
+      "@stacks/transactions": "7.6.0",
+      "bn.js": "5.2.5",
+      "buffer": "6.0.3",
+      "schema-inspector": "2.0.0",
+      "ssri": "8.0.1",
+      "@types/react": "19.2.0",
+      "@types/react-dom": "19.2.0",
+      "axios": "1.20.0",
+      "uuid": "11.1.1",
+      "vite": "6.4.3",
+      "sharp": "0.35.4"
+    }
   }
 }

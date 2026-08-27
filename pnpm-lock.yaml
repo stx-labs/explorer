@@ -94,9 +94,6 @@ importers:
       '@stacks/transactions':
         specifier: 7.6.0
         version: 7.6.0
-      '@storybook/addon-themes':
-        specifier: 8.6.18
-        version: 8.6.18(storybook@8.6.18(prettier@3.5.3))
       '@tanstack/react-query':
         specifier: 5.69.0
         version: 5.69.0(react@19.2.0)
@@ -258,6 +255,9 @@ importers:
         specifier: 8.6.18
         version: 8.6.18(react@19.2.0)(storybook@8.6.18(prettier@3.5.3))
       '@storybook/addon-onboarding':
+        specifier: 8.6.18
+        version: 8.6.18(storybook@8.6.18(prettier@3.5.3))
+      '@storybook/addon-themes':
         specifier: 8.6.18
         version: 8.6.18(storybook@8.6.18(prettier@3.5.3))
       '@storybook/addon-viewport':
