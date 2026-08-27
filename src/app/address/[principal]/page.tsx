@@ -1,6 +1,5 @@
 import { getTokenPrice } from '@/app/getTokenPriceInfo';
 import { CommonSearchParams } from '@/app/transactions/page';
-import { DEFAULT_MAINNET_SERVER, DEFAULT_TESTNET_SERVER } from '@/common/constants/env';
 // TODO: Temporarily disabled - re-enable when API performance is fixed
 // import { GenericResponseType } from '@/common/hooks/useInfiniteQueryResult';
 import { NetworkModes } from '@/common/types/network';
@@ -53,10 +52,7 @@ export default async function Page(props: {
   const { principal } = await params;
   const isSSRDisabled = searchParams?.ssr === 'false';
   const chain = (searchParams.chain as NetworkModes) || NetworkModes.Mainnet;
-  const api =
-    searchParams.api || chain === NetworkModes.Mainnet
-      ? DEFAULT_MAINNET_SERVER
-      : DEFAULT_TESTNET_SERVER;
+  const api = searchParams.api;
   const apiUrl = getApiUrl(chain, api);
   let tokenPrice = {
     stxPrice: 0,
