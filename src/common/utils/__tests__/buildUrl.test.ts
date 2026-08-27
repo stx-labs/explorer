@@ -1,67 +1,81 @@
-import { Network } from '../../types/network';
+import { ChainId } from '@stacks/network';
+
+import { Network, NetworkModes } from '../../types/network';
 import { buildUrl, getQueryParams } from '../buildUrl';
+
+// buildUrl/getQueryParams only read mode, url and the subnet/custom flags, so the
+// remaining Network fields just need to be present.
+const buildNetwork = (
+  network: Pick<Network, 'label' | 'url' | 'mode'> & Partial<Network>
+): Network => ({
+  btcBlockBaseUrl: '',
+  btcTxBaseUrl: '',
+  btcAddressBaseUrl: '',
+  networkId: ChainId.Mainnet,
+  ...network,
+});
 
 describe('getQueryParams', () => {
   it('should return chain param for mainnet', () => {
-    const network: Network = {
+    const network = buildNetwork({
       label: 'Mainnet',
       url: 'https://api.hiro.so',
-      mode: 'mainnet',
-    };
+      mode: NetworkModes.Mainnet,
+    });
     expect(getQueryParams(network)).toBe('?chain=mainnet');
   });
 
   it('should return chain param for testnet', () => {
-    const network: Network = {
+    const network = buildNetwork({
       label: 'Testnet',
       url: 'https://api.testnet.hiro.so',
-      mode: 'testnet',
-    };
+      mode: NetworkModes.Testnet,
+    });
     expect(getQueryParams(network)).toBe('?chain=testnet');
   });
 
   it('should add subnet param for subnet networks', () => {
-    const network: Network = {
+    const network = buildNetwork({
       label: 'Subnet',
       url: 'https://subnet.example.com',
-      mode: 'mainnet',
+      mode: NetworkModes.Mainnet,
       isSubnet: true,
-    };
+    });
     expect(getQueryParams(network)).toBe('?chain=mainnet&subnet=https://subnet.example.com');
   });
 
   it('should add api param for custom networks', () => {
-    const network: Network = {
+    const network = buildNetwork({
       label: 'Custom',
       url: 'https://custom-api.example.com',
-      mode: 'mainnet',
+      mode: NetworkModes.Mainnet,
       isCustomNetwork: true,
-    };
+    });
     expect(getQueryParams(network)).toBe('?chain=mainnet&api=https://custom-api.example.com');
   });
 
   it('should add ssr=false for localhost networks', () => {
-    const network: Network = {
+    const network = buildNetwork({
       label: 'Devnet',
       url: 'http://localhost:3999',
-      mode: 'mainnet',
-    };
+      mode: NetworkModes.Mainnet,
+    });
     expect(getQueryParams(network)).toBe('?chain=mainnet&ssr=false');
   });
 });
 
 describe('buildUrl', () => {
-  const mainnetNetwork: Network = {
+  const mainnetNetwork = buildNetwork({
     label: 'Mainnet',
     url: 'https://api.hiro.so',
-    mode: 'mainnet',
-  };
+    mode: NetworkModes.Mainnet,
+  });
 
-  const testnetNetwork: Network = {
+  const testnetNetwork = buildNetwork({
     label: 'Testnet',
     url: 'https://api.testnet.hiro.so',
-    mode: 'testnet',
-  };
+    mode: NetworkModes.Testnet,
+  });
 
   describe('URLs without existing query params', () => {
     it('should append query params to simple path', () => {
@@ -140,35 +154,35 @@ describe('buildUrl', () => {
 
   describe('with custom/subnet networks', () => {
     it('should properly append subnet params to URL with existing query', () => {
-      const subnetNetwork: Network = {
+      const subnetNetwork = buildNetwork({
         label: 'Subnet',
         url: 'https://subnet.example.com',
-        mode: 'mainnet',
+        mode: NetworkModes.Mainnet,
         isSubnet: true,
-      };
+      });
       expect(buildUrl('/address/SP123?tab=tokens', subnetNetwork)).toBe(
         '/address/SP123?tab=tokens&chain=mainnet&subnet=https://subnet.example.com'
       );
     });
 
     it('should properly append custom network params to URL with existing query', () => {
-      const customNetwork: Network = {
+      const customNetwork = buildNetwork({
         label: 'Custom',
         url: 'https://custom.example.com',
-        mode: 'testnet',
+        mode: NetworkModes.Testnet,
         isCustomNetwork: true,
-      };
+      });
       expect(buildUrl('/txid/0x123?tab=events', customNetwork)).toBe(
         '/txid/0x123?tab=events&chain=testnet&api=https://custom.example.com'
       );
     });
 
     it('should properly append localhost params to URL with existing query', () => {
-      const localhostNetwork: Network = {
+      const localhostNetwork = buildNetwork({
         label: 'Devnet',
         url: 'http://localhost:3999',
-        mode: 'mainnet',
-      };
+        mode: NetworkModes.Mainnet,
+      });
       expect(buildUrl('/address/SP123?tab=tokens', localhostNetwork)).toBe(
         '/address/SP123?tab=tokens&chain=mainnet&ssr=false'
       );
