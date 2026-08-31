@@ -12,21 +12,20 @@ import { ColumnDef } from '@tanstack/react-table';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useMemo } from 'react';
 
-import { StakingActivityTx } from './data';
+import { ViewAllLink } from './ViewAllLink';
+import { ActivityGroup, StakingActivityEvent } from './data';
 
-interface ActivityRow extends StakingActivityTx {
+interface ActivityRow extends StakingActivityEvent {
   network: ReturnType<typeof useGlobalContext>['activeNetwork'];
 }
 
-/**
- * Turns a hyphenated identifier into sentence case, so `stake-update` reads as
- * `Stake update`. Used for both function names and transaction statuses.
- */
-function humanizeFunctionName(name?: string): string {
-  if (!name) return 'Contract call';
-  const words = name.replace(/-/g, ' ');
-  return words.charAt(0).toUpperCase() + words.slice(1);
-}
+const GROUP_LABELS: { value?: ActivityGroup; label: string }[] = [
+  { label: 'All' },
+  { value: 'distributions', label: 'Distributions' },
+  { value: 'enrollments', label: 'Enrollments' },
+  { value: 'unlocks', label: 'Unlocks' },
+  { value: 'bonds', label: 'Bonds' },
+];
 
 function truncate(value: string, lead = 6, tail = 4): string {
   return value.length <= lead + tail ? value : `${value.slice(0, lead)}…${value.slice(-tail)}`;
@@ -34,72 +33,101 @@ function truncate(value: string, lead = 6, tail = 4): string {
 
 const activityColumns: ColumnDef<ActivityRow>[] = [
   {
-    id: 'function',
-    header: 'Action',
-    accessorKey: 'function_name',
+    id: 'event',
+    header: 'Event',
+    accessorKey: 'label',
     enableSorting: false,
-    size: 160,
+    size: 190,
+    cell: info => {
+      const row = info.row.original;
+      return (
+        <Stack gap={0.5}>
+          <Text textStyle="text-medium-sm" whiteSpace="nowrap">
+            {row.label}
+          </Text>
+          {row.detail && (
+            <Text textStyle="text-regular-xs" color="textSecondary" whiteSpace="nowrap">
+              {row.detail}
+            </Text>
+          )}
+        </Stack>
+      );
+    },
+  },
+  {
+    id: 'amount',
+    header: 'Amount',
+    accessorKey: 'amount',
+    enableSorting: false,
+    size: 120,
+    meta: { textAlign: 'right' },
     cell: info => (
-      <Text textStyle="text-medium-sm" whiteSpace="nowrap">
-        {humanizeFunctionName(info.row.original.function_name)}
+      <Text textStyle="text-regular-sm" whiteSpace="nowrap">
+        {(info.getValue() as string) ?? '—'}
       </Text>
     ),
   },
   {
-    id: 'tx_id',
-    header: 'Transaction',
-    accessorKey: 'tx_id',
+    id: 'cumulative',
+    header: 'Cumulative paid',
+    accessorKey: 'cumulative',
     enableSorting: false,
     size: 140,
-    cell: info => {
-      const row = info.row.original;
-      return (
-        <NextLink href={buildUrl(`/txid/${row.tx_id}`, row.network)}>
-          <Text textStyle="text-mono-xs" color="textInteractive" whiteSpace="nowrap">
-            {truncate(row.tx_id, 8, 6)}
-          </Text>
-        </NextLink>
-      );
-    },
+    meta: { textAlign: 'right' },
+    cell: info => (
+      <Text textStyle="text-regular-sm" color="textSecondary" whiteSpace="nowrap">
+        {(info.getValue() as string) ?? '—'}
+      </Text>
+    ),
   },
   {
-    id: 'sender',
-    header: 'Sender',
-    accessorKey: 'sender_address',
-    enableSorting: false,
-    size: 140,
-    cell: info => {
-      const row = info.row.original;
-      return (
-        <NextLink href={buildUrl(`/address/${row.sender_address}`, row.network)}>
-          <Text textStyle="text-mono-xs" color="textInteractive" whiteSpace="nowrap">
-            {truncate(row.sender_address)}
-          </Text>
-        </NextLink>
-      );
-    },
-  },
-  {
-    id: 'status',
-    header: 'Status',
-    accessorKey: 'tx_status',
+    id: 'block',
+    header: 'Block',
+    accessorKey: 'blockHeight',
     enableSorting: false,
     size: 110,
     cell: info => {
-      const status = info.getValue() as string;
+      const row = info.row.original;
       return (
-        <Badge variant="subtle" colorPalette={status === 'success' ? 'green' : 'red'}>
-          {humanizeFunctionName(status.replace(/_/g, '-'))}
-        </Badge>
+        <NextLink href={buildUrl(`/block/${row.blockHeight}`, row.network)}>
+          <Text textStyle="text-mono-xs" color="textInteractive" whiteSpace="nowrap">
+            #{row.blockHeight.toLocaleString()}
+          </Text>
+        </NextLink>
       );
     },
   },
   {
-    id: 'time',
-    header: 'When',
-    accessorKey: 'burn_block_time',
+    id: 'transaction',
+    header: 'Transaction',
+    accessorKey: 'txId',
     enableSorting: false,
-    size: 120,
+    size: 130,
+    cell: info => {
+      const row = info.row.original;
+      return (
+        <Flex gap={2} align="center">
+          <NextLink href={buildUrl(`/txid/${row.txId}`, row.network)}>
+            <Text textStyle="text-mono-xs" color="textInteractive" whiteSpace="nowrap">
+              {truncate(row.txId, 6, 5)}
+            </Text>
+          </NextLink>
+          {/* Failures stay visible; hiding them would misrepresent the record. */}
+          {row.txStatus !== 'success' && (
+            <Badge variant="subtle" colorPalette="red">
+              Failed
+            </Badge>
+          )}
+        </Flex>
+      );
+    },
+  },
+  {
+    id: 'age',
+    header: 'Age',
+    accessorKey: 'burnBlockTime',
+    enableSorting: false,
+    size: 110,
     meta: { textAlign: 'right' },
     cell: info => (
       <Text
@@ -114,17 +142,17 @@ const activityColumns: ColumnDef<ActivityRow>[] = [
   },
 ];
 
-function ActionFilter({ actions, selected }: { actions: string[]; selected?: string }) {
+function ActionFilter({ selected }: { selected?: string }) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
   const hrefFor = useCallback(
-    (action?: string) => {
+    (group?: string) => {
       const params = new URLSearchParams(searchParams?.toString() ?? '');
-      if (action) {
-        params.set('action', action);
+      if (group) {
+        params.set('activity', group);
       } else {
-        params.delete('action');
+        params.delete('activity');
       }
       const query = params.toString();
       return query ? `?${query}` : '?';
@@ -132,23 +160,25 @@ function ActionFilter({ actions, selected }: { actions: string[]; selected?: str
     [searchParams]
   );
 
-  if (actions.length <= 1) return null;
-
-  const chips: { label: string; value?: string }[] = [
-    { label: 'All' },
-    ...actions.map(action => ({ label: humanizeFunctionName(action), value: action })),
-  ];
-
   return (
-    <Flex gap={2} flexWrap="wrap">
-      {chips.map(chip => {
+    <Flex gap={1} flexWrap="wrap" align="center">
+      <Text textStyle="text-regular-sm" color="textSecondary" mr={2}>
+        Filter
+      </Text>
+      {GROUP_LABELS.map(chip => {
         const isSelected = chip.value === selected || (!chip.value && !selected);
         return (
           <Button
             key={chip.label}
             type="button"
-            variant={isSelected ? 'redesignPrimary' : 'redesignTertiary'}
-            size="small"
+            variant={isSelected ? 'redesignPrimary' : 'unstyled'}
+            size="big"
+            px={3}
+            py={1.5}
+            height="auto"
+            borderRadius="redesign.md"
+            color={isSelected ? undefined : 'textSecondary'}
+            _hover={isSelected ? undefined : { color: 'textPrimary' }}
             onClick={() => router.replace(hrefFor(chip.value), { scroll: false })}
             aria-pressed={isSelected}
           >
@@ -165,33 +195,32 @@ function NoActivity() {
     <Stack gap={1} py={8} align="center">
       <Text textStyle="text-medium-sm">No activity yet</Text>
       <Text textStyle="text-regular-sm" color="textSecondary">
-        Transactions calling the staking contract appear here.
+        Bond distributions, enrollments and unlocks appear here.
       </Text>
     </Stack>
   );
 }
 
-/**
- * The "proof" half of the page: real transactions against the pox contract,
- * clickable through to the transaction and the sender.
- */
 export function StakingActivity({
-  transactions,
-  availableActions,
-  selectedAction,
+  events,
+  selectedGroup,
 }: {
-  transactions: StakingActivityTx[];
-  /** Actions seen recently, so the chips only offer filters that return rows. */
-  availableActions: string[];
-  selectedAction?: string;
+  events: StakingActivityEvent[];
+  selectedGroup?: string;
 }) {
   const network = useGlobalContext().activeNetwork;
-  const data = useMemo(() => transactions.map(tx => ({ ...tx, network })), [transactions, network]);
+  const data = useMemo(() => events.map(event => ({ ...event, network })), [events, network]);
   return (
     <Stack gap={3}>
-      <Text textStyle="heading-xs">Activity</Text>
-      <ActionFilter actions={availableActions} selected={selectedAction} />
+      <Text textStyle="heading-xs">Bond activity</Text>
+      <ActionFilter selected={selectedGroup} />
       <Table data={data} columns={activityColumns} emptyTableUi={<NoActivity />} />
+      {data.length > 0 && (
+        <Flex justify="flex-end">
+          {/* TODO: needs a transactions page filtered to the staking contract. */}
+          <ViewAllLink>View all transactions</ViewAllLink>
+        </Flex>
+      )}
     </Stack>
   );
 }

@@ -2,14 +2,14 @@ import { NetworkModes } from '@/common/types/network';
 import { logError } from '@/common/utils/error-utils';
 
 import { StakingPageClient } from './PageClient';
-import { ACTIVITY_ACTION_SAMPLE, ACTIVITY_FEED_LIMIT } from './consts';
+import { ACTIVITY_FEED_LIMIT } from './consts';
 import {
+  ActivityGroup,
   Bond,
   CycleRewards,
   PoxCycle,
-  StakingActivityTx,
+  StakingActivityEvent,
   fetchBonds,
-  fetchCurrentStakerCount,
   fetchCycleRewards,
   fetchPoxCycles,
   fetchPoxInfo,
@@ -20,31 +20,28 @@ import { DistributionSchedule, getDistributionSchedule } from './projections';
 interface StakingSearchParams {
   chain?: string;
   api?: string;
-  /** Restricts the activity feed to one contract function. */
-  action?: string;
+  /** Restricts the activity feed to one group of events. */
+  activity?: string;
 }
 
 export default async function StakingPage(props: { searchParams: Promise<StakingSearchParams> }) {
-  const { chain = NetworkModes.Mainnet, api, action } = await props.searchParams;
+  const { chain = NetworkModes.Mainnet, api, activity: activityGroup } = await props.searchParams;
 
   let bonds: Bond[] = [];
   let bondsTotal = 0;
   let cycles: PoxCycle[] = [];
   let poxInfo;
-  let currentStakerCount: number | undefined;
   let distribution: DistributionSchedule | undefined;
   let cycleRewards: Record<number, CycleRewards> = {};
   let pox5FirstCycleId: number | undefined;
-  let activity: StakingActivityTx[] = [];
-  let activityActions: string[] = [];
+  let activity: StakingActivityEvent[] = [];
 
   // Each source is settled independently: a bond fetch failing should not take
   // the Stacking half of the page down with it, and vice versa.
-  const [bondsResult, poxResult, cyclesResult, stakerCountResult] = await Promise.allSettled([
+  const [bondsResult, poxResult, cyclesResult] = await Promise.allSettled([
     fetchBonds(chain, api),
     fetchPoxInfo(chain, api),
     fetchPoxCycles(chain, api),
-    fetchCurrentStakerCount(chain, api),
   ]);
 
   if (bondsResult.status === 'fulfilled') {
@@ -79,10 +76,6 @@ export default async function StakingPage(props: { searchParams: Promise<Staking
     logError(cyclesResult.reason as Error, 'Staking page: fetch pox cycles', { chain }, 'error');
   }
 
-  if (stakerCountResult.status === 'fulfilled') {
-    currentStakerCount = stakerCountResult.value;
-  }
-
   // Per-cycle rewards come from read-only calls on the pox contract, so they
   // need the contract id and the list of cycles to ask about. pox-5 has no
   // record of cycles that ran before it, so we also note where it starts and
@@ -115,16 +108,18 @@ export default async function StakingPage(props: { searchParams: Promise<Staking
 
   if (poxInfo?.contract_id) {
     try {
-      // The unfiltered sample decides which filters to offer, so the chips only
-      // ever list actions that have actually happened.
-      const [filtered, sample] = await Promise.all([
-        fetchStakingActivity(poxInfo.contract_id, chain, api, ACTIVITY_FEED_LIMIT, action),
-        fetchStakingActivity(poxInfo.contract_id, chain, api, ACTIVITY_ACTION_SAMPLE),
-      ]);
-      activity = filtered;
-      activityActions = Array.from(
-        new Set(sample.map(tx => tx.function_name).filter((name): name is string => !!name))
-      ).sort();
+      // Only groups the page offers are accepted, so an unknown value in the
+      // URL falls back to the unfiltered feed rather than returning nothing.
+      const group = (['distributions', 'enrollments', 'unlocks', 'bonds'] as ActivityGroup[]).find(
+        candidate => candidate === activityGroup
+      );
+      activity = await fetchStakingActivity(
+        poxInfo.contract_id,
+        chain,
+        api,
+        ACTIVITY_FEED_LIMIT,
+        group
+      );
     } catch (error) {
       logError(error as Error, 'Staking page: fetch activity', { chain }, 'error');
     }
@@ -139,15 +134,15 @@ export default async function StakingPage(props: { searchParams: Promise<Staking
       bondsTotal={bondsTotal}
       poxInfo={poxInfo}
       cycles={cycles}
-      distribution={distribution}
-      currentStakerCount={currentStakerCount}
       cycleRewards={cycleRewards}
       pox5FirstCycleId={pox5FirstCycleId}
       currentBurnHeight={poxInfo?.current_burnchain_block_height ?? 0}
+      rewardCycleLength={poxInfo?.reward_cycle_length ?? 0}
+      prepareCycleLength={poxInfo?.prepare_phase_block_length ?? 0}
+      firstBurnchainBlockHeight={poxInfo?.first_burnchain_block_height ?? 0}
       nowMs={nowMs}
       activity={activity}
-      activityActions={activityActions}
-      selectedAction={action}
+      selectedActivityGroup={activityGroup}
       chain={chain}
     />
   );

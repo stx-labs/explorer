@@ -1,19 +1,26 @@
 'use client';
 
-import { Card } from '@/common/components/Card';
 import { Table } from '@/common/components/table/Table';
 import { useGlobalContext } from '@/common/context/useGlobalContext';
 import { PoxInfo } from '@/common/queries/usePoxInforRaw';
+import { formatDateShort } from '@/common/utils/date-utils';
 import { MICROSTACKS_IN_STACKS, abbreviateNumber } from '@/common/utils/utils';
 import { Text } from '@/ui/Text';
-import { Tooltip } from '@/ui/Tooltip';
-import { Flex, Stack } from '@chakra-ui/react';
+import { Box, Flex, Icon, Stack } from '@chakra-ui/react';
+import { ArrowUpRight } from '@phosphor-icons/react';
 import { ColumnDef } from '@tanstack/react-table';
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 
+import { ViewAllLink } from './ViewAllLink';
+import { PREVIOUS_CYCLES_LIMIT, STAKING_LINKS } from './consts';
 import { CycleRewards, PoxCycle } from './data';
-import { getCycleStackerRewardsSatsBigInt, getStackingYieldForCompletedCycle } from './projections';
-import { formatBtc } from './utils';
+import {
+  burnHeightToApproximateTimestamp,
+  formatTermDuration,
+  getCycleStackerRewardsSatsBigInt,
+  getStackingYieldForCompletedCycle,
+} from './projections';
+import { formatBtc, formatDateWithYear, formatUsd } from './utils';
 
 interface CycleRow {
   cycleNumber: number;
@@ -28,6 +35,10 @@ interface CycleRow {
    * earned anything" instead of "we cannot see it from here".
    */
   hasRewardData: boolean;
+  startedHeight: number;
+  startedMs: number;
+  endedHeight: number;
+  endedMs: number;
 }
 
 const cycleColumns: ColumnDef<CycleRow>[] = [
@@ -36,7 +47,7 @@ const cycleColumns: ColumnDef<CycleRow>[] = [
     header: 'Cycle',
     accessorKey: 'cycleNumber',
     enableSorting: false,
-    size: 80,
+    size: 70,
     cell: info => (
       <Text textStyle="text-medium-sm">{(info.getValue() as number).toLocaleString()}</Text>
     ),
@@ -46,8 +57,7 @@ const cycleColumns: ColumnDef<CycleRow>[] = [
     header: 'Total stacked',
     accessorKey: 'totalStackedStx',
     enableSorting: false,
-    size: 140,
-    meta: { textAlign: 'right' },
+    size: 120,
     cell: info => (
       <Text textStyle="text-regular-sm" whiteSpace="nowrap">
         {abbreviateNumber(info.getValue() as number, 1)} STX
@@ -55,11 +65,41 @@ const cycleColumns: ColumnDef<CycleRow>[] = [
     ),
   },
   {
+    id: 'startedHeight',
+    header: 'Started',
+    accessorKey: 'startedHeight',
+    enableSorting: false,
+    size: 170,
+    cell: info => {
+      const row = info.row.original;
+      return (
+        <Text textStyle="text-regular-sm" whiteSpace="nowrap" suppressHydrationWarning>
+          #{row.startedHeight.toLocaleString()} · {formatDateWithYear(row.startedMs)}
+        </Text>
+      );
+    },
+  },
+  {
+    id: 'endedHeight',
+    header: 'Ended',
+    accessorKey: 'endedHeight',
+    enableSorting: false,
+    size: 170,
+    cell: info => {
+      const row = info.row.original;
+      return (
+        <Text textStyle="text-regular-sm" whiteSpace="nowrap" suppressHydrationWarning>
+          #{row.endedHeight.toLocaleString()} · {formatDateWithYear(row.endedMs)}
+        </Text>
+      );
+    },
+  },
+  {
     id: 'rewardsSats',
     header: 'BTC rewards',
     accessorKey: 'rewardsSats',
     enableSorting: false,
-    size: 130,
+    size: 120,
     meta: { textAlign: 'right' },
     cell: info => {
       const row = info.row.original;
@@ -79,7 +119,7 @@ const cycleColumns: ColumnDef<CycleRow>[] = [
     header: 'Gross APY',
     accessorKey: 'apyPercent',
     enableSorting: false,
-    size: 110,
+    size: 100,
     meta: { textAlign: 'right' },
     cell: info => {
       const row = info.row.original;
@@ -101,7 +141,7 @@ const cycleColumns: ColumnDef<CycleRow>[] = [
     header: 'Signers',
     accessorKey: 'totalSigners',
     enableSorting: false,
-    size: 100,
+    size: 90,
     meta: { textAlign: 'right' },
     cell: info => (
       <Text textStyle="text-regular-sm">{(info.getValue() as number).toLocaleString()}</Text>
@@ -109,59 +149,105 @@ const cycleColumns: ColumnDef<CycleRow>[] = [
   },
 ];
 
-function CycleStat({ label, value, detail }: { label: string; value: string; detail?: string }) {
+function Pill({ children }: { children: React.ReactNode }) {
   return (
-    <Card padding={5} height="100%" width="100%">
-      <Stack gap={2}>
-        <Text textStyle="text-medium-xs" color="textSecondary" whiteSpace="nowrap">
-          {label}
-        </Text>
-        <Text textStyle="heading-sm" whiteSpace="nowrap">
-          {value}
-        </Text>
-        {detail && (
-          <Text textStyle="text-regular-xs" color="textSecondary">
-            {detail}
-          </Text>
-        )}
-      </Stack>
-    </Card>
+    <Flex
+      align="center"
+      gap={2}
+      bg="surfaceFourth"
+      borderRadius="redesign.xl"
+      px={3}
+      py={1.5}
+      width="fit-content"
+    >
+      <Box w={2} h={2} borderRadius="full" bg="feedback.green-500" />
+      <Text textStyle="text-regular-sm" whiteSpace="nowrap">
+        {children}
+      </Text>
+    </Flex>
+  );
+}
+
+/** A block height shown as a chip, the way the design marks cycle boundaries. */
+function HeightChip({ height }: { height: number }) {
+  return (
+    <Text
+      textStyle="text-mono-xs"
+      color="textSecondary"
+      bg="surfaceFourth"
+      borderRadius="redesign.xs"
+      px={2}
+      py={0.5}
+      whiteSpace="nowrap"
+    >
+      #{height.toLocaleString()}
+    </Text>
   );
 }
 
 export function StackingOverview({
   poxInfo,
   cycles,
-  currentStakerCount,
   cycleRewards,
   pox5FirstCycleId,
+  firstBurnchainBlockHeight,
+  currentBurnHeight,
+  nowMs,
 }: {
   poxInfo: PoxInfo;
   cycles: PoxCycle[];
-  currentStakerCount?: number;
   cycleRewards: Record<number, CycleRewards>;
   pox5FirstCycleId?: number;
+  firstBurnchainBlockHeight: number;
+  currentBurnHeight: number;
+  nowMs: number;
 }) {
   const { stxPrice, btcPrice } = useGlobalContext().tokenPrice;
   const currentCycleId = poxInfo?.current_cycle?.id;
-  const currentCycleRewardsData =
-    currentCycleId !== undefined ? cycleRewards[currentCycleId] : undefined;
-  const currentCycleRewards = currentCycleRewardsData
-    ? getCycleStackerRewardsSatsBigInt(
-        currentCycleRewardsData.rewardsPerMicroStx,
-        currentCycleRewardsData.stakedMicroStx
-      )
-    : undefined;
   const stackedStx = (poxInfo?.current_cycle?.stacked_ustx ?? 0) / MICROSTACKS_IN_STACKS;
   const blocksUntilNextCycle = poxInfo?.next_reward_cycle_in ?? 0;
+  const rewardCycleLength = poxInfo?.reward_cycle_length ?? 0;
+
+  const cycleStartHeight = useCallback(
+    (cycleNumber: number) => firstBurnchainBlockHeight + cycleNumber * rewardCycleLength,
+    [firstBurnchainBlockHeight, rewardCycleLength]
+  );
+  const at = useCallback(
+    (height: number) => burnHeightToApproximateTimestamp(height, currentBurnHeight, nowMs),
+    [currentBurnHeight, nowMs]
+  );
+
+  const currentStart = cycleStartHeight(currentCycleId ?? 0);
+  const currentEnd = cycleStartHeight((currentCycleId ?? 0) + 1);
+  const elapsed = rewardCycleLength > 0 ? 1 - blocksUntilNextCycle / rewardCycleLength : 0;
+  const daysLeft = formatTermDuration(blocksUntilNextCycle);
+
+  // The most recently settled cycle is what the callout reports, since a
+  // running cycle holds only part of its rewards.
+  const lastSettled = cycles
+    .filter(cycle => currentCycleId === undefined || cycle.cycle_number < currentCycleId)
+    .sort((a, b) => b.cycle_number - a.cycle_number)[0];
+  const lastSettledRewards = lastSettled ? cycleRewards[lastSettled.cycle_number] : undefined;
+  const lastSettledSats = lastSettledRewards
+    ? getCycleStackerRewardsSatsBigInt(
+        lastSettledRewards.rewardsPerMicroStx,
+        lastSettledRewards.stakedMicroStx
+      )
+    : undefined;
+  const lastSettledYield = lastSettledRewards
+    ? getStackingYieldForCompletedCycle({
+        rewardsPerMicroStx: lastSettledRewards.rewardsPerMicroStx,
+        rewardCycleLength,
+        btcPriceUsd: btcPrice,
+        stxPriceUsd: stxPrice,
+      })
+    : undefined;
 
   const rows = useMemo<CycleRow[]>(
     () =>
       cycles
-        // Finished cycles only. The cycle that is still running holds just part
-        // of its rewards, so annualising it would understate the rate, and the
-        // API also returns cycles that have not started yet, which would show a
-        // misleading 0 BTC and 0% against a real staked amount.
+        // Finished cycles only. A running cycle holds part of its rewards, and
+        // the API also returns cycles that have not started.
         .filter(cycle => currentCycleId === undefined || cycle.cycle_number < currentCycleId)
         .map(cycle => {
           const rewards = cycleRewards[cycle.cycle_number];
@@ -170,7 +256,7 @@ export function StackingOverview({
           const yieldForCycle = rewards
             ? getStackingYieldForCompletedCycle({
                 rewardsPerMicroStx: rewards.rewardsPerMicroStx,
-                rewardCycleLength: poxInfo?.reward_cycle_length ?? 0,
+                rewardCycleLength,
                 btcPriceUsd: btcPrice,
                 stxPriceUsd: stxPrice,
               })
@@ -184,86 +270,175 @@ export function StackingOverview({
               : BigInt(0),
             apyPercent: yieldForCycle?.apyPercent,
             hasRewardData,
+            startedHeight: cycleStartHeight(cycle.cycle_number),
+            startedMs: at(cycleStartHeight(cycle.cycle_number)),
+            endedHeight: cycleStartHeight(cycle.cycle_number + 1),
+            endedMs: at(cycleStartHeight(cycle.cycle_number + 1)),
           };
         }),
-    [cycles, currentCycleId, cycleRewards, pox5FirstCycleId, poxInfo, btcPrice, stxPrice]
+    [
+      cycles,
+      currentCycleId,
+      cycleRewards,
+      pox5FirstCycleId,
+      rewardCycleLength,
+      btcPrice,
+      stxPrice,
+      at,
+      cycleStartHeight,
+    ]
   );
 
   return (
     <Stack gap={5}>
-      <Flex gap={3} flexWrap="wrap">
-        <Flex flex="1 1 220px" minW="220px">
-          <CycleStat label="Current cycle" value={`${currentCycleId ?? '-'}`} />
-        </Flex>
-        <Flex flex="1 1 220px" minW="220px">
-          <CycleStat
-            label="Total stacked"
-            value={`${abbreviateNumber(stackedStx, 1)} STX`}
-            detail="This cycle"
-          />
-        </Flex>
-        <Flex flex="1 1 220px" minW="220px">
-          <CycleStat
-            label="Next cycle"
-            value={`${(currentCycleId ?? 0) + 1}`}
-            detail={`in ~${blocksUntilNextCycle.toLocaleString()} blocks`}
-          />
-        </Flex>
-        <Flex flex="1 1 220px" minW="220px">
-          {/*
-            What STX stackers have earned so far in the cycle that is still
-            running. Deliberately not turned into a yearly rate: only part of
-            the cycle's payouts have happened, so annualising it now would
-            understate the return.
-          */}
-          <Tooltip
-            variant="redesignPrimary"
-            size="lg"
-            content="BTC paid to STX stackers so far in this cycle. The cycle is still running, so this figure is still growing."
+      <Flex justify="space-between" align="baseline" gap={4} flexWrap="wrap">
+        <Text textStyle="heading-md">STX-only Staking</Text>
+        <a href={STAKING_LINKS.stackingTracker} target="_blank" rel="noopener noreferrer">
+          <Flex align="center" gap={1}>
+            <Text
+              textStyle="text-medium-sm"
+              color="textPrimary"
+              borderBottom="1px solid"
+              borderColor="currentColor"
+            >
+              stacking-tracker.com
+            </Text>
+            <Icon w={3.5} h={3.5} color="textPrimary">
+              <ArrowUpRight weight="bold" />
+            </Icon>
+          </Flex>
+        </a>
+      </Flex>
+
+      <Flex gap={3} flexDirection={{ base: 'column', lg: 'row' }} align="stretch">
+        <Stack
+          gap={5}
+          bg="surfaceSecondary"
+          borderRadius="redesign.xl"
+          p={[4, 6]}
+          flex={{ base: '1 1 auto', lg: '3 1 0' }}
+          minW={0}
+        >
+          <Flex justify="space-between" gap={3} flexWrap="wrap" align="flex-start">
+            <Stack gap={3}>
+              <Text textStyle="text-regular-sm" color="textSecondary">
+                Current cycle
+              </Text>
+              <Text
+                textStyle="heading-lg"
+                bg="surfaceFourth"
+                borderRadius="redesign.xl"
+                px={5}
+                py={2}
+                width="fit-content"
+              >
+                {currentCycleId ?? '-'}
+              </Text>
+            </Stack>
+            {daysLeft && <Pill>Ends in ~{daysLeft}</Pill>}
+          </Flex>
+
+          <Flex gap={2} align="baseline" flexWrap="wrap">
+            <Text textStyle="heading-sm" whiteSpace="nowrap">
+              {abbreviateNumber(stackedStx, 1)} STX
+            </Text>
+            {stxPrice > 0 && (
+              <Text textStyle="text-regular-sm" color="textSecondary" whiteSpace="nowrap">
+                / {formatUsd(stackedStx * stxPrice)} stacked
+              </Text>
+            )}
+          </Flex>
+
+          <Stack gap={2}>
+            <Flex justify="space-between">
+              <Text textStyle="text-regular-sm">Started</Text>
+              <Text textStyle="text-regular-sm">Ends</Text>
+            </Flex>
+            <Box bg="surfaceFourth" h={2} borderRadius="redesign.xl" overflow="hidden">
+              <Box
+                bg="accent.stacks-500"
+                h="100%"
+                w={`${Math.min(Math.max(elapsed, 0), 1) * 100}%`}
+              />
+            </Box>
+            <Flex justify="space-between" gap={3} align="center" flexWrap="wrap">
+              <Flex gap={2} align="center">
+                <HeightChip height={currentStart} />
+                <Text textStyle="text-regular-xs" color="textSecondary" suppressHydrationWarning>
+                  {formatDateShort(at(currentStart))}
+                </Text>
+              </Flex>
+              <Flex gap={2} align="center">
+                <Text textStyle="text-regular-xs" color="textSecondary" suppressHydrationWarning>
+                  ~{formatDateShort(at(currentEnd))}
+                </Text>
+                <HeightChip height={currentEnd} />
+              </Flex>
+            </Flex>
+          </Stack>
+        </Stack>
+
+        <Stack gap={3} flex={{ base: '1 1 auto', lg: '2 1 0' }} minW={0}>
+          <Stack
+            gap={2}
+            bg="surfaceFourth"
+            border="1px solid"
+            borderColor="redesignBorderSecondary"
+            borderRadius="redesign.xl"
+            p={[4, 5]}
           >
-            <CycleStat
-              label="BTC rewards this cycle"
-              value={currentCycleRewards === undefined ? '-' : formatBtc(currentCycleRewards)}
-              detail="so far"
-            />
-          </Tooltip>
-        </Flex>
-        <Flex flex="1 1 220px" minW="220px">
+            <Text textStyle="text-regular-sm" color="textSecondary">
+              Next cycle
+            </Text>
+            <Flex gap={2} align="baseline" flexWrap="wrap">
+              <Text textStyle="heading-md">{(currentCycleId ?? 0) + 1}</Text>
+              <Text textStyle="text-regular-sm" color="textSecondary" whiteSpace="nowrap">
+                starts #{currentEnd.toLocaleString()}
+              </Text>
+            </Flex>
+            <Text textStyle="text-regular-sm" color="accent.stacks-500" suppressHydrationWarning>
+              ~{formatDateShort(at(currentEnd))} · projected
+            </Text>
+          </Stack>
+
           {/*
-            Current-only by design. pooled_stacker_count from
-            /extended/v2/pox/cycles/:c/signers is accurate for pox-4 cycles but
-            reads ~0 from cycle 141 on, and the v3 staking API that has the real
-            number accepts no cycle parameter. So there is no per-cycle history
-            to put in the table below, only a snapshot of now.
+            The rewards figure is a contract read; the yearly rate is not, since
+            annualising still needs an agreed convention. Saying which is which
+            keeps a proven number from inheriting an unproven one's doubt.
           */}
-          <Tooltip
-            variant="redesignPrimary"
-            size="lg"
-            content="Stakers currently registered across all signer managers. Per-cycle history is not available for pox-5 cycles."
-          >
-            <CycleStat
-              label="Stakers"
-              value={currentStakerCount === undefined ? '-' : currentStakerCount.toLocaleString()}
-              detail="current"
-            />
-          </Tooltip>
-        </Flex>
+          {lastSettled && lastSettledSats !== undefined && (
+            <Stack gap={1.5} bg="surfacePrimary" borderRadius="redesign.xl" p={[4, 5]}>
+              {/* The rule sits inside the padding rather than on the card edge. */}
+              <Flex gap={4} align="stretch">
+                <Box w="3px" bg="accent.stacks-500" borderRadius="redesign.xs" flexShrink={0} />
+                <Stack gap={1.5}>
+                  <Text textStyle="text-medium-sm">
+                    {lastSettledYield?.apyPercent !== undefined
+                      ? `≈ ${lastSettledYield.apyPercent.toFixed(1)}% projected APY · `
+                      : ''}
+                    {formatBtc(lastSettledSats)} paid last cycle
+                  </Text>
+                  <Text textStyle="text-regular-sm" color="textSecondary">
+                    Cycle {lastSettled.cycle_number} rewards are read from the staking contract. The
+                    yearly rate is an estimate pending an agreed way to calculate it.
+                  </Text>
+                </Stack>
+              </Flex>
+            </Stack>
+          )}
+        </Stack>
       </Flex>
 
       <Stack gap={3}>
         <Text textStyle="heading-xs">Previous cycles</Text>
-        <Table data={rows} columns={cycleColumns} />
-        {/*
-          Every listed cycle predates pox-5, so the rewards and APY columns are
-          empty. Saying why beats leaving a column of dashes unexplained. The
-          note disappears once a pox-5 cycle completes and fills a row.
-        */}
-        {pox5FirstCycleId !== undefined && rows.length > 0 && !rows.some(r => r.hasRewardData) && (
+        <Table data={rows.slice(0, PREVIOUS_CYCLES_LIMIT)} columns={cycleColumns} />
+        <Flex justify="space-between" gap={4} flexWrap="wrap" align="baseline">
           <Text textStyle="text-regular-xs" color="textSecondary">
-            BTC rewards and APY are recorded from cycle {pox5FirstCycleId}, when pox-5 took over.
-            Earlier cycles are not tracked by the contract.
+            Signer count — per-cycle stacker counts are not available under pox-5
           </Text>
-        )}
+          {/* TODO: needs a cycles page; see STAKING_LINKS. */}
+          <ViewAllLink>View all cycles</ViewAllLink>
+        </Flex>
       </Stack>
     </Stack>
   );

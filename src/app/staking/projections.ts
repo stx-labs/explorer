@@ -6,7 +6,13 @@
  * canonical numbers service lands, this module can be swapped for API reads
  * without touching any UI. See docs/workplans/2822-bitcoin-staking-page.md.
  */
-import { MINUTES_PER_BLOCK, SATS_IN_BTC } from './consts';
+import {
+  BOND_GAP_CYCLES,
+  BOND_TERM_CYCLES as BOND_LENGTH_CYCLES,
+  DISTRIBUTIONS_PER_BOND,
+  MINUTES_PER_BLOCK,
+  SATS_IN_BTC,
+} from './consts';
 
 /**
  * The single estimate in this module. Every date we render is a projection at
@@ -463,21 +469,21 @@ export function getTimelineTicks(
 }
 
 /**
- * The bond a newcomer would act on.
+ * The bond the page leads with.
  *
- * Bonds overlap: several run at once while exactly one is usually open for
- * enrollment. The one worth putting at the top of the page is the one someone
- * could still join, which is the bond that exists on chain but has not started
- * yet. If none is open, fall back to the bond that started most recently, so
- * the page still orients you rather than showing nothing.
+ * Bonds overlap, so several run at once while one is usually taking
+ * registrations. The one to feature is the bond currently running, because
+ * that is the one with real balances and a payout history to show. The bond
+ * open for enrollment is surfaced alongside it as what comes next, rather than
+ * in its place. Falls back to the enrolling bond when nothing is running yet.
  */
 export function getFeaturedBondIndex(
   bonds: { index: number; status: string }[]
 ): number | undefined {
   const byNewest = [...bonds].sort((a, b) => b.index - a.index);
-  const enrolling = byNewest.find(bond => bond.status === 'upcoming');
-  if (enrolling) return enrolling.index;
-  return byNewest.find(bond => bond.status === 'active')?.index;
+  const running = byNewest.find(bond => bond.status === 'active');
+  if (running) return running.index;
+  return byNewest.find(bond => bond.status === 'upcoming')?.index;
 }
 
 /**
@@ -510,4 +516,138 @@ export function formatTimeRemaining(blocks: number): string {
   const hours = minutes / 60;
   if (hours < 48) return plural(Math.round(hours), 'hour');
   return plural(Math.round(hours / 24), 'day');
+}
+
+/**
+ * A bond's life, as five states rather than the three the API reports.
+ *
+ * The API knows `upcoming`, `active` and `unlocked`. The page needs more: a
+ * bond that exists but has not opened for enrollment reads differently from
+ * one taking registrations, and a bond past its STX unlock reads differently
+ * from one whose term has ended. All four boundaries are block heights, so the
+ * extra states are derived rather than asked for.
+ */
+export type BondLifecycleState = 'scheduled' | 'enrolling' | 'active' | 'maturity' | 'closed';
+
+export interface BondSchedule {
+  enrollmentOpensHeight: number;
+  enrollmentClosesHeight: number;
+  /** D0: the bond starts earning. */
+  activationHeight: number;
+  /** Paired STX is released, one distribution before the term ends. */
+  stxUnlockHeight: number;
+  termEndHeight: number;
+}
+
+/**
+ * Every milestone in a bond's life, from its start height alone.
+ *
+ * Enrollment opens one bond gap before the bond starts and closes at the start
+ * of the prepare phase. STX unlocks one distribution before the term ends.
+ * Verified against the contract's own `get-bond-l1-unlock-height` and
+ * `bond-period-to-reward-cycle`.
+ */
+export function getBondSchedule(
+  activationHeight: number,
+  termEndHeight: number,
+  rewardCycleLength: number,
+  prepareCycleLength: number
+): BondSchedule {
+  return {
+    enrollmentOpensHeight: activationHeight - BOND_GAP_CYCLES * rewardCycleLength,
+    enrollmentClosesHeight: activationHeight - prepareCycleLength,
+    activationHeight,
+    stxUnlockHeight: termEndHeight - getDistributionCadence(rewardCycleLength),
+    termEndHeight,
+  };
+}
+
+export function getBondLifecycleState(
+  schedule: BondSchedule,
+  currentBurnHeight: number,
+  existsOnChain: boolean
+): BondLifecycleState {
+  if (!existsOnChain) return 'scheduled';
+  if (currentBurnHeight >= schedule.termEndHeight) return 'closed';
+  if (currentBurnHeight >= schedule.stxUnlockHeight) return 'maturity';
+  if (currentBurnHeight >= schedule.activationHeight) return 'active';
+  if (currentBurnHeight >= schedule.enrollmentOpensHeight) return 'enrolling';
+  return 'scheduled';
+}
+
+export interface BondProgress {
+  /** Distributions already paid, out of the bond's full term. */
+  paid: number;
+  total: number;
+  /** Whole days since the bond started, and its full length in days. */
+  dayOfTerm: number;
+  termDays: number;
+  elapsedRatio: number;
+}
+
+/**
+ * How far through its term a bond is.
+ *
+ * Distributions land on the chain-wide grid, and a bond's term spans exactly
+ * 24 of them, so the count is how many grid steps have passed since it
+ * started rather than anything stored per bond.
+ */
+export function getBondProgress(
+  schedule: BondSchedule,
+  currentBurnHeight: number,
+  rewardCycleLength: number
+): BondProgress {
+  const cadence = getDistributionCadence(rewardCycleLength);
+  const blocksElapsed = Math.max(currentBurnHeight - schedule.activationHeight, 0);
+  const termBlocks = Math.max(schedule.termEndHeight - schedule.activationHeight, 1);
+  const minutesPerDay = 24 * 60;
+  return {
+    paid: Math.min(Math.floor(blocksElapsed / cadence), DISTRIBUTIONS_PER_BOND),
+    total: DISTRIBUTIONS_PER_BOND,
+    dayOfTerm: Math.floor((blocksElapsed * MINUTES_PER_BLOCK) / minutesPerDay),
+    termDays: Math.round((termBlocks * MINUTES_PER_BLOCK) / minutesPerDay),
+    elapsedRatio: Math.min(blocksElapsed / termBlocks, 1),
+  };
+}
+
+/**
+ * What a finished bond actually returned, against what it targeted.
+ *
+ * The contract pays a fixed amount per distribution regardless of how long the
+ * blocks took, so a bond that ran fast returns slightly more than its target
+ * rate and one that ran slow slightly less.
+ */
+export function getRealizedRatePercent(
+  paidSats: bigint,
+  bondedSats: bigint,
+  termBlocks: number,
+  rewardCycleLength: number
+): number | undefined {
+  if (bondedSats <= BigInt(0) || termBlocks <= 0) return undefined;
+  const cyclesInTerm = termBlocks / rewardCycleLength;
+  const yearsInTerm = cyclesInTerm / getCyclesPerYear(rewardCycleLength);
+  if (yearsInTerm <= 0) return undefined;
+  return (Number(paidSats) / Number(bondedSats) / yearsInTerm) * 100;
+}
+
+/**
+ * Start heights for bonds the contract will create but has not yet.
+ *
+ * Bond N starts BOND_GAP_CYCLES after bond N-1, so the schedule extends
+ * indefinitely from any known bond. Only the timing is knowable this way; a
+ * scheduled bond has no capacity or target rate until the Endowment sets them.
+ */
+export function projectScheduledBonds(
+  latestKnownIndex: number,
+  latestKnownActivationHeight: number,
+  rewardCycleLength: number,
+  count: number
+): { index: number; activationHeight: number; termEndHeight: number }[] {
+  const gapBlocks = BOND_GAP_CYCLES * rewardCycleLength;
+  const termBlocks = BOND_LENGTH_CYCLES * rewardCycleLength;
+  return Array.from({ length: Math.max(count, 0) }, (_, offset) => {
+    const index = latestKnownIndex + offset + 1;
+    const activationHeight = latestKnownActivationHeight + gapBlocks * (offset + 1);
+    return { index, activationHeight, termEndHeight: activationHeight + termBlocks };
+  });
 }

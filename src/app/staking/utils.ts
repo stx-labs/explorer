@@ -1,6 +1,6 @@
 import { MICROSTACKS_IN_STACKS } from '@/common/utils/utils';
 
-import { SATS_IN_BTC } from './consts';
+import { BOND_OFFERING_SATS, SATS_IN_BTC } from './consts';
 import { Bond, BondStatus } from './data';
 
 /** Parses an API amount string to BigInt, tolerating null/undefined/empty. */
@@ -59,13 +59,26 @@ export function formatStx(microStx: bigint): string {
   return `${stx.toLocaleString(undefined, { maximumFractionDigits: 2 })} STX`;
 }
 
+/**
+ * A dollar figure short enough to sit beside the number it describes.
+ *
+ * Uses compact notation so large sums read as "$106M" rather than nine digits.
+ * The shared `abbreviateNumber` stops at millions and has no thousands case, so
+ * a page-local formatter beats widening a util the rest of the app relies on.
+ */
 export function formatUsd(amount: number): string {
   if (!Number.isFinite(amount)) return '-';
-  return amount.toLocaleString(undefined, {
-    style: 'currency',
-    currency: 'USD',
-    maximumFractionDigits: 0,
-  });
+  return (
+    new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      notation: 'compact',
+      maximumFractionDigits: 1,
+    })
+      .format(amount)
+      // Compact notation keeps a trailing ".0", so "$106.0M" needs trimming.
+      .replace(/\.0(?=[KMBT]?$)/, '')
+  );
 }
 
 export function formatPercent(ratio: number | undefined, decimals = 1): string {
@@ -98,4 +111,33 @@ export function aggregateBondTotals(bonds: Bond[]) {
  */
 export function formatSbtc(sats: bigint, decimals = 4): string {
   return formatBtc(sats, decimals).replace('BTC', 'sBTC');
+}
+
+/**
+ * What a bond's fill is measured against.
+ *
+ * The meter measures the offering, which is the Endowment's figure and is not
+ * on chain. Where no offering is known, fall back to on-chain capacity so the
+ * meter still means something rather than disappearing.
+ */
+export function getBondOfferingSats(bond: Pick<Bond, 'index' | 'parameters'>): {
+  sats: bigint;
+  isOffering: boolean;
+} {
+  const offering = BOND_OFFERING_SATS[bond.index];
+  if (offering) return { sats: toBigInt(offering), isOffering: true };
+  return { sats: toBigInt(bond.parameters?.btc_capacity), isOffering: false };
+}
+
+/**
+ * A date carrying its year, for rows that span more than one.
+ *
+ * Cycle history reaches back far enough that "10 Sep" alone is ambiguous.
+ */
+export function formatDateWithYear(timestamp: number): string {
+  return new Date(timestamp).toLocaleDateString('en-GB', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
 }

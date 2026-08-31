@@ -1,6 +1,12 @@
 import { toBondRow } from '../BondsTable';
 import { Bond } from '../data';
-import { aggregateBondTotals, formatBtc, getBondDisplayName, isBondPending } from '../utils';
+import {
+  aggregateBondTotals,
+  formatBtc,
+  formatUsd,
+  getBondDisplayName,
+  isBondPending,
+} from '../utils';
 import testnetBonds from './fixtures/testnet-bonds.json';
 
 /**
@@ -51,7 +57,6 @@ describe('toBondRow', () => {
     expect(row.isPending).toBe(true);
     expect(row.capacitySats).toBe(BigInt(13986724000));
     expect(row.lockedSats).toBe(BigInt(0));
-    expect(row.fillRatio).toBe(0);
   });
 
   test('term spans 12 pox cycles', () => {
@@ -70,11 +75,6 @@ describe('toBondRow', () => {
     // Unlock is 10,292 blocks ahead.
     expect(row.unlockMs).toBe(NOW_MS + (19800 - CURRENT_BURN_HEIGHT) * TEN_MIN);
     expect(row.unlockMs).toBeGreaterThan(NOW_MS);
-  });
-
-  test('fill ratio is a real proportion of capacity', () => {
-    const row = toRow(bonds.find(b => b.index === 3)!);
-    expect(row.fillRatio).toBeCloseTo(19500 / 13686724000, 12);
   });
 });
 
@@ -111,5 +111,25 @@ describe('display helpers', () => {
   test('only upcoming bonds are pending', () => {
     expect(isBondPending('upcoming')).toBe(true);
     expect(isBondPending('active')).toBe(false);
+  });
+});
+
+describe('formatUsd', () => {
+  test('abbreviates large sums', () => {
+    expect(formatUsd(106_005_982)).toBe('$106M');
+    expect(formatUsd(1_250_000_000)).toBe('$1.3B');
+  });
+
+  test('abbreviates thousands, which the shared util does not', () => {
+    expect(formatUsd(75_441)).toBe('$75.4K');
+  });
+
+  test('leaves small sums alone', () => {
+    expect(formatUsd(237)).toBe('$237');
+    expect(formatUsd(0)).toBe('$0');
+  });
+
+  test('is a dash when there is no number', () => {
+    expect(formatUsd(Number.NaN)).toBe('-');
   });
 });

@@ -3,7 +3,7 @@
 import { Table } from '@/common/components/table/Table';
 import { formatDateShort } from '@/common/utils/date-utils';
 import { Text } from '@/ui/Text';
-import { Badge, Box, Flex, Stack } from '@chakra-ui/react';
+import { Badge, Stack } from '@chakra-ui/react';
 import { ColumnDef } from '@tanstack/react-table';
 import { useMemo } from 'react';
 
@@ -12,7 +12,6 @@ import { Bond } from './data';
 import { bpsToPercent, burnHeightToApproximateTimestamp, getBondFillRatio } from './projections';
 import {
   formatBtc,
-  formatPercent,
   formatSbtc,
   getBondDisplayName,
   getBondStatusLabel,
@@ -33,7 +32,6 @@ export interface BondRow {
   lockedSats: bigint;
   paidOutSats: bigint;
   targetRatePercent: number;
-  fillRatio: number | undefined;
   registeredCount: number;
   allowedCount: number;
   /** Rough dates for the term, projected from block heights. */
@@ -61,25 +59,9 @@ export function toBondRow(bond: Bond, currentBurnHeight: number, nowMs: number):
     lockedSats,
     paidOutSats: toBigInt(bond.balances?.paid_out?.btc),
     targetRatePercent: bpsToPercent(bond.parameters?.target_rate_bps ?? 0),
-    fillRatio: getBondFillRatio(lockedSats, capacitySats),
     registeredCount: bond.registrations?.registered_count ?? 0,
     allowedCount: bond.registrations?.allowed_count ?? 0,
   };
-}
-
-function FillBar({ ratio }: { ratio: number | undefined }) {
-  const clamped = Math.min(Math.max(ratio ?? 0, 0), 1);
-  return (
-    <Box
-      bg={{ base: 'neutral.sand-200', _dark: 'neutral.sand-700' }}
-      h={1.5}
-      w="100%"
-      borderRadius="redesign.xl"
-      overflow="hidden"
-    >
-      <Box bg="accent.bitcoin-500" h="100%" w={`${clamped * 100}%`} />
-    </Box>
-  );
 }
 
 /**
@@ -157,23 +139,13 @@ export const bondColumns: ColumnDef<BondRow>[] = [
     header: 'Capacity',
     accessorKey: 'capacitySats',
     enableSorting: false,
-    size: 170,
-    cell: info => {
-      const row = info.row.original;
-      return (
-        <Stack gap={1} minW={28}>
-          <Flex justify="space-between" gap={2}>
-            <Text textStyle="text-regular-xs" whiteSpace="nowrap">
-              {formatBtc(row.capacitySats, 2)}
-            </Text>
-            <Text textStyle="text-regular-xs" color="textSecondary" whiteSpace="nowrap">
-              {formatPercent(row.fillRatio)} full
-            </Text>
-          </Flex>
-          <FillBar ratio={row.fillRatio} />
-        </Stack>
-      );
-    },
+    size: 120,
+    meta: { textAlign: 'right' },
+    cell: info => (
+      <Text textStyle="text-regular-sm" whiteSpace="nowrap">
+        {formatBtc(info.row.original.capacitySats, 2)}
+      </Text>
+    ),
   },
   {
     id: 'bonded',

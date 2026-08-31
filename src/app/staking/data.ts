@@ -334,63 +334,184 @@ export async function fetchCycleRewards(
 }
 
 /**
- * Recent transactions that called the pox contract.
+ * Bitcoin Staking activity, as events rather than transactions.
  *
- * Note this is not the same as the contract's address transactions: that
- * endpoint returns anything involving the address, including sBTC deposits that
- * merely touch it. Filtering by `contract_id` gives only calls to the contract
- * itself, which is what "Bitcoin Staking activity" means.
+ * One `calculate-rewards` transaction pays every active bond and emits a
+ * `bond-distribution` event for each, so a transaction list would show a single
+ * opaque row where the page wants one per bond. Events carry the amounts;
+ * transactions carry the block and timestamp, so both are needed.
  */
-export interface StakingActivityTx {
+export type ActivityGroup = 'distributions' | 'enrollments' | 'unlocks' | 'bonds';
+
+/** Which contract functions belong to each of the page's filters. */
+export const ACTIVITY_GROUP_FUNCTIONS: Record<ActivityGroup, string[]> = {
+  distributions: ['calculate-rewards'],
+  enrollments: ['register-for-bond', 'update-bond-registration'],
+  unlocks: ['unstake', 'unstake-sbtc'],
+  bonds: ['setup-bond'],
+};
+
+export interface StakingActivityEvent {
+  txId: string;
+  txStatus: string;
+  blockHeight: number;
+  burnBlockTime: number;
+  sender: string;
+  group: ActivityGroup;
+  /** Headline label, e.g. "Reward distribution". */
+  label: string;
+  /** Qualifier under the label, e.g. "Bond 306". */
+  detail?: string;
+  /** Amount moved, already formatted with its unit. */
+  amount?: string;
+  /** Running total paid to that bond, where the event reports one. */
+  cumulative?: string;
+}
+
+interface RawTx {
   tx_id: string;
   tx_status: string;
   sender_address: string;
   burn_block_time: number;
   block_height: number;
-  function_name?: string;
+  contract_call?: { function_name?: string };
+}
+
+async function fetchTxsByFunction(
+  apiUrl: string,
+  poxContractId: string,
+  functionName: string,
+  limit: number
+): Promise<RawTx[]> {
+  const params = new URLSearchParams({
+    limit: String(limit),
+    contract_id: poxContractId,
+    function_name: functionName,
+  });
+  const response = await stacksAPIFetch(`${apiUrl}/extended/v1/tx?${params}`, {
+    cache: 'default',
+    next: { revalidate: REVALIDATE_SECONDS, tags: [`staking-activity-${functionName}`] },
+  });
+  if (!response.ok) return [];
+  const data: { results?: RawTx[] } = await response.json();
+  return data.results ?? [];
+}
+
+/** Reads `(key uN)` pairs out of a Clarity tuple's printed form. */
+export function readUint(repr: string, key: string): bigint | undefined {
+  const match = new RegExp(`\\(${key} u(\\d+)\\)`).exec(repr);
+  return match ? BigInt(match[1]) : undefined;
+}
+
+export function readTopic(repr: string): string | undefined {
+  return /\(topic "([^"]+)"\)/.exec(repr)?.[1];
+}
+
+async function fetchTxEvents(apiUrl: string, txId: string): Promise<string[]> {
+  const response = await stacksAPIFetch(`${apiUrl}/extended/v1/tx/${txId}`, {
+    cache: 'default',
+    next: { revalidate: REVALIDATE_SECONDS, tags: [`staking-tx-${txId}`] },
+  });
+  if (!response.ok) return [];
+  const data: { events?: { contract_log?: { value?: { repr?: string } } }[] } =
+    await response.json();
+  return (data.events ?? [])
+    .map(event => event.contract_log?.value?.repr)
+    .filter((repr): repr is string => !!repr);
+}
+
+const SATS_PER_BTC = 100_000_000;
+const REWARDS_PRECISION_DIVISOR = BigInt('1000000000000000000');
+
+/**
+ * Total paid to a bond so far, from a distribution event.
+ *
+ * The event reports a per-sat rate rather than a running total, so it has to be
+ * multiplied back out by what the bond holds.
+ */
+export function readCumulativePaidSats(repr: string): bigint | undefined {
+  const perSat = readUint(repr, 'cumulative-rewards-per-sat');
+  const staked = readUint(repr, 'bond-staked-sats');
+  if (perSat === undefined || staked === undefined) return undefined;
+  return (perSat * staked) / REWARDS_PRECISION_DIVISOR;
+}
+
+function formatSats(sats: bigint): string {
+  const btc = Number(sats) / SATS_PER_BTC;
+  if (btc === 0) return '0 BTC';
+  if (btc < 0.0001) return '<0.0001 BTC';
+  return `${btc.toLocaleString(undefined, { maximumFractionDigits: 4 })} BTC`;
 }
 
 export async function fetchStakingActivity(
   poxContractId: string,
   chain: string,
   api?: string,
-  limit = 10,
-  functionName?: string
-): Promise<StakingActivityTx[]> {
+  limit = 12,
+  group?: ActivityGroup
+): Promise<StakingActivityEvent[]> {
   const apiUrl = getApiUrl(chain, api);
-  // The API filters by function name server-side, so a filtered feed is still a
-  // true feed of that action rather than a filtered page of a mixed one.
-  const params = new URLSearchParams({
-    limit: String(limit),
-    contract_id: poxContractId,
-  });
-  if (functionName) params.set('function_name', functionName);
-  const response = await stacksAPIFetch(`${apiUrl}/extended/v1/tx?${params}`, {
-    cache: 'default',
-    next: {
-      revalidate: REVALIDATE_SECONDS,
-      tags: ['staking-activity', `staking-activity-${functionName ?? 'all'}`],
-    },
-  });
-  if (!response.ok) {
-    throw new Error(`Failed to fetch staking activity: ${response.status}`);
-  }
-  const data: {
-    results?: {
-      tx_id: string;
-      tx_status: string;
-      sender_address: string;
-      burn_block_time: number;
-      block_height: number;
-      contract_call?: { function_name?: string };
-    }[];
-  } = await response.json();
-  return (data.results ?? []).map(tx => ({
-    tx_id: tx.tx_id,
-    tx_status: tx.tx_status,
-    sender_address: tx.sender_address,
-    burn_block_time: tx.burn_block_time,
-    block_height: tx.block_height,
-    function_name: tx.contract_call?.function_name,
-  }));
+  const groups = group ? [group] : (Object.keys(ACTIVITY_GROUP_FUNCTIONS) as ActivityGroup[]);
+
+  const perGroup = await Promise.all(
+    groups.map(async activityGroup => {
+      const functions = ACTIVITY_GROUP_FUNCTIONS[activityGroup];
+      const txsByFunction = await Promise.all(
+        functions.map(fn => fetchTxsByFunction(apiUrl, poxContractId, fn, limit))
+      );
+      const txs = txsByFunction.flat();
+
+      const rows = await Promise.all(
+        txs.map(async (tx): Promise<StakingActivityEvent[]> => {
+          const base = {
+            txId: tx.tx_id,
+            txStatus: tx.tx_status,
+            blockHeight: tx.block_height,
+            burnBlockTime: tx.burn_block_time,
+            sender: tx.sender_address,
+            group: activityGroup,
+          };
+
+          // A rewards transaction expands into one row per bond it paid.
+          if (tx.contract_call?.function_name === 'calculate-rewards') {
+            const reprs = await fetchTxEvents(apiUrl, tx.tx_id);
+            return reprs
+              .filter(repr => readTopic(repr) === 'bond-distribution')
+              .map(repr => {
+                const bondIndex = readUint(repr, 'bond-index');
+                const rewards = readUint(repr, 'bond-rewards') ?? BigInt(0);
+                const cumulativeSats = readCumulativePaidSats(repr);
+                return {
+                  ...base,
+                  label: 'Reward distribution',
+                  detail: bondIndex !== undefined ? `Bond ${bondIndex}` : undefined,
+                  amount: formatSats(rewards),
+                  cumulative: cumulativeSats !== undefined ? formatSats(cumulativeSats) : undefined,
+                };
+              });
+          }
+
+          const labels: Record<string, string> = {
+            'register-for-bond': 'Enrolled',
+            'update-bond-registration': 'Registration updated',
+            unstake: 'Unstaked',
+            'unstake-sbtc': 'sBTC unstaked',
+            'setup-bond': 'Bond created',
+          };
+          return [
+            {
+              ...base,
+              label: labels[tx.contract_call?.function_name ?? ''] ?? 'Contract call',
+            },
+          ];
+        })
+      );
+      return rows.flat();
+    })
+  );
+
+  return perGroup
+    .flat()
+    .sort((a, b) => b.burnBlockTime - a.burnBlockTime || b.blockHeight - a.blockHeight)
+    .slice(0, limit);
 }

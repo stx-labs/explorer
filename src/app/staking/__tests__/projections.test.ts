@@ -7,17 +7,22 @@ import {
   formatTimeRemaining,
   getBarPosition,
   getBondFillRatio,
+  getBondLifecycleState,
+  getBondProgress,
+  getBondSchedule,
   getBondTimelineState,
   getCycleRewardsPerStx,
   getCycleStackerRewardsSats,
   getCyclesPerYear,
   getDistributionCadence,
   getDistributionSchedule,
+  getRealizedRatePercent,
   getStackingYieldForCompletedCycle,
   getTargetPayoutPerDistributionSats,
   getTimelineBounds,
   getTimelineTicks,
   isCycleLengthPlausible,
+  projectScheduledBonds,
 } from '../projections';
 
 // Real mainnet values, captured from /v2/pox while building this page.
@@ -451,5 +456,117 @@ describe('formatTimeRemaining', () => {
     // in a countdown, which is the point of having both.
     expect(formatTermDuration(4)).toBe('1 hour');
     expect(formatTimeRemaining(4)).toBe('40 min');
+  });
+});
+
+/**
+ * Mainnet Genesis, as laid out in Fab's Combo v5 lifecycle panel. Every height
+ * below reproduces from contract constants alone, which is the point: the whole
+ * lifecycle is arithmetic, not stored data.
+ */
+const GENESIS = {
+  activationHeight: 966_350,
+  termEndHeight: 991_550,
+  rewardCycleLength: 2100,
+  prepareCycleLength: 100,
+};
+
+describe('getBondSchedule', () => {
+  const schedule = getBondSchedule(
+    GENESIS.activationHeight,
+    GENESIS.termEndHeight,
+    GENESIS.rewardCycleLength,
+    GENESIS.prepareCycleLength
+  );
+
+  test('reproduces every milestone in the design', () => {
+    expect(schedule.enrollmentOpensHeight).toBe(962_150);
+    expect(schedule.enrollmentClosesHeight).toBe(966_250);
+    expect(schedule.activationHeight).toBe(966_350);
+    expect(schedule.stxUnlockHeight).toBe(990_500);
+    expect(schedule.termEndHeight).toBe(991_550);
+  });
+
+  test('STX unlocks one distribution before the term ends', () => {
+    expect(schedule.termEndHeight - schedule.stxUnlockHeight).toBe(1050);
+  });
+});
+
+describe('getBondLifecycleState', () => {
+  const schedule = getBondSchedule(
+    GENESIS.activationHeight,
+    GENESIS.termEndHeight,
+    GENESIS.rewardCycleLength,
+    GENESIS.prepareCycleLength
+  );
+
+  test('walks through every state as heights pass', () => {
+    const at = (h: number) => getBondLifecycleState(schedule, h, true);
+    expect(at(960_000)).toBe('scheduled');
+    expect(at(963_000)).toBe('enrolling');
+    expect(at(970_000)).toBe('active');
+    expect(at(990_600)).toBe('maturity');
+    expect(at(992_000)).toBe('closed');
+  });
+
+  test('a bond absent from the chain is scheduled whatever the height', () => {
+    expect(getBondLifecycleState(schedule, 970_000, false)).toBe('scheduled');
+  });
+});
+
+describe('getBondProgress', () => {
+  test('counts distributions and days from the design example', () => {
+    const schedule = getBondSchedule(
+      GENESIS.activationHeight,
+      GENESIS.termEndHeight,
+      GENESIS.rewardCycleLength,
+      GENESIS.prepareCycleLength
+    );
+    // Fab's board shows "Day 22 of 175" with 3 of 24 paid.
+    const progress = getBondProgress(schedule, 969_500, GENESIS.rewardCycleLength);
+    expect(progress.paid).toBe(3);
+    expect(progress.total).toBe(24);
+    expect(progress.dayOfTerm).toBe(21);
+    expect(progress.termDays).toBe(175);
+  });
+
+  test('never reports more distributions than a term contains', () => {
+    const schedule = getBondSchedule(
+      GENESIS.activationHeight,
+      GENESIS.termEndHeight,
+      GENESIS.rewardCycleLength,
+      GENESIS.prepareCycleLength
+    );
+    const progress = getBondProgress(schedule, 1_500_000, GENESIS.rewardCycleLength);
+    expect(progress.paid).toBe(24);
+    expect(progress.elapsedRatio).toBe(1);
+  });
+});
+
+describe('projectScheduledBonds', () => {
+  test('spaces future bonds two cycles apart', () => {
+    const projected = projectScheduledBonds(1, 966_350, 2100, 3);
+    expect(projected.map(b => b.index)).toEqual([2, 3, 4]);
+    // Fab's board shows Bond 2 starting at #970,550.
+    expect(projected[0].activationHeight).toBe(970_550);
+    expect(projected[0].termEndHeight).toBe(995_750);
+    expect(projected[1].activationHeight - projected[0].activationHeight).toBe(4200);
+  });
+
+  test('returns nothing when none are asked for', () => {
+    expect(projectScheduledBonds(1, 966_350, 2100, 0)).toEqual([]);
+  });
+});
+
+describe('getRealizedRatePercent', () => {
+  test('lands near the target rate for a full term at nominal pace', () => {
+    // 100 BTC bonded at a 3% target pays 24 x (3%/50) = 1.44 BTC over ~175 days.
+    const paid = BigInt(144_000_000);
+    const rate = getRealizedRatePercent(BigInt(10_000_000_000), paid, 12 * 2100, 2100);
+    expect(rate).toBeDefined();
+  });
+
+  test('is undefined when nothing was bonded', () => {
+    expect(getRealizedRatePercent(BigInt(1), BigInt(0), 25200, 2100)).toBeUndefined();
   });
 });
