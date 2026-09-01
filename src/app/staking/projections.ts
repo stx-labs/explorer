@@ -50,6 +50,32 @@ export function burnHeightToApproximateTimestamp(
 }
 
 /**
+ * The burn height a moment falls on, inverting the projection above so a
+ * position on the timeline can name the block under the cursor.
+ */
+export function approximateBurnHeightAt(
+  timestampMs: number,
+  currentBurnHeight: number,
+  nowMs: number
+): number {
+  const minutesDelta = (timestampMs - nowMs) / (60 * 1000);
+  return Math.round(currentBurnHeight + minutesDelta / MINUTES_PER_BLOCK);
+}
+
+/**
+ * The reward cycle a burn height belongs to. Cycles are fixed-length and
+ * anchored to the chain's first burnchain block, so this is arithmetic.
+ */
+export function burnHeightToRewardCycle(
+  burnHeight: number,
+  firstBurnchainBlockHeight: number,
+  rewardCycleLength: number
+): number | undefined {
+  if (!rewardCycleLength) return undefined;
+  return Math.floor((burnHeight - firstBurnchainBlockHeight) / rewardCycleLength);
+}
+
+/**
  * Bond reward distributions land on a global grid anchored to the chain's first
  * burnchain block, NOT to a bond's activation height. Every bond pays on the
  * same schedule. From pox-5.clar:
@@ -191,7 +217,7 @@ const MICRO_STX_IN_STX = 1_000_000;
 const MINUTES_IN_YEAR = 365 * 24 * 60;
 
 /**
- * Sats earned per STX staked, for one cycle.
+ * Sats rewarded per STX staked, for one cycle.
  *
  * The contract's figure is per micro-STX and scaled by 1e18, so to get a
  * per-STX number we multiply by the million micro-STX in a STX and divide the
@@ -229,14 +255,18 @@ export function isCycleLengthPlausible(rewardCycleLength: number): boolean {
 }
 
 export interface StackingYield {
-  /** Sats earned per STX staked over the whole cycle. */
+  /** Sats rewarded per STX staked over the whole cycle. */
   satsPerStxPerCycle: number;
   /** The same figure stretched out over a year. */
   satsPerStxPerYear: number;
   /**
-   * The yearly rate as a percentage, comparing what a stacker earns in BTC
-   * against what their STX is worth. Needs both prices, so it is undefined
-   * when we do not have them.
+   * The simple yearly rate: a cycle's return scaled up without reinvesting.
+   * Needs both prices, so it is undefined when we do not have them.
+   */
+  aprPercent?: number | undefined;
+  /**
+   * The yearly rate with rewards restacked each cycle, which is what an APY
+   * means and what the wider ecosystem quotes. Undefined without both prices.
    */
   apyPercent: number | undefined;
 }
@@ -245,7 +275,7 @@ export interface StackingYield {
  * Works out the yearly rate for one finished cycle.
  *
  * The comparison is between two different coins, so prices have to come into
- * it: we take the BTC a stacker earned, convert it to dollars, and express
+ * it: we take the BTC a stacker rewarded, convert it to dollars, and express
  * that as a percentage of the dollar value of the STX they locked up.
  *
  * Only pass a cycle that has finished. A cycle still in progress holds only
@@ -278,11 +308,18 @@ export function getStackingYieldForCompletedCycle({
     return { satsPerStxPerCycle, satsPerStxPerYear, apyPercent: undefined };
   }
 
-  const usdEarnedPerStxPerYear = (satsPerStxPerYear / SATS_IN_BTC) * btcPriceUsd;
+  const usdRewardedPerStxPerYear = (satsPerStxPerYear / SATS_IN_BTC) * btcPriceUsd;
+  // The simple rate: a cycle's return scaled to a year without reinvesting.
+  const aprRatio = usdRewardedPerStxPerYear / stxPriceUsd;
+  // Rewards land every cycle and can be restacked, so the yearly figure
+  // compounds at that frequency. This is the difference between an APR and an
+  // APY, and the ecosystem quotes the compounded one.
+  const cyclesPerYear = getCyclesPerYear(rewardCycleLength);
   return {
     satsPerStxPerCycle,
     satsPerStxPerYear,
-    apyPercent: (usdEarnedPerStxPerYear / stxPriceUsd) * 100,
+    aprPercent: aprRatio * 100,
+    apyPercent: (Math.pow(1 + aprRatio / cyclesPerYear, cyclesPerYear) - 1) * 100,
   };
 }
 
@@ -615,7 +652,8 @@ export function getBondProgress(
  *
  * The contract pays a fixed amount per distribution regardless of how long the
  * blocks took, so a bond that ran fast returns slightly more than its target
- * rate and one that ran slow slightly less.
+ * rate and one that ran slow slightly less. Undefined where the figure would
+ * not mean anything: nothing bonded, or cycles too short to annualize.
  */
 export function getRealizedRatePercent(
   paidSats: bigint,
@@ -624,6 +662,11 @@ export function getRealizedRatePercent(
   rewardCycleLength: number
 ): number | undefined {
   if (bondedSats <= BigInt(0) || termBlocks <= 0) return undefined;
+  // Annualizing needs a term long enough for a year to be a sensible unit. On a
+  // chain whose cycles run in hours, a term returns its full rate in under two
+  // days, and scaling that to a year produces a number in the hundreds of
+  // percent that describes the block interval rather than the bond.
+  if (!isCycleLengthPlausible(rewardCycleLength)) return undefined;
   const cyclesInTerm = termBlocks / rewardCycleLength;
   const yearsInTerm = cyclesInTerm / getCyclesPerYear(rewardCycleLength);
   if (yearsInTerm <= 0) return undefined;

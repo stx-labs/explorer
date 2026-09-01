@@ -37,7 +37,6 @@ export function GlossaryTerm({
           <Text textStyle="text-regular-sm" color="textInvert">
             {definition}
           </Text>
-          {/* TODO: no docs anchor yet; see glossary.ts. */}
           {docsUrl && (
             <a href={docsUrl} target="_blank" rel="noopener noreferrer">
               <Flex align="center" gap={1}>

@@ -231,7 +231,25 @@ describe('getStackingYieldForCompletedCycle', () => {
     });
     expect(result.satsPerStxPerCycle).toBeCloseTo(0.70183108, 8);
     expect(result.satsPerStxPerYear).toBeCloseTo(17.5658, 3);
-    expect(result.apyPercent).toBeCloseTo(4.9928, 3);
+    // The simple rate, then the same rate with each cycle's rewards restacked.
+    expect(result.aprPercent).toBeCloseTo(4.9928, 3);
+    expect(result.apyPercent).toBeCloseTo(5.1143, 3);
+  });
+
+  test('the APY is the APR compounded once per cycle', () => {
+    // The distinction the wider ecosystem draws: stacking-tracker publishes
+    // both, and its APY is its APR compounded at the cycle frequency.
+    const result = getStackingYieldForCompletedCycle({
+      rewardsPerMicroStx: fullCycleRewardsPerMicroStx,
+      rewardCycleLength: 2100,
+      btcPriceUsd: 78519.865,
+      stxPriceUsd: 0.27625,
+    });
+    const cyclesPerYear = getCyclesPerYear(2100);
+    const compounded =
+      (Math.pow(1 + result.aprPercent! / 100 / cyclesPerYear, cyclesPerYear) - 1) * 100;
+    expect(result.apyPercent).toBeCloseTo(compounded, 6);
+    expect(result.apyPercent!).toBeGreaterThan(result.aprPercent!);
   });
 
   test('leaves the rate out when a price is missing', () => {
@@ -568,5 +586,16 @@ describe('getRealizedRatePercent', () => {
 
   test('is undefined when nothing was bonded', () => {
     expect(getRealizedRatePercent(BigInt(1), BigInt(0), 25200, 2100)).toBeUndefined();
+  });
+
+  test('refuses to annualize a term measured in hours', () => {
+    // A regtest chain runs 20-block cycles, so a 12-cycle term finishes in
+    // under two days. A 4.8% return over that period annualizes past 1000%,
+    // which describes the block interval rather than the bond.
+    expect(getRealizedRatePercent(BigInt(4800), BigInt(100_000), 240, 20)).toBeUndefined();
+    // The same figures over a mainnet-length cycle stay a sensible rate.
+    const rate = getRealizedRatePercent(BigInt(4800), BigInt(100_000), 12 * 2100, 2100);
+    expect(rate).toBeDefined();
+    expect(rate!).toBeLessThan(20);
   });
 });

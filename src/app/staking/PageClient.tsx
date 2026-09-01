@@ -10,13 +10,19 @@ import { StackingOverview } from './StackingOverview';
 import { StakingActivity } from './StakingActivity';
 import { StakingStats } from './StakingStats';
 import { SCHEDULED_BONDS_AHEAD, SHOW_SCHEDULED_BONDS } from './consts';
-import { Bond, CycleRewards, PoxCycle, StakingActivityEvent } from './data';
+import {
+  Bond,
+  BondRewards,
+  CycleRewards,
+  EnrollmentShare,
+  PoxCycle,
+  StakingActivityEvent,
+} from './data';
+import { DailyPrices } from './prices';
 import { getFeaturedBondIndex, projectScheduledBonds } from './projections';
 
 export interface StakingPageData {
   bonds: Bond[];
-  /** Bonds on chain, which can exceed the number fetched. */
-  bondsTotal: number;
   poxInfo?: PoxInfo;
   cycles: PoxCycle[];
   cycleRewards: Record<number, CycleRewards>;
@@ -27,14 +33,20 @@ export interface StakingPageData {
   rewardCycleLength: number;
   prepareCycleLength: number;
   firstBurnchainBlockHeight: number;
+  enrollments: EnrollmentShare[];
   activity: StakingActivityEvent[];
+  /** BTC rewarded by bonds to date, which differs from what has been claimed. */
+  rewarded?: BondRewards;
   selectedActivityGroup?: string;
   chain: string;
+  /** Daily price history, so settled cycles are priced at the time they ended. */
+  prices?: DailyPrices;
+  /** Real cycle end times, where the chain has been asked for them. */
+  cycleEndTimes?: Record<number, number>;
 }
 
 export function StakingPageClient({
   bonds,
-  bondsTotal,
   poxInfo,
   cycles,
   cycleRewards,
@@ -44,9 +56,13 @@ export function StakingPageClient({
   rewardCycleLength,
   prepareCycleLength,
   firstBurnchainBlockHeight,
+  enrollments,
   activity,
+  rewarded,
   selectedActivityGroup,
   chain,
+  prices,
+  cycleEndTimes,
 }: StakingPageData) {
   // The bond to feature, and the one after it. The next bond may not exist on
   // chain yet, in which case its term comes from the contract's fixed cadence.
@@ -86,18 +102,21 @@ export function StakingPageClient({
       <Stack gap={5}>
         <Text textStyle="heading-md">Bitcoin Staking</Text>
         <StakingStats
-          bonds={bonds}
           featuredBond={featuredBond}
           rewardCycleLength={rewardCycleLength}
           prepareCycleLength={prepareCycleLength}
           currentBurnHeight={currentBurnHeight}
+          nowMs={nowMs}
+          rewardsByBond={rewarded?.byBondIndex}
         />
         <PeriodsOverview
           bonds={bonds}
-          bondsTotal={bondsTotal}
           featuredIndex={featuredIndex}
+          rewardsByBond={rewarded?.byBondIndex}
           scheduledBonds={scheduledBonds}
           rewardCycleLength={rewardCycleLength}
+          prepareCycleLength={prepareCycleLength}
+          firstBurnchainBlockHeight={firstBurnchainBlockHeight}
           currentBurnHeight={currentBurnHeight}
           nowMs={nowMs}
         />
@@ -105,6 +124,7 @@ export function StakingPageClient({
           bonds={bonds}
           featuredBond={featuredBond}
           nextBond={nextBond}
+          enrollments={enrollments}
           rewardCycleLength={rewardCycleLength}
           prepareCycleLength={prepareCycleLength}
           firstBurnchainBlockHeight={firstBurnchainBlockHeight}
@@ -124,6 +144,8 @@ export function StakingPageClient({
             firstBurnchainBlockHeight={firstBurnchainBlockHeight}
             currentBurnHeight={currentBurnHeight}
             nowMs={nowMs}
+            prices={prices}
+            cycleEndTimes={cycleEndTimes}
           />
         </Stack>
       )}

@@ -6,15 +6,22 @@ import { ACTIVITY_FEED_LIMIT } from './consts';
 import {
   ActivityGroup,
   Bond,
+  BondRegistration,
+  BondRewards,
   CycleRewards,
   PoxCycle,
   StakingActivityEvent,
+  fetchBondRegistrations,
+  fetchBondRewards,
   fetchBonds,
+  fetchCycleEndTimes,
   fetchCycleRewards,
   fetchPoxCycles,
   fetchPoxInfo,
   fetchStakingActivity,
 } from './data';
+import { DailyPrices, fetchDailyPrices } from './prices';
+import { burnHeightToApproximateTimestamp, getFeaturedBondIndex } from './projections';
 import { DistributionSchedule, getDistributionSchedule } from './projections';
 
 interface StakingSearchParams {
@@ -28,13 +35,15 @@ export default async function StakingPage(props: { searchParams: Promise<Staking
   const { chain = NetworkModes.Mainnet, api, activity: activityGroup } = await props.searchParams;
 
   let bonds: Bond[] = [];
-  let bondsTotal = 0;
   let cycles: PoxCycle[] = [];
   let poxInfo;
   let distribution: DistributionSchedule | undefined;
   let cycleRewards: Record<number, CycleRewards> = {};
+  let pricedCycles: number[] = [];
   let pox5FirstCycleId: number | undefined;
   let activity: StakingActivityEvent[] = [];
+  let rewarded: BondRewards | undefined;
+  let enrollments: BondRegistration[] = [];
 
   // Each source is settled independently: a bond fetch failing should not take
   // the Stacking half of the page down with it, and vice versa.
@@ -46,7 +55,6 @@ export default async function StakingPage(props: { searchParams: Promise<Staking
 
   if (bondsResult.status === 'fulfilled') {
     bonds = bondsResult.value.bonds;
-    bondsTotal = bondsResult.value.total;
   } else {
     logError(bondsResult.reason as Error, 'Staking page: fetch bonds', { chain }, 'error');
   }
@@ -97,12 +105,52 @@ export default async function StakingPage(props: { searchParams: Promise<Staking
           (poxInfo?.current_cycle?.id === undefined || cycleNumber <= poxInfo.current_cycle.id)
       );
 
+    pricedCycles = cyclesToPrice;
     if (cyclesToPrice.length > 0) {
       try {
         cycleRewards = await fetchCycleRewards(cyclesToPrice, poxInfo.contract_id, chain, api);
       } catch (error) {
         logError(error as Error, 'Staking page: fetch cycle rewards', { chain }, 'error');
       }
+    }
+  }
+
+  // Fixed once so every projected date on the page agrees.
+  const nowMs = Date.now();
+
+  // Only cycles that show a rate need a real end time, so the cost tracks the
+  // rows that use it rather than the whole page.
+  let cycleEndTimes: Record<number, number> = {};
+  if (pricedCycles.length > 0 && poxInfo?.reward_cycle_length) {
+    try {
+      cycleEndTimes = await fetchCycleEndTimes(
+        pricedCycles,
+        poxInfo.first_burnchain_block_height ?? 0,
+        poxInfo.reward_cycle_length,
+        chain,
+        api
+      );
+    } catch (error) {
+      logError(error as Error, 'Staking page: fetch cycle end times', { chain }, 'error');
+    }
+  }
+
+  // One request per coin covers every cycle on the page, so a settled cycle can
+  // be priced at the day it ended rather than at today's rates.
+  let prices: DailyPrices | undefined;
+  if (cycles.length > 0 && poxInfo?.reward_cycle_length) {
+    const oldest = Math.min(...cycles.map(cycle => cycle.cycle_number));
+    const startHeight =
+      (poxInfo.first_burnchain_block_height ?? 0) + oldest * poxInfo.reward_cycle_length;
+    const startMs = burnHeightToApproximateTimestamp(
+      startHeight,
+      poxInfo.current_burnchain_block_height ?? 0,
+      nowMs
+    );
+    try {
+      prices = await fetchDailyPrices(startMs, nowMs);
+    } catch (error) {
+      logError(error as Error, 'Staking page: fetch daily prices', { chain }, 'error');
     }
   }
 
@@ -113,6 +161,7 @@ export default async function StakingPage(props: { searchParams: Promise<Staking
       const group = (['distributions', 'enrollments', 'unlocks', 'bonds'] as ActivityGroup[]).find(
         candidate => candidate === activityGroup
       );
+      rewarded = await fetchBondRewards(poxInfo.contract_id, chain, api);
       activity = await fetchStakingActivity(
         poxInfo.contract_id,
         chain,
@@ -125,13 +174,21 @@ export default async function StakingPage(props: { searchParams: Promise<Staking
     }
   }
 
+  // Enrollments in the bond the page features, which drive its breakdown bar.
+  const featuredForEnrollments = getFeaturedBondIndex(bonds);
+  if (featuredForEnrollments !== undefined) {
+    try {
+      enrollments = await fetchBondRegistrations(featuredForEnrollments, chain, api);
+    } catch (error) {
+      logError(error as Error, 'Staking page: fetch enrollments', { chain }, 'error');
+    }
+  }
+
   // Stamped once on the server so the timeline and the table agree on "now".
-  const nowMs = Date.now();
 
   return (
     <StakingPageClient
       bonds={bonds}
-      bondsTotal={bondsTotal}
       poxInfo={poxInfo}
       cycles={cycles}
       cycleRewards={cycleRewards}
@@ -141,7 +198,12 @@ export default async function StakingPage(props: { searchParams: Promise<Staking
       prepareCycleLength={poxInfo?.prepare_phase_block_length ?? 0}
       firstBurnchainBlockHeight={poxInfo?.first_burnchain_block_height ?? 0}
       nowMs={nowMs}
+      prices={prices}
+      cycleEndTimes={cycleEndTimes}
+      // Only the sizes cross to the client; the addresses stay here.
+      enrollments={enrollments.map(enrollment => ({ btc: enrollment.balances?.btc ?? '0' }))}
       activity={activity}
+      rewarded={rewarded}
       selectedActivityGroup={activityGroup}
       chain={chain}
     />

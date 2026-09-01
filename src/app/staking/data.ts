@@ -2,6 +2,8 @@ import { stacksAPIFetch } from '@/api/stacksAPIFetch';
 import { PoxInfo } from '@/common/queries/usePoxInforRaw';
 import { getApiUrl } from '@/common/utils/network-utils';
 
+import { DISTRIBUTIONS_PER_BOND } from './consts';
+
 /**
  * Shapes returned by /extended/v3/staking/*. These are not covered by
  * @stacks/blockchain-api-client, so they are declared here. Replace them with
@@ -50,6 +52,16 @@ export interface Bond {
   };
 }
 
+/**
+ * One enrollment's size, without whose it is.
+ *
+ * The breakdown shows proportions, so the staker address has no job on the
+ * page and is dropped rather than shipped to the browser unused.
+ */
+export interface EnrollmentShare {
+  btc: string;
+}
+
 export interface BondRegistration {
   staker: string;
   signer: string;
@@ -88,6 +100,65 @@ export async function fetchBonds(chain: string, api?: string): Promise<BondsPage
   return { bonds, total: data.total ?? bonds.length };
 }
 
+/**
+ * A page of bonds.
+ *
+ * The endpoint pages by cursor rather than offset — `offset` is accepted and
+ * ignored — and the cursor is the bond index the page starts at, running down
+ * from there. Callers that want a page number derive the cursor from the
+ * highest index, which `fetchHighestBondIndex` reads.
+ */
+export interface BondsCursorPage extends BondsPage {
+  nextCursor?: string;
+  previousCursor?: string;
+}
+
+/**
+ * Every paged endpoint used here rejects a limit above this. Requests are
+ * clamped rather than trusted: asking for more returns a 400, which reads as an
+ * empty result and silently produces a confident zero downstream.
+ */
+const MAX_PAGE_LIMIT = 50;
+
+export async function fetchBondsPage(
+  chain: string,
+  api?: string,
+  limit = MAX_PAGE_LIMIT,
+  cursor?: string
+): Promise<BondsCursorPage> {
+  const apiUrl = getApiUrl(chain, api);
+  const params = new URLSearchParams({ limit: String(Math.min(limit, MAX_PAGE_LIMIT)) });
+  if (cursor !== undefined) params.set('cursor', cursor);
+  const response = await stacksAPIFetch(`${apiUrl}/extended/v3/staking/bonds?${params}`, {
+    cache: 'default',
+    next: { revalidate: REVALIDATE_SECONDS, tags: ['staking-bonds'] },
+  });
+  if (!response.ok) {
+    throw new Error(`Failed to fetch bonds: ${response.status}`);
+  }
+  const data: CursorPaginated<Bond> = await response.json();
+  const bonds = [...(data.results ?? [])].sort((a, b) => b.index - a.index);
+  return {
+    bonds,
+    total: data.total ?? bonds.length,
+    nextCursor: data.cursor?.next ?? undefined,
+    previousCursor: data.cursor?.previous ?? undefined,
+  };
+}
+
+/**
+ * The newest bond's index and how many exist, read from the first page. Paging
+ * by number counts down from the index rather than assuming it equals the
+ * total, which only holds while no bond has ever been skipped.
+ */
+export async function fetchHighestBondIndex(
+  chain: string,
+  api?: string
+): Promise<{ highestIndex?: number; total: number }> {
+  const page = await fetchBondsPage(chain, api, 1);
+  return { highestIndex: page.bonds[0]?.index, total: page.total };
+}
+
 export async function fetchBond(index: number, chain: string, api?: string): Promise<Bond> {
   const apiUrl = getApiUrl(chain, api);
   const response = await stacksAPIFetch(`${apiUrl}/extended/v3/staking/bonds/${index}`, {
@@ -107,7 +178,7 @@ export async function fetchBondRegistrations(
 ): Promise<BondRegistration[]> {
   const apiUrl = getApiUrl(chain, api);
   const response = await stacksAPIFetch(
-    `${apiUrl}/extended/v3/staking/bonds/${index}/registrations?limit=200`,
+    `${apiUrl}/extended/v3/staking/bonds/${index}/registrations?limit=${MAX_PAGE_LIMIT}`,
     {
       cache: 'default',
       next: { revalidate: REVALIDATE_SECONDS, tags: [`staking-bond-${index}-registrations`] },
@@ -137,17 +208,34 @@ export interface PoxCycle {
   total_signers: number;
 }
 
-export async function fetchPoxCycles(chain: string, api?: string, limit = 10): Promise<PoxCycle[]> {
+export interface PoxCyclesPage {
+  cycles: PoxCycle[];
+  /** Cycles the chain has recorded, which exceeds the number fetched. */
+  total: number;
+}
+
+export async function fetchPoxCyclesPage(
+  chain: string,
+  api?: string,
+  limit = 10,
+  offset = 0
+): Promise<PoxCyclesPage> {
   const apiUrl = getApiUrl(chain, api);
-  const response = await stacksAPIFetch(`${apiUrl}/extended/v2/pox/cycles?limit=${limit}`, {
+  const params = new URLSearchParams({ limit: String(limit), offset: String(offset) });
+  const response = await stacksAPIFetch(`${apiUrl}/extended/v2/pox/cycles?${params}`, {
     cache: 'default',
     next: { revalidate: REVALIDATE_SECONDS, tags: ['staking-pox-cycles'] },
   });
   if (!response.ok) {
     throw new Error(`Failed to fetch pox cycles: ${response.status}`);
   }
-  const data: { results: PoxCycle[] } = await response.json();
-  return data.results ?? [];
+  const data: { results?: PoxCycle[]; total?: number } = await response.json();
+  const cycles = data.results ?? [];
+  return { cycles, total: data.total ?? cycles.length };
+}
+
+export async function fetchPoxCycles(chain: string, api?: string, limit = 10): Promise<PoxCycle[]> {
+  return (await fetchPoxCyclesPage(chain, api, limit)).cycles;
 }
 
 export interface StakingSignerManager {
@@ -346,7 +434,7 @@ export type ActivityGroup = 'distributions' | 'enrollments' | 'unlocks' | 'bonds
 /** Which contract functions belong to each of the page's filters. */
 export const ACTIVITY_GROUP_FUNCTIONS: Record<ActivityGroup, string[]> = {
   distributions: ['calculate-rewards'],
-  enrollments: ['register-for-bond', 'update-bond-registration'],
+  enrollments: ['register-for-bond', 'update-bond-registration', 'stake', 'stake-update'],
   unlocks: ['unstake', 'unstake-sbtc'],
   bonds: ['setup-bond'],
 };
@@ -362,6 +450,8 @@ export interface StakingActivityEvent {
   label: string;
   /** Qualifier under the label, e.g. "Bond 306". */
   detail?: string;
+  /** The bond the event belongs to, for filtering without parsing the label. */
+  bondIndex?: number;
   /** Amount moved, already formatted with its unit. */
   amount?: string;
   /** Running total paid to that bond, where the event reports one. */
@@ -381,10 +471,12 @@ async function fetchTxsByFunction(
   apiUrl: string,
   poxContractId: string,
   functionName: string,
-  limit: number
+  limit: number,
+  offset = 0
 ): Promise<RawTx[]> {
   const params = new URLSearchParams({
-    limit: String(limit),
+    limit: String(Math.min(limit, MAX_PAGE_LIMIT)),
+    offset: String(offset),
     contract_id: poxContractId,
     function_name: functionName,
   });
@@ -443,6 +535,171 @@ function formatSats(sats: bigint): string {
   return `${btc.toLocaleString(undefined, { maximumFractionDigits: 4 })} BTC`;
 }
 
+/** Parsed locally: utils imports from this module, so it cannot be imported back. */
+function parseAmount(value: string | undefined | null): bigint {
+  if (!value) return BigInt(0);
+  try {
+    return BigInt(value);
+  } catch {
+    return BigInt(0);
+  }
+}
+
+/** "Genesis" for the first bond, "Bond N" for the rest. */
+function bondName(index?: number): string | undefined {
+  if (index === undefined) return undefined;
+  return index === 0 ? 'Genesis' : `Bond ${index}`;
+}
+
+function joinDetail(...parts: (string | undefined)[]): string | undefined {
+  const kept = parts.filter(Boolean);
+  return kept.length > 0 ? kept.join(' · ') : undefined;
+}
+
+/**
+ * Which of the bond's distributions this one is.
+ *
+ * Distributions land on the chain-wide grid and a term spans exactly
+ * DISTRIBUTIONS_PER_BOND of them, so the ordinal is how many grid steps have
+ * passed since the bond started rather than anything the event reports.
+ */
+function describeDistribution(bond?: Bond, calculationHeight?: bigint): string | undefined {
+  const activation = bond?.schedule?.activation?.bitcoin_height;
+  const unlock = bond?.schedule?.unlock?.bitcoin_height;
+  if (activation === undefined || unlock === undefined || calculationHeight === undefined) {
+    return undefined;
+  }
+  const cadence = (unlock - activation) / DISTRIBUTIONS_PER_BOND;
+  if (cadence <= 0) return undefined;
+  const ordinal = Math.floor((Number(calculationHeight) - activation) / cadence) + 1;
+  if (ordinal < 1 || ordinal > DISTRIBUTIONS_PER_BOND) return undefined;
+  return `${ordinal} of ${DISTRIBUTIONS_PER_BOND}`;
+}
+
+/**
+ * The bond a non-distribution call touched, and what it moved.
+ *
+ * Each of these functions prints a topic naming its bond, so the row can say
+ * which bond it belongs to without parsing the function's arguments.
+ */
+function describeContractCall(
+  fn: string,
+  reprs: string[],
+  bondsByIndex: Map<number, Bond>
+): { text?: string; bondIndex?: number; amount?: string } {
+  const find = (topic: string) => reprs.find(repr => readTopic(repr) === topic);
+
+  if (fn === 'setup-bond') {
+    const repr = find('setup-bond');
+    if (!repr) return {};
+    const index = readUint(repr, 'bond-index');
+    const cycle = readUint(repr, 'first-reward-cycle');
+    const bondIndex = index !== undefined ? Number(index) : undefined;
+    return {
+      // A bond has no bonded amount at setup: this call runs before enrollment
+      // opens, so the only size the chain knows here is the offering the bond
+      // was created with.
+      text: joinDetail(bondName(bondIndex), cycle !== undefined ? `cycle ${cycle}` : undefined),
+      bondIndex,
+      amount:
+        bondIndex !== undefined
+          ? formatSats(parseAmount(bondsByIndex.get(bondIndex)?.parameters?.btc_capacity))
+          : undefined,
+    };
+  }
+
+  if (fn === 'stake' || fn === 'stake-update') {
+    const repr = find('stake') ?? find('stake-update');
+    if (!repr) return {};
+    const microStx = readUint(repr, 'amount-ustx');
+    // Staked STX is not tied to a bond, so the row names when it unlocks
+    // rather than which bond it belongs to.
+    const unlockCycle = readUint(repr, 'unlock-cycle');
+    return {
+      text: unlockCycle !== undefined ? `Unlocks cycle ${unlockCycle}` : undefined,
+      amount: microStx !== undefined ? formatMicroStx(microStx) : undefined,
+    };
+  }
+
+  const repr = find('register-for-bond') ?? find('update-bond-registration') ?? find('unstake');
+  const index = repr ? readUint(repr, 'bond-index') : undefined;
+  const bondIndex = index !== undefined ? Number(index) : undefined;
+  return { text: bondName(bondIndex), bondIndex };
+}
+
+function formatMicroStx(microStx: bigint): string {
+  const stx = Number(microStx) / 1_000_000;
+  return `${stx.toLocaleString(undefined, { maximumFractionDigits: 0 })} STX`;
+}
+
+/**
+ * When a burn block was mined.
+ *
+ * Not every height has a record, so this walks forward a few blocks rather than
+ * giving up on the first gap. A cycle boundary is a burn height, and the block
+ * that lands on or just after it is the one that opened the cycle.
+ */
+/**
+ * A finished cycle's boundary never moves, so its lookup is cached for far
+ * longer than live chain data. The 60-second default would re-fetch a settled
+ * fact on nearly every render.
+ */
+const SETTLED_REVALIDATE_SECONDS = 24 * 60 * 60;
+
+export async function fetchBurnBlockTimeMs(
+  height: number,
+  chain: string,
+  api?: string
+): Promise<number | undefined> {
+  const MAX_PROBES = 5;
+  const apiUrl = getApiUrl(chain, api);
+  for (let offset = 0; offset < MAX_PROBES; offset++) {
+    try {
+      const response = await stacksAPIFetch(
+        `${apiUrl}/extended/v2/burn-blocks/${height + offset}`,
+        {
+          cache: 'default',
+          next: { revalidate: SETTLED_REVALIDATE_SECONDS, tags: [`burn-block-${height + offset}`] },
+        }
+      );
+      if (!response.ok) continue;
+      const data: { burn_block_time?: number } = await response.json();
+      if (typeof data.burn_block_time === 'number') return data.burn_block_time * 1000;
+    } catch {
+      // Try the next height rather than failing the whole lookup.
+    }
+  }
+  return undefined;
+}
+
+/**
+ * The moment each cycle ended, read from the chain rather than projected.
+ *
+ * A cycle ends where the next one's reward phase begins. Only cycles that show
+ * a rate need this, so the cost tracks the rows that use it.
+ */
+export async function fetchCycleEndTimes(
+  cycleNumbers: number[],
+  firstBurnchainBlockHeight: number,
+  rewardCycleLength: number,
+  chain: string,
+  api?: string
+): Promise<Record<number, number>> {
+  if (!rewardCycleLength) return {};
+  const entries = await Promise.all(
+    cycleNumbers.map(async cycleNumber => {
+      const endHeight = firstBurnchainBlockHeight + (cycleNumber + 1) * rewardCycleLength;
+      const endedMs = await fetchBurnBlockTimeMs(endHeight, chain, api);
+      return [cycleNumber, endedMs] as const;
+    })
+  );
+  const byCycle: Record<number, number> = {};
+  for (const [cycleNumber, endedMs] of entries) {
+    if (endedMs !== undefined) byCycle[cycleNumber] = endedMs;
+  }
+  return byCycle;
+}
+
 export async function fetchStakingActivity(
   poxContractId: string,
   chain: string,
@@ -452,6 +709,17 @@ export async function fetchStakingActivity(
 ): Promise<StakingActivityEvent[]> {
   const apiUrl = getApiUrl(chain, api);
   const groups = group ? [group] : (Object.keys(ACTIVITY_GROUP_FUNCTIONS) as ActivityGroup[]);
+
+  // Rows name which distribution they are and which bond they belong to, both
+  // of which come from the bond rather than the event. Only bonds currently
+  // paying out can appear, so the newest page covers every row.
+  const bondsByIndex = new Map<number, Bond>();
+  try {
+    const page = await fetchBondsPage(chain, api);
+    for (const bond of page.bonds) bondsByIndex.set(bond.index, bond);
+  } catch {
+    // Rows still render; they just carry no bond context.
+  }
 
   const perGroup = await Promise.all(
     groups.map(async activityGroup => {
@@ -475,33 +743,50 @@ export async function fetchStakingActivity(
           // A rewards transaction expands into one row per bond it paid.
           if (tx.contract_call?.function_name === 'calculate-rewards') {
             const reprs = await fetchTxEvents(apiUrl, tx.tx_id);
+            const calculationHeight = reprs
+              .filter(repr => readTopic(repr) === 'calculate-rewards')
+              .map(repr => readUint(repr, 'calculation-height'))
+              .find(height => height !== undefined);
             return reprs
               .filter(repr => readTopic(repr) === 'bond-distribution')
               .map(repr => {
                 const bondIndex = readUint(repr, 'bond-index');
                 const rewards = readUint(repr, 'bond-rewards') ?? BigInt(0);
                 const cumulativeSats = readCumulativePaidSats(repr);
+                const index = bondIndex !== undefined ? Number(bondIndex) : undefined;
+                const bond = index !== undefined ? bondsByIndex.get(index) : undefined;
+                const ordinal = describeDistribution(bond, calculationHeight);
                 return {
                   ...base,
                   label: 'Reward distribution',
-                  detail: bondIndex !== undefined ? `Bond ${bondIndex}` : undefined,
+                  detail: joinDetail(bondName(index), ordinal),
+                  bondIndex: index,
                   amount: formatSats(rewards),
                   cumulative: cumulativeSats !== undefined ? formatSats(cumulativeSats) : undefined,
                 };
               });
           }
 
+          const fn = tx.contract_call?.function_name ?? '';
           const labels: Record<string, string> = {
             'register-for-bond': 'Enrolled',
             'update-bond-registration': 'Registration updated',
             unstake: 'Unstaked',
             'unstake-sbtc': 'sBTC unstaked',
+            stake: 'STX paired',
+            'stake-update': 'STX paired',
             'setup-bond': 'Bond created',
           };
+
+          const reprs = await fetchTxEvents(apiUrl, tx.tx_id);
+          const detail = describeContractCall(fn, reprs, bondsByIndex);
           return [
             {
               ...base,
-              label: labels[tx.contract_call?.function_name ?? ''] ?? 'Contract call',
+              label: labels[fn] ?? 'Contract call',
+              detail: detail.text,
+              bondIndex: detail.bondIndex,
+              amount: detail.amount,
             },
           ];
         })
@@ -514,4 +799,100 @@ export async function fetchStakingActivity(
     .flat()
     .sort((a, b) => b.burnBlockTime - a.burnBlockTime || b.blockHeight - a.blockHeight)
     .slice(0, limit);
+}
+
+/**
+ * BTC rewarded by all bonds to date, in sats.
+ *
+ * The bonds endpoint reports `paid_out`, which counts rewards that have been
+ * claimed rather than rewarded, so a bond can accrue for months and still read
+ * zero. What the programme has actually produced is the sum of
+ * `total-bond-rewards` across every distribution, which each `calculate-rewards`
+ * event reports.
+ *
+ * The contract stores no lifetime total per bond, so this has to be summed from
+ * history. That is affordable because distributions are rare — two per reward
+ * cycle — but it does grow, so the scan is bounded and the result cached.
+ */
+const DISTRIBUTION_TX_PAGE = MAX_PAGE_LIMIT;
+const MAX_DISTRIBUTION_PAGES = 4;
+
+export interface BondRewards {
+  /** Total sats rewarded across all bonds. */
+  totalSats: bigint;
+  /** Sats rewarded per bond, keyed by bond index. */
+  byBondIndex: Record<number, bigint>;
+}
+
+/**
+ * BTC rewarded by bonds to date, in total and per bond.
+ *
+ * Both come from the same walk of distribution history, so the per-bond
+ * breakdown costs nothing extra: each `calculate-rewards` transaction reports
+ * `total-bond-rewards` for the whole waterfall and emits one
+ * `bond-distribution` event per bond it paid.
+ */
+export async function fetchBondRewards(
+  poxContractId: string,
+  chain: string,
+  api?: string
+): Promise<BondRewards | undefined> {
+  const apiUrl = getApiUrl(chain, api);
+  try {
+    // The transaction endpoint caps limit at 50, so history is paged.
+    const txs: RawTx[] = [];
+    for (let page = 0; page < MAX_DISTRIBUTION_PAGES; page++) {
+      const batch = await fetchTxsByFunction(
+        apiUrl,
+        poxContractId,
+        'calculate-rewards',
+        DISTRIBUTION_TX_PAGE,
+        page * DISTRIBUTION_TX_PAGE
+      );
+      txs.push(...batch);
+      if (batch.length < DISTRIBUTION_TX_PAGE) break;
+    }
+
+    const settled = txs.filter(tx => tx.tx_status === 'success');
+    if (settled.length === 0) return { totalSats: BigInt(0), byBondIndex: {} };
+
+    const perTx = await Promise.all(
+      settled.map(async tx => {
+        const reprs = await fetchTxEvents(apiUrl, tx.tx_id);
+        const summary = reprs.find(repr => readTopic(repr) === 'calculate-rewards');
+        // A distribution we cannot read would understate the totals, so report
+        // nothing rather than a number we know is short.
+        if (!summary) return undefined;
+
+        const perBond: Record<number, bigint> = {};
+        reprs
+          .filter(repr => readTopic(repr) === 'bond-distribution')
+          .forEach(repr => {
+            const index = readUint(repr, 'bond-index');
+            const rewarded = readUint(repr, 'bond-rewards');
+            if (index === undefined || rewarded === undefined) return;
+            const key = Number(index);
+            perBond[key] = (perBond[key] ?? BigInt(0)) + rewarded;
+          });
+
+        return { total: readUint(summary, 'total-bond-rewards') ?? BigInt(0), perBond };
+      })
+    );
+    if (perTx.some(entry => entry === undefined)) return undefined;
+
+    const byBondIndex: Record<number, bigint> = {};
+    let totalSats = BigInt(0);
+    perTx.forEach(entry => {
+      if (!entry) return;
+      totalSats += entry.total;
+      Object.entries(entry.perBond).forEach(([index, sats]) => {
+        const key = Number(index);
+        byBondIndex[key] = (byBondIndex[key] ?? BigInt(0)) + sats;
+      });
+    });
+    return { totalSats, byBondIndex };
+  } catch {
+    // Missing totals should not take the page down.
+    return undefined;
+  }
 }

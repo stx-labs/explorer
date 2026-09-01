@@ -1,6 +1,7 @@
 'use client';
 
 import { useGlobalContext } from '@/common/context/useGlobalContext';
+import { formatDateShort } from '@/common/utils/date-utils';
 import { Button } from '@/ui/Button';
 import { Text } from '@/ui/Text';
 import { Box, Flex, Icon, Stack } from '@chakra-ui/react';
@@ -10,16 +11,13 @@ import { GlossaryTerm } from './GlossaryTerm';
 import { BOND_TERM_CYCLES, DISTRIBUTIONS_PER_BOND, RESERVE_RATIO_PERCENT } from './consts';
 import { Bond } from './data';
 import { GLOSSARY } from './glossary';
-import { getBondProgress, getBondSchedule, getDistributionCadence } from './projections';
 import {
-  aggregateBondTotals,
-  formatBtc,
-  formatStx,
-  formatUsd,
-  microStxToStx,
-  satsToBtc,
-  toBigInt,
-} from './utils';
+  burnHeightToApproximateTimestamp,
+  getBondProgress,
+  getBondSchedule,
+  getDistributionCadence,
+} from './projections';
+import { formatBtc, formatStx, formatUsd, microStxToStx, satsToBtc, toBigInt } from './utils';
 
 function Stat({
   label,
@@ -33,26 +31,40 @@ function Stat({
   caption?: React.ReactNode;
 }) {
   return (
-    <Stack gap={2} flex="1 1 9rem" minW="8rem">
+    // The label sits at the top of the panel and the figure at the bottom, so a
+    // row of stats reads as two aligned bands rather than four floating blocks.
+    <Flex
+      direction="column"
+      justify="space-between"
+      gap={8}
+      flex="1 1 9rem"
+      minW="8rem"
+      minH="7rem"
+      height="100%"
+    >
       <Text textStyle="text-regular-sm" color="textSecondary" whiteSpace="nowrap">
         {label}
       </Text>
-      <Flex gap={1.5} align="baseline">
-        <Text textStyle="heading-md" whiteSpace="nowrap">
-          {value}
-        </Text>
-        {unit && (
-          <Text textStyle="text-regular-sm" color="textSecondary">
-            {unit}
+      <Stack gap={1.5}>
+        <Flex gap={1.5} align="baseline">
+          <Text textStyle="heading-md" fontWeight="medium" whiteSpace="nowrap">
+            {value}
+          </Text>
+          {unit && (
+            <Text textStyle="text-regular-sm" color="textSecondary">
+              {unit}
+            </Text>
+          )}
+        </Flex>
+        {caption && (
+          // Two lines are reserved so a caption that wraps at narrow widths does
+          // not lift its figure out of line with the stats beside it.
+          <Text textStyle="text-regular-xs" color="textSecondary" minH="2lh">
+            {caption}
           </Text>
         )}
-      </Flex>
-      {caption && (
-        <Text textStyle="text-regular-xs" color="textSecondary" whiteSpace="nowrap">
-          {caption}
-        </Text>
-      )}
-    </Stack>
+      </Stack>
+    </Flex>
   );
 }
 
@@ -87,95 +99,109 @@ function ConstantRow({ term, parts }: { term: keyof typeof GLOSSARY; parts: stri
 }
 
 export function StakingStats({
-  bonds,
   featuredBond,
   rewardCycleLength,
   prepareCycleLength,
   currentBurnHeight,
+  nowMs,
+  rewardsByBond,
 }: {
-  bonds: Bond[];
-  /** The bond whose per-bond figures the captions describe. */
+  /**
+   * Every figure here describes this one bond. The section reads as a whole
+   * with Current bond below it, and per-bond is the only scope where the
+   * captions mean anything: several bonds run at once with their own rates,
+   * distribution counts and unlock heights.
+   */
   featuredBond?: Bond;
   rewardCycleLength: number;
   prepareCycleLength: number;
   currentBurnHeight: number;
+  nowMs: number;
+  /** Sats rewarded per bond, summed from distribution history. */
+  rewardsByBond?: Record<number, bigint>;
 }) {
   const { stxPrice, btcPrice } = useGlobalContext().tokenPrice;
-  const totals = aggregateBondTotals(bonds);
 
-  const bondedBtc = satsToBtc(totals.lockedSats);
-  const lockedStx = microStxToStx(totals.lockedMicroStx);
+  if (!featuredBond) return null;
 
-  const rates = Array.from(new Set(bonds.map(b => b.parameters?.target_rate_bps ?? 0)));
-  const pairing = Array.from(new Set(bonds.map(b => b.parameters?.minimum_stx_ratio ?? 0)));
-  const rateLabel = (values: number[]) => {
-    if (values.length === 0) return '-';
-    const sorted = [...values].sort((a, b) => a - b);
-    const pct = (bps: number) => `${(bps / 100).toFixed(1)}%`;
-    return sorted.length === 1
-      ? pct(sorted[0])
-      : `${pct(sorted[0])} - ${pct(sorted[sorted.length - 1])}`;
-  };
+  const bondedSats = toBigInt(featuredBond.balances?.locked?.btc);
+  const pairedMicroStx = toBigInt(featuredBond.balances?.locked?.stx);
+  const rewardedSats = rewardsByBond?.[featuredBond.index] ?? BigInt(0);
+  const bondedBtc = satsToBtc(bondedSats);
+  const pairedStx = microStxToStx(pairedMicroStx);
 
-  // Disbursement progress and the STX unlock height describe one bond, so they
-  // follow the featured bond rather than the aggregate.
-  let distributions: string | undefined;
-  let stxUnlock: string | undefined;
-  if (featuredBond) {
-    const schedule = getBondSchedule(
-      featuredBond.schedule?.activation?.bitcoin_height ?? 0,
-      featuredBond.schedule?.unlock?.bitcoin_height ?? 0,
-      rewardCycleLength,
-      prepareCycleLength
-    );
-    const progress = getBondProgress(schedule, currentBurnHeight, rewardCycleLength);
-    distributions = `${progress.paid}/${progress.total} distributions`;
-    stxUnlock = `unlocks #${schedule.stxUnlockHeight.toLocaleString()}`;
-  }
+  const schedule = getBondSchedule(
+    featuredBond.schedule?.activation?.bitcoin_height ?? 0,
+    featuredBond.schedule?.unlock?.bitcoin_height ?? 0,
+    rewardCycleLength,
+    prepareCycleLength
+  );
+  const progress = getBondProgress(schedule, currentBurnHeight, rewardCycleLength);
 
+  // When the next payout lands, rather than how many have gone by. A bond that
+  // has taken all 24 has none left to name.
+  const cadence = getDistributionCadence(rewardCycleLength);
+  const nextRewardsHeight =
+    progress.paid < progress.total
+      ? schedule.activationHeight + (progress.paid + 1) * cadence
+      : undefined;
+  const nextRewards =
+    nextRewardsHeight !== undefined
+      ? `Next rewards ~${formatDateShort(
+          burnHeightToApproximateTimestamp(nextRewardsHeight, currentBurnHeight, nowMs)
+        )}`
+      : undefined;
+
+  const rate = (bps: number) => `${(bps / 100).toFixed(1)}%`;
   const usd = (amount: number, price?: number) => (price ? formatUsd(amount * price) : undefined);
   const join = (...parts: (string | undefined)[]) => parts.filter(Boolean).join(' · ') || undefined;
 
   return (
     <Flex gap={3} flexDirection={{ base: 'column', lg: 'row' }} align="stretch">
       <Box
-        bg="surfaceSecondary"
+        bg="surfacePrimary"
         borderRadius="redesign.xl"
         p={[4, 6]}
         flex={{ base: '1 1 auto', lg: '3 1 0' }}
         minW={0}
+        display="flex"
       >
-        <Flex gap={6} flexWrap="wrap">
+        <Flex gap={6} flexWrap="wrap" width="100%" align="stretch" alignContent="stretch">
           <Stat
             label={<GlossaryTerm entry="targetRewardRate" />}
-            value={rateLabel(rates)}
+            value={rate(featuredBond.parameters?.target_rate_bps ?? 0)}
             caption={
-              // With no bonds there is no pairing rate to qualify, and "≥-"
-              // reads as a broken value rather than an absent one.
-              pairing.length > 0 ? (
-                <>
-                  <GlossaryTerm entry="stxPairing">STX pairing</GlossaryTerm> ≥{rateLabel(pairing)}
-                </>
-              ) : undefined
+              <>
+                <GlossaryTerm entry="stxPairing">STX pairing</GlossaryTerm> ≥
+                {rate(featuredBond.parameters?.minimum_stx_ratio ?? 0)}
+              </>
             }
           />
           <Stat
             label="BTC bonded"
-            value={formatBtc(totals.lockedSats, 1).replace(' BTC', '')}
+            value={formatBtc(bondedSats, 1).replace(' BTC', '')}
             unit="BTC"
-            caption={usd(bondedBtc, btcPrice)}
+            caption={join(usd(bondedBtc, btcPrice), 'total of confirmed enrollments')}
           />
+          {/*
+            What bonds have been rewarded, not what stakers have collected. The bonds
+            endpoint's `paid_out` counts claims, so a bond generating rewards for
+            months still reports zero until someone withdraws.
+          */}
           <Stat
-            label="BTC paid out"
-            value={formatBtc(totals.paidOutSats, 4).replace(' BTC', '')}
+            label="BTC rewarded"
+            value={formatBtc(rewardedSats, 4).replace(' BTC', '')}
             unit="BTC"
-            caption={join(usd(satsToBtc(totals.paidOutSats), btcPrice), distributions)}
+            caption={join(usd(satsToBtc(rewardedSats), btcPrice), nextRewards)}
           />
           <Stat
             label="STX paired"
-            value={formatStx(totals.lockedMicroStx).replace(' STX', '')}
+            value={formatStx(pairedMicroStx).replace(' STX', '')}
             unit="STX"
-            caption={join(usd(lockedStx, stxPrice), stxUnlock)}
+            caption={join(
+              usd(pairedStx, stxPrice),
+              `unlocks #${schedule.stxUnlockHeight.toLocaleString()}`
+            )}
           />
         </Flex>
       </Box>
@@ -188,7 +214,9 @@ export function StakingStats({
         borderRadius="redesign.xl"
         p={[4, 6]}
         flex={{ base: '1 1 auto', lg: '1 1 0' }}
-        minW={0}
+        // Below this the constant rows collapse onto two lines and the panel
+        // stops reading as a list of pairs.
+        minW={{ base: 0, lg: '25rem' }}
       >
         <Stack gap={4} justify="space-between" height="100%">
           <Stack gap={2.5}>
@@ -207,12 +235,12 @@ export function StakingStats({
               ]}
             />
             <ConstantRow term="reserve" parts={[`${RESERVE_RATIO_PERCENT}%`]} />
-            {featuredBond && (
+            {
               <ConstantRow
                 term="onChainCapacity"
                 parts={[formatBtc(toBigInt(featuredBond.parameters?.btc_capacity), 0)]}
               />
-            )}
+            }
           </Stack>
           {/* TODO: no destination exists yet; see STAKING_LINKS.howToParticipate. */}
           <Button

@@ -13,11 +13,17 @@ export const STAKING_PAGE_TITLE = 'Staking';
  * upper bound. Newest first, with the number omitted stated in the UI rather
  * than silently truncated.
  */
-/** How many bond periods the timeline shows before the table takes over. */
-export const TIMELINE_BOND_LIMIT = 10;
+/**
+ * Bonds shown either side of the current one. The timeline reads as a sequence
+ * running through the present rather than starting at whatever is live now, so
+ * the two windows are counted separately and the current bond sits between
+ * them.
+ */
+export const TIMELINE_BONDS_BEFORE = 5;
+export const TIMELINE_BONDS_AFTER = 5;
 
-/** The table view lists the same number of periods as the timeline. */
-export const BONDS_TABLE_LIMIT = TIMELINE_BOND_LIMIT;
+/** Rows in the table view, which lists forward from the current bond only. */
+export const BONDS_TABLE_LIMIT = 10;
 
 /**
  * Where "get started" sends people.
@@ -30,8 +36,20 @@ export const STAKING_APP_URL = 'https://bitcoin-staking-app.vercel.app/';
 
 export const ACTIVITY_FEED_LIMIT = 5;
 
+/** Rows on the full activity page, which shows more than the page section. */
+export const ACTIVITY_PAGE_LIMIT = 60;
+
 /** Previous cycles shown before the "view all" link takes over. */
 export const PREVIOUS_CYCLES_LIMIT = 3;
+
+/** Rows per page on the full cycle history. */
+export const CYCLES_PAGE_SIZE = 10;
+
+/** Bonds per page on the full bonds list. The endpoint refuses more than 50. */
+export const BONDS_PAGE_SIZE = 20;
+
+/** Events per page on the full activity list. */
+export const ACTIVITY_PAGE_SIZE = 20;
 
 /**
  * Bond shape, fixed in pox-5 as BOND_LENGTH_CYCLES and BOND_GAP_CYCLES.
@@ -42,22 +60,12 @@ export const BOND_GAP_CYCLES = 2;
 export const DISTRIBUTIONS_PER_BOND = 24;
 
 /**
- * Share of each cycle's Bitcoin rewards held back into the protocol reserve
- * before the remainder reaches STX stackers. RESERVE_RATIO in pox-5.
+ * Share of a distribution held back into the protocol reserve, taken after
+ * active bonds are paid rather than off the cycle's gross rewards. Verified
+ * against the contract: reserve-deposit is exactly 15% of
+ * (gross-accrued-rewards - total-bond-rewards). RESERVE_RATIO in pox-5.
  */
 export const RESERVE_RATIO_PERCENT = 15;
-
-/**
- * The portion of a bond's on-chain capacity actually offered to stakers.
- *
- * The Endowment sets it and the rest of the on-chain capacity is an operational
- * buffer, so it cannot be read from the chain. Keyed by bond index, in sats.
- *
- * TODO: source this from the bond parameters service. Mitchell projects these
- * in Attio and has the API calls; we need those details to replace the map. A
- * bond with no entry falls back to its on-chain capacity.
- */
-export const BOND_OFFERING_SATS: Record<number, string> = {};
 
 /**
  * Whether to show bonds that are scheduled by the contract's cadence but not
@@ -70,18 +78,14 @@ export const BOND_OFFERING_SATS: Record<number, string> = {};
  */
 export const SHOW_SCHEDULED_BONDS = true;
 /**
- * Enough projected bonds to fill the timeline. It trims to TIMELINE_BOND_LIMIT,
+ * Enough projected bonds to fill the timeline's forward window. It trims to
+ * what that window has room for,
  * so this only needs to cover the case where few bonds exist on chain.
  */
-export const SCHEDULED_BONDS_AHEAD = TIMELINE_BOND_LIMIT;
+export const SCHEDULED_BONDS_AHEAD = TIMELINE_BONDS_AFTER + 1;
 
-/** TODO: no destination exists yet. Fill in when the pages are built. */
 export const STAKING_LINKS = {
+  /** TODO: no destination agreed yet. STAKING_APP_URL is the likely target. */
   howToParticipate: '',
-  estimateYield: '',
-  registerInterest: '',
-  allBondTransactions: '',
-  allTransactions: '',
-  allCycles: '',
   stackingTracker: 'https://www.stacking-tracker.com/',
 };

@@ -108,6 +108,15 @@ describe('display helpers', () => {
     expect(formatBtc(BigInt(0))).toBe('0 BTC');
   });
 
+  test('a headline figure never rounds a real balance down to zero', () => {
+    // The stat row asks for one decimal so whole-BTC amounts read cleanly. The
+    // first mainnet bond holds 350,000 sats, which at one decimal would render
+    // as "0" and be read as an empty bond.
+    expect(formatBtc(BigInt(350000), 1)).toBe('0.0035 BTC');
+    expect(formatBtc(BigInt(14730000000), 1)).toBe('147.3 BTC');
+    expect(formatBtc(BigInt(0), 1)).toBe('0 BTC');
+  });
+
   test('only upcoming bonds are pending', () => {
     expect(isBondPending('upcoming')).toBe(true);
     expect(isBondPending('active')).toBe(false);
@@ -116,17 +125,18 @@ describe('display helpers', () => {
 
 describe('formatUsd', () => {
   test('abbreviates large sums', () => {
-    expect(formatUsd(106_005_982)).toBe('$106M');
-    expect(formatUsd(1_250_000_000)).toBe('$1.3B');
+    expect(formatUsd(106_005_982)).toBe('$106.01M');
+    expect(formatUsd(1_250_000_000)).toBe('$1.25B');
   });
 
   test('abbreviates thousands, which the shared util does not', () => {
-    expect(formatUsd(75_441)).toBe('$75.4K');
+    expect(formatUsd(75_441)).toBe('$75.44K');
   });
 
-  test('leaves small sums alone', () => {
-    expect(formatUsd(237)).toBe('$237');
-    expect(formatUsd(0)).toBe('$0');
+  test('always shows cents, so a column of amounts aligns', () => {
+    expect(formatUsd(269.8)).toBe('$269.80');
+    expect(formatUsd(237)).toBe('$237.00');
+    expect(formatUsd(0)).toBe('$0.00');
   });
 
   test('is a dash when there is no number', () => {

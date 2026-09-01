@@ -3,6 +3,7 @@
 import { Table } from '@/common/components/table/Table';
 import { useGlobalContext } from '@/common/context/useGlobalContext';
 import { PoxInfo } from '@/common/queries/usePoxInforRaw';
+import { buildUrl } from '@/common/utils/buildUrl';
 import { formatDateShort } from '@/common/utils/date-utils';
 import { MICROSTACKS_IN_STACKS, abbreviateNumber } from '@/common/utils/utils';
 import { Text } from '@/ui/Text';
@@ -13,7 +14,9 @@ import { useCallback, useMemo } from 'react';
 
 import { ViewAllLink } from './ViewAllLink';
 import { PREVIOUS_CYCLES_LIMIT, STAKING_LINKS } from './consts';
+import { CycleRow, cycleColumns, toCycleRow } from './cycleColumns';
 import { CycleRewards, PoxCycle } from './data';
+import { DailyPrices, getCyclePrices } from './prices';
 import {
   burnHeightToApproximateTimestamp,
   formatTermDuration,
@@ -21,133 +24,6 @@ import {
   getStackingYieldForCompletedCycle,
 } from './projections';
 import { formatBtc, formatDateWithYear, formatUsd } from './utils';
-
-interface CycleRow {
-  cycleNumber: number;
-  totalStackedStx: number;
-  totalSigners: number;
-  /** BTC paid to STX stackers over the cycle, in sats. */
-  rewardsSats: bigint;
-  apyPercent: number | undefined;
-  /**
-   * False for cycles that ran before pox-5. The pox-5 contract has no record of
-   * them, so it reports zero, and showing that as "0%" would read as "nobody
-   * earned anything" instead of "we cannot see it from here".
-   */
-  hasRewardData: boolean;
-  startedHeight: number;
-  startedMs: number;
-  endedHeight: number;
-  endedMs: number;
-}
-
-const cycleColumns: ColumnDef<CycleRow>[] = [
-  {
-    id: 'cycleNumber',
-    header: 'Cycle',
-    accessorKey: 'cycleNumber',
-    enableSorting: false,
-    size: 70,
-    cell: info => (
-      <Text textStyle="text-medium-sm">{(info.getValue() as number).toLocaleString()}</Text>
-    ),
-  },
-  {
-    id: 'totalStackedStx',
-    header: 'Total stacked',
-    accessorKey: 'totalStackedStx',
-    enableSorting: false,
-    size: 120,
-    cell: info => (
-      <Text textStyle="text-regular-sm" whiteSpace="nowrap">
-        {abbreviateNumber(info.getValue() as number, 1)} STX
-      </Text>
-    ),
-  },
-  {
-    id: 'startedHeight',
-    header: 'Started',
-    accessorKey: 'startedHeight',
-    enableSorting: false,
-    size: 170,
-    cell: info => {
-      const row = info.row.original;
-      return (
-        <Text textStyle="text-regular-sm" whiteSpace="nowrap" suppressHydrationWarning>
-          #{row.startedHeight.toLocaleString()} · {formatDateWithYear(row.startedMs)}
-        </Text>
-      );
-    },
-  },
-  {
-    id: 'endedHeight',
-    header: 'Ended',
-    accessorKey: 'endedHeight',
-    enableSorting: false,
-    size: 170,
-    cell: info => {
-      const row = info.row.original;
-      return (
-        <Text textStyle="text-regular-sm" whiteSpace="nowrap" suppressHydrationWarning>
-          #{row.endedHeight.toLocaleString()} · {formatDateWithYear(row.endedMs)}
-        </Text>
-      );
-    },
-  },
-  {
-    id: 'rewardsSats',
-    header: 'BTC rewards',
-    accessorKey: 'rewardsSats',
-    enableSorting: false,
-    size: 120,
-    meta: { textAlign: 'right' },
-    cell: info => {
-      const row = info.row.original;
-      return (
-        <Text
-          textStyle="text-regular-sm"
-          color={row.hasRewardData ? 'textPrimary' : 'textSecondary'}
-          whiteSpace="nowrap"
-        >
-          {row.hasRewardData ? formatBtc(row.rewardsSats) : '\u2014'}
-        </Text>
-      );
-    },
-  },
-  {
-    id: 'apyPercent',
-    header: 'Gross APY',
-    accessorKey: 'apyPercent',
-    enableSorting: false,
-    size: 100,
-    meta: { textAlign: 'right' },
-    cell: info => {
-      const row = info.row.original;
-      return (
-        <Text
-          textStyle="text-regular-sm"
-          color={row.hasRewardData ? 'textPrimary' : 'textSecondary'}
-          whiteSpace="nowrap"
-        >
-          {row.hasRewardData && row.apyPercent !== undefined
-            ? `${row.apyPercent.toFixed(2)}%`
-            : '\u2014'}
-        </Text>
-      );
-    },
-  },
-  {
-    id: 'totalSigners',
-    header: 'Signers',
-    accessorKey: 'totalSigners',
-    enableSorting: false,
-    size: 90,
-    meta: { textAlign: 'right' },
-    cell: info => (
-      <Text textStyle="text-regular-sm">{(info.getValue() as number).toLocaleString()}</Text>
-    ),
-  },
-];
 
 function Pill({ children }: { children: React.ReactNode }) {
   return (
@@ -193,6 +69,8 @@ export function StackingOverview({
   firstBurnchainBlockHeight,
   currentBurnHeight,
   nowMs,
+  prices,
+  cycleEndTimes,
 }: {
   poxInfo: PoxInfo;
   cycles: PoxCycle[];
@@ -201,8 +79,13 @@ export function StackingOverview({
   firstBurnchainBlockHeight: number;
   currentBurnHeight: number;
   nowMs: number;
+  /** Daily price history, so a finished cycle is priced at the time it ended. */
+  prices?: DailyPrices;
+  /** Real cycle end times, where the chain has been asked for them. */
+  cycleEndTimes?: Record<number, number>;
 }) {
   const { stxPrice, btcPrice } = useGlobalContext().tokenPrice;
+  const network = useGlobalContext().activeNetwork;
   const currentCycleId = poxInfo?.current_cycle?.id;
   const stackedStx = (poxInfo?.current_cycle?.stacked_ustx ?? 0) / MICROSTACKS_IN_STACKS;
   const blocksUntilNextCycle = poxInfo?.next_reward_cycle_in ?? 0;
@@ -234,12 +117,22 @@ export function StackingOverview({
         lastSettledRewards.stakedMicroStx
       )
     : undefined;
+  // The cycle has finished, so it is priced at the day it ended rather than at
+  // today's rates, which would move a settled figure every time the market did.
+  const lastSettledEndMs = lastSettled
+    ? (cycleEndTimes?.[lastSettled.cycle_number] ??
+      at(cycleStartHeight(lastSettled.cycle_number + 1)))
+    : undefined;
+  const lastSettledPrices =
+    prices && lastSettledEndMs !== undefined ? getCyclePrices(prices, lastSettledEndMs) : undefined;
+  const lastSettledPricedAtEnd =
+    lastSettledPrices?.btcPriceUsd !== undefined && lastSettledPrices?.stxPriceUsd !== undefined;
   const lastSettledYield = lastSettledRewards
     ? getStackingYieldForCompletedCycle({
         rewardsPerMicroStx: lastSettledRewards.rewardsPerMicroStx,
         rewardCycleLength,
-        btcPriceUsd: btcPrice,
-        stxPriceUsd: stxPrice,
+        btcPriceUsd: lastSettledPrices?.btcPriceUsd ?? btcPrice,
+        stxPriceUsd: lastSettledPrices?.stxPriceUsd ?? stxPrice,
       })
     : undefined;
 
@@ -249,33 +142,20 @@ export function StackingOverview({
         // Finished cycles only. A running cycle holds part of its rewards, and
         // the API also returns cycles that have not started.
         .filter(cycle => currentCycleId === undefined || cycle.cycle_number < currentCycleId)
-        .map(cycle => {
-          const rewards = cycleRewards[cycle.cycle_number];
-          const hasRewardData =
-            pox5FirstCycleId !== undefined && cycle.cycle_number >= pox5FirstCycleId;
-          const yieldForCycle = rewards
-            ? getStackingYieldForCompletedCycle({
-                rewardsPerMicroStx: rewards.rewardsPerMicroStx,
-                rewardCycleLength,
-                btcPriceUsd: btcPrice,
-                stxPriceUsd: stxPrice,
-              })
-            : undefined;
-          return {
-            cycleNumber: cycle.cycle_number,
-            totalStackedStx: Number(cycle.total_stacked_amount ?? 0) / MICROSTACKS_IN_STACKS,
-            totalSigners: cycle.total_signers ?? 0,
-            rewardsSats: rewards
-              ? getCycleStackerRewardsSatsBigInt(rewards.rewardsPerMicroStx, rewards.stakedMicroStx)
-              : BigInt(0),
-            apyPercent: yieldForCycle?.apyPercent,
-            hasRewardData,
-            startedHeight: cycleStartHeight(cycle.cycle_number),
-            startedMs: at(cycleStartHeight(cycle.cycle_number)),
-            endedHeight: cycleStartHeight(cycle.cycle_number + 1),
-            endedMs: at(cycleStartHeight(cycle.cycle_number + 1)),
-          };
-        }),
+        .map(cycle =>
+          toCycleRow({
+            cycle,
+            rewards: cycleRewards[cycle.cycle_number],
+            pox5FirstCycleId,
+            rewardCycleLength,
+            cycleStartHeight,
+            at,
+            btcPrice,
+            stxPrice,
+            prices,
+            cycleEndTimes,
+          })
+        ),
     [
       cycles,
       currentCycleId,
@@ -284,6 +164,8 @@ export function StackingOverview({
       rewardCycleLength,
       btcPrice,
       stxPrice,
+      prices,
+      cycleEndTimes,
       at,
       cycleStartHeight,
     ]
@@ -294,13 +176,14 @@ export function StackingOverview({
       <Flex justify="space-between" align="baseline" gap={4} flexWrap="wrap">
         <Text textStyle="heading-md">STX-only Staking</Text>
         <a href={STAKING_LINKS.stackingTracker} target="_blank" rel="noopener noreferrer">
-          <Flex align="center" gap={1}>
-            <Text
-              textStyle="text-medium-sm"
-              color="textPrimary"
-              borderBottom="1px solid"
-              borderColor="currentColor"
-            >
+          <Flex
+            align="center"
+            gap={1}
+            borderBottom="1px solid"
+            borderColor="redesignBorderPrimary"
+            width="fit-content"
+          >
+            <Text textStyle="text-medium-sm" color="textPrimary">
               stacking-tracker.com
             </Text>
             <Icon w={3.5} h={3.5} color="textPrimary">
@@ -313,7 +196,7 @@ export function StackingOverview({
       <Flex gap={3} flexDirection={{ base: 'column', lg: 'row' }} align="stretch">
         <Stack
           gap={5}
-          bg="surfaceSecondary"
+          bg="surfacePrimary"
           borderRadius="redesign.xl"
           p={[4, 6]}
           flex={{ base: '1 1 auto', lg: '3 1 0' }}
@@ -397,30 +280,40 @@ export function StackingOverview({
               </Text>
             </Flex>
             <Text textStyle="text-regular-sm" color="accent.stacks-500" suppressHydrationWarning>
-              ~{formatDateShort(at(currentEnd))} · projected
+              ~{formatDateWithYear(at(currentEnd))} · projected
             </Text>
           </Stack>
 
           {/*
-            The rewards figure is a contract read; the yearly rate is not, since
-            annualising still needs an agreed convention. Saying which is which
-            keeps a proven number from inheriting an unproven one's doubt.
+            The rewards figure is a contract read; the rate is derived from it.
+            Naming the method beats hedging, so a reader can tell whether the
+            number answers their question.
           */}
           {lastSettled && lastSettledSats !== undefined && (
-            <Stack gap={1.5} bg="surfacePrimary" borderRadius="redesign.xl" p={[4, 5]}>
+            <Stack
+              gap={1.5}
+              bg="surfacePrimary"
+              borderRadius="redesign.xl"
+              p={[4, 5]}
+              flex={{ base: '0 0 auto', lg: '1 1 auto' }}
+              justify="center"
+            >
               {/* The rule sits inside the padding rather than on the card edge. */}
               <Flex gap={4} align="stretch">
                 <Box w="3px" bg="accent.stacks-500" borderRadius="redesign.xs" flexShrink={0} />
                 <Stack gap={1.5}>
                   <Text textStyle="text-medium-sm">
                     {lastSettledYield?.apyPercent !== undefined
-                      ? `≈ ${lastSettledYield.apyPercent.toFixed(1)}% projected APY · `
+                      ? `${lastSettledYield.apyPercent.toFixed(2)}% APY · `
                       : ''}
                     {formatBtc(lastSettledSats)} paid last cycle
                   </Text>
                   <Text textStyle="text-regular-sm" color="textSecondary">
-                    Cycle {lastSettled.cycle_number} rewards are read from the staking contract. The
-                    yearly rate is an estimate pending an agreed way to calculate it.
+                    {`Cycle ${lastSettled.cycle_number} rewards are verified from on-chain contract reads.`}
+                    {lastSettledYield?.apyPercent !== undefined &&
+                      (lastSettledPricedAtEnd
+                        ? ' APY is calculated from end-of-cycle BTC and STX prices.'
+                        : ' APY is calculated from current BTC and STX prices.')}
                   </Text>
                 </Stack>
               </Flex>
@@ -434,10 +327,9 @@ export function StackingOverview({
         <Table data={rows.slice(0, PREVIOUS_CYCLES_LIMIT)} columns={cycleColumns} />
         <Flex justify="space-between" gap={4} flexWrap="wrap" align="baseline">
           <Text textStyle="text-regular-xs" color="textSecondary">
-            Signer count — per-cycle stacker counts are not available under pox-5
+            Signer count, not stacker count. Rewards and APY start at the first pox-5 cycle.
           </Text>
-          {/* TODO: needs a cycles page; see STAKING_LINKS. */}
-          <ViewAllLink>View all cycles</ViewAllLink>
+          <ViewAllLink href={buildUrl('/staking/cycles', network)}>View all cycles</ViewAllLink>
         </Flex>
       </Stack>
     </Stack>

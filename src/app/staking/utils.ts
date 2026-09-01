@@ -1,6 +1,6 @@
 import { MICROSTACKS_IN_STACKS } from '@/common/utils/utils';
 
-import { BOND_OFFERING_SATS, SATS_IN_BTC } from './consts';
+import { SATS_IN_BTC } from './consts';
 import { Bond, BondStatus } from './data';
 
 /** Parses an API amount string to BigInt, tolerating null/undefined/empty. */
@@ -51,7 +51,11 @@ export function formatBtc(sats: bigint, decimals = 4): string {
   const btc = satsToBtc(sats);
   if (btc === 0) return '0 BTC';
   if (btc < 0.0001) return `<0.0001 BTC`;
-  return `${btc.toLocaleString(undefined, { maximumFractionDigits: decimals })} BTC`;
+  // Callers ask for few decimals so whole-BTC figures read cleanly, but a
+  // balance under 1 BTC would then round to "0" and be read as none at all.
+  // Anything smaller than this is already caught by the guard above.
+  const maximumFractionDigits = btc < 1 ? Math.max(decimals, 4) : decimals;
+  return `${btc.toLocaleString(undefined, { maximumFractionDigits })} BTC`;
 }
 
 export function formatStx(microStx: bigint): string {
@@ -62,23 +66,20 @@ export function formatStx(microStx: bigint): string {
 /**
  * A dollar figure short enough to sit beside the number it describes.
  *
- * Uses compact notation so large sums read as "$106M" rather than nine digits.
- * The shared `abbreviateNumber` stops at millions and has no thousands case, so
- * a page-local formatter beats widening a util the rest of the app relies on.
+ * Uses compact notation so large sums read as "$106.00M" rather than nine
+ * digits. The shared `abbreviateNumber` stops at millions and has no thousands
+ * case, so a page-local formatter beats widening a util the rest of the app
+ * relies on. Cents are always shown, so a column of amounts aligns.
  */
 export function formatUsd(amount: number): string {
   if (!Number.isFinite(amount)) return '-';
-  return (
-    new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      notation: 'compact',
-      maximumFractionDigits: 1,
-    })
-      .format(amount)
-      // Compact notation keeps a trailing ".0", so "$106.0M" needs trimming.
-      .replace(/\.0(?=[KMBT]?$)/, '')
-  );
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    notation: 'compact',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(amount);
 }
 
 export function formatPercent(ratio: number | undefined, decimals = 1): string {
@@ -111,22 +112,6 @@ export function aggregateBondTotals(bonds: Bond[]) {
  */
 export function formatSbtc(sats: bigint, decimals = 4): string {
   return formatBtc(sats, decimals).replace('BTC', 'sBTC');
-}
-
-/**
- * What a bond's fill is measured against.
- *
- * The meter measures the offering, which is the Endowment's figure and is not
- * on chain. Where no offering is known, fall back to on-chain capacity so the
- * meter still means something rather than disappearing.
- */
-export function getBondOfferingSats(bond: Pick<Bond, 'index' | 'parameters'>): {
-  sats: bigint;
-  isOffering: boolean;
-} {
-  const offering = BOND_OFFERING_SATS[bond.index];
-  if (offering) return { sats: toBigInt(offering), isOffering: true };
-  return { sats: toBigInt(bond.parameters?.btc_capacity), isOffering: false };
 }
 
 /**
