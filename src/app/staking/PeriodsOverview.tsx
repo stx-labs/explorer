@@ -486,7 +486,9 @@ export function PeriodsOverview({
                       >
                         <Text
                           textStyle="text-mono-xs"
-                          color="neutral.sand-50"
+                          // Pairs with surfaceInvert, so both flip together
+                          // rather than the text staying light on a light chip.
+                          color="textInvert"
                           whiteSpace="nowrap"
                           suppressHydrationWarning
                         >
