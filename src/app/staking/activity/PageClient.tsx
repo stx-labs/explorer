@@ -1,13 +1,10 @@
 'use client';
 
-import { useGlobalContext } from '@/common/context/useGlobalContext';
-import { buildUrl } from '@/common/utils/buildUrl';
 import { Text } from '@/ui/Text';
-import { Flex, Stack } from '@chakra-ui/react';
+import { Stack } from '@chakra-ui/react';
 
-import { PageTitle } from '../../_components/PageTitle';
-import { BackLink } from '../BackLink';
 import { StakingActivity } from '../StakingActivity';
+import { SubpageHeader } from '../SubpageHeader';
 import { ACTIVITY_PAGE_LIMIT, ACTIVITY_PAGE_SIZE } from '../consts';
 import { StakingActivityEvent } from '../data';
 
@@ -19,21 +16,19 @@ export interface ActivityPageData {
 }
 
 export function ActivityPageClient({ events, selectedGroup, bondIndex }: ActivityPageData) {
-  const network = useGlobalContext().activeNetwork;
   return (
     <Stack gap={6}>
-      <Stack gap={4}>
-        <BackLink href={buildUrl('/staking', network)}>Staking</BackLink>
-        <PageTitle>
-          {bondIndex !== undefined ? `Bond ${bondIndex} transactions` : 'Bitcoin Staking activity'}
-        </PageTitle>
-      </Stack>
+      <SubpageHeader
+        title={
+          bondIndex !== undefined ? `Bond ${bondIndex} transactions` : 'Bitcoin Staking activity'
+        }
+      />
       <Stack gap={3}>
         <StakingActivity
           events={events}
           selectedGroup={selectedGroup}
           pageSize={ACTIVITY_PAGE_SIZE}
-          showViewAll={false}
+          standalone
         />
         {/*
           The feed merges several contract functions, and the transaction
@@ -42,11 +37,9 @@ export function ActivityPageClient({ events, selectedGroup, bondIndex }: Activit
           Saying so is better than pagination that quietly stops.
         */}
         {events.length >= ACTIVITY_PAGE_LIMIT && (
-          <Flex justify="flex-start">
-            <Text textStyle="text-regular-xs" color="textSecondary">
-              Showing recent staking events, not a full historical feed.
-            </Text>
-          </Flex>
+          <Text textStyle="text-regular-xs" color="textSecondary">
+            Showing recent staking events, not a full historical feed.
+          </Text>
         )}
       </Stack>
     </Stack>

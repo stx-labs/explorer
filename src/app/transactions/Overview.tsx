@@ -83,11 +83,19 @@ export const OverviewCard = ({
   title,
   stat,
   subStat,
+  caption,
   ...rest
-}: { title: string; stat: ReactNode; subStat?: string } & StackProps) => {
+}: {
+  title: ReactNode;
+  stat: ReactNode;
+  /** Sits beside the figure; keep it short. */
+  subStat?: ReactNode;
+  /** A line under the figure, for context too long to sit beside it. */
+  caption?: ReactNode;
+} & Omit<StackProps, 'title'>) => {
   return (
     <Stack
-      aria-label={title}
+      aria-label={typeof title === 'string' ? title : undefined}
       py={3}
       px={4}
       bg="surfacePrimary"
@@ -123,6 +131,11 @@ export const OverviewCard = ({
           subStat
         )}
       </Flex>
+      {caption && (
+        <Text textStyle="text-regular-xs" color="textSecondary">
+          {caption}
+        </Text>
+      )}
     </Stack>
   );
 };

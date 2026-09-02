@@ -1,5 +1,6 @@
 'use client';
 
+import { ProgressBar } from '@/common/components/ProgressBar';
 import { ScrollIndicator } from '@/common/components/ScrollIndicator';
 import { Table } from '@/common/components/table/Table';
 import { TableContainer } from '@/common/components/table/TableContainer';
@@ -9,14 +10,14 @@ import { NetworkModes } from '@/common/types/network';
 import { buildUrl } from '@/common/utils/buildUrl';
 import { formatDateShort } from '@/common/utils/date-utils';
 import { MICROSTACKS_IN_STACKS, abbreviateNumber } from '@/common/utils/utils';
+import { BlockHeightBadge } from '@/ui/Badge';
+import { ButtonLink } from '@/ui/ButtonLink';
 import { Text } from '@/ui/Text';
 import { Tooltip } from '@/ui/Tooltip';
 import { Box, Flex, Icon, Stack } from '@chakra-ui/react';
-import { ArrowUpRight, Info } from '@phosphor-icons/react';
-import { ColumnDef } from '@tanstack/react-table';
+import { Info } from '@phosphor-icons/react';
 import { useCallback, useMemo } from 'react';
 
-import { ViewAllLink } from './ViewAllLink';
 import {
   DISTRIBUTIONS_PER_CYCLE,
   MAINNET_HISTORIC_CYCLES,
@@ -52,23 +53,6 @@ function Pill({ children }: { children: React.ReactNode }) {
         {children}
       </Text>
     </Flex>
-  );
-}
-
-/** A block height shown as a chip, the way the design marks cycle boundaries. */
-function HeightChip({ height }: { height: number }) {
-  return (
-    <Text
-      textStyle="text-mono-xs"
-      color="textSecondary"
-      bg="surfaceFourth"
-      borderRadius="redesign.xs"
-      px={2}
-      py={0.5}
-      whiteSpace="nowrap"
-    >
-      #{height.toLocaleString()}
-    </Text>
   );
 }
 
@@ -217,191 +201,213 @@ export function StackingOverview({
   );
 
   return (
-    <Stack gap={5}>
-      <Flex justify="space-between" align="baseline" gap={4} flexWrap="wrap">
-        <Text textStyle="heading-md">STX-only Staking</Text>
-        <a href={STAKING_LINKS.stackingTracker} target="_blank" rel="noopener noreferrer">
-          <Flex
-            align="center"
-            gap={1}
-            borderBottom="1px solid"
-            borderColor="redesignBorderPrimary"
-            width="fit-content"
+    <Stack gap={8}>
+      <Stack gap={4}>
+        <Flex justify="space-between" align="baseline" gap={4} flexWrap="wrap">
+          <Text textStyle="heading-md">STX-only Staking</Text>
+          <ButtonLink
+            href={STAKING_LINKS.stackingTracker}
+            buttonLinkSize="big"
+            target="_blank"
+            rel="noopener noreferrer"
           >
-            <Text textStyle="text-medium-sm" color="textPrimary">
-              stacking-tracker.com
-            </Text>
-            <Icon w={3.5} h={3.5} color="textPrimary">
-              <ArrowUpRight weight="bold" />
-            </Icon>
-          </Flex>
-        </a>
-      </Flex>
+            stacking-tracker.com
+          </ButtonLink>
+        </Flex>
 
-      <Flex gap={3} flexDirection={{ base: 'column', lg: 'row' }} align="stretch">
-        <Stack
-          gap={5}
-          bg="surfacePrimary"
-          borderRadius="redesign.xl"
-          p={[4, 6]}
-          flex={{ base: '1 1 auto', lg: '3 1 0' }}
-          minW={0}
-        >
-          <Flex justify="space-between" gap={3} flexWrap="wrap" align="flex-start">
-            <Stack gap={3}>
-              <Text textStyle="text-regular-sm" color="textSecondary">
-                Current cycle
-              </Text>
-              <Text
-                textStyle="heading-lg"
-                bg="surfaceFourth"
-                borderRadius="redesign.xl"
-                px={5}
-                py={2}
-                width="fit-content"
-              >
-                {currentCycleId ?? '-'}
-              </Text>
-            </Stack>
-            {/* The bar below draws the same progress; the pill states it for
-                readers who want the number rather than the shape. */}
-            <Pill>
-              {Math.round(Math.min(Math.max(elapsed, 0), 1) * 100)}% complete
-              {daysLeft && ` · ends in ~${daysLeft}`}
-            </Pill>
-          </Flex>
-
-          <Stack gap={1}>
-            <Flex gap={2} align="baseline" flexWrap="wrap">
-              <Text textStyle="heading-sm" whiteSpace="nowrap">
-                {abbreviateNumber(stackedStx, 1)} STX
-              </Text>
-              {stxPrice > 0 && (
-                <Text textStyle="text-regular-sm" color="textSecondary" whiteSpace="nowrap">
-                  / {formatUsd(stackedStx * stxPrice)} stacked
+        <Flex gap={3} flexDirection={{ base: 'column', lg: 'row' }} align="stretch">
+          <Stack
+            gap={5}
+            bg="surfacePrimary"
+            borderRadius="redesign.xl"
+            p={[4, 6]}
+            flex={{ base: '1 1 auto', lg: '3 1 0' }}
+            minW={0}
+          >
+            <Flex justify="space-between" gap={3} flexWrap="wrap" align="flex-start">
+              <Stack gap={3}>
+                <Text textStyle="text-regular-sm" color="textSecondary">
+                  Current cycle
                 </Text>
-              )}
+                <Text
+                  textStyle="heading-lg"
+                  bg="surfaceFourth"
+                  borderRadius="redesign.xl"
+                  px={5}
+                  py={2}
+                  width="fit-content"
+                >
+                  {currentCycleId ?? '-'}
+                </Text>
+              </Stack>
+              {/* The bar below draws the same progress; the pill states it for
+                readers who want the number rather than the shape. */}
+              <Pill>
+                {Math.round(Math.min(Math.max(elapsed, 0), 1) * 100)}% complete
+                {daysLeft && ` · ends in ~${daysLeft}`}
+              </Pill>
             </Flex>
-            {/*
+
+            <Stack gap={1}>
+              <Flex gap={2} align="baseline" flexWrap="wrap">
+                <Text textStyle="heading-sm" whiteSpace="nowrap">
+                  {abbreviateNumber(stackedStx, 1)} STX
+                </Text>
+                {stxPrice > 0 && (
+                  <Text textStyle="text-regular-sm" color="textSecondary" whiteSpace="nowrap">
+                    / {formatUsd(stackedStx * stxPrice)} stacked
+                  </Text>
+                )}
+              </Flex>
+              {/*
               What the running cycle has settled so far. The contract credits
               rewards once per distribution rather than per block, so the count
               is shown alongside: without it, a cycle that has not reached its
               first distribution reads as earning nothing.
             */}
-            {currentCycleSats !== undefined && (
-              <Flex gap={1} align="center">
-                <Text textStyle="text-regular-sm" color="textSecondary">
-                  {accruedToStackersSats !== undefined
-                    ? `~${formatBtc(accruedToStackersSats, 2)} rewarded so far`
-                    : `${formatBtc(currentCycleSats, 2)} rewarded`}{' '}
-                  · {currentDistributionsSettled} of {DISTRIBUTIONS_PER_CYCLE} distributions settled
-                </Text>
-                <Tooltip
-                  variant="redesignPrimary"
-                  size="lg"
-                  portalled
-                  content="Rewards are distributed halfway through a cycle, and at the end of the cycle. In between, this shows the rewards paid so far, less the reserve."
-                >
-                  <Icon w={3.5} h={3.5} color="iconSecondary" cursor="help">
-                    <Info />
-                  </Icon>
-                </Tooltip>
-              </Flex>
-            )}
-          </Stack>
+              {currentCycleSats !== undefined && (
+                <Flex gap={1} align="center">
+                  <Text textStyle="text-regular-sm" color="textSecondary">
+                    {accruedToStackersSats !== undefined
+                      ? `~${formatBtc(accruedToStackersSats, 2)} rewarded so far`
+                      : `${formatBtc(currentCycleSats, 2)} rewarded`}{' '}
+                    · {currentDistributionsSettled} of {DISTRIBUTIONS_PER_CYCLE} distributions
+                    settled
+                  </Text>
+                  <Tooltip
+                    variant="redesignPrimary"
+                    size="lg"
+                    portalled
+                    content="Rewards are distributed halfway through a cycle, and at the end of the cycle. In between, this shows the rewards paid so far, less the reserve."
+                  >
+                    <Icon w={3.5} h={3.5} color="iconSecondary" cursor="help">
+                      <Info />
+                    </Icon>
+                  </Tooltip>
+                </Flex>
+              )}
+            </Stack>
 
-          <Stack gap={2}>
-            <Flex justify="space-between">
-              <Text textStyle="text-regular-sm">Started</Text>
-              <Text textStyle="text-regular-sm">Ends</Text>
-            </Flex>
-            <Box bg="surfaceFourth" h={2} borderRadius="redesign.xl" overflow="hidden">
-              <Box
-                bg="accent.stacks-500"
-                h="100%"
-                w={`${Math.min(Math.max(elapsed, 0), 1) * 100}%`}
-              />
-            </Box>
-            <Flex justify="space-between" gap={3} align="center" flexWrap="wrap">
-              <Flex gap={2} align="center">
-                <HeightChip height={currentStart} />
-                <Text textStyle="text-regular-xs" color="textSecondary" suppressHydrationWarning>
+            {/* Drawn as the home page draws its cycle: labels, the line, dates, then blocks. */}
+            <Stack gap={4}>
+              <Stack gap={1}>
+                <Flex justify="space-between">
+                  <Text textStyle="text-medium-sm" color="textPrimary">
+                    Started
+                  </Text>
+                  <Text textStyle="text-medium-sm" color="textPrimary">
+                    Ends
+                  </Text>
+                </Flex>
+                <ProgressBar percentage={Math.min(Math.max(elapsed, 0), 1) * 100} />
+              </Stack>
+              <Flex justify="space-between" gap={3}>
+                <Text
+                  textStyle="text-medium-xs"
+                  color="textPrimary"
+                  borderRadius="redesign.md"
+                  bg="surfaceFifth"
+                  px={2}
+                  py={1}
+                  suppressHydrationWarning
+                >
                   {formatDateShort(at(currentStart))}
                 </Text>
-              </Flex>
-              <Flex gap={2} align="center">
-                <Text textStyle="text-regular-xs" color="textSecondary" suppressHydrationWarning>
-                  ~{formatDateShort(at(currentEnd))}
+                <Text
+                  textStyle="text-medium-xs"
+                  color="textPrimary"
+                  borderRadius="redesign.md"
+                  bg="surfaceFifth"
+                  px={2}
+                  py={1}
+                  suppressHydrationWarning
+                >
+                  ~ {formatDateShort(at(currentEnd))}
                 </Text>
-                <HeightChip height={currentEnd} />
               </Flex>
-            </Flex>
+              {/* The end height is in the future, so it has no block page to link to. */}
+              <Flex justify="space-between" gap={3} align="flex-start">
+                <BlockHeightBadge blockType="btc" blockHeight={currentStart} />
+                <BlockHeightBadge blockType="btc" blockHeight={currentEnd} disableLink />
+              </Flex>
+            </Stack>
           </Stack>
-        </Stack>
 
-        <Stack gap={3} flex={{ base: '1 1 auto', lg: '2 1 0' }} minW={0}>
-          <Stack
-            gap={2}
-            bg="surfaceFourth"
-            border="1px solid"
-            borderColor="redesignBorderSecondary"
-            borderRadius="redesign.xl"
-            p={[4, 5]}
-          >
-            <Text textStyle="text-regular-sm" color="textSecondary">
-              Next cycle
-            </Text>
-            <Flex gap={2} align="baseline" flexWrap="wrap">
-              <Text textStyle="heading-md">{(currentCycleId ?? 0) + 1}</Text>
-              <Text textStyle="text-regular-sm" color="textSecondary" whiteSpace="nowrap">
-                starts #{currentEnd.toLocaleString()}
+          <Stack gap={3} flex={{ base: '1 1 auto', lg: '2 1 0' }} minW={0}>
+            <Stack
+              gap={2}
+              bg="surfaceFourth"
+              border="1px solid"
+              borderColor="redesignBorderSecondary"
+              borderRadius="redesign.xl"
+              p={[4, 5]}
+            >
+              <Text textStyle="text-regular-sm" color="textSecondary">
+                Next cycle
               </Text>
-            </Flex>
-            <Text textStyle="text-regular-sm" color="accent.stacks-500" suppressHydrationWarning>
-              ~{formatDateWithYear(at(currentEnd))} · projected
-            </Text>
-          </Stack>
+              <Flex gap={2} align="baseline" flexWrap="wrap">
+                <Text textStyle="heading-md">{(currentCycleId ?? 0) + 1}</Text>
+                <Text textStyle="text-regular-sm" color="textSecondary" whiteSpace="nowrap">
+                  starts #{currentEnd.toLocaleString()}
+                </Text>
+              </Flex>
+              <Text textStyle="text-regular-sm" color="accent.stacks-500" suppressHydrationWarning>
+                ~{formatDateWithYear(at(currentEnd))} · projected
+              </Text>
+            </Stack>
 
-          {/*
+            {/*
             The rewards figure is a contract read; the rate is derived from it.
             Naming the method beats hedging, so a reader can tell whether the
             number answers their question.
           */}
-          {lastSettled && lastSettledSats !== undefined && (
-            <Stack
-              gap={1.5}
-              bg="surfacePrimary"
-              borderRadius="redesign.xl"
-              p={[4, 5]}
-              flex={{ base: '0 0 auto', lg: '1 1 auto' }}
-              justify="center"
-            >
-              {/* The rule sits inside the padding rather than on the card edge. */}
-              <Flex gap={4} align="stretch">
-                <Box w="3px" bg="accent.stacks-500" borderRadius="redesign.xs" flexShrink={0} />
-                <Stack gap={1.5}>
-                  <Text textStyle="text-medium-sm">
-                    {lastSettledYield?.apyPercent !== undefined
-                      ? `${lastSettledYield.apyPercent.toFixed(2)}% APY · `
-                      : ''}
-                    {formatBtc(lastSettledSats)} paid last cycle
-                  </Text>
-                  <Text textStyle="text-regular-sm" color="textSecondary">
-                    {`Cycle ${lastSettled.cycle_number} rewards are verified from on-chain contract reads.`}
-                    {lastSettledYield?.apyPercent !== undefined &&
-                      (lastSettledPricedAtEnd
-                        ? ' APY is calculated from end-of-cycle BTC and STX prices.'
-                        : ' APY is calculated from current BTC and STX prices.')}
-                  </Text>
-                </Stack>
-              </Flex>
-            </Stack>
-          )}
-        </Stack>
-      </Flex>
+            {lastSettled && lastSettledSats !== undefined && (
+              <Stack
+                gap={1.5}
+                bg="surfacePrimary"
+                borderRadius="redesign.xl"
+                p={[4, 5]}
+                flex={{ base: '0 0 auto', lg: '1 1 auto' }}
+                justify="center"
+              >
+                {/* The rule sits inside the padding rather than on the card edge. */}
+                <Flex gap={4} align="stretch">
+                  <Box w="3px" bg="accent.stacks-500" borderRadius="redesign.xs" flexShrink={0} />
+                  <Stack gap={1.5}>
+                    <Text textStyle="text-medium-sm">
+                      {lastSettledYield?.apyPercent !== undefined
+                        ? `${lastSettledYield.apyPercent.toFixed(2)}% APY · `
+                        : ''}
+                      {formatBtc(lastSettledSats)} paid last cycle
+                    </Text>
+                    <Text textStyle="text-regular-sm" color="textSecondary">
+                      {`Cycle ${lastSettled.cycle_number} rewards are verified from on-chain contract reads.`}
+                      {lastSettledYield?.apyPercent !== undefined &&
+                        (lastSettledPricedAtEnd
+                          ? ' APY is calculated from end-of-cycle BTC and STX prices.'
+                          : ' APY is calculated from current BTC and STX prices.')}
+                    </Text>
+                  </Stack>
+                </Flex>
+              </Stack>
+            )}
+          </Stack>
+        </Flex>
+      </Stack>
 
-      <Stack gap={3}>
-        <Text textStyle="heading-xs">Previous cycles</Text>
+      <Stack gap={4}>
+        <Flex justify="space-between" align="center" gap={4}>
+          <Text textStyle="heading-xs">Previous cycles</Text>
+          <ButtonLink
+            href={STAKING_LINKS.stackingTracker}
+            buttonLinkSize="big"
+            target="_blank"
+            rel="noopener noreferrer"
+            display={{ base: 'none', md: 'inline' }}
+          >
+            View all cycles at stacking-tracker.com
+          </ButtonLink>
+        </Flex>
         <Table
           data={rows.slice(0, PREVIOUS_CYCLES_LIMIT)}
           columns={cycleColumns}
@@ -411,14 +417,18 @@ export function StackingOverview({
           scrollIndicatorWrapper={table => <ScrollIndicator>{table}</ScrollIndicator>}
           tableProps={{ mt: { base: -3, lg: -4 } }}
         />
-        <Flex justify="space-between" gap={4} flexWrap="wrap" align="baseline">
-          <Text textStyle="text-regular-xs" color="textSecondary">
-            Rewards and APY before pox-5 come from stacking-tracker.com.
-          </Text>
-          <ViewAllLink href={STAKING_LINKS.stackingTracker} external>
-            View all cycles at stacking-tracker.com
-          </ViewAllLink>
-        </Flex>
+        <Text textStyle="text-regular-xs" color="textSecondary">
+          Rewards and APY before pox-5 come from stacking-tracker.com.
+        </Text>
+        <ButtonLink
+          href={STAKING_LINKS.stackingTracker}
+          buttonLinkSize="big"
+          target="_blank"
+          rel="noopener noreferrer"
+          display={{ base: 'inline', md: 'none' }}
+        >
+          View all cycles at stacking-tracker.com
+        </ButtonLink>
       </Stack>
     </Stack>
   );

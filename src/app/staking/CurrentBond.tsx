@@ -1,20 +1,20 @@
 'use client';
 
+import { ProgressBar } from '@/common/components/ProgressBar';
 import { useGlobalContext } from '@/common/context/useGlobalContext';
 import { buildUrl } from '@/common/utils/buildUrl';
 import { formatDateShort } from '@/common/utils/date-utils';
+import { ButtonLink } from '@/ui/ButtonLink';
 import { Text } from '@/ui/Text';
 import { Tooltip } from '@/ui/Tooltip';
-import { Badge, Box, Flex, Icon, Stack } from '@chakra-ui/react';
+import { Box, Flex, Icon, Stack } from '@chakra-ui/react';
 import { ArrowRight } from '@phosphor-icons/react';
 
-import { STATE_BADGES } from './BondTooltip';
-import { ViewAllLink } from './ViewAllLink';
+import { BondStateBadge, BondStateTone } from './BondStateBadge';
 import { Bond, EnrollmentShare } from './data';
 import {
   BondLifecycleState,
   burnHeightToApproximateTimestamp,
-  getBondFillRatio,
   getBondLifecycleState,
   getBondProgress,
   getBondSchedule,
@@ -23,7 +23,7 @@ import {
 import { formatBtc, formatDateWithYear, getBondDisplayName, toBigInt } from './utils';
 
 /** Term progress and the enrollment breakdown read as one pair of bars. */
-const BAR_HEIGHT = 2.5;
+const BAR_HEIGHT = 2;
 
 const STATE_LABELS: Record<BondLifecycleState, string> = {
   scheduled: 'Scheduled',
@@ -31,6 +31,14 @@ const STATE_LABELS: Record<BondLifecycleState, string> = {
   active: 'Active',
   maturity: 'Maturity',
   closed: 'Closed',
+};
+
+const STATE_TONES: Record<BondLifecycleState, BondStateTone> = {
+  scheduled: 'pending',
+  enrolling: 'enrolling',
+  active: 'active',
+  maturity: 'maturity',
+  closed: 'closed',
 };
 
 /**
@@ -73,14 +81,6 @@ function EnrollmentBar({
         );
       })}
     </Flex>
-  );
-}
-
-function Meter({ ratio }: { ratio: number }) {
-  return (
-    <Box bg="surfaceFifth" h={BAR_HEIGHT} w="100%" borderRadius="redesign.xl" overflow="hidden">
-      <Box bg="accent.stacks-500" h="100%" w={`${Math.min(Math.max(ratio, 0), 1) * 100}%`} />
-    </Box>
   );
 }
 
@@ -221,7 +221,7 @@ export function CurrentBond({
   }`;
 
   return (
-    <Stack gap={3}>
+    <Stack gap={4}>
       <Text textStyle="heading-md">Current bond</Text>
       <Flex
         gap={[3, 4]}
@@ -234,21 +234,7 @@ export function CurrentBond({
           <Stack gap={2}>
             <Flex gap={3} align="center" flexWrap="wrap">
               <Text textStyle="heading-lg">{name}</Text>
-              <Badge
-                bg={STATE_BADGES[state].bg}
-                color={STATE_BADGES[state].color}
-                gap={1.5}
-                px={2.5}
-                py={1}
-                borderRadius="redesign.xl"
-              >
-                {/* The dot carries the state's colour where the badge is a
-                    tint. On a solid badge it reads as a hole. */}
-                {!STATE_BADGES[state].solid && (
-                  <Box w={1.5} h={1.5} borderRadius="full" bg="currentColor" />
-                )}
-                {STATE_LABELS[state]}
-              </Badge>
+              <BondStateBadge tone={STATE_TONES[state]} label={STATE_LABELS[state]} />
             </Flex>
             <Text textStyle="text-regular-sm" color="textSecondary">
               {/* A bond that goes by name still needs its index stated
@@ -267,7 +253,7 @@ export function CurrentBond({
                 {(progress.elapsedRatio * 100).toFixed(1)}% elapsed
               </Text>
             </Flex>
-            <Meter ratio={progress.elapsedRatio} />
+            <ProgressBar percentage={Math.min(Math.max(progress.elapsedRatio, 0), 1) * 100} />
             <Flex justify="space-between" gap={3}>
               <Text textStyle="text-mono-xs" color="textSecondary">
                 #{activationHeight.toLocaleString()}
@@ -325,9 +311,12 @@ export function CurrentBond({
         <Stack gap={4} flex={1} bg="surfaceTertiary" borderRadius="redesign.lg" p={[4, 5]}>
           <Flex justify="space-between" gap={3} align="baseline" flexWrap="wrap">
             <Text textStyle="heading-xs">Lifecycle</Text>
-            <ViewAllLink href={buildUrl(`/staking/activity?bond=${featuredBond.index}`, network)}>
+            <ButtonLink
+              href={buildUrl(`/staking/activity?bond=${featuredBond.index}`, network)}
+              buttonLinkSize="big"
+            >
               View all bond transactions
-            </ViewAllLink>
+            </ButtonLink>
           </Flex>
           <Stack gap={0}>
             {milestones.map((milestone, index) => (

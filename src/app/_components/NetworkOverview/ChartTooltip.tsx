@@ -1,8 +1,30 @@
 import { truncateMiddle } from '@/common/utils/utils';
 import { useColorMode } from '@/components/ui/color-mode';
 import { Text } from '@/ui/Text';
-import { Stack } from '@chakra-ui/react';
+import { Stack, StackProps } from '@chakra-ui/react';
 import { TooltipProps } from 'recharts';
+
+/**
+ * The surface every hover card on a chart or timeline sits on: translucent and
+ * blurred, so it stays readable over whatever it happens to cover.
+ */
+export function ChartTooltipSurface({ children, ...props }: StackProps) {
+  const { colorMode } = useColorMode();
+  return (
+    <Stack
+      bg={
+        colorMode === 'light'
+          ? 'var(--stacks-colors-alpha-black-alpha-700)'
+          : 'var(--stacks-colors-alpha-sand-alpha-400)'
+      }
+      backdropFilter="blur(8px)"
+      borderRadius="redesign.sm"
+      {...props}
+    >
+      {children}
+    </Stack>
+  );
+}
 
 export function ChartTooltip({ active, payload, label }: TooltipProps<number, string>) {
   const { colorMode } = useColorMode();
@@ -28,19 +50,7 @@ export function ChartTooltip({ active, payload, label }: TooltipProps<number, st
     }
 
     return (
-      <Stack
-        bg={
-          colorMode === 'light'
-            ? 'var(--stacks-colors-alpha-black-alpha-700)'
-            : 'var(--stacks-colors-alpha-sand-alpha-400)'
-        }
-        px={2}
-        pt={1.5}
-        pb={2.5}
-        borderRadius="redesign.sm"
-        borderColor="borderPrimary"
-        gap={2.5}
-      >
+      <ChartTooltipSurface px={2} pt={1.5} pb={2.5} gap={2.5}>
         <Text
           textStyle={'text-medium-xs'}
           color={
@@ -71,7 +81,7 @@ export function ChartTooltip({ active, payload, label }: TooltipProps<number, st
         >
           {`In Bitcoin block ${truncateMiddle(dataPoint?.burnBlockHash, 4, 4)}`}
         </Text>
-      </Stack>
+      </ChartTooltipSurface>
     );
   }
   return null;

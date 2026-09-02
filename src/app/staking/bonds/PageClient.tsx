@@ -1,14 +1,11 @@
 'use client';
 
-import { useGlobalContext } from '@/common/context/useGlobalContext';
-import { buildUrl } from '@/common/utils/buildUrl';
 import { Stack } from '@chakra-ui/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback } from 'react';
 
-import { PageTitle } from '../../_components/PageTitle';
-import { BackLink } from '../BackLink';
 import { BondsTable } from '../BondsTable';
+import { SubpageHeader } from '../SubpageHeader';
 import { Bond } from '../data';
 
 export interface BondsPageData {
@@ -34,7 +31,6 @@ export function BondsPageClient({
 }: BondsPageData) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const network = useGlobalContext().activeNetwork;
 
   // Paging lives in the URL so a page of bonds can be linked to directly.
   const handlePageChange = useCallback(
@@ -53,10 +49,7 @@ export function BondsPageClient({
 
   return (
     <Stack gap={6}>
-      <Stack gap={4}>
-        <BackLink href={buildUrl('/staking', network)}>Staking</BackLink>
-        <PageTitle>Bonds</PageTitle>
-      </Stack>
+      <SubpageHeader title="Bonds" />
 
       <BondsTable
         bonds={bonds}
@@ -65,14 +58,13 @@ export function BondsPageClient({
         rewardsByBond={rewardsByBond}
         rewardCycleLength={rewardCycleLength}
         limit={pageSize}
+        fullPage
         pagination={{
           manualPagination: true,
           pageIndex,
           pageSize,
           totalRows: total,
           onPageChange: handlePageChange,
-          bordered: false,
-          showGoToPage: false,
         }}
       />
     </Stack>

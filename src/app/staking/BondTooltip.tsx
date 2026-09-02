@@ -34,13 +34,9 @@ const STATE_LABELS: Record<BondLifecycleState, string> = {
  * The tooltip sits on a dark surface, where the subtle palette variants are
  * tuned for a light one and lose their contrast.
  */
-export const STATE_BADGES: Record<
-  BondLifecycleState,
-  { bg: string; color: string; solid?: boolean }
-> = {
+const STATE_BADGES: Record<BondLifecycleState, { bg: string; color: string }> = {
   scheduled: { bg: 'neutral.sand-500', color: 'neutral.sand-50' },
-  // Fully coloured rather than tinted, so it needs no dot to carry the state.
-  enrolling: { bg: 'accent.bitcoin-500', color: 'neutral.sand-950', solid: true },
+  enrolling: { bg: 'accent.bitcoin-500', color: 'neutral.sand-950' },
   active: { bg: 'feedback.green-200', color: 'feedback.green-600' },
   maturity: { bg: 'neutral.sand-300', color: 'neutral.sand-950' },
   closed: { bg: 'neutral.sand-500', color: 'neutral.sand-50' },
