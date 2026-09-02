@@ -424,7 +424,11 @@ export function Table<T>({
                       flexRender(header.column.columnDef.header, header.getContext())
                     )}
                     {header.column.columnDef.meta?.tooltip && (
-                      <Tooltip content={header.column.columnDef.meta.tooltip}>
+                      <Tooltip
+                        content={header.column.columnDef.meta.tooltip}
+                        // Without a cap a long explanation runs off as one line.
+                        contentProps={{ maxW: '20rem', whiteSpace: 'normal' }}
+                      >
                         {/* Sized to the header's line box: taller than that and
                             it overflows the cell and clips against the rule. */}
                         <Icon h={3.5} w={3.5} flexShrink={0} color="iconSecondary">

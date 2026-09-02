@@ -169,7 +169,7 @@ export const cycleColumns: ColumnDef<CycleRow>[] = [
     meta: {
       textAlign: 'right',
       tooltip:
-        "A cycle's BTC rewards per STX staked, compounded each cycle and priced at the BTC and STX rates when that cycle ended. Gross: before pool or signer fees.",
+        'BTC rewards per STX staked, compounded, at end-of-cycle prices. Gross: before pool or signer fees.',
     },
     cell: info => {
       const row = info.row.original;
