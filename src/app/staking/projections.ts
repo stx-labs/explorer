@@ -699,3 +699,62 @@ export function projectScheduledBonds(
     return { index, activationHeight, termEndHeight: activationHeight + termBlocks };
   });
 }
+
+export interface DistributionGridCell {
+  /** The chain-wide distribution index, so a cell is the same cell in every row. */
+  index: number;
+  leftPercent: number;
+  widthPercent: number;
+}
+
+/**
+ * The distribution grid across a span of the timeline.
+ *
+ * Distributions fall on a chain-wide schedule anchored to the first burnchain
+ * block, and a bond activates on one of its boundaries, so these cells are the
+ * boxes every bar on the timeline is cut from. Cells are clipped to the span
+ * and positioned as percentages of it, the same way the bars are.
+ */
+export function getDistributionGridCells({
+  startMs,
+  endMs,
+  cadence,
+  firstBurnchainBlockHeight,
+  currentBurnHeight,
+  nowMs,
+  maxCells = 500,
+}: {
+  startMs: number;
+  endMs: number;
+  /** Blocks between distributions; see getDistributionCadence. */
+  cadence: number;
+  firstBurnchainBlockHeight: number;
+  currentBurnHeight: number;
+  nowMs: number;
+  /** A guard against a degenerate span producing an unbounded grid. */
+  maxCells?: number;
+}): DistributionGridCell[] {
+  if (cadence <= 0 || endMs <= startMs) return [];
+  const cells: DistributionGridCell[] = [];
+  const startHeight = approximateBurnHeightAt(startMs, currentBurnHeight, nowMs);
+  let index = Math.floor((startHeight - firstBurnchainBlockHeight) / cadence);
+  while (cells.length < maxCells) {
+    const cellStartHeight = firstBurnchainBlockHeight + index * cadence;
+    const cellStartMs = burnHeightToApproximateTimestamp(cellStartHeight, currentBurnHeight, nowMs);
+    if (cellStartMs >= endMs) break;
+    const cellEndMs = burnHeightToApproximateTimestamp(
+      cellStartHeight + cadence,
+      currentBurnHeight,
+      nowMs
+    );
+    const position = getBarPosition(
+      Math.max(cellStartMs, startMs),
+      Math.min(cellEndMs, endMs),
+      startMs,
+      endMs
+    );
+    if (position.widthPercent > 0) cells.push({ index, ...position });
+    index += 1;
+  }
+  return cells;
+}

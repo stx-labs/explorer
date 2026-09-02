@@ -131,3 +131,72 @@ In Progress (MVP scaffold complete, pending Fab's design review)
 - Numbers service (doc Part 2) is NOT a dependency for this page. All derived math is
   isolated in `projections.ts` behind a single `PROJECTION_METHOD` constant so it can
   be swapped for a service call without touching UI.
+
+## Consistency and responsive pass (2 Sep 2026)
+
+Review feedback on the first iteration: the page did not use the same
+components as the rest of the Explorer for things like tables, and it broke on
+mobile. Checked against the redesign pages (blocks, transactions, STX token).
+
+### Findings
+- Every other redesign table renders inside `TableContainer` (bordered card)
+  with `ScrollIndicator` for horizontal overflow. The staking tables rendered
+  bare, which is also why they were clipped on phones: the page wrapper is
+  `overflow: hidden`, so a 750px table at 375px simply lost its right-hand
+  columns with no way to reach them.
+- To make bare tables look right, `Table` and `TablePaginationControls` had
+  gained `bordered`/`showGoToPage` escape hatches and a `getRowHref` row-click
+  prop. Wrapping the tables properly removes the need for all three.
+- The headline stats used a wrapping flex with `height: 100%` children, which
+  resolved to a runaway height on phones (the first stat card was ~1000px tall).
+- Custom "view all" / back links, a hand-rolled segmented toggle, and Chakra's
+  default `Badge` duplicated `ButtonLink`, `Tabs` (`variant="primary"
+  size="redesignMd"`) and the explorer `Badge` recipe.
+
+### Checklist
+- [x] Restore `src/common/components/table/Table.tsx` and
+      `TablePaginationControls.tsx` to `main` (no shared-component changes)
+- [x] Wrap bonds, cycles and activity tables in `TableContainer` +
+      `ScrollIndicator`; full pages reserve `minH="500px"` like other list pages
+- [x] Replace `ViewAllLink`/`BackLink` with `ButtonLink` (forward/backward);
+      "view all" sits top-right on desktop and under the table on phones, as
+      on the home page
+- [x] Replace the Timeline/Table toggle and the activity filter chips with
+      `TabsRoot`/`TabsLabel`/`TabsList`/`TabsTrigger` as on the blocks page
+- [x] Bond status via the explorer `Badge` recipe (`BondStateBadge`); failed
+      transactions via the shared `StatusTag`
+- [x] Activity cells use the shared `TxLinkCellRenderer`, `BlockHeightBadge`
+      and `TimeStampCellRenderer`; the event title is the row's link, as the
+      title cell is in the transactions table
+- [x] Headline stats as one card per figure, reusing `OverviewCard` from the
+      transactions overview (extended with an optional `caption` line); two by
+      two on phones, one row above. The protocol constants and the call to
+      action run as a slim strip beneath, so no card has to match another's
+      height (chosen by Fab from three live alternatives, 2 Sep 2026)
+- [x] Timeline plot scrolls inside `ScrollIndicator` on narrow screens
+- [x] Sub-pages share `SubpageHeader` (back `ButtonLink` + `heading-md`),
+      matching the heading size of the other list pages
+- [x] Section rhythm copied from the home page: `gap={{ base: 16, md: 18, lg: 20, xl: 24 }}`
+      between sections, `gap={4}` from a heading to its content. Bond activity
+      promoted to a `heading-md` section so every top-level block reads alike
+- [x] The home Stacking card's `ProgressBar` moved to
+      `src/common/components/ProgressBar.tsx` and reused for the current cycle
+      and the bond term; the cycle block also takes the home card's date chips
+      and `BlockHeightBadge` block markers
+
+- [x] Timeline hover reworked to one card: rests on the today line, follows the
+      pointer (200ms ease), morphs into the bond details over a bar with a 120ms
+      grace on leaving, and flips above the pointer when there is no room below.
+      Styled with the network overview chart's tooltip surface, now shared as
+      `ChartTooltipSurface` with a backdrop blur
+
+- [x] Timeline plot split into `TimelinePlot.tsx` (rows, hover card, pointer
+      state); the chain-wide distribution grid is `getDistributionGridCells` in
+      `projections.ts`, unit-tested like the rest of the derived math
+
+### Kept on purpose
+- The Gantt-style period timeline, the bond lifecycle list and the dark bond
+  tooltip have no closer match in the Explorer; they keep their own markup but
+  now sit inside the shared scroll/link/badge primitives.
+- The informative empty states (`NoBondsYet`, `NoActivity`) use the `Table`
+  component's `emptyTableUi` slot rather than the generic "No results found".

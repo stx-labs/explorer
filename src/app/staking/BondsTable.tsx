@@ -6,17 +6,17 @@ import { TableContainer } from '@/common/components/table/TableContainer';
 import { formatDateShort } from '@/common/utils/date-utils';
 import { Text } from '@/ui/Text';
 import { Tooltip } from '@/ui/Tooltip';
-import { Badge, Flex, Icon, Stack } from '@chakra-ui/react';
+import { Flex, Icon, Stack } from '@chakra-ui/react';
 import { Info } from '@phosphor-icons/react';
 import { ColumnDef } from '@tanstack/react-table';
 import { useMemo } from 'react';
 
+import { BondStateBadge } from './BondStateBadge';
 import { BONDS_TABLE_LIMIT } from './consts';
 import { Bond } from './data';
 import {
   bpsToPercent,
   burnHeightToApproximateTimestamp,
-  getBondFillRatio,
   getRealizedRatePercent,
 } from './projections';
 import {
@@ -181,13 +181,10 @@ export const bondColumns: ColumnDef<BondRow>[] = [
     enableSorting: false,
     size: 100,
     cell: info => (
-      <Badge
-        variant="subtle"
-        colorPalette={info.row.original.isPending ? 'gray' : 'green'}
-        whiteSpace="nowrap"
-      >
-        {info.getValue() as string}
-      </Badge>
+      <BondStateBadge
+        tone={info.row.original.isPending ? 'pending' : 'active'}
+        label={info.getValue() as string}
+      />
     ),
   },
   {
@@ -341,6 +338,7 @@ export function BondsTable({
   rewardCycleLength,
   limit = BONDS_TABLE_LIMIT,
   pagination,
+  fullPage = false,
 }: {
   bonds: Bond[];
   currentBurnHeight: number;
@@ -352,6 +350,8 @@ export function BondsTable({
   limit?: number;
   /** Set by the full bonds page, which pages through every bond on chain. */
   pagination?: React.ComponentProps<typeof Table>['pagination'];
+  /** The full bonds page reserves the height the other list pages do. */
+  fullPage?: boolean;
 }) {
   // Newest first, capped. The count of what is not shown is rendered above the
   // table so the list never looks complete when it is not.
@@ -369,10 +369,12 @@ export function BondsTable({
       columns={bondColumns}
       emptyTableUi={<NoBondsYet />}
       pagination={pagination}
-      // The Explorer's table convention: a card that scrolls sideways rather
-      // than a table that overflows the page.
+      // The same card and horizontal scroll every other explorer table gets,
+      // which is also what keeps nine columns reachable on a phone.
       tableContainerWrapper={table => (
-        <TableContainer pt={{ base: 3, lg: 4 }}>{table}</TableContainer>
+        <TableContainer pt={{ base: 3, lg: 4 }} minH={fullPage ? '500px' : undefined}>
+          {table}
+        </TableContainer>
       )}
       scrollIndicatorWrapper={table => <ScrollIndicator>{table}</ScrollIndicator>}
       tableProps={{ mt: { base: -3, lg: -4 } }}

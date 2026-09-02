@@ -16,14 +16,6 @@ export interface TablePaginationControlsProps {
   totalRows: number; // the total number of rows
   onPageChange: (page: PaginationState) => void; // the callback to handle page indexchange
   onPageSizeChange?: (page: PaginationState) => void; // the callback to handle page size change
-  /**
-   * Draws the outline that continues the table's own border. Tables not wrapped
-   * in a bordered container should turn this off, or the controls read as a
-   * floating box.
-   */
-  bordered?: boolean;
-  /** Shows the jump-to-page input. */
-  showGoToPage?: boolean;
 }
 
 export function TablePaginationControls({
@@ -31,8 +23,6 @@ export function TablePaginationControls({
   pageSize,
   totalRows,
   onPageChange,
-  bordered = true,
-  showGoToPage = true,
 }: TablePaginationControlsProps) {
   const [inputValue, setInputValue] = useState<string>('');
   const pageCount = Math.ceil(totalRows / pageSize);
@@ -63,12 +53,10 @@ export function TablePaginationControls({
       w="fit-content"
       borderBottomLeftRadius="redesign.lg"
       borderBottomRightRadius="redesign.lg"
-      border={bordered ? '1px solid' : undefined}
+      border="1px solid"
       borderTop="none"
-      borderColor={bordered ? 'redesignBorderSecondary' : undefined}
-      gridTemplateColumns={
-        showGoToPage ? { base: '1fr', lg: 'auto 1px auto' } : { base: '1fr', lg: 'auto' }
-      }
+      borderColor="redesignBorderSecondary"
+      gridTemplateColumns={{ base: '1fr', lg: 'auto 1px auto' }}
       gridTemplateRows={{ base: 'auto auto auto', lg: 'auto' }}
     >
       <Flex
@@ -127,7 +115,7 @@ export function TablePaginationControls({
         </PaginationRoot>
       </Flex>
 
-      {showGoToPage && numPages > 5 && (
+      {numPages > 5 && (
         <>
           <Separator
             orientation={{ base: 'horizontal', lg: 'vertical' }}
