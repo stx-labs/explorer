@@ -100,18 +100,23 @@ export function StakingPageClient({
         )
       : [];
 
+  // The same rhythm as the home page: a large gap between sections, and a
+  // small one between a section's heading and its content.
   return (
-    <Stack gap={12}>
-      <Stack gap={5}>
-        <Text textStyle="heading-md">Bitcoin Staking</Text>
-        <StakingStats
-          featuredBond={featuredBond}
-          rewardCycleLength={rewardCycleLength}
-          prepareCycleLength={prepareCycleLength}
-          currentBurnHeight={currentBurnHeight}
-          nowMs={nowMs}
-          rewardsByBond={rewarded?.byBondIndex}
-        />
+    <Stack gap={{ base: 16, md: 18, lg: 20, xl: 24 }}>
+      {/* The headline figures and the timeline describe the same bonds, so they share a section. */}
+      <Stack gap={8}>
+        <Stack gap={4}>
+          <Text textStyle="heading-md">Bitcoin Staking</Text>
+          <StakingStats
+            featuredBond={featuredBond}
+            rewardCycleLength={rewardCycleLength}
+            prepareCycleLength={prepareCycleLength}
+            currentBurnHeight={currentBurnHeight}
+            nowMs={nowMs}
+            rewardsByBond={rewarded?.byBondIndex}
+          />
+        </Stack>
         <PeriodsOverview
           bonds={bonds}
           featuredIndex={featuredIndex}
@@ -123,35 +128,32 @@ export function StakingPageClient({
           currentBurnHeight={currentBurnHeight}
           nowMs={nowMs}
         />
-        <CurrentBond
-          bonds={bonds}
-          featuredBond={featuredBond}
-          nextBond={nextBond}
-          enrollments={enrollments}
-          rewardCycleLength={rewardCycleLength}
-          prepareCycleLength={prepareCycleLength}
+      </Stack>
+      <CurrentBond
+        bonds={bonds}
+        featuredBond={featuredBond}
+        nextBond={nextBond}
+        enrollments={enrollments}
+        rewardCycleLength={rewardCycleLength}
+        prepareCycleLength={prepareCycleLength}
+        firstBurnchainBlockHeight={firstBurnchainBlockHeight}
+        currentBurnHeight={currentBurnHeight}
+        nowMs={nowMs}
+      />
+      <StakingActivity events={activity} selectedGroup={selectedActivityGroup} />
+      {poxInfo && (
+        <StackingOverview
+          poxInfo={poxInfo}
+          cycles={cycles}
+          cycleRewards={cycleRewards}
+          pox5FirstCycleId={pox5FirstCycleId}
           firstBurnchainBlockHeight={firstBurnchainBlockHeight}
           currentBurnHeight={currentBurnHeight}
           nowMs={nowMs}
+          currentCycleAccruedSats={currentCycleAccruedSats}
+          prices={prices}
+          cycleEndTimes={cycleEndTimes}
         />
-        <StakingActivity events={activity} selectedGroup={selectedActivityGroup} />
-      </Stack>
-
-      {poxInfo && (
-        <Stack gap={5}>
-          <StackingOverview
-            poxInfo={poxInfo}
-            cycles={cycles}
-            cycleRewards={cycleRewards}
-            pox5FirstCycleId={pox5FirstCycleId}
-            firstBurnchainBlockHeight={firstBurnchainBlockHeight}
-            currentBurnHeight={currentBurnHeight}
-            nowMs={nowMs}
-            currentCycleAccruedSats={currentCycleAccruedSats}
-            prices={prices}
-            cycleEndTimes={cycleEndTimes}
-          />
-        </Stack>
       )}
     </Stack>
   );

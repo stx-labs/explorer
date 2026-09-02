@@ -1,10 +1,11 @@
 'use client';
 
+import { OverviewCard } from '@/app/transactions/Overview';
 import { useGlobalContext } from '@/common/context/useGlobalContext';
 import { formatDateShort } from '@/common/utils/date-utils';
-import { Button } from '@/ui/Button';
+import { Button, ButtonProps } from '@/ui/Button';
 import { Text } from '@/ui/Text';
-import { Box, Flex, Icon, Stack } from '@chakra-ui/react';
+import { Flex, Grid, Icon, SimpleGrid, Stack } from '@chakra-ui/react';
 import { ArrowUpRight } from '@phosphor-icons/react';
 
 import { GlossaryTerm } from './GlossaryTerm';
@@ -19,86 +20,84 @@ import {
 } from './projections';
 import { formatBtc, formatStx, formatUsd, microStxToStx, satsToBtc, toBigInt } from './utils';
 
-function Stat({
-  label,
-  value,
-  unit,
-  caption,
-}: {
-  label: React.ReactNode;
-  value: string;
-  unit?: string;
-  caption?: React.ReactNode;
-}) {
+/** A figure with its unit beside it, sized as the overview cards size theirs. */
+function Figure({ value, unit }: { value: string; unit?: string }) {
   return (
-    // The label sits at the top of the panel and the figure at the bottom, so a
-    // row of stats reads as two aligned bands rather than four floating blocks.
-    <Flex
-      direction="column"
-      justify="space-between"
-      gap={{ base: 2, lg: 8 }}
-      flex={{ base: '1 1 9rem', lg: '1 1 9rem' }}
-      minW="8rem"
-      minH={{ base: 'auto', lg: '7rem' }}
-      height={{ base: 'auto', lg: '100%' }}
-    >
-      <Text textStyle="text-regular-sm" color="textSecondary" whiteSpace="nowrap">
-        {label}
+    <Flex gap={1.5} align="baseline">
+      <Text textStyle="heading-sm" fontWeight="medium" color="textPrimary" whiteSpace="nowrap">
+        {value}
       </Text>
-      <Stack gap={1.5}>
-        <Flex gap={1.5} align="baseline">
-          <Text textStyle="heading-md" fontWeight="medium" whiteSpace="nowrap">
-            {value}
-          </Text>
-          {unit && (
-            <Text textStyle="text-regular-sm" color="textSecondary">
-              {unit}
-            </Text>
-          )}
-        </Flex>
-        {caption && (
-          // Two lines are reserved so a caption that wraps at narrow widths does
-          // not lift its figure out of line with the stats beside it.
-          <Text
-            textStyle="text-regular-xs"
-            color="textSecondary"
-            minH={{ base: 'auto', lg: '2lh' }}
-          >
-            {caption}
-          </Text>
-        )}
-      </Stack>
+      {unit && (
+        <Text textStyle="text-regular-sm" color="textSecondary">
+          {unit}
+        </Text>
+      )}
     </Flex>
   );
 }
 
+interface Constant {
+  term: keyof typeof GLOSSARY;
+  parts: string[];
+}
+
 /**
- * A protocol constant: a term you can hover for a definition, and its value.
- *
- * The value arrives as parts so the separator can carry its own spacing rather
- * than being crammed against the words either side of it.
+ * A constant's value. It arrives as parts so the separator can carry its own
+ * spacing rather than being crammed against the words either side of it.
  */
-function ConstantRow({ term, parts }: { term: keyof typeof GLOSSARY; parts: string[] }) {
+function ConstantValue({ parts }: { parts: string[] }) {
   return (
-    <Flex justify="space-between" gap={4} align="baseline">
-      <Text textStyle="text-regular-sm" color="textSecondary">
+    <Flex gap={2} align="baseline" flexWrap="wrap">
+      {parts.map((part, index) => (
+        // The separator travels with the part before it, so a wrap ends a line
+        // with the dot rather than starting the next one with it.
+        <Flex key={part} gap={2} align="baseline">
+          <Text textStyle="text-medium-sm" whiteSpace="nowrap">
+            {part}
+          </Text>
+          {index < parts.length - 1 && (
+            <Text textStyle="text-regular-sm" color="textSecondary">
+              ·
+            </Text>
+          )}
+        </Flex>
+      ))}
+    </Flex>
+  );
+}
+
+/** Term over value: one cell of the constants strip. */
+function ConstantCell({ term, parts }: Constant) {
+  return (
+    <Stack gap={1} minW={0}>
+      <Text textStyle="text-regular-sm" color="textSecondary" whiteSpace="nowrap">
         <GlossaryTerm entry={term} />
       </Text>
-      <Flex gap={2} align="baseline">
-        {parts.map((part, index) => (
-          <Flex key={part} gap={2} align="baseline">
-            {index > 0 && (
-              <Text textStyle="text-regular-sm" color="textSecondary">
-                ·
-              </Text>
-            )}
-            <Text textStyle="text-medium-sm" whiteSpace="nowrap">
-              {part}
-            </Text>
-          </Flex>
-        ))}
-      </Flex>
-    </Flex>
+      <ConstantValue parts={parts} />
+    </Stack>
+  );
+}
+
+/** The staking site, whose form also takes expressions of interest. */
+function HowToParticipateButton(props: ButtonProps) {
+  return (
+    <Button
+      asChild
+      variant="redesignPrimary"
+      size="big"
+      display="flex"
+      alignItems="center"
+      justifyContent="center"
+      gap={2}
+      {...props}
+    >
+      <a href={STAKING_LINKS.howToParticipate} target="_blank" rel="noopener noreferrer">
+        How to participate
+        <Icon w={3.5} h={3.5}>
+          <ArrowUpRight weight="bold" />
+        </Icon>
+      </a>
+    </Button>
   );
 }
 
@@ -160,116 +159,90 @@ export function StakingStats({
   const usd = (amount: number, price?: number) => (price ? formatUsd(amount * price) : undefined);
   const join = (...parts: (string | undefined)[]) => parts.filter(Boolean).join(' · ') || undefined;
 
-  return (
-    <Flex gap={3} flexDirection={{ base: 'column', lg: 'row' }} align="stretch">
-      <Box
-        bg="surfacePrimary"
-        borderRadius="redesign.xl"
-        p={[4, 6]}
-        flex={{ base: '1 1 auto', lg: '3 1 0' }}
-        minW={0}
-        display={{ base: 'block', lg: 'flex' }}
-      >
-        <Flex
-          gap={{ base: 5, lg: 6 }}
-          flexWrap="wrap"
-          width="100%"
-          align={{ base: 'flex-start', lg: 'stretch' }}
-          alignContent={{ base: 'flex-start', lg: 'stretch' }}
-        >
-          <Stat
-            label={<GlossaryTerm entry="targetRewardRate" />}
-            value={rate(featuredBond.parameters?.target_rate_bps ?? 0)}
-            caption={
-              <>
-                <GlossaryTerm entry="stxPairing">STX pairing</GlossaryTerm> ≥
-                {rate(featuredBond.parameters?.minimum_stx_ratio ?? 0)}
-              </>
-            }
-          />
-          <Stat
-            label="BTC bonded"
-            value={formatBtc(bondedSats, 1).replace(' BTC', '')}
-            unit="BTC"
-            caption={join(usd(bondedBtc, btcPrice), 'total of confirmed enrollments')}
-          />
-          {/*
-            What bonds have been rewarded, not what stakers have collected. The bonds
-            endpoint's `paid_out` counts claims, so a bond generating rewards for
-            months still reports zero until someone withdraws.
-          */}
-          <Stat
-            label="BTC rewarded"
-            value={formatBtc(rewardedSats, 4).replace(' BTC', '')}
-            unit="BTC"
-            caption={join(usd(satsToBtc(rewardedSats), btcPrice), nextRewards)}
-          />
-          <Stat
-            label="STX paired"
-            value={formatStx(pairedMicroStx).replace(' STX', '')}
-            unit="STX"
-            caption={join(
-              usd(pairedStx, stxPrice),
-              `unlocks #${schedule.termEndHeight.toLocaleString()}`
-            )}
-          />
-        </Flex>
-      </Box>
+  // Protocol constants, fixed in the contract rather than read per bond.
+  const constants: Constant[] = [
+    {
+      term: 'bondTerm',
+      parts: [
+        `${BOND_TERM_CYCLES} cycles`,
+        `${(BOND_TERM_CYCLES * rewardCycleLength).toLocaleString()} blocks`,
+      ],
+    },
+    {
+      term: 'rewardDistribution',
+      parts: [`${cadence.toLocaleString()} blocks`, `${DISTRIBUTIONS_PER_BOND} / term`],
+    },
+    {
+      term: 'onChainCapacity',
+      parts: [formatBtc(toBigInt(featuredBond.parameters?.btc_capacity), 0)],
+    },
+  ];
 
-      {/* Protocol constants, fixed in the contract rather than read per bond. */}
-      <Box
+  return (
+    <Stack gap={3}>
+      {/*
+        One card per figure, in the shape the transactions overview uses for
+        its headline stats. Two by two on a phone, one row on anything wider.
+      */}
+      <Grid templateColumns={{ base: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' }} gap={3}>
+        <OverviewCard
+          title={<GlossaryTerm entry="targetRewardRate" />}
+          stat={<Figure value={rate(featuredBond.parameters?.target_rate_bps ?? 0)} />}
+          caption={
+            <>
+              <GlossaryTerm entry="stxPairing">STX pairing</GlossaryTerm> ≥
+              {rate(featuredBond.parameters?.minimum_stx_ratio ?? 0)}
+            </>
+          }
+        />
+        <OverviewCard
+          title="BTC bonded"
+          stat={<Figure value={formatBtc(bondedSats, 1).replace(' BTC', '')} unit="BTC" />}
+          caption={join(usd(bondedBtc, btcPrice), 'total of confirmed enrollments')}
+        />
+        {/*
+          What bonds have been rewarded, not what stakers have collected. The bonds
+          endpoint's `paid_out` counts claims, so a bond generating rewards for
+          months still reports zero until someone withdraws.
+        */}
+        <OverviewCard
+          title="BTC rewarded"
+          stat={<Figure value={formatBtc(rewardedSats, 4).replace(' BTC', '')} unit="BTC" />}
+          caption={join(usd(satsToBtc(rewardedSats), btcPrice), nextRewards)}
+        />
+        <OverviewCard
+          title="STX paired"
+          stat={<Figure value={formatStx(pairedMicroStx).replace(' STX', '')} unit="STX" />}
+          caption={join(
+            usd(pairedStx, stxPrice),
+            `unlocks #${schedule.termEndHeight.toLocaleString()}`
+          )}
+        />
+      </Grid>
+
+      {/*
+        The constants run as one strip beneath the figures, with the call to
+        action at its end. Nothing here has to match another card's height, so
+        nothing has space to fill.
+      */}
+      <Flex
         bg="surfaceFourth"
         border="1px solid"
         borderColor="redesignBorderSecondary"
         borderRadius="redesign.xl"
-        p={[4, 6]}
-        flex={{ base: '1 1 auto', lg: '1 1 0' }}
-        // Below this the constant rows collapse onto two lines and the panel
-        // stops reading as a list of pairs.
-        minW={{ base: 0, lg: '25rem' }}
+        px={[4, 6]}
+        py={[4, 5]}
+        gap={{ base: 4, lg: 8 }}
+        align={{ base: 'stretch', lg: 'center' }}
+        direction={{ base: 'column', lg: 'row' }}
       >
-        <Stack gap={4} justify="space-between" height="100%">
-          <Stack gap={2.5}>
-            <ConstantRow
-              term="bondTerm"
-              parts={[
-                `${BOND_TERM_CYCLES} cycles`,
-                `${(BOND_TERM_CYCLES * rewardCycleLength).toLocaleString()} blocks`,
-              ]}
-            />
-            <ConstantRow
-              term="rewardDistribution"
-              parts={[
-                `${getDistributionCadence(rewardCycleLength).toLocaleString()} blocks`,
-                `${DISTRIBUTIONS_PER_BOND} / term`,
-              ]}
-            />
-            {
-              <ConstantRow
-                term="onChainCapacity"
-                parts={[formatBtc(toBigInt(featuredBond.parameters?.btc_capacity), 0)]}
-              />
-            }
-          </Stack>
-          <Button
-            asChild
-            variant="redesignPrimary"
-            size="big"
-            width="100%"
-            display="flex"
-            alignItems="center"
-            justifyContent="center"
-            gap={2}
-          >
-            <a href={STAKING_LINKS.howToParticipate} target="_blank" rel="noopener noreferrer">
-              How to participate
-              <Icon w={3.5} h={3.5}>
-                <ArrowUpRight weight="bold" />
-              </Icon>
-            </a>
-          </Button>
-        </Stack>
-      </Box>
-    </Flex>
+        <SimpleGrid columns={{ base: 2, lg: 4 }} gap={{ base: 4, lg: 6 }} flex={1} minW={0}>
+          {constants.map(constant => (
+            <ConstantCell key={constant.term} {...constant} />
+          ))}
+        </SimpleGrid>
+        <HowToParticipateButton width={{ base: '100%', lg: 'auto' }} flexShrink={0} />
+      </Flex>
+    </Stack>
   );
 }

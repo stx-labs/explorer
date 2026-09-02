@@ -1,52 +1,52 @@
 'use client';
 
+import { TxLink } from '@/common/components/ExplorerLinks';
 import { ScrollIndicator } from '@/common/components/ScrollIndicator';
 import { Table } from '@/common/components/table/Table';
 import { TableContainer } from '@/common/components/table/TableContainer';
+import {
+  StatusTag,
+  TimeStampCellRenderer,
+  TxLinkCellRenderer,
+} from '@/common/components/table/table-examples/TxTableCellRenderers';
 import { useGlobalContext } from '@/common/context/useGlobalContext';
 import { buildUrl } from '@/common/utils/buildUrl';
-import { formatTimestampToRelativeTime } from '@/common/utils/time-utils';
-import { NextLink } from '@/ui/NextLink';
-import { TabsList, TabsRoot, TabsTrigger } from '@/ui/Tabs';
+import { formatTimestampLocalized, formatTimestampToRelativeTime } from '@/common/utils/time-utils';
+import { BlockHeightBadge } from '@/ui/Badge';
+import { ButtonLink } from '@/ui/ButtonLink';
+import { TabsLabel, TabsList, TabsRoot, TabsTrigger } from '@/ui/Tabs';
 import { Text } from '@/ui/Text';
-import { Badge, Box, Flex, Icon, Stack } from '@chakra-ui/react';
+import { Flex, Icon, Stack } from '@chakra-ui/react';
 import { Coins, Flag, Link as LinkIcon, LockOpen } from '@phosphor-icons/react';
 import { ColumnDef } from '@tanstack/react-table';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useMemo, useState } from 'react';
 
-import { ViewAllLink } from './ViewAllLink';
+import { Transaction } from '@stacks/stacks-blockchain-api-types';
+
 import { ActivityGroup, StakingActivityEvent } from './data';
 
-interface ActivityRow extends StakingActivityEvent {
-  network: ReturnType<typeof useGlobalContext>['activeNetwork'];
-}
-
-/** Tabs need a value for every trigger, and "all" is the absence of a filter. */
+/** The unfiltered view. Not a group the API knows, so it cannot collide. */
 const ALL_GROUPS = 'all';
 
-const GROUP_LABELS: { value?: ActivityGroup; label: string }[] = [
-  { label: 'All' },
+const GROUP_LABELS: { value: ActivityGroup | typeof ALL_GROUPS; label: string }[] = [
+  { value: ALL_GROUPS, label: 'All' },
   { value: 'distributions', label: 'Distributions' },
   { value: 'enrollments', label: 'Enrollments' },
   { value: 'unlocks', label: 'Unlocks' },
   { value: 'bonds', label: 'Bonds' },
 ];
 
-function truncate(value: string, lead = 6, tail = 4): string {
-  return value.length <= lead + tail ? value : `${value.slice(0, lead)}…${value.slice(-tail)}`;
-}
-
-/** A tinted square per event kind, so a scan of the column reads by shape. */
-const GROUP_ICONS: Record<ActivityGroup, { icon: React.ElementType; bg: string; color: string }> = {
-  distributions: { icon: Coins, bg: 'accent.stacks-200', color: 'accent.stacks-600' },
-  enrollments: { icon: LinkIcon, bg: 'feedback.blue-200', color: 'feedback.blue-600' },
-  unlocks: { icon: LockOpen, bg: 'feedback.bronze-200', color: 'feedback.bronze-600' },
-  bonds: { icon: Flag, bg: 'feedback.green-200', color: 'feedback.green-600' },
+/** A tinted square per event kind, so a scan of the column reads by colour and shape. */
+const GROUP_ICONS: Record<ActivityGroup, { icon: React.ReactNode; bg: string; color: string }> = {
+  distributions: { icon: <Coins />, bg: 'accent.stacks-200', color: 'accent.stacks-600' },
+  enrollments: { icon: <LinkIcon />, bg: 'feedback.blue-200', color: 'feedback.blue-600' },
+  unlocks: { icon: <LockOpen />, bg: 'feedback.bronze-200', color: 'feedback.bronze-600' },
+  bonds: { icon: <Flag />, bg: 'feedback.green-200', color: 'feedback.green-600' },
 };
 
 function EventIcon({ group }: { group: ActivityGroup }) {
-  const { icon: Glyph, bg, color } = GROUP_ICONS[group];
+  const { icon, bg, color } = GROUP_ICONS[group];
   return (
     <Flex
       w={7}
@@ -57,14 +57,14 @@ function EventIcon({ group }: { group: ActivityGroup }) {
       borderRadius="redesign.md"
       bg={bg}
     >
-      <Icon w={3.5} h={3.5} color={color}>
-        <Glyph weight="fill" />
+      <Icon w={4} h={4} color={color}>
+        {icon}
       </Icon>
     </Flex>
   );
 }
 
-const activityColumns: ColumnDef<ActivityRow>[] = [
+const activityColumns: ColumnDef<StakingActivityEvent>[] = [
   {
     id: 'event',
     header: 'Event',
@@ -77,13 +77,17 @@ const activityColumns: ColumnDef<ActivityRow>[] = [
         <Flex gap={3} align="center">
           <EventIcon group={row.group} />
           <Stack gap={0.5}>
-            <Text textStyle="text-medium-sm" whiteSpace="nowrap">
-              {row.label}
-            </Text>
-            {/* The line is held even when empty, so every row is one height. */}
-            <Text textStyle="text-regular-xs" color="textSecondary" whiteSpace="nowrap" minH="1lh">
-              {row.detail}
-            </Text>
+            {/* The title is the row's link, as it is in the transactions table. */}
+            <TxLink txId={row.txId} variant="tableLink">
+              <Text textStyle="text-medium-sm" whiteSpace="nowrap">
+                {row.label}
+              </Text>
+            </TxLink>
+            {row.detail && (
+              <Text textStyle="text-regular-xs" color="textSecondary" whiteSpace="nowrap">
+                {row.detail}
+              </Text>
+            )}
           </Stack>
         </Flex>
       );
@@ -121,16 +125,7 @@ const activityColumns: ColumnDef<ActivityRow>[] = [
     accessorKey: 'blockHeight',
     enableSorting: false,
     size: 110,
-    cell: info => {
-      const row = info.row.original;
-      return (
-        <NextLink href={buildUrl(`/block/${row.blockHeight}`, row.network)} variant="noUnderline">
-          <Text textStyle="text-mono-xs" color="accent.stacks-500" whiteSpace="nowrap">
-            #{row.blockHeight.toLocaleString()}
-          </Text>
-        </NextLink>
-      );
-    },
+    cell: info => <BlockHeightBadge blockType="stx" blockHeight={info.getValue() as number} />,
   },
   {
     id: 'transaction',
@@ -141,17 +136,11 @@ const activityColumns: ColumnDef<ActivityRow>[] = [
     cell: info => {
       const row = info.row.original;
       return (
-        <Flex gap={2} align="center">
-          <NextLink href={buildUrl(`/txid/${row.txId}`, row.network)} variant="noUnderline">
-            <Text textStyle="text-mono-xs" color="accent.stacks-500" whiteSpace="nowrap">
-              {truncate(row.txId, 6, 5)}
-            </Text>
-          </NextLink>
+        <Flex gap={1.5} align="center">
+          {TxLinkCellRenderer(row.txId)}
           {/* Failures stay visible; hiding them would misrepresent the record. */}
           {row.txStatus !== 'success' && (
-            <Badge variant="subtle" colorPalette="red">
-              Failed
-            </Badge>
+            <StatusTag status={row.txStatus as Transaction['tx_status']} />
           )}
         </Flex>
       );
@@ -164,16 +153,17 @@ const activityColumns: ColumnDef<ActivityRow>[] = [
     enableSorting: false,
     size: 110,
     meta: { textAlign: 'right' },
-    cell: info => (
-      <Text
-        textStyle="text-regular-xs"
-        color="textTertiary"
-        whiteSpace="nowrap"
-        suppressHydrationWarning
-      >
-        {formatTimestampToRelativeTime(info.getValue() as number)}
-      </Text>
-    ),
+    cell: info => {
+      const timestamp = info.getValue() as number;
+      return (
+        <Flex alignItems="center" justifyContent="flex-end" w="full">
+          {TimeStampCellRenderer(
+            formatTimestampToRelativeTime(timestamp),
+            formatTimestampLocalized(timestamp)
+          )}
+        </Flex>
+      );
+    },
   },
 ];
 
@@ -196,28 +186,31 @@ function ActionFilter({ selected }: { selected?: string }) {
   );
 
   return (
-    // The same segmented control the rest of the Explorer switches views with.
+    // The same tab strip the home page uses to switch block views, so a
+    // filter here looks like a filter anywhere else in the explorer.
     <TabsRoot
       variant="primary"
       size="redesignMd"
       value={selected ?? ALL_GROUPS}
-      onValueChange={details =>
-        router.replace(hrefFor(details.value === ALL_GROUPS ? undefined : details.value), {
-          scroll: false,
-        })
+      onValueChange={({ value }) =>
+        router.replace(hrefFor(value === ALL_GROUPS ? undefined : value), { scroll: false })
       }
+      aria-label="Filter activity by event type"
     >
-      <Flex gap={3} align="center" flexWrap="wrap">
-        <Text textStyle="text-regular-sm" color="textSecondary">
+      <Flex align="center" gap={0} w="full" minW={0}>
+        <TabsLabel as="span" id="staking-activity-filter-label" whiteSpace="nowrap">
           Filter:
-        </Text>
-        <TabsList>
-          {GROUP_LABELS.map(chip => (
-            <TabsTrigger key={chip.label} value={chip.value ?? ALL_GROUPS}>
-              {chip.label}
-            </TabsTrigger>
-          ))}
-        </TabsList>
+        </TabsLabel>
+        {/* Takes the room left beside the label, rather than the full width plus the label. */}
+        <ScrollIndicator scrollIndicatorPositionerProps={{ flex: 1, minW: 0, w: 'auto' }}>
+          <TabsList aria-labelledby="staking-activity-filter-label">
+            {GROUP_LABELS.map(chip => (
+              <TabsTrigger key={chip.value} value={chip.value}>
+                {chip.label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </ScrollIndicator>
       </Flex>
     </TabsRoot>
   );
@@ -238,59 +231,77 @@ export function StakingActivity({
   events,
   selectedGroup,
   pageSize,
-  showViewAll = true,
+  standalone = false,
 }: {
   events: StakingActivityEvent[];
   selectedGroup?: string;
   /** Set by the full activity page, which pages through what it fetched. */
   pageSize?: number;
-  showViewAll?: boolean;
+  /**
+   * True on the full activity page, which supplies its own title and has no
+   * "view all" to point at, and reserves the height other list pages do.
+   */
+  standalone?: boolean;
 }) {
   const network = useGlobalContext().activeNetwork;
   const [pageIndex, setPageIndex] = useState(0);
-  const data = useMemo(() => events.map(event => ({ ...event, network })), [events, network]);
 
   // The feed merges several endpoints, so it is fetched whole and paged here
   // rather than asked for by offset.
   const page = useMemo(
-    () => (pageSize ? data.slice(pageIndex * pageSize, (pageIndex + 1) * pageSize) : data),
-    [data, pageIndex, pageSize]
+    () => (pageSize ? events.slice(pageIndex * pageSize, (pageIndex + 1) * pageSize) : events),
+    [events, pageIndex, pageSize]
   );
 
+  const viewAllHref = buildUrl('/staking/activity', network);
+  const showViewAll = !standalone && events.length > 0;
+
   return (
-    <Stack gap={3}>
-      <Text textStyle="heading-xs">Bond activity</Text>
+    <Stack gap={4}>
+      {!standalone && (
+        <Flex justify="space-between" align="center" gap={4}>
+          <Text textStyle="heading-md">Bond activity</Text>
+          {showViewAll && (
+            <ButtonLink
+              href={viewAllHref}
+              buttonLinkSize="big"
+              display={{ base: 'none', md: 'inline' }}
+            >
+              View all transactions
+            </ButtonLink>
+          )}
+        </Flex>
+      )}
       <ActionFilter selected={selectedGroup} />
       <Table
         data={page}
         columns={activityColumns}
         emptyTableUi={<NoActivity />}
-        getRowHref={row => buildUrl(`/txid/${row.txId}`, row.network)}
         tableContainerWrapper={table => (
-          <TableContainer pt={{ base: 3, lg: 4 }}>{table}</TableContainer>
+          <TableContainer minH={standalone ? '500px' : undefined}>{table}</TableContainer>
         )}
         scrollIndicatorWrapper={table => <ScrollIndicator>{table}</ScrollIndicator>}
-        tableProps={{ mt: { base: -3, lg: -4 } }}
         pagination={
-          pageSize && data.length > pageSize
+          pageSize && events.length > pageSize
             ? {
                 manualPagination: true,
                 pageIndex,
                 pageSize,
-                totalRows: data.length,
+                totalRows: events.length,
                 onPageChange: next => setPageIndex(next.pageIndex),
-                bordered: false,
-                showGoToPage: false,
               }
             : undefined
         }
       />
-      {showViewAll && data.length > 0 && (
-        <Flex justify="flex-end">
-          <ViewAllLink href={buildUrl('/staking/activity', network)}>
-            View all transactions
-          </ViewAllLink>
-        </Flex>
+      {/* On a phone the link follows the table, as it does under the home page's transactions. */}
+      {showViewAll && (
+        <ButtonLink
+          href={viewAllHref}
+          buttonLinkSize="big"
+          display={{ base: 'inline', md: 'none' }}
+        >
+          View all transactions
+        </ButtonLink>
       )}
     </Stack>
   );

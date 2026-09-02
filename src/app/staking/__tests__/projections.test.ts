@@ -15,6 +15,7 @@ import {
   getCycleStackerRewardsSats,
   getCyclesPerYear,
   getDistributionCadence,
+  getDistributionGridCells,
   getDistributionSchedule,
   getRealizedRatePercent,
   getStackingYieldForCompletedCycle,
@@ -600,5 +601,58 @@ describe('getRealizedRatePercent', () => {
     const rate = getRealizedRatePercent(BigInt(4800), BigInt(100_000), 12 * 2100, 2100);
     expect(rate).toBeDefined();
     expect(rate!).toBeLessThan(20);
+  });
+});
+
+describe('getDistributionGridCells', () => {
+  const BLOCK_MS = 10 * 60 * 1000;
+  const nowMs = 1_700_000_000_000;
+  const grid = {
+    cadence: 10,
+    firstBurnchainBlockHeight: 0,
+    currentBurnHeight: 100,
+    nowMs,
+  };
+
+  it('tiles the span with consecutive chain-wide cells, clipping the ends', () => {
+    // Height 95 to height 125 crosses cells 9 (90-100) through 12 (120-130).
+    const cells = getDistributionGridCells({
+      ...grid,
+      startMs: nowMs - 5 * BLOCK_MS,
+      endMs: nowMs + 25 * BLOCK_MS,
+    });
+    expect(cells.map(cell => cell.index)).toEqual([9, 10, 11, 12]);
+    expect(cells[0].leftPercent).toBe(0);
+    expect(cells[0].widthPercent).toBeCloseTo((5 / 30) * 100, 5);
+    expect(cells[1].widthPercent).toBeCloseTo((10 / 30) * 100, 5);
+    const covered = cells.reduce((sum, cell) => sum + cell.widthPercent, 0);
+    expect(covered).toBeCloseTo(100, 5);
+  });
+
+  it('places each cell where a bar activating on that boundary would start', () => {
+    const startMs = nowMs - 5 * BLOCK_MS;
+    const endMs = nowMs + 25 * BLOCK_MS;
+    const cells = getDistributionGridCells({ ...grid, startMs, endMs });
+    const cell10 = cells.find(cell => cell.index === 10)!;
+    const barAt100 = getBarPosition(nowMs, nowMs + 10 * BLOCK_MS, startMs, endMs);
+    expect(cell10.leftPercent).toBeCloseTo(barAt100.leftPercent, 5);
+    expect(cell10.widthPercent).toBeCloseTo(barAt100.widthPercent, 5);
+  });
+
+  it('returns nothing for an empty span or a network with no cadence', () => {
+    expect(getDistributionGridCells({ ...grid, startMs: nowMs, endMs: nowMs })).toEqual([]);
+    expect(
+      getDistributionGridCells({ ...grid, cadence: 0, startMs: nowMs, endMs: nowMs + BLOCK_MS })
+    ).toEqual([]);
+  });
+
+  it('stops at the cap rather than running away', () => {
+    const cells = getDistributionGridCells({
+      ...grid,
+      startMs: nowMs,
+      endMs: nowMs + 100_000 * BLOCK_MS,
+      maxCells: 50,
+    });
+    expect(cells).toHaveLength(50);
   });
 });

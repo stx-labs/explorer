@@ -24,7 +24,6 @@ import {
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table';
-import { useRouter } from 'next/navigation';
 import React, { Fragment, type JSX, ReactNode, useEffect, useMemo, useState } from 'react';
 
 import { ExplorerErrorBoundary } from '../../../app/_components/ErrorBoundary';
@@ -139,18 +138,12 @@ export type TableProps<T> = {
     totalRows: number;
     onPageChange: (pagination: PaginationState) => void;
     onPageSizeChange?: (pageSize: PaginationState) => void;
-    /** Draws the outline continuing a bordered table container. */
-    bordered?: boolean;
-    /** Shows the jump-to-page input. */
-    showGoToPage?: boolean;
   };
   tableProps?: ChakraTableRootProps;
   emptyTableUi?: React.ReactElement;
   emptyFilteredTableUi?: React.ReactElement;
   errorTableUi?: React.ReactElement;
   renderSubComponent?: (props: { row: Row<T> }) => ReactNode;
-  /** Makes each row navigate. Rows become links; nested links still win. */
-  getRowHref?: (row: T) => string | undefined;
   getRowCanExpand?: (row: Row<T>) => boolean;
   expandAllRowsByDefault?: boolean;
   meta?: Record<string, unknown>;
@@ -256,13 +249,11 @@ export function Table<T>({
   errorTableUi,
   expandAllRowsByDefault,
   renderSubComponent,
-  getRowHref,
   meta,
   manualSorting,
   initialSorting,
   enableSortingRemoval,
 }: TableProps<T>): JSX.Element {
-  const router = useRouter();
   const [sorting, setSorting] = useState<SortingState>(initialSorting ?? []);
   const [tableData, setTableData] = useState(data);
 
@@ -454,7 +445,6 @@ export function Table<T>({
           const firstCell = row.getVisibleCells()[0];
           const isSpanRow = firstCell?.column.columnDef.meta?.isSpanRow?.(row.original) ?? false;
           const subComponent = renderSubComponent?.({ row });
-          const rowHref = getRowHref?.(row.original);
           return (
             <Fragment key={row.id}>
               <ChakraTable.Row
@@ -472,16 +462,6 @@ export function Table<T>({
                 }}
                 className="group"
                 minH={13}
-                {...(rowHref && {
-                  cursor: 'pointer',
-                  _hover: { bg: 'surfaceSecondary' },
-                  onClick: (event: React.MouseEvent) => {
-                    // A click on a link inside the row is that link's, not the
-                    // row's, so nested destinations keep working.
-                    if ((event.target as HTMLElement).closest('a')) return;
-                    router.push(rowHref);
-                  },
-                })}
               >
                 {row.getVisibleCells().map((cell, columnIndex) => {
                   if (isSpanRow && columnIndex > 0) {
@@ -562,8 +542,6 @@ export function Table<T>({
               totalRows={pagination.totalRows}
               onPageChange={pagination.onPageChange}
               onPageSizeChange={pagination.onPageSizeChange}
-              bordered={pagination.bordered}
-              showGoToPage={pagination.showGoToPage}
             />
           )}
         </Stack>

@@ -4,15 +4,20 @@ import { ScrollIndicator } from '@/common/components/ScrollIndicator';
 import { useGlobalContext } from '@/common/context/useGlobalContext';
 import { buildUrl } from '@/common/utils/buildUrl';
 import { formatDateShort } from '@/common/utils/date-utils';
-import { TabsList, TabsRoot, TabsTrigger } from '@/ui/Tabs';
+import { ButtonLink } from '@/ui/ButtonLink';
+import { TabsLabel, TabsList, TabsRoot, TabsTrigger } from '@/ui/Tabs';
 import { Text } from '@/ui/Text';
-import { Tooltip } from '@/ui/Tooltip';
 import { Box, Flex, Stack } from '@chakra-ui/react';
-import { useCallback, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 
-import { BondTooltip, BondTooltipData } from './BondTooltip';
+import { BondTooltipData } from './BondTooltip';
 import { BondsTable } from './BondsTable';
-import { ViewAllLink } from './ViewAllLink';
+import {
+  ROW_LABEL_WIDTH,
+  SEGMENT_PAID_BG,
+  SEGMENT_REMAINING_BG,
+  TimelinePlot,
+} from './TimelinePlot';
 import {
   BOND_GAP_CYCLES,
   DISTRIBUTIONS_PER_BOND,
@@ -21,66 +26,18 @@ import {
 } from './consts';
 import { Bond } from './data';
 import {
-  BondTimelineState,
-  approximateBurnHeightAt,
   burnHeightToApproximateTimestamp,
-  burnHeightToRewardCycle,
   formatTermDuration,
   getBarPosition,
   getBondLifecycleState,
   getBondSchedule,
   getBondTimelineState,
   getDistributionCadence,
+  getDistributionGridCells,
   getTimelineBounds,
   getTimelineTicks,
 } from './projections';
-import { bondLabel, formatDateWithYear, getBondDisplayName, toBigInt } from './utils';
-
-const ROW_LABEL_WIDTH = 20;
-
-/**
- * A bond's term drawn as its 24 reward distributions.
- *
- * Fab's prototype colours bars by whether the bond is yours, which needs a
- * connected wallet. Here each bar is divided into the distributions it will
- * receive, so the fill shows how much of the term has actually paid out rather
- * than just how much time has passed.
- */
-const SEGMENT_PAID_BG = 'accent.stacks-500';
-const SEGMENT_REMAINING_BG = 'accent.stacks-300';
-
-function Bar({
-  state,
-  distributionsPaid,
-}: {
-  state: BondTimelineState;
-  distributionsPaid: number;
-}) {
-  // A bond that has not started has no distributions to divide, and its term is
-  // an outline rather than a fill.
-  if (state === 'upcoming') {
-    return (
-      <Box
-        h={7}
-        w="100%"
-        borderRadius="redesign.xs"
-        border="1px dashed"
-        borderColor="neutral.sand-400"
-      />
-    );
-  }
-  return (
-    <Flex h={7} w="100%" gap="1px" borderRadius="redesign.xs" overflow="hidden">
-      {Array.from({ length: DISTRIBUTIONS_PER_BOND }, (_, index) => (
-        <Box
-          key={index}
-          flex="1 1 0"
-          bg={index < distributionsPaid ? SEGMENT_PAID_BG : SEGMENT_REMAINING_BG}
-        />
-      ))}
-    </Flex>
-  );
-}
+import { bondLabel, getBondDisplayName, toBigInt } from './utils';
 
 function LegendKey({ swatch, label }: { swatch: React.ReactNode; label: string }) {
   return (
@@ -132,25 +89,9 @@ export function PeriodsOverview({
 }) {
   const [view, setView] = useState<'timeline' | 'table'>('timeline');
   const network = useGlobalContext().activeNetwork;
+  const viewAllHref = buildUrl('/staking/bonds', network);
 
-  // The cursor names the moment under it, so the axis never has to print more
-  // dates than it can fit. Measured against the plot area rather than the row,
-  // since the labels take a fixed strip on the left.
-  const [hoverPercent, setHoverPercent] = useState<number>();
-  const [bondTooltipOpen, setBondTooltipOpen] = useState(false);
-  const trackCursor = useCallback((event: React.MouseEvent) => {
-    // Measured from the track itself, found through the element the event is
-    // bound to, so the reading cannot drift from what is drawn.
-    const track = (event.currentTarget as HTMLElement).querySelector('[data-timeline-track]');
-    const rect = track?.getBoundingClientRect();
-    if (!rect || rect.width <= 0) return;
-    // A bond under the pointer has its own tooltip, so the flag stands down.
-    const overBar = (event.target as HTMLElement).closest?.('[data-bond-bar]') != null;
-    const percent = ((event.clientX - rect.left) / rect.width) * 100;
-    setHoverPercent(!overBar && percent >= 0 && percent <= 100 ? percent : undefined);
-  }, []);
-  const clearCursor = useCallback(() => setHoverPercent(undefined), []);
-  const { rows, bounds, ticks, todayPercent } = useMemo(() => {
+  const { rows, bounds, ticks, todayPercent, cells } = useMemo(() => {
     // The featured bond leads, then the ones that follow it, so the timeline
     // and the Current bond section always agree on what "current" means.
     const cadence = getDistributionCadence(rewardCycleLength);
@@ -249,7 +190,18 @@ export function PeriodsOverview({
 
     const timelineBounds = getTimelineBounds(bars, nowMs);
     const span = timelineBounds.endMs - timelineBounds.startMs;
+
+    const gridCells = getDistributionGridCells({
+      startMs: timelineBounds.startMs,
+      endMs: timelineBounds.endMs,
+      cadence,
+      firstBurnchainBlockHeight,
+      currentBurnHeight,
+      nowMs,
+    });
+
     return {
+      cells: gridCells,
       rows: bars.map(bar => ({
         ...bar,
         ...getBarPosition(bar.startMs, bar.endMs, timelineBounds.startMs, timelineBounds.endMs),
@@ -269,17 +221,12 @@ export function PeriodsOverview({
     scheduledBonds,
     rewardCycleLength,
     prepareCycleLength,
+    firstBurnchainBlockHeight,
     currentBurnHeight,
     nowMs,
   ]);
 
   if (rows.length === 0) return null;
-
-  const todayLabel = new Date(nowMs).toLocaleString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    timeZone: 'UTC',
-  });
 
   // When the next bond's terms become knowable. Offering and target rate are
   // set when enrollment opens, which the cadence fixes relative to its start.
@@ -296,28 +243,6 @@ export function PeriodsOverview({
         )}`
       : undefined;
 
-  // What the cursor is over, named in the chain's own terms.
-  const cursor = (() => {
-    if (hoverPercent === undefined || bondTooltipOpen) return undefined;
-    const span = bounds.endMs - bounds.startMs;
-    if (span <= 0) return undefined;
-    const atMs = bounds.startMs + (hoverPercent / 100) * span;
-    const height = approximateBurnHeightAt(atMs, currentBurnHeight, nowMs);
-    const cycle = burnHeightToRewardCycle(height, firstBurnchainBlockHeight, rewardCycleLength);
-    // Heights the chain has passed are known; the rest are projected.
-    const prefix = height > currentBurnHeight ? '~' : '';
-    return {
-      percent: hoverPercent,
-      label: [
-        cycle !== undefined ? `cycle ${cycle}` : undefined,
-        `#${height.toLocaleString()}`,
-        `${prefix}${formatDateWithYear(atMs)}`,
-      ]
-        .filter(Boolean)
-        .join(' · '),
-    };
-  })();
-
   const statesShown = new Set(rows.map(row => row.state));
   // The legend's count describes the current bond, which the timeline shows
   // partway down now that earlier bonds lead into it.
@@ -326,21 +251,31 @@ export function PeriodsOverview({
   )?.distributionsPaid;
 
   return (
-    <Stack gap={3}>
-      <Text textStyle="heading-xs">Period overview</Text>
+    <Stack gap={4}>
+      <Flex justify="space-between" align="center" gap={4}>
+        <Text textStyle="heading-xs">Period overview</Text>
+        <ButtonLink
+          href={viewAllHref}
+          buttonLinkSize="big"
+          display={{ base: 'none', md: 'inline' }}
+        >
+          View all bonds
+        </ButtonLink>
+      </Flex>
       <Flex align="center" gap={4} flexWrap="wrap" justify="space-between">
-        {/* The same control the blocks page uses to switch its own views. */}
+        {/* The view switch the blocks page uses, so the two read as one control. */}
         <TabsRoot
           variant="primary"
           size="redesignMd"
           value={view}
-          onValueChange={details => setView(details.value as 'timeline' | 'table')}
+          onValueChange={({ value }) => setView(value as 'timeline' | 'table')}
+          aria-label="Period overview view options"
         >
-          <Flex gap={3} align="center">
-            <Text textStyle="text-regular-sm" color="textSecondary">
+          <Flex align="center" gap={0}>
+            <TabsLabel as="span" id="period-overview-view-label" whiteSpace="nowrap">
               View by:
-            </Text>
-            <TabsList>
+            </TabsLabel>
+            <TabsList aria-labelledby="period-overview-view-label">
               <TabsTrigger value="timeline">Timeline</TabsTrigger>
               <TabsTrigger value="table">Table</TabsTrigger>
             </TabsList>
@@ -361,15 +296,9 @@ export function PeriodsOverview({
           rewardCycleLength={rewardCycleLength}
         />
       ) : (
-        <ScrollIndicator>
-          <Stack
-            gap={4}
-            bg="surfaceSecondary"
-            borderRadius="redesign.xl"
-            px={[4, 6]}
-            py={[4, 5]}
-            overflowX="auto"
-          >
+        <Stack gap={4} bg="surfaceSecondary" borderRadius="redesign.xl" px={[4, 6]} py={[4, 5]}>
+          {/* A narrow screen scrolls the plot the way it scrolls a wide table. */}
+          <ScrollIndicator>
             <Box minW="32rem">
               {/* Axis: labels above a rule, with a tick at each division. */}
               <Flex>
@@ -417,148 +346,47 @@ export function PeriodsOverview({
                 </Box>
               </Flex>
 
-              {/* Bars. The today marker sits in its own overlay that covers only
-              the bar area, so it can be positioned as a plain percentage. */}
-              <Box
-                data-timeline-plot="true"
-                position="relative"
-                pt={9}
-                onMouseMove={trackCursor}
-                onMouseLeave={clearCursor}
-              >
-                <Stack gap={2.5}>
-                  {rows.map(row => (
-                    <Flex key={row.index} align="center">
-                      <Box w={ROW_LABEL_WIDTH} flexShrink={0} pr={3}>
-                        <Text textStyle="text-regular-sm" whiteSpace="nowrap">
-                          {row.label}
-                        </Text>
-                      </Box>
-                      <Box position="relative" flex={1} h={7}>
-                        <Tooltip
-                          variant="redesignPrimary"
-                          size="lg"
-                          portalled
-                          // Scheduled and enrolling bonds carry links, so the
-                          // tooltip has to survive the pointer crossing the gap
-                          // between the bar and the panel. The app-wide default
-                          // closes instantly, which puts them out of reach.
-                          closeDelay={300}
-                          positioning={{ placement: 'top', gutter: 2 }}
-                          onOpenChange={details => setBondTooltipOpen(details.open)}
-                          content={
-                            <BondTooltip
-                              bond={row.tooltip}
-                              rewardCycleLength={rewardCycleLength}
-                              currentBurnHeight={currentBurnHeight}
-                              nowMs={nowMs}
-                            />
-                          }
-                        >
-                          <Box
-                            data-bond-bar="true"
-                            position="absolute"
-                            left={`${row.leftPercent}%`}
-                            width={`${row.widthPercent}%`}
-                            minW={1}
-                          >
-                            <Bar state={row.state} distributionsPaid={row.distributionsPaid} />
-                          </Box>
-                        </Tooltip>
-                      </Box>
-                    </Flex>
-                  ))}
-                </Stack>
-                <Flex position="absolute" inset={0} pointerEvents="none">
-                  <Box w={ROW_LABEL_WIDTH} flexShrink={0} pr={3} />
-                  <Box data-timeline-track="true" position="relative" flex={1}>
-                    {cursor && (
-                      <Box
-                        position="absolute"
-                        left={`${cursor.percent}%`}
-                        top={0}
-                        bottom={0}
-                        borderLeft="1px solid"
-                        borderColor="neutral.sand-400"
-                        // The flag follows the pointer, so it sits above the
-                        // fixed today marker when the two meet.
-                        zIndex={1}
-                      >
-                        <Box
-                          position="absolute"
-                          top={1}
-                          left={0}
-                          transform="translateX(-50%)"
-                          bg="surfaceInvert"
-                          borderRadius="redesign.xs"
-                          px={2}
-                          py={0.5}
-                        >
-                          <Text
-                            textStyle="text-mono-xs"
-                            // Pairs with surfaceInvert, so both flip together
-                            // rather than the text staying light on a light chip.
-                            color="textInvert"
-                            whiteSpace="nowrap"
-                            suppressHydrationWarning
-                          >
-                            {cursor.label}
-                          </Text>
-                        </Box>
-                      </Box>
-                    )}
-                    <Box
-                      position="absolute"
-                      left={`${todayPercent}%`}
-                      top={0}
-                      bottom={0}
-                      borderLeft="1px dashed"
-                      borderColor="redesignBorderSecondary"
-                    >
-                      <Box
-                        position="absolute"
-                        top={1}
-                        left={0}
-                        transform="translateX(-50%)"
-                        bg="surfaceFourth"
-                        border="1px solid"
-                        borderColor="redesignBorderSecondary"
-                        borderRadius="redesign.xs"
-                        px={2}
-                        py={0.5}
-                      >
-                        <Text textStyle="text-mono-xs" color="textSecondary" whiteSpace="nowrap">
-                          today · {todayLabel}
-                        </Text>
-                      </Box>
-                    </Box>
-                  </Box>
-                </Flex>
-              </Box>
-            </Box>
-
-            <Flex gap={5} flexWrap="wrap" pl={ROW_LABEL_WIDTH}>
-              {featuredPaid !== undefined && (
-                <LegendKey
-                  swatch={<Swatch bg={SEGMENT_PAID_BG} />}
-                  label={`${featuredPaid}/${DISTRIBUTIONS_PER_BOND} reward distributions completed`}
-                />
-              )}
-              <LegendKey swatch={<Swatch bg={SEGMENT_REMAINING_BG} />} label="Term remaining" />
-              {statesShown.has('upcoming') && (
-                <LegendKey swatch={<Swatch dashed />} label="Scheduled · not yet started" />
-              )}
-              <LegendKey
-                swatch={<Box w={4} borderTop="1px dashed" borderColor="neutral.sand-400" />}
-                label="Today"
+              <TimelinePlot
+                rows={rows}
+                cells={cells}
+                bounds={bounds}
+                todayPercent={todayPercent}
+                currentBurnHeight={currentBurnHeight}
+                nowMs={nowMs}
+                rewardCycleLength={rewardCycleLength}
+                firstBurnchainBlockHeight={firstBurnchainBlockHeight}
               />
-            </Flex>
-          </Stack>
-        </ScrollIndicator>
+            </Box>
+          </ScrollIndicator>
+
+          <Flex gap={5} flexWrap="wrap" pl={{ base: 0, md: ROW_LABEL_WIDTH }}>
+            {featuredPaid !== undefined && (
+              <LegendKey
+                swatch={<Swatch bg={SEGMENT_PAID_BG} />}
+                label={`${featuredPaid}/${DISTRIBUTIONS_PER_BOND} reward distributions completed`}
+              />
+            )}
+            <LegendKey swatch={<Swatch bg={SEGMENT_REMAINING_BG} />} label="Term remaining" />
+            <LegendKey
+              swatch={
+                <Box w={4} h={3} borderRadius="redesign.xs" bg="surfaceFifth" opacity={0.3} />
+              }
+              label="One reward distribution · half a cycle"
+            />
+            {statesShown.has('upcoming') && (
+              <LegendKey swatch={<Swatch dashed />} label="Scheduled · not yet started" />
+            )}
+            <LegendKey
+              swatch={<Box w={4} borderTop="1px dashed" borderColor="neutral.sand-400" />}
+              label="Today"
+            />
+          </Flex>
+        </Stack>
       )}
-      <Flex justify="flex-end">
-        <ViewAllLink href={buildUrl('/staking/bonds', network)}>View all bonds</ViewAllLink>
-      </Flex>
+      {/* On a phone the link follows the content, as it does on the home page. */}
+      <ButtonLink href={viewAllHref} buttonLinkSize="big" display={{ base: 'inline', md: 'none' }}>
+        View all bonds
+      </ButtonLink>
     </Stack>
   );
 }
