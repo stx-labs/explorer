@@ -28,6 +28,11 @@ export function GlossaryTerm({
       // The page layout clips overflow, so the definition has to leave the flow
       // or it gets cut off at the nearest bounded ancestor.
       portalled
+      // The definition carries a docs link, so the tooltip has to survive the
+      // pointer crossing the gap to reach it. The app-wide default closes
+      // instantly, which puts the link out of reach.
+      closeDelay={300}
+      positioning={{ placement: 'top', gutter: 2 }}
       contentProps={{ maxW: '22rem', whiteSpace: 'normal' }}
       content={
         <Stack gap={1.5}>
