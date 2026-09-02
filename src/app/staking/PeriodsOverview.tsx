@@ -244,12 +244,6 @@ export function PeriodsOverview({
       : undefined;
 
   const statesShown = new Set(rows.map(row => row.state));
-  // The legend's count describes the current bond, which the timeline shows
-  // partway down now that earlier bonds lead into it.
-  const featuredPaid = (
-    rows.find(row => row.index === featuredIndex) ?? rows.find(row => row.state === 'active')
-  )?.distributionsPaid;
-
   return (
     <Stack gap={4}>
       <Flex justify="space-between" align="center" gap={4}>

@@ -6,8 +6,6 @@ export const BOND_TERM_CYCLES = 12;
 
 export const SATS_IN_BTC = 100_000_000;
 
-export const STAKING_PAGE_TITLE = 'Staking';
-
 /**
  * Bonds are created continuously, so both the table and the timeline need an
  * upper bound. Newest first, with the number omitted stated in the UI rather
@@ -24,15 +22,6 @@ export const TIMELINE_BONDS_AFTER = 5;
 
 /** Rows in the table view, which lists forward from the current bond only. */
 export const BONDS_TABLE_LIMIT = 10;
-
-/**
- * Where "get started" sends people.
- *
- * One deployment serves every network. Replace this with a per-network lookup
- * once separate deployments exist, so mainnet visitors are not sent to an app
- * pointed at a test network.
- */
-export const STAKING_APP_URL = 'https://bitcoin-staking-app.vercel.app/';
 
 export const ACTIVITY_FEED_LIMIT = 5;
 

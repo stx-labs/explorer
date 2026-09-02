@@ -2,13 +2,13 @@
 
 import { PoxInfo } from '@/common/queries/usePoxInforRaw';
 import { Text } from '@/ui/Text';
-import { Stack } from '@chakra-ui/react';
+import { Flex, Stack } from '@chakra-ui/react';
 
 import { CurrentBond } from './CurrentBond';
 import { PeriodsOverview } from './PeriodsOverview';
 import { StackingOverview } from './StackingOverview';
 import { StakingActivity } from './StakingActivity';
-import { StakingStats } from './StakingStats';
+import { HowToParticipateButton, StakingStats } from './StakingStats';
 import { SCHEDULED_BONDS_AHEAD, SHOW_SCHEDULED_BONDS } from './consts';
 import {
   Bond,
@@ -110,7 +110,10 @@ export function StakingPageClient({
       <Stack gap={{ base: 10, lg: 12 }}>
         <Text textStyle="heading-md">Bitcoin Staking</Text>
         <Stack gap={4}>
-          <Text textStyle="heading-xs">Current bond</Text>
+          <Flex justify="space-between" align="center" gap={4} flexWrap="wrap">
+            <Text textStyle="heading-xs">Current bond</Text>
+            <HowToParticipateButton />
+          </Flex>
           <StakingStats
             featuredBond={featuredBond}
             rewardCycleLength={rewardCycleLength}

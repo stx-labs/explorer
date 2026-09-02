@@ -108,8 +108,8 @@ export function StackingOverview({
   const elapsed = rewardCycleLength > 0 ? 1 - blocksUntilNextCycle / rewardCycleLength : 0;
   const daysLeft = formatTermDuration(blocksUntilNextCycle);
 
-  // The most recently settled cycle is what the callout reports, since a
-  // running cycle holds only part of its rewards.
+  // The callout reports the last settled cycle: a running one holds only part
+  // of its rewards.
   const lastSettled = cycles
     .filter(cycle => currentCycleId === undefined || cycle.cycle_number < currentCycleId)
     .sort((a, b) => b.cycle_number - a.cycle_number)[0];

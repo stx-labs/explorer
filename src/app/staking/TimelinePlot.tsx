@@ -36,10 +36,10 @@ const REST_TOP = 4;
 /**
  * A bond's term drawn as its 24 reward distributions.
  *
- * Fab's prototype colours bars by whether the bond is yours, which needs a
- * connected wallet. Here each bar is divided into the distributions it will
- * receive, so the fill shows how much of the term has actually paid out rather
- * than just how much time has passed.
+ * Dividing the bar by distribution rather than by elapsed time shows how much
+ * of the term has actually paid out, which is what a reader is asking. Colour
+ * carries the same meaning for every bond, since the page has no wallet and so
+ * no notion of whose a bond is.
  */
 export const SEGMENT_PAID_BG = 'accent.stacks-500';
 export const SEGMENT_REMAINING_BG = 'accent.stacks-300';

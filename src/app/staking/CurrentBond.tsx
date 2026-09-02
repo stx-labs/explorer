@@ -11,6 +11,7 @@ import { Box, Flex, Icon, Stack } from '@chakra-ui/react';
 import { ArrowRight } from '@phosphor-icons/react';
 
 import { BondStateBadge, BondStateTone } from './BondStateBadge';
+import { GlossaryTerm } from './GlossaryTerm';
 import { Bond, EnrollmentShare } from './data';
 import {
   BondLifecycleState,
@@ -85,7 +86,7 @@ function EnrollmentBar({
 }
 
 interface Milestone {
-  label: string;
+  label: React.ReactNode;
   height: number;
   timestamp: number;
   /** Passed milestones show a real date; future ones are projections. */
@@ -189,7 +190,12 @@ export function CurrentBond({
     ...(progress.paid > 0
       ? [
           {
-            label: `Latest distribution · ${progress.paid} of ${progress.total}`,
+            label: (
+              <>
+                <GlossaryTerm entry="rewardDistribution">Latest distribution</GlossaryTerm> ·{' '}
+                {progress.paid} of {progress.total}
+              </>
+            ),
             height: distributionHeight(progress.paid),
             isCurrent: true,
           },
@@ -226,7 +232,7 @@ export function CurrentBond({
         gap={[3, 4]}
         p={[3, 4]}
         bg="surfacePrimary"
-        borderRadius="redesign.xl"
+        borderRadius="redesign.md"
         flexDirection={{ base: 'column', lg: 'row' }}
       >
         <Stack gap={5} flex={1} p={[3, 4]}>
@@ -239,7 +245,8 @@ export function CurrentBond({
               {/* A bond that goes by name still needs its index stated
                   somewhere; one titled "Bond 2" already carries it. */}
               {name !== `Bond ${featuredBond.index}` && `Bond ${featuredBond.index} · `}
-              {cycleRange} · {(termEndHeight - activationHeight).toLocaleString()} blocks
+              <GlossaryTerm entry="bondTerm">{cycleRange}</GlossaryTerm> ·{' '}
+              {(termEndHeight - activationHeight).toLocaleString()} blocks
             </Text>
           </Stack>
 
@@ -307,7 +314,7 @@ export function CurrentBond({
           )}
         </Stack>
 
-        <Stack gap={4} flex={1} bg="surfaceTertiary" borderRadius="redesign.lg" p={[4, 5]}>
+        <Stack gap={4} flex={1} bg="surfaceTertiary" borderRadius="redesign.sm" p={[4, 5]}>
           <Flex justify="space-between" gap={3} align="baseline" flexWrap="wrap">
             <Text textStyle="heading-xs">Lifecycle</Text>
             <ButtonLink
@@ -320,7 +327,7 @@ export function CurrentBond({
           <Stack gap={0}>
             {milestones.map((milestone, index) => (
               <Box
-                key={milestone.label}
+                key={milestone.height}
                 py={2.5}
                 borderTop={index > 0 ? '1px solid' : undefined}
                 borderColor="redesignBorderSecondary"

@@ -26,18 +26,6 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
       'Bitcoin rewards are paid on a fixed schedule, once every half reward cycle. Because a bond runs 12 cycles, it receives 24 distributions over its term.',
     docsUrl: `${DOCS_GLOSSARY}#distribution-cycle`,
   },
-  reserve: {
-    term: 'Reserve',
-    definition:
-      'Each distribution pays active bonds first. 15% of what remains is then held back into the protocol reserve (tranche 3 of the reward waterfall) before the rest is distributed to STX stackers.',
-    docsUrl: `${DOCS_GLOSSARY}#reserve-fund-tranche-3`,
-  },
-  onChainCapacity: {
-    term: 'On-chain capacity',
-    definition:
-      'The most BTC a bond can hold, set by the Stacks Endowment and written on chain when the bond is created.',
-    docsUrl: `${DOCS_GLOSSARY}#available-capacity-and-capacity-allocation-pox-5`,
-  },
   targetRewardRate: {
     term: 'Target reward rate',
     definition:

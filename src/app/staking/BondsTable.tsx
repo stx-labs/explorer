@@ -5,12 +5,11 @@ import { Table } from '@/common/components/table/Table';
 import { TableContainer } from '@/common/components/table/TableContainer';
 import { formatDateShort } from '@/common/utils/date-utils';
 import { Text } from '@/ui/Text';
-import { Tooltip } from '@/ui/Tooltip';
-import { Flex, Icon, Stack } from '@chakra-ui/react';
-import { Info } from '@phosphor-icons/react';
+import { Stack } from '@chakra-ui/react';
 import { ColumnDef } from '@tanstack/react-table';
 import { useMemo } from 'react';
 
+import { AnnotatedValue, NO_VALUE } from './AnnotatedValue';
 import { BondStateBadge } from './BondStateBadge';
 import { BONDS_TABLE_LIMIT } from './consts';
 import { Bond } from './data';
@@ -111,6 +110,11 @@ export function toBondRow(
 }
 
 /** Why a rate cannot be shown, so an empty cell is not read as a zero. */
+/** Why a rate cannot be shown, so an empty cell is not read as a zero. */
+function reasonNote(reason?: string): string | undefined {
+  return reason ? UNAVAILABLE_REASONS[reason] : undefined;
+}
+
 const UNAVAILABLE_REASONS: Record<string, string> = {
   running: 'The bond is still paying out. A realized rate is only final once its term ends.',
   nothingBonded: 'Nothing was bonded, so there is no principal to measure a return against.',
@@ -119,29 +123,6 @@ const UNAVAILABLE_REASONS: Record<string, string> = {
   cycleTooShort:
     'Reward cycles on this network are shorter than a day, so a term returns its full rate too quickly for an annual figure to mean anything.',
 };
-
-function Unavailable({ reason }: { reason?: string }) {
-  const explanation = reason ? UNAVAILABLE_REASONS[reason] : undefined;
-  if (!explanation) {
-    return (
-      <Text textStyle="text-regular-sm" color="textSecondary">
-        —
-      </Text>
-    );
-  }
-  return (
-    <Flex gap={1} align="center" justify="flex-end">
-      <Text textStyle="text-regular-sm" color="textSecondary">
-        —
-      </Text>
-      <Tooltip variant="redesignPrimary" size="lg" portalled content={explanation}>
-        <Icon w={3.5} h={3.5} color="iconSecondary" cursor="help">
-          <Info />
-        </Icon>
-      </Tooltip>
-    </Flex>
-  );
-}
 
 /**
  * Value columns read as pending rather than as a hard zero for upcoming bonds:
@@ -275,7 +256,7 @@ export const bondColumns: ColumnDef<BondRow>[] = [
           </Text>
         );
       }
-      return <Unavailable reason={row.realizedRateUnavailable} />;
+      return <AnnotatedValue value={NO_VALUE} note={reasonNote(row.realizedRateUnavailable)} />;
     },
   },
   {
@@ -310,7 +291,7 @@ export const bondColumns: ColumnDef<BondRow>[] = [
             {formatSbtc(info.row.original.rewardedSats)}
           </Text>
         ) : (
-          <Unavailable reason="outOfHistory" />
+          <AnnotatedValue value={NO_VALUE} note={UNAVAILABLE_REASONS.outOfHistory} />
         )}
       </PendingOr>
     ),

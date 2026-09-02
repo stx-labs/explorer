@@ -5,11 +5,11 @@ import { useGlobalContext } from '@/common/context/useGlobalContext';
 import { formatDateShort } from '@/common/utils/date-utils';
 import { Button, ButtonProps } from '@/ui/Button';
 import { Text } from '@/ui/Text';
-import { Flex, Grid, Icon, SimpleGrid, Stack } from '@chakra-ui/react';
+import { Flex, Grid, Icon, Stack } from '@chakra-ui/react';
 import { ArrowUpRight } from '@phosphor-icons/react';
 
 import { GlossaryTerm } from './GlossaryTerm';
-import { BOND_TERM_CYCLES, DISTRIBUTIONS_PER_BOND, STAKING_LINKS } from './consts';
+import { STAKING_LINKS } from './consts';
 import { Bond } from './data';
 import { GLOSSARY } from './glossary';
 import {
@@ -36,50 +36,12 @@ function Figure({ value, unit }: { value: string; unit?: string }) {
   );
 }
 
-interface Constant {
-  term: keyof typeof GLOSSARY;
-  parts: string[];
-}
-
 /**
  * A constant's value. It arrives as parts so the separator can carry its own
  * spacing rather than being crammed against the words either side of it.
  */
-function ConstantValue({ parts }: { parts: string[] }) {
-  return (
-    <Flex gap={2} align="baseline" flexWrap="wrap">
-      {parts.map((part, index) => (
-        // The separator travels with the part before it, so a wrap ends a line
-        // with the dot rather than starting the next one with it.
-        <Flex key={part} gap={2} align="baseline">
-          <Text textStyle="text-medium-sm" whiteSpace="nowrap">
-            {part}
-          </Text>
-          {index < parts.length - 1 && (
-            <Text textStyle="text-regular-sm" color="textSecondary">
-              ·
-            </Text>
-          )}
-        </Flex>
-      ))}
-    </Flex>
-  );
-}
-
-/** Term over value: one cell of the constants strip. */
-function ConstantCell({ term, parts }: Constant) {
-  return (
-    <Stack gap={1} minW={0}>
-      <Text textStyle="text-regular-sm" color="textSecondary" whiteSpace="nowrap">
-        <GlossaryTerm entry={term} />
-      </Text>
-      <ConstantValue parts={parts} />
-    </Stack>
-  );
-}
-
 /** The staking site, whose form also takes expressions of interest. */
-function HowToParticipateButton(props: ButtonProps) {
+export function HowToParticipateButton(props: ButtonProps) {
   return (
     <Button
       asChild
@@ -159,27 +121,8 @@ export function StakingStats({
   const usd = (amount: number, price?: number) => (price ? formatUsd(amount * price) : undefined);
   const join = (...parts: (string | undefined)[]) => parts.filter(Boolean).join(' · ') || undefined;
 
-  // Protocol constants, fixed in the contract rather than read per bond.
-  const constants: Constant[] = [
-    {
-      term: 'bondTerm',
-      parts: [
-        `${BOND_TERM_CYCLES} cycles`,
-        `${(BOND_TERM_CYCLES * rewardCycleLength).toLocaleString()} blocks`,
-      ],
-    },
-    {
-      term: 'rewardDistribution',
-      parts: [`${cadence.toLocaleString()} blocks`, `${DISTRIBUTIONS_PER_BOND} / term`],
-    },
-    {
-      term: 'onChainCapacity',
-      parts: [formatBtc(toBigInt(featuredBond.parameters?.btc_capacity), 0)],
-    },
-  ];
-
   return (
-    <Stack gap={3}>
+    <>
       {/*
         One card per figure, in the shape the transactions overview uses for
         its headline stats. Two by two on a phone, one row on anything wider.
@@ -219,30 +162,6 @@ export function StakingStats({
           )}
         />
       </Grid>
-
-      {/*
-        The constants run as one strip beneath the figures, with the call to
-        action at its end. Nothing here has to match another card's height, so
-        nothing has space to fill.
-      */}
-      <Flex
-        bg="surfaceFourth"
-        border="1px solid"
-        borderColor="redesignBorderSecondary"
-        borderRadius="redesign.xl"
-        px={[4, 6]}
-        py={[4, 5]}
-        gap={{ base: 4, lg: 8 }}
-        align={{ base: 'stretch', lg: 'center' }}
-        direction={{ base: 'column', lg: 'row' }}
-      >
-        <SimpleGrid columns={{ base: 2, lg: 4 }} gap={{ base: 4, lg: 6 }} flex={1} minW={0}>
-          {constants.map(constant => (
-            <ConstantCell key={constant.term} {...constant} />
-          ))}
-        </SimpleGrid>
-        <HowToParticipateButton width={{ base: '100%', lg: 'auto' }} flexShrink={0} />
-      </Flex>
-    </Stack>
+    </>
   );
 }

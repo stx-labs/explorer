@@ -2,11 +2,9 @@
 
 import { MICROSTACKS_IN_STACKS, abbreviateNumber } from '@/common/utils/utils';
 import { Text } from '@/ui/Text';
-import { Tooltip } from '@/ui/Tooltip';
-import { Flex, Icon } from '@chakra-ui/react';
-import { Info } from '@phosphor-icons/react';
 import { ColumnDef } from '@tanstack/react-table';
 
+import { AnnotatedValue, NO_VALUE } from './AnnotatedValue';
 import { CycleRewards, PoxCycle } from './data';
 import { DailyPrices, getCyclePrices } from './prices';
 import { getCycleStackerRewardsSatsBigInt, getStackingYieldForCompletedCycle } from './projections';
@@ -22,36 +20,6 @@ const FROM_STACKING_TRACKER =
   'This cycle predates pox-5, so the figure comes from stacking-tracker.com rather than a contract read.';
 
 /** A figure with a note on where it came from, when that is not the chain. */
-function Sourced({ value, note }: { value: string; note: string }) {
-  return (
-    <Flex gap={1} align="center" justify="flex-end">
-      <Text textStyle="text-regular-sm" color="textSecondary" whiteSpace="nowrap">
-        {value}
-      </Text>
-      <Tooltip variant="redesignPrimary" size="lg" portalled content={note}>
-        <Icon w={3.5} h={3.5} color="iconSecondary" cursor="help">
-          <Info />
-        </Icon>
-      </Tooltip>
-    </Flex>
-  );
-}
-
-function NoRewardData() {
-  return (
-    <Flex gap={1} align="center" justify="flex-end">
-      <Text textStyle="text-regular-sm" color="textSecondary">
-        &#8212;
-      </Text>
-      <Tooltip variant="redesignPrimary" size="lg" portalled content={NO_REWARD_DATA}>
-        <Icon w={3.5} h={3.5} color="iconSecondary" cursor="help">
-          <Info />
-        </Icon>
-      </Tooltip>
-    </Flex>
-  );
-}
-
 export interface CycleRow {
   cycleNumber: number;
   totalStackedStx: number;
@@ -142,15 +110,15 @@ export const cycleColumns: ColumnDef<CycleRow>[] = [
       const row = info.row.original;
       if (!row.hasRewardData) {
         return row.historic ? (
-          <Sourced value={`${row.historic.rewardsBtc} BTC`} note={FROM_STACKING_TRACKER} />
+          <AnnotatedValue value={`${row.historic.rewardsBtc} BTC`} note={FROM_STACKING_TRACKER} />
         ) : (
-          <NoRewardData />
+          <AnnotatedValue value={NO_VALUE} note={NO_REWARD_DATA} />
         );
       }
       // Bonds are paid ahead of stackers, so a shared cycle lowers this figure
       // as well as the yield derived from it.
       if (row.sharedWithBonds) {
-        return <Sourced value={formatBtc(row.rewardsSats)} note={SHARED_WITH_BONDS} />;
+        return <AnnotatedValue value={formatBtc(row.rewardsSats)} note={SHARED_WITH_BONDS} />;
       }
       return (
         <Text textStyle="text-regular-sm" whiteSpace="nowrap">
@@ -175,9 +143,12 @@ export const cycleColumns: ColumnDef<CycleRow>[] = [
       const row = info.row.original;
       if (!row.hasRewardData) {
         return row.historic ? (
-          <Sourced value={`${row.historic.apyPercent.toFixed(2)}%`} note={FROM_STACKING_TRACKER} />
+          <AnnotatedValue
+            value={`${row.historic.apyPercent.toFixed(2)}%`}
+            note={FROM_STACKING_TRACKER}
+          />
         ) : (
-          <NoRewardData />
+          <AnnotatedValue value={NO_VALUE} note={NO_REWARD_DATA} />
         );
       }
       const value = row.apyPercent !== undefined ? `${row.apyPercent.toFixed(2)}%` : '\u2014';
@@ -190,7 +161,7 @@ export const cycleColumns: ColumnDef<CycleRow>[] = [
       }
       // A cycle that paid bonds is not comparable with one that did not, so it
       // says so rather than leaving the lower number to be read as a decline.
-      return <Sourced value={value} note={SHARED_WITH_BONDS} />;
+      return <AnnotatedValue value={value} note={SHARED_WITH_BONDS} />;
     },
   },
   {

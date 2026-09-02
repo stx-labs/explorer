@@ -749,8 +749,8 @@ export async function fetchStakingActivity(
   const groups = group ? [group] : (Object.keys(ACTIVITY_GROUP_FUNCTIONS) as ActivityGroup[]);
 
   // Rows name which distribution they are and which bond they belong to, both
-  // of which come from the bond rather than the event. Only bonds currently
-  // paying out can appear, so the newest page covers every row.
+  // of which come from the bond rather than the event. Only bonds still paying
+  // out can appear, so the newest page covers every row.
   const bondsByIndex = new Map<number, Bond>();
   try {
     const page = await fetchBondsPage(chain, api);
