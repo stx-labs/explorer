@@ -569,10 +569,14 @@ export type BondLifecycleState = 'scheduled' | 'enrolling' | 'active' | 'maturit
 export interface BondSchedule {
   enrollmentOpensHeight: number;
   enrollmentClosesHeight: number;
-  /** D0: the bond starts earning. */
+  /** Day 0: the bond starts earning. */
   activationHeight: number;
-  /** Paired STX is released, one distribution before the term ends. */
-  stxUnlockHeight: number;
+  /**
+   * The bond's Bitcoin becomes spendable: the L1 timelock's minimum unlock
+   * height, one distribution before the term ends. This is the BTC leg, not
+   * the STX one, which stays locked until the term ends on L2.
+   */
+  l1UnlockHeight: number;
   termEndHeight: number;
 }
 
@@ -580,9 +584,10 @@ export interface BondSchedule {
  * Every milestone in a bond's life, from its start height alone.
  *
  * Enrollment opens one bond gap before the bond starts and closes at the start
- * of the prepare phase. STX unlocks one distribution before the term ends.
- * Verified against the contract's own `get-bond-l1-unlock-height` and
- * `bond-period-to-reward-cycle`.
+ * of the prepare phase. The Bitcoin leg's L1 timelock can be spent one
+ * distribution before the term ends; the STX leg stays locked until the term
+ * ends on L2. Verified against the contract's own `get-bond-l1-unlock-height`
+ * and `bond-period-to-reward-cycle`.
  */
 export function getBondSchedule(
   activationHeight: number,
@@ -594,7 +599,7 @@ export function getBondSchedule(
     enrollmentOpensHeight: activationHeight - BOND_GAP_CYCLES * rewardCycleLength,
     enrollmentClosesHeight: activationHeight - prepareCycleLength,
     activationHeight,
-    stxUnlockHeight: termEndHeight - getDistributionCadence(rewardCycleLength),
+    l1UnlockHeight: termEndHeight - getDistributionCadence(rewardCycleLength),
     termEndHeight,
   };
 }
@@ -606,7 +611,7 @@ export function getBondLifecycleState(
 ): BondLifecycleState {
   if (!existsOnChain) return 'scheduled';
   if (currentBurnHeight >= schedule.termEndHeight) return 'closed';
-  if (currentBurnHeight >= schedule.stxUnlockHeight) return 'maturity';
+  if (currentBurnHeight >= schedule.l1UnlockHeight) return 'maturity';
   if (currentBurnHeight >= schedule.activationHeight) return 'active';
   if (currentBurnHeight >= schedule.enrollmentOpensHeight) return 'enrolling';
   return 'scheduled';

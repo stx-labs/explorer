@@ -164,9 +164,9 @@ export function CurrentBond({
   );
   const state = getBondLifecycleState(schedule, currentBurnHeight, true);
   const progress = getBondProgress(schedule, currentBurnHeight, rewardCycleLength);
-  // A bond's own distributions, counted from D0 rather than read off the
+  // A bond's own distributions, counted from Day 0 rather than read off the
   // chain-wide grid. The two agree, because a bond activates on a grid
-  // boundary, but counting from D0 is what makes "3 of 24" meaningful and
+  // boundary, but counting from Day 0 is what makes "3 of 24" meaningful and
   // keeps a not-yet-started bond from showing a distribution behind it.
   const cadence = getDistributionCadence(rewardCycleLength);
   const distributionHeight = (n: number) => schedule.activationHeight + n * cadence;
@@ -184,7 +184,7 @@ export function CurrentBond({
   const milestones: Milestone[] = [
     { label: 'Enrollment opened', height: schedule.enrollmentOpensHeight },
     { label: 'Enrollment closed', height: schedule.enrollmentClosesHeight },
-    { label: 'Bond started · D0', height: schedule.activationHeight },
+    { label: 'Bond started · Day 0', height: schedule.activationHeight },
     // Only a bond that has been paid has a latest distribution to show.
     ...(progress.paid > 0
       ? [
@@ -203,7 +203,7 @@ export function CurrentBond({
           },
         ]
       : []),
-    { label: 'STX unlocks · L1', height: schedule.stxUnlockHeight },
+    { label: 'Bitcoin unlocks · L1', height: schedule.l1UnlockHeight },
     { label: 'Term ends', height: schedule.termEndHeight },
   ]
     .map(m => ({

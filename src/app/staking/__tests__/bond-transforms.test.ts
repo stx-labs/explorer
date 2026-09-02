@@ -96,8 +96,11 @@ describe('aggregateBondTotals', () => {
 });
 
 describe('display helpers', () => {
-  test('names bonds by index, since there is no on-chain name', () => {
-    expect(getBondDisplayName({ index: 1 })).toBe('Bond 1');
+  test('names bonds by index, except the first, which goes by name', () => {
+    // Mainnet's bond series starts at 1, so that one is Genesis.
+    expect(getBondDisplayName({ index: 1 })).toBe('Genesis');
+    expect(getBondDisplayName({ index: 2 })).toBe('Bond 2');
+    expect(getBondDisplayName({ index: 316 })).toBe('Bond 316');
   });
 
   test('distinguishes a tiny holding from an empty one', () => {

@@ -8,7 +8,7 @@ import { Box, Flex, Icon, Stack } from '@chakra-ui/react';
 import { ArrowUpRight } from '@phosphor-icons/react';
 
 import { GlossaryTerm } from './GlossaryTerm';
-import { BOND_TERM_CYCLES, DISTRIBUTIONS_PER_BOND, RESERVE_RATIO_PERCENT } from './consts';
+import { BOND_TERM_CYCLES, DISTRIBUTIONS_PER_BOND, STAKING_LINKS } from './consts';
 import { Bond } from './data';
 import { GLOSSARY } from './glossary';
 import {
@@ -36,11 +36,11 @@ function Stat({
     <Flex
       direction="column"
       justify="space-between"
-      gap={8}
-      flex="1 1 9rem"
+      gap={{ base: 2, lg: 8 }}
+      flex={{ base: '1 1 9rem', lg: '1 1 9rem' }}
       minW="8rem"
-      minH="7rem"
-      height="100%"
+      minH={{ base: 'auto', lg: '7rem' }}
+      height={{ base: 'auto', lg: '100%' }}
     >
       <Text textStyle="text-regular-sm" color="textSecondary" whiteSpace="nowrap">
         {label}
@@ -59,7 +59,11 @@ function Stat({
         {caption && (
           // Two lines are reserved so a caption that wraps at narrow widths does
           // not lift its figure out of line with the stats beside it.
-          <Text textStyle="text-regular-xs" color="textSecondary" minH="2lh">
+          <Text
+            textStyle="text-regular-xs"
+            color="textSecondary"
+            minH={{ base: 'auto', lg: '2lh' }}
+          >
             {caption}
           </Text>
         )}
@@ -164,9 +168,15 @@ export function StakingStats({
         p={[4, 6]}
         flex={{ base: '1 1 auto', lg: '3 1 0' }}
         minW={0}
-        display="flex"
+        display={{ base: 'block', lg: 'flex' }}
       >
-        <Flex gap={6} flexWrap="wrap" width="100%" align="stretch" alignContent="stretch">
+        <Flex
+          gap={{ base: 5, lg: 6 }}
+          flexWrap="wrap"
+          width="100%"
+          align={{ base: 'flex-start', lg: 'stretch' }}
+          alignContent={{ base: 'flex-start', lg: 'stretch' }}
+        >
           <Stat
             label={<GlossaryTerm entry="targetRewardRate" />}
             value={rate(featuredBond.parameters?.target_rate_bps ?? 0)}
@@ -200,7 +210,7 @@ export function StakingStats({
             unit="STX"
             caption={join(
               usd(pairedStx, stxPrice),
-              `unlocks #${schedule.stxUnlockHeight.toLocaleString()}`
+              `unlocks #${schedule.termEndHeight.toLocaleString()}`
             )}
           />
         </Flex>
@@ -234,7 +244,6 @@ export function StakingStats({
                 `${DISTRIBUTIONS_PER_BOND} / term`,
               ]}
             />
-            <ConstantRow term="reserve" parts={[`${RESERVE_RATIO_PERCENT}%`]} />
             {
               <ConstantRow
                 term="onChainCapacity"
@@ -242,8 +251,8 @@ export function StakingStats({
               />
             }
           </Stack>
-          {/* TODO: no destination exists yet; see STAKING_LINKS.howToParticipate. */}
           <Button
+            asChild
             variant="redesignPrimary"
             size="big"
             width="100%"
@@ -252,10 +261,12 @@ export function StakingStats({
             justifyContent="center"
             gap={2}
           >
-            How to participate
-            <Icon w={3.5} h={3.5}>
-              <ArrowUpRight weight="bold" />
-            </Icon>
+            <a href={STAKING_LINKS.howToParticipate} target="_blank" rel="noopener noreferrer">
+              How to participate
+              <Icon w={3.5} h={3.5}>
+                <ArrowUpRight weight="bold" />
+              </Icon>
+            </a>
           </Button>
         </Stack>
       </Box>

@@ -1,13 +1,14 @@
 'use client';
 
+import { ScrollIndicator } from '@/common/components/ScrollIndicator';
 import { useGlobalContext } from '@/common/context/useGlobalContext';
 import { buildUrl } from '@/common/utils/buildUrl';
 import { formatDateShort } from '@/common/utils/date-utils';
-import { Button } from '@/ui/Button';
+import { TabsList, TabsRoot, TabsTrigger } from '@/ui/Tabs';
 import { Text } from '@/ui/Text';
 import { Tooltip } from '@/ui/Tooltip';
 import { Box, Flex, Stack } from '@chakra-ui/react';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
 import { BondTooltip, BondTooltipData } from './BondTooltip';
 import { BondsTable } from './BondsTable';
@@ -33,7 +34,7 @@ import {
   getTimelineBounds,
   getTimelineTicks,
 } from './projections';
-import { formatDateWithYear, getBondDisplayName, toBigInt } from './utils';
+import { bondLabel, formatDateWithYear, getBondDisplayName, toBigInt } from './utils';
 
 const ROW_LABEL_WIDTH = 20;
 
@@ -135,13 +136,15 @@ export function PeriodsOverview({
   // The cursor names the moment under it, so the axis never has to print more
   // dates than it can fit. Measured against the plot area rather than the row,
   // since the labels take a fixed strip on the left.
-  const plotRef = useRef<HTMLDivElement>(null);
   const [hoverPercent, setHoverPercent] = useState<number>();
+  const [bondTooltipOpen, setBondTooltipOpen] = useState(false);
   const trackCursor = useCallback((event: React.MouseEvent) => {
-    const rect = plotRef.current?.getBoundingClientRect();
+    // Measured from the track itself, found through the element the event is
+    // bound to, so the reading cannot drift from what is drawn.
+    const track = (event.currentTarget as HTMLElement).querySelector('[data-timeline-track]');
+    const rect = track?.getBoundingClientRect();
     if (!rect || rect.width <= 0) return;
-    // A bond under the cursor has its own tooltip, so the flag stands down
-    // rather than the two competing for the same spot.
+    // A bond under the pointer has its own tooltip, so the flag stands down.
     const overBar = (event.target as HTMLElement).closest?.('[data-bond-bar]') != null;
     const percent = ((event.clientX - rect.left) / rect.width) * 100;
     setHoverPercent(!overBar && percent >= 0 && percent <= 100 ? percent : undefined);
@@ -211,7 +214,7 @@ export function PeriodsOverview({
         .slice(0, Math.max(TIMELINE_BONDS_AFTER + 1 - forwardOnChain, 0))
         .map(scheduled => ({
           index: scheduled.index,
-          label: `Bond ${scheduled.index}`,
+          label: bondLabel(scheduled.index),
           lockedSats: BigInt(0),
           startMs: burnHeightToApproximateTimestamp(
             scheduled.activationHeight,
@@ -228,7 +231,7 @@ export function PeriodsOverview({
           activationHeight: scheduled.activationHeight,
           unlockHeight: scheduled.termEndHeight,
           tooltip: {
-            label: `Bond ${scheduled.index}`,
+            label: bondLabel(scheduled.index),
             // A bond the contract has not created yet has no parameters to
             // report, so it always reads as scheduled.
             state: 'scheduled' as const,
@@ -280,7 +283,7 @@ export function PeriodsOverview({
 
   // When the next bond's terms become knowable. Offering and target rate are
   // set when enrollment opens, which the cadence fixes relative to its start.
-  const nextBond = rows.find(row => row.state === 'upcoming');
+  const nextBond = rows.find(row => row.tooltip.state === 'scheduled');
   const leadTime = formatTermDuration(BOND_GAP_CYCLES * rewardCycleLength);
   const nextBondNote =
     nextBond && leadTime
@@ -295,7 +298,7 @@ export function PeriodsOverview({
 
   // What the cursor is over, named in the chain's own terms.
   const cursor = (() => {
-    if (hoverPercent === undefined) return undefined;
+    if (hoverPercent === undefined || bondTooltipOpen) return undefined;
     const span = bounds.endMs - bounds.startMs;
     if (span <= 0) return undefined;
     const atMs = bounds.startMs + (hoverPercent / 100) * span;
@@ -326,30 +329,23 @@ export function PeriodsOverview({
     <Stack gap={3}>
       <Text textStyle="heading-xs">Period overview</Text>
       <Flex align="center" gap={4} flexWrap="wrap" justify="space-between">
-        <Flex gap={2} align="center">
-          <Text textStyle="text-regular-sm" color="textSecondary">
-            View by:
-          </Text>
-          {(['timeline', 'table'] as const).map(option => (
-            <Button
-              key={option}
-              type="button"
-              variant="unstyled"
-              size="big"
-              px={3}
-              py={1.5}
-              height="auto"
-              borderRadius="redesign.md"
-              bg={view === option ? 'surfaceFifth' : undefined}
-              color={view === option ? 'textPrimary' : 'textSecondary'}
-              _hover={view === option ? undefined : { color: 'textPrimary' }}
-              onClick={() => setView(option)}
-              aria-pressed={view === option}
-            >
-              {option === 'timeline' ? 'Timeline' : 'Table'}
-            </Button>
-          ))}
-        </Flex>
+        {/* The same control the blocks page uses to switch its own views. */}
+        <TabsRoot
+          variant="primary"
+          size="redesignMd"
+          value={view}
+          onValueChange={details => setView(details.value as 'timeline' | 'table')}
+        >
+          <Flex gap={3} align="center">
+            <Text textStyle="text-regular-sm" color="textSecondary">
+              View by:
+            </Text>
+            <TabsList>
+              <TabsTrigger value="timeline">Timeline</TabsTrigger>
+              <TabsTrigger value="table">Table</TabsTrigger>
+            </TabsList>
+          </Flex>
+        </TabsRoot>
         {nextBondNote && (
           <Text textStyle="text-regular-xs" color="textSecondary">
             {nextBondNote}
@@ -365,185 +361,200 @@ export function PeriodsOverview({
           rewardCycleLength={rewardCycleLength}
         />
       ) : (
-        <Stack
-          gap={4}
-          bg="surfaceSecondary"
-          borderRadius="redesign.xl"
-          px={[4, 6]}
-          py={[4, 5]}
-          overflowX="auto"
-        >
-          <Box minW="32rem">
-            {/* Axis: labels above a rule, with a tick at each division. */}
-            <Flex>
-              <Box w={ROW_LABEL_WIDTH} flexShrink={0} />
-              <Box position="relative" flex={1} h={8}>
-                {ticks.map(tick => (
-                  <Flex
-                    key={`${tick.year}-${tick.label}`}
-                    position="absolute"
-                    left={`${tick.leftPercent}%`}
-                    top={0}
-                    gap={1}
-                    align="baseline"
-                    pl={1.5}
-                  >
-                    <Text textStyle="text-mono-xs" color="textSecondary" whiteSpace="nowrap">
-                      {tick.label}
-                    </Text>
-                    {tick.isYearStart && (
-                      <Text textStyle="text-mono-xs" color="textTertiary">
-                        &apos;{`${tick.year}`.slice(2)}
+        <ScrollIndicator>
+          <Stack
+            gap={4}
+            bg="surfaceSecondary"
+            borderRadius="redesign.xl"
+            px={[4, 6]}
+            py={[4, 5]}
+            overflowX="auto"
+          >
+            <Box minW="32rem">
+              {/* Axis: labels above a rule, with a tick at each division. */}
+              <Flex>
+                <Box w={ROW_LABEL_WIDTH} flexShrink={0} />
+                <Box position="relative" flex={1} h={8}>
+                  {ticks.map(tick => (
+                    <Flex
+                      key={`${tick.year}-${tick.label}`}
+                      position="absolute"
+                      left={`${tick.leftPercent}%`}
+                      top={0}
+                      gap={1}
+                      align="baseline"
+                      pl={1.5}
+                    >
+                      <Text textStyle="text-mono-xs" color="textSecondary" whiteSpace="nowrap">
+                        {tick.label}
                       </Text>
-                    )}
-                  </Flex>
-                ))}
-                <Box
-                  position="absolute"
-                  left={0}
-                  right={0}
-                  bottom={0}
-                  borderBottom="1px solid"
-                  borderColor="redesignBorderSecondary"
-                />
-                {ticks.map(tick => (
+                      {tick.isYearStart && (
+                        <Text textStyle="text-mono-xs" color="textTertiary">
+                          &apos;{`${tick.year}`.slice(2)}
+                        </Text>
+                      )}
+                    </Flex>
+                  ))}
                   <Box
-                    key={`tick-${tick.year}-${tick.label}`}
                     position="absolute"
-                    left={`${tick.leftPercent}%`}
+                    left={0}
+                    right={0}
                     bottom={0}
-                    h={2}
-                    borderLeft="1px solid"
+                    borderBottom="1px solid"
                     borderColor="redesignBorderSecondary"
                   />
-                ))}
-              </Box>
-            </Flex>
+                  {ticks.map(tick => (
+                    <Box
+                      key={`tick-${tick.year}-${tick.label}`}
+                      position="absolute"
+                      left={`${tick.leftPercent}%`}
+                      bottom={0}
+                      h={2}
+                      borderLeft="1px solid"
+                      borderColor="redesignBorderSecondary"
+                    />
+                  ))}
+                </Box>
+              </Flex>
 
-            {/* Bars. The today marker sits in its own overlay that covers only
+              {/* Bars. The today marker sits in its own overlay that covers only
               the bar area, so it can be positioned as a plain percentage. */}
-            <Box position="relative" pt={9} onMouseMove={trackCursor} onMouseLeave={clearCursor}>
-              <Stack gap={2.5}>
-                {rows.map(row => (
-                  <Flex key={row.index} align="center">
-                    <Box w={ROW_LABEL_WIDTH} flexShrink={0} pr={3}>
-                      <Text textStyle="text-regular-sm" whiteSpace="nowrap">
-                        {row.label}
-                      </Text>
-                    </Box>
-                    <Box position="relative" flex={1} h={7}>
-                      <Tooltip
-                        variant="redesignPrimary"
-                        size="lg"
-                        portalled
-                        content={
-                          <BondTooltip
-                            bond={row.tooltip}
-                            rewardCycleLength={rewardCycleLength}
-                            currentBurnHeight={currentBurnHeight}
-                            nowMs={nowMs}
-                          />
-                        }
+              <Box
+                data-timeline-plot="true"
+                position="relative"
+                pt={9}
+                onMouseMove={trackCursor}
+                onMouseLeave={clearCursor}
+              >
+                <Stack gap={2.5}>
+                  {rows.map(row => (
+                    <Flex key={row.index} align="center">
+                      <Box w={ROW_LABEL_WIDTH} flexShrink={0} pr={3}>
+                        <Text textStyle="text-regular-sm" whiteSpace="nowrap">
+                          {row.label}
+                        </Text>
+                      </Box>
+                      <Box position="relative" flex={1} h={7}>
+                        <Tooltip
+                          variant="redesignPrimary"
+                          size="lg"
+                          portalled
+                          // Scheduled and enrolling bonds carry links, so the
+                          // tooltip has to survive the pointer crossing the gap
+                          // between the bar and the panel. The app-wide default
+                          // closes instantly, which puts them out of reach.
+                          closeDelay={300}
+                          positioning={{ placement: 'top', gutter: 2 }}
+                          onOpenChange={details => setBondTooltipOpen(details.open)}
+                          content={
+                            <BondTooltip
+                              bond={row.tooltip}
+                              rewardCycleLength={rewardCycleLength}
+                              currentBurnHeight={currentBurnHeight}
+                              nowMs={nowMs}
+                            />
+                          }
+                        >
+                          <Box
+                            data-bond-bar="true"
+                            position="absolute"
+                            left={`${row.leftPercent}%`}
+                            width={`${row.widthPercent}%`}
+                            minW={1}
+                          >
+                            <Bar state={row.state} distributionsPaid={row.distributionsPaid} />
+                          </Box>
+                        </Tooltip>
+                      </Box>
+                    </Flex>
+                  ))}
+                </Stack>
+                <Flex position="absolute" inset={0} pointerEvents="none">
+                  <Box w={ROW_LABEL_WIDTH} flexShrink={0} pr={3} />
+                  <Box data-timeline-track="true" position="relative" flex={1}>
+                    {cursor && (
+                      <Box
+                        position="absolute"
+                        left={`${cursor.percent}%`}
+                        top={0}
+                        bottom={0}
+                        borderLeft="1px solid"
+                        borderColor="neutral.sand-400"
+                        // The flag follows the pointer, so it sits above the
+                        // fixed today marker when the two meet.
+                        zIndex={1}
                       >
                         <Box
-                          data-bond-bar="true"
                           position="absolute"
-                          left={`${row.leftPercent}%`}
-                          width={`${row.widthPercent}%`}
-                          minW={1}
+                          top={1}
+                          left={0}
+                          transform="translateX(-50%)"
+                          bg="surfaceInvert"
+                          borderRadius="redesign.xs"
+                          px={2}
+                          py={0.5}
                         >
-                          <Bar state={row.state} distributionsPaid={row.distributionsPaid} />
+                          <Text
+                            textStyle="text-mono-xs"
+                            // Pairs with surfaceInvert, so both flip together
+                            // rather than the text staying light on a light chip.
+                            color="textInvert"
+                            whiteSpace="nowrap"
+                            suppressHydrationWarning
+                          >
+                            {cursor.label}
+                          </Text>
                         </Box>
-                      </Tooltip>
-                    </Box>
-                  </Flex>
-                ))}
-              </Stack>
-              <Flex position="absolute" inset={0} pointerEvents="none">
-                <Box w={ROW_LABEL_WIDTH} flexShrink={0} pr={3} />
-                <Box position="relative" flex={1} ref={plotRef}>
-                  {cursor && (
+                      </Box>
+                    )}
                     <Box
                       position="absolute"
-                      left={`${cursor.percent}%`}
+                      left={`${todayPercent}%`}
                       top={0}
                       bottom={0}
-                      borderLeft="1px solid"
-                      borderColor="neutral.sand-400"
-                      // The flag follows the pointer, so it sits above the
-                      // fixed today marker when the two meet.
-                      zIndex={1}
+                      borderLeft="1px dashed"
+                      borderColor="redesignBorderSecondary"
                     >
                       <Box
                         position="absolute"
                         top={1}
                         left={0}
                         transform="translateX(-50%)"
-                        bg="surfaceInvert"
+                        bg="surfaceFourth"
+                        border="1px solid"
+                        borderColor="redesignBorderSecondary"
                         borderRadius="redesign.xs"
                         px={2}
                         py={0.5}
                       >
-                        <Text
-                          textStyle="text-mono-xs"
-                          // Pairs with surfaceInvert, so both flip together
-                          // rather than the text staying light on a light chip.
-                          color="textInvert"
-                          whiteSpace="nowrap"
-                          suppressHydrationWarning
-                        >
-                          {cursor.label}
+                        <Text textStyle="text-mono-xs" color="textSecondary" whiteSpace="nowrap">
+                          today · {todayLabel}
                         </Text>
                       </Box>
                     </Box>
-                  )}
-                  <Box
-                    position="absolute"
-                    left={`${todayPercent}%`}
-                    top={0}
-                    bottom={0}
-                    borderLeft="1px dashed"
-                    borderColor="redesignBorderSecondary"
-                  >
-                    <Box
-                      position="absolute"
-                      top={1}
-                      left={0}
-                      transform="translateX(-50%)"
-                      bg="surfaceFourth"
-                      border="1px solid"
-                      borderColor="redesignBorderSecondary"
-                      borderRadius="redesign.xs"
-                      px={2}
-                      py={0.5}
-                    >
-                      <Text textStyle="text-mono-xs" color="textSecondary" whiteSpace="nowrap">
-                        today · {todayLabel}
-                      </Text>
-                    </Box>
                   </Box>
-                </Box>
-              </Flex>
+                </Flex>
+              </Box>
             </Box>
-          </Box>
 
-          <Flex gap={5} flexWrap="wrap" pl={ROW_LABEL_WIDTH}>
-            {featuredPaid !== undefined && (
+            <Flex gap={5} flexWrap="wrap" pl={ROW_LABEL_WIDTH}>
+              {featuredPaid !== undefined && (
+                <LegendKey
+                  swatch={<Swatch bg={SEGMENT_PAID_BG} />}
+                  label={`${featuredPaid}/${DISTRIBUTIONS_PER_BOND} reward distributions completed`}
+                />
+              )}
+              <LegendKey swatch={<Swatch bg={SEGMENT_REMAINING_BG} />} label="Term remaining" />
+              {statesShown.has('upcoming') && (
+                <LegendKey swatch={<Swatch dashed />} label="Scheduled · not yet started" />
+              )}
               <LegendKey
-                swatch={<Swatch bg={SEGMENT_PAID_BG} />}
-                label={`${featuredPaid}/${DISTRIBUTIONS_PER_BOND} reward distributions completed`}
+                swatch={<Box w={4} borderTop="1px dashed" borderColor="neutral.sand-400" />}
+                label="Today"
               />
-            )}
-            <LegendKey swatch={<Swatch bg={SEGMENT_REMAINING_BG} />} label="Term remaining" />
-            {statesShown.has('upcoming') && (
-              <LegendKey swatch={<Swatch dashed />} label="Scheduled · not yet started" />
-            )}
-            <LegendKey
-              swatch={<Box w={4} borderTop="1px dashed" borderColor="neutral.sand-400" />}
-              label="Today"
-            />
-          </Flex>
-        </Stack>
+            </Flex>
+          </Stack>
+        </ScrollIndicator>
       )}
       <Flex justify="flex-end">
         <ViewAllLink href={buildUrl('/staking/bonds', network)}>View all bonds</ViewAllLink>

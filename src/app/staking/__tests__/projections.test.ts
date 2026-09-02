@@ -501,12 +501,15 @@ describe('getBondSchedule', () => {
     expect(schedule.enrollmentOpensHeight).toBe(962_150);
     expect(schedule.enrollmentClosesHeight).toBe(966_250);
     expect(schedule.activationHeight).toBe(966_350);
-    expect(schedule.stxUnlockHeight).toBe(990_500);
+    expect(schedule.l1UnlockHeight).toBe(990_500);
     expect(schedule.termEndHeight).toBe(991_550);
   });
 
-  test('STX unlocks one distribution before the term ends', () => {
-    expect(schedule.termEndHeight - schedule.stxUnlockHeight).toBe(1050);
+  test("the Bitcoin leg's L1 timelock opens one distribution before the term ends", () => {
+    // Day 175 in the protocol diagram: the L1 minimum unlock height, 1,050
+    // Bitcoin blocks before the L2 term end. The STX leg stays locked until
+    // the term ends, so this height is not an STX unlock.
+    expect(schedule.termEndHeight - schedule.l1UnlockHeight).toBe(1050);
   });
 });
 

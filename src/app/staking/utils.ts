@@ -1,6 +1,6 @@
 import { MICROSTACKS_IN_STACKS } from '@/common/utils/utils';
 
-import { SATS_IN_BTC } from './consts';
+import { GENESIS_BOND_INDEX, SATS_IN_BTC } from './consts';
 import { Bond, BondStatus } from './data';
 
 /** Parses an API amount string to BigInt, tolerating null/undefined/empty. */
@@ -26,8 +26,13 @@ export function microStxToStx(microStx: bigint): number {
  * name until (and unless) marketing names land, at which point this becomes a
  * lookup like SIGNER_KEY_MAP in src/app/signers/consts.ts.
  */
+/** The same naming for a bond the chain has not created yet. */
+export function bondLabel(index: number): string {
+  return index === GENESIS_BOND_INDEX ? 'Genesis' : `Bond ${index}`;
+}
+
 export function getBondDisplayName(bond: Pick<Bond, 'index'>): string {
-  return `Bond ${bond.index}`;
+  return bond.index === GENESIS_BOND_INDEX ? 'Genesis' : `Bond ${bond.index}`;
 }
 
 const STATUS_LABELS: Record<string, string> = {

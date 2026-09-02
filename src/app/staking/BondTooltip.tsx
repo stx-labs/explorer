@@ -2,9 +2,10 @@
 
 import { formatDateShort } from '@/common/utils/date-utils';
 import { Text } from '@/ui/Text';
-import { Badge, Flex, Stack } from '@chakra-ui/react';
+import { Badge, Flex, Icon, Stack } from '@chakra-ui/react';
+import { ArrowRight, ArrowUpRight } from '@phosphor-icons/react';
 
-import { DISTRIBUTIONS_PER_BOND } from './consts';
+import { DISTRIBUTIONS_PER_BOND, STAKING_LINKS } from './consts';
 import {
   BondLifecycleState,
   BondSchedule,
@@ -69,6 +70,41 @@ function Row({ label, value }: { label: string; value: string }) {
         {value}
       </Text>
     </Flex>
+  );
+}
+
+/**
+ * A way in, for bonds nobody can enrol in yet.
+ *
+ * Only shown before a bond opens: once it is running there is nothing left to
+ * register interest in, and the yield is a fact rather than an estimate.
+ */
+function TooltipAction({
+  href,
+  children,
+  arrow,
+}: {
+  href: string;
+  children: string;
+  arrow: 'out' | 'next';
+}) {
+  return (
+    <a href={href} target="_blank" rel="noopener noreferrer">
+      <Flex
+        align="center"
+        gap={1}
+        borderBottom="1px solid"
+        borderColor="neutral.sand-400"
+        width="fit-content"
+      >
+        <Text textStyle="text-medium-xs" color="neutral.sand-50" whiteSpace="nowrap">
+          {children}
+        </Text>
+        <Icon w={3} h={3} color="neutral.sand-50">
+          {arrow === 'out' ? <ArrowUpRight weight="bold" /> : <ArrowRight weight="bold" />}
+        </Icon>
+      </Flex>
+    </a>
   );
 }
 
@@ -188,8 +224,21 @@ export function BondTooltip({
       )}
       {state === 'maturity' && (
         <Text textStyle="text-regular-xs" color="neutral.sand-300">
-          Paired STX unlocked at #{schedule.stxUnlockHeight.toLocaleString()}.
+          Bitcoin unlocked at #{schedule.l1UnlockHeight.toLocaleString()}.
         </Text>
+      )}
+
+      {/* A bond that has not opened yet is something to prepare for, so the
+          tooltip offers the two things a reader can actually do. */}
+      {(state === 'scheduled' || state === 'enrolling') && (
+        <Flex gap={4} pt={2} borderTop="1px solid" borderColor="neutral.sand-500" flexWrap="wrap">
+          <TooltipAction href={STAKING_LINKS.estimateYield} arrow="out">
+            Estimate your yield
+          </TooltipAction>
+          <TooltipAction href={STAKING_LINKS.registerInterest} arrow="next">
+            Register interest
+          </TooltipAction>
+        </Flex>
       )}
     </Stack>
   );

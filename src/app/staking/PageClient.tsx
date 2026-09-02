@@ -39,6 +39,8 @@ export interface StakingPageData {
   rewarded?: BondRewards;
   selectedActivityGroup?: string;
   chain: string;
+  /** Bitcoin taken in by the running cycle so far, measured from payouts. */
+  currentCycleAccruedSats?: string;
   /** Daily price history, so settled cycles are priced at the time they ended. */
   prices?: DailyPrices;
   /** Real cycle end times, where the chain has been asked for them. */
@@ -61,6 +63,7 @@ export function StakingPageClient({
   rewarded,
   selectedActivityGroup,
   chain,
+  currentCycleAccruedSats,
   prices,
   cycleEndTimes,
 }: StakingPageData) {
@@ -144,6 +147,7 @@ export function StakingPageClient({
             firstBurnchainBlockHeight={firstBurnchainBlockHeight}
             currentBurnHeight={currentBurnHeight}
             nowMs={nowMs}
+            currentCycleAccruedSats={currentCycleAccruedSats}
             prices={prices}
             cycleEndTimes={cycleEndTimes}
           />

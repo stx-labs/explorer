@@ -1,6 +1,8 @@
 'use client';
 
+import { ScrollIndicator } from '@/common/components/ScrollIndicator';
 import { Table } from '@/common/components/table/Table';
+import { TableContainer } from '@/common/components/table/TableContainer';
 import { formatDateShort } from '@/common/utils/date-utils';
 import { Text } from '@/ui/Text';
 import { Tooltip } from '@/ui/Tooltip';
@@ -164,6 +166,8 @@ export const bondColumns: ColumnDef<BondRow>[] = [
     accessorKey: 'name',
     enableSorting: false,
     size: 110,
+    // Which bond a row belongs to has to stay readable while the rest scrolls.
+    meta: { isPinned: 'left' },
     cell: info => (
       <Text textStyle="text-medium-sm" whiteSpace="nowrap">
         {info.getValue() as string}
@@ -365,6 +369,13 @@ export function BondsTable({
       columns={bondColumns}
       emptyTableUi={<NoBondsYet />}
       pagination={pagination}
+      // The Explorer's table convention: a card that scrolls sideways rather
+      // than a table that overflows the page.
+      tableContainerWrapper={table => (
+        <TableContainer pt={{ base: 3, lg: 4 }}>{table}</TableContainer>
+      )}
+      scrollIndicatorWrapper={table => <ScrollIndicator>{table}</ScrollIndicator>}
+      tableProps={{ mt: { base: -3, lg: -4 } }}
     />
   );
 }

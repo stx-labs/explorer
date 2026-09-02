@@ -2,7 +2,7 @@ import { stacksAPIFetch } from '@/api/stacksAPIFetch';
 import { PoxInfo } from '@/common/queries/usePoxInforRaw';
 import { getApiUrl } from '@/common/utils/network-utils';
 
-import { DISTRIBUTIONS_PER_BOND } from './consts';
+import { DISTRIBUTIONS_PER_BOND, GENESIS_BOND_INDEX } from './consts';
 
 /**
  * Shapes returned by /extended/v3/staking/*. These are not covered by
@@ -120,6 +120,9 @@ export interface BondsCursorPage extends BondsPage {
  */
 const MAX_PAGE_LIMIT = 50;
 
+/** The burnchain rewards endpoint allows a larger page than the rest. */
+const MAX_PAGE_LIMIT_REWARDS = 250;
+
 export async function fetchBondsPage(
   chain: string,
   api?: string,
@@ -208,20 +211,9 @@ export interface PoxCycle {
   total_signers: number;
 }
 
-export interface PoxCyclesPage {
-  cycles: PoxCycle[];
-  /** Cycles the chain has recorded, which exceeds the number fetched. */
-  total: number;
-}
-
-export async function fetchPoxCyclesPage(
-  chain: string,
-  api?: string,
-  limit = 10,
-  offset = 0
-): Promise<PoxCyclesPage> {
+export async function fetchPoxCycles(chain: string, api?: string, limit = 10): Promise<PoxCycle[]> {
   const apiUrl = getApiUrl(chain, api);
-  const params = new URLSearchParams({ limit: String(limit), offset: String(offset) });
+  const params = new URLSearchParams({ limit: String(limit) });
   const response = await stacksAPIFetch(`${apiUrl}/extended/v2/pox/cycles?${params}`, {
     cache: 'default',
     next: { revalidate: REVALIDATE_SECONDS, tags: ['staking-pox-cycles'] },
@@ -229,13 +221,8 @@ export async function fetchPoxCyclesPage(
   if (!response.ok) {
     throw new Error(`Failed to fetch pox cycles: ${response.status}`);
   }
-  const data: { results?: PoxCycle[]; total?: number } = await response.json();
-  const cycles = data.results ?? [];
-  return { cycles, total: data.total ?? cycles.length };
-}
-
-export async function fetchPoxCycles(chain: string, api?: string, limit = 10): Promise<PoxCycle[]> {
-  return (await fetchPoxCyclesPage(chain, api, limit)).cycles;
+  const data: { results?: PoxCycle[] } = await response.json();
+  return data.results ?? [];
 }
 
 export interface StakingSignerManager {
@@ -548,7 +535,7 @@ function parseAmount(value: string | undefined | null): bigint {
 /** "Genesis" for the first bond, "Bond N" for the rest. */
 function bondName(index?: number): string | undefined {
   if (index === undefined) return undefined;
-  return index === 0 ? 'Genesis' : `Bond ${index}`;
+  return index === GENESIS_BOND_INDEX ? 'Genesis' : `Bond ${index}`;
 }
 
 function joinDetail(...parts: (string | undefined)[]): string | undefined {
@@ -698,6 +685,57 @@ export async function fetchCycleEndTimes(
     if (endedMs !== undefined) byCycle[cycleNumber] = endedMs;
   }
   return byCycle;
+}
+
+/** Burnchain reward pages needed to cover one cycle, with room to spare. */
+const MAX_ACCRUAL_PAGES = 12;
+
+/**
+ * Bitcoin paid to reward addresses since a cycle began, in sats.
+ *
+ * The contract credits stackers once per distribution, so between distributions
+ * its figure sits still while Bitcoin keeps arriving. This measures what has
+ * actually landed. Payouts for the running cycle are the newest rows, so this
+ * pages from the start and stops on crossing the cycle boundary: no offset
+ * arithmetic, unlike reaching back to an arbitrary past cycle.
+ *
+ * Undefined if the boundary is not reached within the page budget, since a
+ * short sum would read as a real figure.
+ */
+export async function fetchCycleAccruedSats(
+  cycleStartHeight: number,
+  chain: string,
+  api?: string
+): Promise<bigint | undefined> {
+  if (!cycleStartHeight) return undefined;
+  const apiUrl = getApiUrl(chain, api);
+  let total = BigInt(0);
+  try {
+    for (let page = 0; page < MAX_ACCRUAL_PAGES; page++) {
+      const params = new URLSearchParams({
+        limit: String(MAX_PAGE_LIMIT_REWARDS),
+        offset: String(page * MAX_PAGE_LIMIT_REWARDS),
+      });
+      const response = await stacksAPIFetch(`${apiUrl}/extended/v1/burnchain/rewards?${params}`, {
+        cache: 'default',
+        next: { revalidate: REVALIDATE_SECONDS, tags: ['staking-cycle-accrual'] },
+      });
+      if (!response.ok) return undefined;
+      const data: { results?: { burn_block_height: number; reward_amount: string }[] } =
+        await response.json();
+      const rows = data.results ?? [];
+      if (rows.length === 0) return total;
+      for (const row of rows) {
+        if (row.burn_block_height < cycleStartHeight) return total;
+        total += parseAmount(row.reward_amount);
+      }
+      if (rows.length < MAX_PAGE_LIMIT_REWARDS) return total;
+    }
+  } catch {
+    return undefined;
+  }
+  // Ran out of pages before reaching the boundary.
+  return undefined;
 }
 
 export async function fetchStakingActivity(

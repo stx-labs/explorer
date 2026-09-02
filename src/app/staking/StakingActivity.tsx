@@ -1,11 +1,13 @@
 'use client';
 
+import { ScrollIndicator } from '@/common/components/ScrollIndicator';
 import { Table } from '@/common/components/table/Table';
+import { TableContainer } from '@/common/components/table/TableContainer';
 import { useGlobalContext } from '@/common/context/useGlobalContext';
 import { buildUrl } from '@/common/utils/buildUrl';
 import { formatTimestampToRelativeTime } from '@/common/utils/time-utils';
-import { Button } from '@/ui/Button';
 import { NextLink } from '@/ui/NextLink';
+import { TabsList, TabsRoot, TabsTrigger } from '@/ui/Tabs';
 import { Text } from '@/ui/Text';
 import { Badge, Box, Flex, Icon, Stack } from '@chakra-ui/react';
 import { Coins, Flag, Link as LinkIcon, LockOpen } from '@phosphor-icons/react';
@@ -19,6 +21,9 @@ import { ActivityGroup, StakingActivityEvent } from './data';
 interface ActivityRow extends StakingActivityEvent {
   network: ReturnType<typeof useGlobalContext>['activeNetwork'];
 }
+
+/** Tabs need a value for every trigger, and "all" is the absence of a filter. */
+const ALL_GROUPS = 'all';
 
 const GROUP_LABELS: { value?: ActivityGroup; label: string }[] = [
   { label: 'All' },
@@ -191,33 +196,30 @@ function ActionFilter({ selected }: { selected?: string }) {
   );
 
   return (
-    <Flex gap={1} flexWrap="wrap" align="center">
-      <Text textStyle="text-regular-sm" color="textSecondary" mr={2}>
-        Filter
-      </Text>
-      {GROUP_LABELS.map(chip => {
-        const isSelected = chip.value === selected || (!chip.value && !selected);
-        return (
-          <Button
-            key={chip.label}
-            type="button"
-            variant="unstyled"
-            size="big"
-            px={3}
-            py={1.5}
-            height="auto"
-            borderRadius="redesign.md"
-            bg={isSelected ? 'surfaceFifth' : undefined}
-            color={isSelected ? 'textPrimary' : 'textSecondary'}
-            _hover={isSelected ? undefined : { color: 'textPrimary' }}
-            onClick={() => router.replace(hrefFor(chip.value), { scroll: false })}
-            aria-pressed={isSelected}
-          >
-            {chip.label}
-          </Button>
-        );
-      })}
-    </Flex>
+    // The same segmented control the rest of the Explorer switches views with.
+    <TabsRoot
+      variant="primary"
+      size="redesignMd"
+      value={selected ?? ALL_GROUPS}
+      onValueChange={details =>
+        router.replace(hrefFor(details.value === ALL_GROUPS ? undefined : details.value), {
+          scroll: false,
+        })
+      }
+    >
+      <Flex gap={3} align="center" flexWrap="wrap">
+        <Text textStyle="text-regular-sm" color="textSecondary">
+          Filter:
+        </Text>
+        <TabsList>
+          {GROUP_LABELS.map(chip => (
+            <TabsTrigger key={chip.label} value={chip.value ?? ALL_GROUPS}>
+              {chip.label}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+      </Flex>
+    </TabsRoot>
   );
 }
 
@@ -264,6 +266,11 @@ export function StakingActivity({
         columns={activityColumns}
         emptyTableUi={<NoActivity />}
         getRowHref={row => buildUrl(`/txid/${row.txId}`, row.network)}
+        tableContainerWrapper={table => (
+          <TableContainer pt={{ base: 3, lg: 4 }}>{table}</TableContainer>
+        )}
+        scrollIndicatorWrapper={table => <ScrollIndicator>{table}</ScrollIndicator>}
+        tableProps={{ mt: { base: -3, lg: -4 } }}
         pagination={
           pageSize && data.length > pageSize
             ? {

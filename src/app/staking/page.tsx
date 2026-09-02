@@ -14,6 +14,7 @@ import {
   fetchBondRegistrations,
   fetchBondRewards,
   fetchBonds,
+  fetchCycleAccruedSats,
   fetchCycleEndTimes,
   fetchCycleRewards,
   fetchPoxCycles,
@@ -135,6 +136,21 @@ export default async function StakingPage(props: { searchParams: Promise<Staking
     }
   }
 
+  // What the running cycle has taken in so far. The contract only credits this
+  // at each distribution, so between them it is measured from Bitcoin payouts.
+  let currentCycleAccruedSats: string | undefined;
+  if (poxInfo?.reward_cycle_length && poxInfo.current_cycle?.id !== undefined) {
+    const cycleStart =
+      (poxInfo.first_burnchain_block_height ?? 0) +
+      poxInfo.current_cycle.id * poxInfo.reward_cycle_length;
+    try {
+      const accrued = await fetchCycleAccruedSats(cycleStart, chain, api);
+      currentCycleAccruedSats = accrued?.toString();
+    } catch (error) {
+      logError(error as Error, 'Staking page: fetch cycle accrual', { chain }, 'error');
+    }
+  }
+
   // One request per coin covers every cycle on the page, so a settled cycle can
   // be priced at the day it ended rather than at today's rates.
   let prices: DailyPrices | undefined;
@@ -198,6 +214,7 @@ export default async function StakingPage(props: { searchParams: Promise<Staking
       prepareCycleLength={poxInfo?.prepare_phase_block_length ?? 0}
       firstBurnchainBlockHeight={poxInfo?.first_burnchain_block_height ?? 0}
       nowMs={nowMs}
+      currentCycleAccruedSats={currentCycleAccruedSats}
       prices={prices}
       cycleEndTimes={cycleEndTimes}
       // Only the sizes cross to the client; the addresses stay here.

@@ -15,6 +15,25 @@ import { formatBtc, formatDateWithYear } from './utils';
 /** Cycles before pox-5 have no reward record to read. */
 const NO_REWARD_DATA = 'Only cycles from pox-5 onward report rewards on chain.';
 
+const FROM_STACKING_TRACKER =
+  'This cycle predates pox-5, so the figure comes from stacking-tracker.com rather than a contract read.';
+
+/** A figure with a note on where it came from, when that is not the chain. */
+function Sourced({ value, note }: { value: string; note: string }) {
+  return (
+    <Flex gap={1} align="center" justify="flex-end">
+      <Text textStyle="text-regular-sm" color="textSecondary" whiteSpace="nowrap">
+        {value}
+      </Text>
+      <Tooltip variant="redesignPrimary" size="lg" portalled content={note}>
+        <Icon w={3.5} h={3.5} color="iconSecondary" cursor="help">
+          <Info />
+        </Icon>
+      </Tooltip>
+    </Flex>
+  );
+}
+
 function NoRewardData() {
   return (
     <Flex gap={1} align="center" justify="flex-end">
@@ -39,6 +58,8 @@ export interface CycleRow {
   apyPercent: number | undefined;
   /** Whether the rate used end-of-cycle prices rather than today's. */
   pricedAtEnd?: boolean;
+  /** Figures for a pre-pox-5 cycle, which the chain cannot report. */
+  historic?: { rewardsBtc: number; apyPercent: number };
   /**
    * False for cycles that ran before pox-5. The pox-5 contract has no record of
    * them, so it reports zero, and showing that as "0%" would read as "nobody
@@ -57,6 +78,7 @@ export const cycleColumns: ColumnDef<CycleRow>[] = [
     header: 'Cycle',
     accessorKey: 'cycleNumber',
     enableSorting: false,
+    meta: { isPinned: 'left' },
     size: 70,
     cell: info => (
       <Text textStyle="text-medium-sm">{(info.getValue() as number).toLocaleString()}</Text>
@@ -113,7 +135,13 @@ export const cycleColumns: ColumnDef<CycleRow>[] = [
     meta: { textAlign: 'right' },
     cell: info => {
       const row = info.row.original;
-      if (!row.hasRewardData) return <NoRewardData />;
+      if (!row.hasRewardData) {
+        return row.historic ? (
+          <Sourced value={`${row.historic.rewardsBtc} BTC`} note={FROM_STACKING_TRACKER} />
+        ) : (
+          <NoRewardData />
+        );
+      }
       return (
         <Text textStyle="text-regular-sm" whiteSpace="nowrap">
           {formatBtc(row.rewardsSats)}
@@ -126,7 +154,8 @@ export const cycleColumns: ColumnDef<CycleRow>[] = [
     header: 'Gross APY',
     accessorKey: 'apyPercent',
     enableSorting: false,
-    size: 100,
+    // Wider than the label alone: the header also carries an info icon.
+    size: 130,
     meta: {
       textAlign: 'right',
       tooltip:
@@ -134,7 +163,13 @@ export const cycleColumns: ColumnDef<CycleRow>[] = [
     },
     cell: info => {
       const row = info.row.original;
-      if (!row.hasRewardData) return <NoRewardData />;
+      if (!row.hasRewardData) {
+        return row.historic ? (
+          <Sourced value={`${row.historic.apyPercent.toFixed(2)}%`} note={FROM_STACKING_TRACKER} />
+        ) : (
+          <NoRewardData />
+        );
+      }
       return (
         <Text textStyle="text-regular-sm" color="textSecondary" whiteSpace="nowrap">
           {row.apyPercent !== undefined ? `${row.apyPercent.toFixed(2)}%` : '\u2014'}
@@ -172,6 +207,7 @@ export function toCycleRow({
   stxPrice,
   prices,
   cycleEndTimes,
+  historic,
 }: {
   cycle: PoxCycle;
   rewards?: CycleRewards;
@@ -186,6 +222,8 @@ export function toCycleRow({
   prices?: DailyPrices;
   /** Real cycle end times, where the chain has been asked for them. */
   cycleEndTimes?: Record<number, number>;
+  /** Figures for cycles the chain cannot report, keyed by cycle number. */
+  historic?: Record<number, { rewardsBtc: number; apyPercent: number }>;
 }): CycleRow {
   const hasRewardData = pox5FirstCycleId !== undefined && cycle.cycle_number >= pox5FirstCycleId;
   // A read beats the projection, which drifts further the older the cycle is.
@@ -216,5 +254,6 @@ export function toCycleRow({
     endedHeight: cycleStartHeight(cycle.cycle_number + 1),
     endedMs,
     pricedAtEnd: atEnd?.btcPriceUsd !== undefined && atEnd?.stxPriceUsd !== undefined,
+    historic: historic?.[cycle.cycle_number],
   };
 }

@@ -1,19 +1,29 @@
 'use client';
 
+import { ScrollIndicator } from '@/common/components/ScrollIndicator';
 import { Table } from '@/common/components/table/Table';
+import { TableContainer } from '@/common/components/table/TableContainer';
 import { useGlobalContext } from '@/common/context/useGlobalContext';
 import { PoxInfo } from '@/common/queries/usePoxInforRaw';
+import { NetworkModes } from '@/common/types/network';
 import { buildUrl } from '@/common/utils/buildUrl';
 import { formatDateShort } from '@/common/utils/date-utils';
 import { MICROSTACKS_IN_STACKS, abbreviateNumber } from '@/common/utils/utils';
 import { Text } from '@/ui/Text';
+import { Tooltip } from '@/ui/Tooltip';
 import { Box, Flex, Icon, Stack } from '@chakra-ui/react';
-import { ArrowUpRight } from '@phosphor-icons/react';
+import { ArrowUpRight, Info } from '@phosphor-icons/react';
 import { ColumnDef } from '@tanstack/react-table';
 import { useCallback, useMemo } from 'react';
 
 import { ViewAllLink } from './ViewAllLink';
-import { PREVIOUS_CYCLES_LIMIT, STAKING_LINKS } from './consts';
+import {
+  DISTRIBUTIONS_PER_CYCLE,
+  MAINNET_HISTORIC_CYCLES,
+  PREVIOUS_CYCLES_LIMIT,
+  RESERVE_RATIO_PERCENT,
+  STAKING_LINKS,
+} from './consts';
 import { CycleRow, cycleColumns, toCycleRow } from './cycleColumns';
 import { CycleRewards, PoxCycle } from './data';
 import { DailyPrices, getCyclePrices } from './prices';
@@ -21,6 +31,7 @@ import {
   burnHeightToApproximateTimestamp,
   formatTermDuration,
   getCycleStackerRewardsSatsBigInt,
+  getDistributionCadence,
   getStackingYieldForCompletedCycle,
 } from './projections';
 import { formatBtc, formatDateWithYear, formatUsd } from './utils';
@@ -71,6 +82,7 @@ export function StackingOverview({
   nowMs,
   prices,
   cycleEndTimes,
+  currentCycleAccruedSats,
 }: {
   poxInfo: PoxInfo;
   cycles: PoxCycle[];
@@ -83,9 +95,13 @@ export function StackingOverview({
   prices?: DailyPrices;
   /** Real cycle end times, where the chain has been asked for them. */
   cycleEndTimes?: Record<number, number>;
+  /** Bitcoin taken in by the running cycle so far, measured from payouts. */
+  currentCycleAccruedSats?: string;
 }) {
   const { stxPrice, btcPrice } = useGlobalContext().tokenPrice;
   const network = useGlobalContext().activeNetwork;
+  // These figures name mainnet cycles, so they are only meaningful there.
+  const historic = network.mode === NetworkModes.Mainnet ? MAINNET_HISTORIC_CYCLES : undefined;
   const currentCycleId = poxInfo?.current_cycle?.id;
   const stackedStx = (poxInfo?.current_cycle?.stacked_ustx ?? 0) / MICROSTACKS_IN_STACKS;
   const blocksUntilNextCycle = poxInfo?.next_reward_cycle_in ?? 0;
@@ -111,6 +127,33 @@ export function StackingOverview({
     .filter(cycle => currentCycleId === undefined || cycle.cycle_number < currentCycleId)
     .sort((a, b) => b.cycle_number - a.cycle_number)[0];
   const lastSettledRewards = lastSettled ? cycleRewards[lastSettled.cycle_number] : undefined;
+  // The running cycle's rewards to date, read from the contract like any other.
+  const currentCycleRewards =
+    currentCycleId !== undefined ? cycleRewards[currentCycleId] : undefined;
+  // A cycle spans two distributions, one at its midpoint and one at its end.
+  const cadence = getDistributionCadence(rewardCycleLength);
+  const currentDistributionsSettled =
+    cadence > 0
+      ? Math.min(
+          Math.max(Math.floor((currentBurnHeight - currentStart) / cadence), 0),
+          DISTRIBUTIONS_PER_CYCLE
+        )
+      : 0;
+  // Stackers take what is left once the reserve has its share. The bond
+  // tranche is paid ahead of both, but is not credited until a distribution
+  // runs, so it is not deducted here: with material bond participation this
+  // would need the bonds' accrued share subtracted too.
+  const accruedGross = currentCycleAccruedSats ? BigInt(currentCycleAccruedSats) : undefined;
+  const accruedToStackersSats =
+    accruedGross !== undefined
+      ? (accruedGross * BigInt(100 - RESERVE_RATIO_PERCENT)) / BigInt(100)
+      : undefined;
+  const currentCycleSats = currentCycleRewards
+    ? getCycleStackerRewardsSatsBigInt(
+        currentCycleRewards.rewardsPerMicroStx,
+        currentCycleRewards.stakedMicroStx
+      )
+    : undefined;
   const lastSettledSats = lastSettledRewards
     ? getCycleStackerRewardsSatsBigInt(
         lastSettledRewards.rewardsPerMicroStx,
@@ -154,6 +197,7 @@ export function StackingOverview({
             stxPrice,
             prices,
             cycleEndTimes,
+            historic,
           })
         ),
     [
@@ -166,6 +210,7 @@ export function StackingOverview({
       stxPrice,
       prices,
       cycleEndTimes,
+      historic,
       at,
       cycleStartHeight,
     ]
@@ -218,19 +263,52 @@ export function StackingOverview({
                 {currentCycleId ?? '-'}
               </Text>
             </Stack>
-            {daysLeft && <Pill>Ends in ~{daysLeft}</Pill>}
+            {/* The bar below draws the same progress; the pill states it for
+                readers who want the number rather than the shape. */}
+            <Pill>
+              {Math.round(Math.min(Math.max(elapsed, 0), 1) * 100)}% complete
+              {daysLeft && ` · ends in ~${daysLeft}`}
+            </Pill>
           </Flex>
 
-          <Flex gap={2} align="baseline" flexWrap="wrap">
-            <Text textStyle="heading-sm" whiteSpace="nowrap">
-              {abbreviateNumber(stackedStx, 1)} STX
-            </Text>
-            {stxPrice > 0 && (
-              <Text textStyle="text-regular-sm" color="textSecondary" whiteSpace="nowrap">
-                / {formatUsd(stackedStx * stxPrice)} stacked
+          <Stack gap={1}>
+            <Flex gap={2} align="baseline" flexWrap="wrap">
+              <Text textStyle="heading-sm" whiteSpace="nowrap">
+                {abbreviateNumber(stackedStx, 1)} STX
               </Text>
+              {stxPrice > 0 && (
+                <Text textStyle="text-regular-sm" color="textSecondary" whiteSpace="nowrap">
+                  / {formatUsd(stackedStx * stxPrice)} stacked
+                </Text>
+              )}
+            </Flex>
+            {/*
+              What the running cycle has settled so far. The contract credits
+              rewards once per distribution rather than per block, so the count
+              is shown alongside: without it, a cycle that has not reached its
+              first distribution reads as earning nothing.
+            */}
+            {currentCycleSats !== undefined && (
+              <Flex gap={1} align="center">
+                <Text textStyle="text-regular-sm" color="textSecondary">
+                  {accruedToStackersSats !== undefined
+                    ? `~${formatBtc(accruedToStackersSats, 2)} rewarded so far`
+                    : `${formatBtc(currentCycleSats, 2)} rewarded`}{' '}
+                  · {currentDistributionsSettled} of {DISTRIBUTIONS_PER_CYCLE} distributions settled
+                </Text>
+                <Tooltip
+                  variant="redesignPrimary"
+                  size="lg"
+                  portalled
+                  content="Rewards are distributed halfway through a cycle, and at the end of the cycle. In between, this shows the rewards paid so far, less the reserve."
+                >
+                  <Icon w={3.5} h={3.5} color="iconSecondary" cursor="help">
+                    <Info />
+                  </Icon>
+                </Tooltip>
+              </Flex>
             )}
-          </Flex>
+          </Stack>
 
           <Stack gap={2}>
             <Flex justify="space-between">
@@ -324,12 +402,22 @@ export function StackingOverview({
 
       <Stack gap={3}>
         <Text textStyle="heading-xs">Previous cycles</Text>
-        <Table data={rows.slice(0, PREVIOUS_CYCLES_LIMIT)} columns={cycleColumns} />
+        <Table
+          data={rows.slice(0, PREVIOUS_CYCLES_LIMIT)}
+          columns={cycleColumns}
+          tableContainerWrapper={table => (
+            <TableContainer pt={{ base: 3, lg: 4 }}>{table}</TableContainer>
+          )}
+          scrollIndicatorWrapper={table => <ScrollIndicator>{table}</ScrollIndicator>}
+          tableProps={{ mt: { base: -3, lg: -4 } }}
+        />
         <Flex justify="space-between" gap={4} flexWrap="wrap" align="baseline">
           <Text textStyle="text-regular-xs" color="textSecondary">
-            Signer count, not stacker count. Rewards and APY start at the first pox-5 cycle.
+            Rewards and APY before pox-5 come from stacking-tracker.com.
           </Text>
-          <ViewAllLink href={buildUrl('/staking/cycles', network)}>View all cycles</ViewAllLink>
+          <ViewAllLink href={STAKING_LINKS.stackingTracker} external>
+            View all cycles at stacking-tracker.com
+          </ViewAllLink>
         </Flex>
       </Stack>
     </Stack>
