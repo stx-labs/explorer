@@ -215,6 +215,7 @@ export function CurrentBond({
     // Read top to bottom in the order the bond actually lives them.
     .sort((a, b) => a.height - b.height);
 
+  const name = getBondDisplayName(featuredBond);
   const cycleRange = `cycles ${featuredBond.schedule?.activation?.pox_cycle ?? '?'}–${
     (featuredBond.schedule?.unlock?.pox_cycle ?? 1) - 1
   }`;
@@ -232,7 +233,7 @@ export function CurrentBond({
         <Stack gap={5} flex={1} p={[3, 4]}>
           <Stack gap={2}>
             <Flex gap={3} align="center" flexWrap="wrap">
-              <Text textStyle="heading-lg">{getBondDisplayName(featuredBond)}</Text>
+              <Text textStyle="heading-lg">{name}</Text>
               <Badge
                 bg={STATE_BADGES[state].bg}
                 color={STATE_BADGES[state].color}
@@ -241,13 +242,19 @@ export function CurrentBond({
                 py={1}
                 borderRadius="redesign.xl"
               >
-                <Box w={1.5} h={1.5} borderRadius="full" bg="currentColor" />
+                {/* The dot carries the state's colour where the badge is a
+                    tint. On a solid badge it reads as a hole. */}
+                {!STATE_BADGES[state].solid && (
+                  <Box w={1.5} h={1.5} borderRadius="full" bg="currentColor" />
+                )}
                 {STATE_LABELS[state]}
               </Badge>
             </Flex>
             <Text textStyle="text-regular-sm" color="textSecondary">
-              Bond {featuredBond.index} · {cycleRange} ·{' '}
-              {(termEndHeight - activationHeight).toLocaleString()} blocks
+              {/* A bond that goes by name still needs its index stated
+                  somewhere; one titled "Bond 2" already carries it. */}
+              {name !== `Bond ${featuredBond.index}` && `Bond ${featuredBond.index} · `}
+              {cycleRange} · {(termEndHeight - activationHeight).toLocaleString()} blocks
             </Text>
           </Stack>
 
