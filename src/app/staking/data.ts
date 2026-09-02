@@ -860,6 +860,11 @@ export interface BondRewards {
   totalSats: bigint;
   /** Sats rewarded per bond, keyed by bond index. */
   byBondIndex: Record<number, bigint>;
+  /**
+   * Sats diverted to bonds per reward cycle. A cycle with a share here paid
+   * STX stackers less than one without, which is why its yield reads lower.
+   */
+  byCycle: Record<number, bigint>;
 }
 
 /**
@@ -892,7 +897,7 @@ export async function fetchBondRewards(
     }
 
     const settled = txs.filter(tx => tx.tx_status === 'success');
-    if (settled.length === 0) return { totalSats: BigInt(0), byBondIndex: {} };
+    if (settled.length === 0) return { totalSats: BigInt(0), byBondIndex: {}, byCycle: {} };
 
     const perTx = await Promise.all(
       settled.map(async tx => {
@@ -913,22 +918,32 @@ export async function fetchBondRewards(
             perBond[key] = (perBond[key] ?? BigInt(0)) + rewarded;
           });
 
-        return { total: readUint(summary, 'total-bond-rewards') ?? BigInt(0), perBond };
+        return {
+          total: readUint(summary, 'total-bond-rewards') ?? BigInt(0),
+          cycle: readUint(summary, 'stx-cycle'),
+          perBond,
+        };
       })
     );
     if (perTx.some(entry => entry === undefined)) return undefined;
 
     const byBondIndex: Record<number, bigint> = {};
+    const byCycle: Record<number, bigint> = {};
     let totalSats = BigInt(0);
     perTx.forEach(entry => {
       if (!entry) return;
       totalSats += entry.total;
+      // A cycle runs two distributions, so its share is the sum of both.
+      if (entry.cycle !== undefined) {
+        const cycle = Number(entry.cycle);
+        byCycle[cycle] = (byCycle[cycle] ?? BigInt(0)) + entry.total;
+      }
       Object.entries(entry.perBond).forEach(([index, sats]) => {
         const key = Number(index);
         byBondIndex[key] = (byBondIndex[key] ?? BigInt(0)) + sats;
       });
     });
-    return { totalSats, byBondIndex };
+    return { totalSats, byBondIndex, byCycle };
   } catch {
     // Missing totals should not take the page down.
     return undefined;

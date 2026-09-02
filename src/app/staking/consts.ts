@@ -80,10 +80,9 @@ export const RESERVE_RATIO_PERCENT = 15;
  * Whether to show bonds that are scheduled by the contract's cadence but not
  * yet created on chain.
  *
- * TODO: needs sign-off from Mitchell before production. Whether to publish
- * upcoming bonds ahead of time, and how far ahead, is a marketing and
- * leadership decision rather than a technical one. Terms are pure arithmetic;
- * their capacity and target rate are not knowable until the Endowment sets them.
+ * Their terms are pure arithmetic from the last bond on chain; their capacity
+ * and target rate are not knowable until the Endowment sets them, which is why
+ * a scheduled bond shows dates but no figures.
  */
 export const SHOW_SCHEDULED_BONDS = true;
 /**

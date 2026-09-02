@@ -14,7 +14,7 @@ import { BlockHeightBadge } from '@/ui/Badge';
 import { ButtonLink } from '@/ui/ButtonLink';
 import { Text } from '@/ui/Text';
 import { Tooltip } from '@/ui/Tooltip';
-import { Box, Flex, Icon, Stack } from '@chakra-ui/react';
+import { Box, Flex, Grid, Icon, Stack } from '@chakra-ui/react';
 import { Info } from '@phosphor-icons/react';
 import { useCallback, useMemo } from 'react';
 
@@ -49,7 +49,7 @@ function Pill({ children }: { children: React.ReactNode }) {
       width="fit-content"
     >
       <Box w={2} h={2} borderRadius="full" bg="feedback.green-500" />
-      <Text textStyle="text-regular-sm" whiteSpace="nowrap">
+      <Text textStyle="text-medium-md" whiteSpace="nowrap">
         {children}
       </Text>
     </Flex>
@@ -67,6 +67,7 @@ export function StackingOverview({
   prices,
   cycleEndTimes,
   currentCycleAccruedSats,
+  bondRewardsByCycle,
 }: {
   poxInfo: PoxInfo;
   cycles: PoxCycle[];
@@ -81,6 +82,8 @@ export function StackingOverview({
   cycleEndTimes?: Record<number, number>;
   /** Bitcoin taken in by the running cycle so far, measured from payouts. */
   currentCycleAccruedSats?: string;
+  /** Sats diverted to bonds per cycle, which lowers the stacker yield. */
+  bondRewardsByCycle?: Record<number, bigint>;
 }) {
   const { stxPrice, btcPrice } = useGlobalContext().tokenPrice;
   const network = useGlobalContext().activeNetwork;
@@ -123,10 +126,17 @@ export function StackingOverview({
           DISTRIBUTIONS_PER_CYCLE
         )
       : 0;
-  // Stackers take what is left once the reserve has its share. The bond
-  // tranche is paid ahead of both, but is not credited until a distribution
-  // runs, so it is not deducted here: with material bond participation this
-  // would need the bonds' accrued share subtracted too.
+  // Stackers take what is left once the reserve has its share.
+  //
+  // The waterfall pays bonds first, so the correct figure is
+  // 0.85 x (gross - bonds). This applies the 0.85 to the whole gross, which
+  // overstates the stacker share by 0.85 x bonds. It reads correctly only
+  // while the bond tranche rounds to nothing against the staked total.
+  //
+  // Deducting it needs the bonds' accrued share part-way through a cycle,
+  // which the contract has not credited yet either, so it would have to be
+  // modelled from each active bond's target payout per distribution. Worth
+  // doing once bonds hold enough to move this number.
   const accruedGross = currentCycleAccruedSats ? BigInt(currentCycleAccruedSats) : undefined;
   const accruedToStackersSats =
     accruedGross !== undefined
@@ -182,6 +192,7 @@ export function StackingOverview({
             prices,
             cycleEndTimes,
             historic,
+            bondRewardsByCycle,
           })
         ),
     [
@@ -195,6 +206,7 @@ export function StackingOverview({
       prices,
       cycleEndTimes,
       historic,
+      bondRewardsByCycle,
       at,
       cycleStartHeight,
     ]
@@ -230,7 +242,7 @@ export function StackingOverview({
                   Current cycle
                 </Text>
                 <Text
-                  textStyle="heading-lg"
+                  textStyle="heading-md"
                   bg="surfaceFourth"
                   borderRadius="redesign.xl"
                   px={5}
@@ -278,6 +290,7 @@ export function StackingOverview({
                     variant="redesignPrimary"
                     size="lg"
                     portalled
+                    contentProps={{ maxW: '18rem', whiteSpace: 'normal' }}
                     content="Rewards are distributed halfway through a cycle, and at the end of the cycle. In between, this shows the rewards paid so far, less the reserve."
                   >
                     <Icon w={3.5} h={3.5} color="iconSecondary" cursor="help">
@@ -333,7 +346,14 @@ export function StackingOverview({
             </Stack>
           </Stack>
 
-          <Stack gap={3} flex={{ base: '1 1 auto', lg: '2 1 0' }} minW={0}>
+          {/* Equal tracks rather than flex growth, which hands each card its
+              content height and the remainder to the other. */}
+          <Grid
+            gap={3}
+            flex={{ base: '1 1 auto', lg: '2 1 0' }}
+            minW={0}
+            templateRows={{ lg: lastSettled && lastSettledSats !== undefined ? '1fr 1fr' : '1fr' }}
+          >
             <Stack
               gap={2}
               bg="surfaceFourth"
@@ -341,6 +361,9 @@ export function StackingOverview({
               borderColor="redesignBorderSecondary"
               borderRadius="redesign.xl"
               p={[4, 5]}
+              // Three bands rather than a block at the top: the label, the
+              // cycle, and when it starts at the foot of the card.
+              justify={{ base: 'flex-start', lg: 'space-between' }}
             >
               <Text textStyle="text-regular-sm" color="textSecondary">
                 Next cycle
@@ -367,7 +390,8 @@ export function StackingOverview({
                 bg="surfacePrimary"
                 borderRadius="redesign.xl"
                 p={[4, 5]}
-                flex={{ base: '0 0 auto', lg: '1 1 auto' }}
+                flex={{ base: '0 0 auto', lg: '1 1 0' }}
+                minH={0}
                 justify="center"
               >
                 {/* The rule sits inside the padding rather than on the card edge. */}
@@ -391,7 +415,7 @@ export function StackingOverview({
                 </Flex>
               </Stack>
             )}
-          </Stack>
+          </Grid>
         </Flex>
       </Stack>
 

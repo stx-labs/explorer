@@ -260,7 +260,7 @@ export function StakingActivity({
     <Stack gap={4}>
       {!standalone && (
         <Flex justify="space-between" align="center" gap={4}>
-          <Text textStyle="heading-md">Bond activity</Text>
+          <Text textStyle="heading-xs">Bond activity</Text>
           {showViewAll && (
             <ButtonLink
               href={viewAllHref}

@@ -15,6 +15,9 @@ import { formatBtc, formatDateWithYear } from './utils';
 /** Cycles before pox-5 have no reward record to read. */
 const NO_REWARD_DATA = 'Only cycles from pox-5 onward report rewards on chain.';
 
+const SHARED_WITH_BONDS =
+  'Bitcoin bonds were active this cycle, so its rewards were shared between bonds and STX stackers. Cycles before Bitcoin Staking are not directly comparable.';
+
 const FROM_STACKING_TRACKER =
   'This cycle predates pox-5, so the figure comes from stacking-tracker.com rather than a contract read.';
 
@@ -60,6 +63,8 @@ export interface CycleRow {
   pricedAtEnd?: boolean;
   /** Figures for a pre-pox-5 cycle, which the chain cannot report. */
   historic?: { rewardsBtc: number; apyPercent: number };
+  /** Whether Bitcoin bonds were paid ahead of stackers in this cycle. */
+  sharedWithBonds?: boolean;
   /**
    * False for cycles that ran before pox-5. The pox-5 contract has no record of
    * them, so it reports zero, and showing that as "0%" would read as "nobody
@@ -142,6 +147,11 @@ export const cycleColumns: ColumnDef<CycleRow>[] = [
           <NoRewardData />
         );
       }
+      // Bonds are paid ahead of stackers, so a shared cycle lowers this figure
+      // as well as the yield derived from it.
+      if (row.sharedWithBonds) {
+        return <Sourced value={formatBtc(row.rewardsSats)} note={SHARED_WITH_BONDS} />;
+      }
       return (
         <Text textStyle="text-regular-sm" whiteSpace="nowrap">
           {formatBtc(row.rewardsSats)}
@@ -170,11 +180,17 @@ export const cycleColumns: ColumnDef<CycleRow>[] = [
           <NoRewardData />
         );
       }
-      return (
-        <Text textStyle="text-regular-sm" color="textSecondary" whiteSpace="nowrap">
-          {row.apyPercent !== undefined ? `${row.apyPercent.toFixed(2)}%` : '\u2014'}
-        </Text>
-      );
+      const value = row.apyPercent !== undefined ? `${row.apyPercent.toFixed(2)}%` : '\u2014';
+      if (!row.sharedWithBonds) {
+        return (
+          <Text textStyle="text-regular-sm" color="textSecondary" whiteSpace="nowrap">
+            {value}
+          </Text>
+        );
+      }
+      // A cycle that paid bonds is not comparable with one that did not, so it
+      // says so rather than leaving the lower number to be read as a decline.
+      return <Sourced value={value} note={SHARED_WITH_BONDS} />;
     },
   },
   {
@@ -208,6 +224,7 @@ export function toCycleRow({
   prices,
   cycleEndTimes,
   historic,
+  bondRewardsByCycle,
 }: {
   cycle: PoxCycle;
   rewards?: CycleRewards;
@@ -224,6 +241,8 @@ export function toCycleRow({
   cycleEndTimes?: Record<number, number>;
   /** Figures for cycles the chain cannot report, keyed by cycle number. */
   historic?: Record<number, { rewardsBtc: number; apyPercent: number }>;
+  /** Sats diverted to bonds per cycle, which lowers the stacker yield. */
+  bondRewardsByCycle?: Record<number, bigint>;
 }): CycleRow {
   const hasRewardData = pox5FirstCycleId !== undefined && cycle.cycle_number >= pox5FirstCycleId;
   // A read beats the projection, which drifts further the older the cycle is.
@@ -254,6 +273,7 @@ export function toCycleRow({
     endedHeight: cycleStartHeight(cycle.cycle_number + 1),
     endedMs,
     pricedAtEnd: atEnd?.btcPriceUsd !== undefined && atEnd?.stxPriceUsd !== undefined,
+    sharedWithBonds: (bondRewardsByCycle?.[cycle.cycle_number] ?? BigInt(0)) > BigInt(0),
     historic: historic?.[cycle.cycle_number],
   };
 }

@@ -104,10 +104,13 @@ export function StakingPageClient({
   // small one between a section's heading and its content.
   return (
     <Stack gap={{ base: 16, md: 18, lg: 20, xl: 24 }}>
-      {/* The headline figures and the timeline describe the same bonds, so they share a section. */}
-      <Stack gap={8}>
+      {/* One top-level heading over the bond sections, which are its
+          subheadings: the current bond, where it sits among the others, and
+          what has happened to them. */}
+      <Stack gap={{ base: 10, lg: 12 }}>
+        <Text textStyle="heading-md">Bitcoin Staking</Text>
         <Stack gap={4}>
-          <Text textStyle="heading-md">Bitcoin Staking</Text>
+          <Text textStyle="heading-xs">Current bond</Text>
           <StakingStats
             featuredBond={featuredBond}
             rewardCycleLength={rewardCycleLength}
@@ -115,6 +118,17 @@ export function StakingPageClient({
             currentBurnHeight={currentBurnHeight}
             nowMs={nowMs}
             rewardsByBond={rewarded?.byBondIndex}
+          />
+          <CurrentBond
+            bonds={bonds}
+            featuredBond={featuredBond}
+            nextBond={nextBond}
+            enrollments={enrollments}
+            rewardCycleLength={rewardCycleLength}
+            prepareCycleLength={prepareCycleLength}
+            firstBurnchainBlockHeight={firstBurnchainBlockHeight}
+            currentBurnHeight={currentBurnHeight}
+            nowMs={nowMs}
           />
         </Stack>
         <PeriodsOverview
@@ -128,19 +142,8 @@ export function StakingPageClient({
           currentBurnHeight={currentBurnHeight}
           nowMs={nowMs}
         />
+        <StakingActivity events={activity} selectedGroup={selectedActivityGroup} />
       </Stack>
-      <CurrentBond
-        bonds={bonds}
-        featuredBond={featuredBond}
-        nextBond={nextBond}
-        enrollments={enrollments}
-        rewardCycleLength={rewardCycleLength}
-        prepareCycleLength={prepareCycleLength}
-        firstBurnchainBlockHeight={firstBurnchainBlockHeight}
-        currentBurnHeight={currentBurnHeight}
-        nowMs={nowMs}
-      />
-      <StakingActivity events={activity} selectedGroup={selectedActivityGroup} />
       {poxInfo && (
         <StackingOverview
           poxInfo={poxInfo}
@@ -151,6 +154,7 @@ export function StakingPageClient({
           currentBurnHeight={currentBurnHeight}
           nowMs={nowMs}
           currentCycleAccruedSats={currentCycleAccruedSats}
+          bondRewardsByCycle={rewarded?.byCycle}
           prices={prices}
           cycleEndTimes={cycleEndTimes}
         />

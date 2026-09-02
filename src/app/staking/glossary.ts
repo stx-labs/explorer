@@ -23,7 +23,7 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
   rewardDistribution: {
     term: 'Reward distribution',
     definition:
-      'Bitcoin rewards are paid on a fixed schedule, once every half reward cycle. Because a bond runs 12 cycles, it receives 24 distributions over its term. Every bond pays on the same schedule, whenever it started.',
+      'Bitcoin rewards are paid on a fixed schedule, once every half reward cycle. Because a bond runs 12 cycles, it receives 24 distributions over its term.',
     docsUrl: `${DOCS_GLOSSARY}#distribution-cycle`,
   },
   reserve: {
@@ -35,7 +35,7 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
   onChainCapacity: {
     term: 'On-chain capacity',
     definition:
-      'The most BTC a bond can hold, set by the Stacks Endowment and written on chain when the bond is created. It includes an operational buffer, so it is larger than the amount offered to stakers.',
+      'The most BTC a bond can hold, set by the Stacks Endowment and written on chain when the bond is created.',
     docsUrl: `${DOCS_GLOSSARY}#available-capacity-and-capacity-allocation-pox-5`,
   },
   targetRewardRate: {

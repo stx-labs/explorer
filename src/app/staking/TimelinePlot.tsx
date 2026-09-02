@@ -64,6 +64,8 @@ function Bar({
       />
     );
   }
+  // Divided into the distributions the bond receives, so the fill shows how
+  // much of the term has actually paid out rather than only how far it has run.
   return (
     <Flex h={ROW_HEIGHT} w="100%" gap="1px" borderRadius="redesign.xs" overflow="hidden">
       {Array.from({ length: DISTRIBUTIONS_PER_BOND }, (_, index) => (
@@ -156,6 +158,10 @@ function HoverCard({
 
   return (
     <ChartTooltipSurface
+      // The shared surface is a light 24% film in dark mode, tuned for a
+      // sparse chart. This card carries a table of figures over dense bars, so
+      // it needs a dark backdrop in both modes to stay legible.
+      bg="var(--stacks-colors-alpha-black-alpha-800)"
       position="absolute"
       top={0}
       // Until the plot is measured, the card sits on today by percentage.
@@ -228,8 +234,19 @@ const TimelineRows = memo(function TimelineRows({
               left={`${row.leftPercent}%`}
               width={`${row.widthPercent}%`}
               minW={1}
-              _hover={{ opacity: 0.7 }}
-              transition="opacity 150ms ease-out"
+              // Matches the bar inside it, so the hover ring follows the same
+              // rounding rather than boxing it in.
+              borderRadius="redesign.xs"
+              // Hovering emphasises rather than fades: the bar grows into the
+              // gap between rows and takes a ring. Only the vertical scales,
+              // since its width and position carry the term's dates.
+              _hover={{
+                transform: 'scaleY(1.15)',
+                outline: '2px solid',
+                outlineColor: 'textPrimary',
+                zIndex: 1,
+              }}
+              transition="transform 150ms ease-out, outline-color 150ms ease-out"
               _motionReduce={{ transition: 'none' }}
             >
               <Bar state={row.state} distributionsPaid={row.distributionsPaid} />
@@ -301,7 +318,8 @@ export function TimelinePlot({
       clearTimeout(barGrace.current);
       if (bar?.dataset.bondIndex !== undefined) {
         // Over a bar the card anchors where the pointer entered, like a
-        // tooltip, so it can be reached rather than chased.
+        // tooltip, so it can be reached rather than chased: a scheduled or
+        // enrolling bond's details carry links.
         const index = Number(bar.dataset.bondIndex);
         if (hoveredRef.current !== index) {
           hoveredRef.current = index;

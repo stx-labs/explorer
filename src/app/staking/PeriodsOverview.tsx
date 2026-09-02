@@ -360,18 +360,19 @@ export function PeriodsOverview({
           </ScrollIndicator>
 
           <Flex gap={5} flexWrap="wrap" pl={{ base: 0, md: ROW_LABEL_WIDTH }}>
-            {featuredPaid !== undefined && (
-              <LegendKey
-                swatch={<Swatch bg={SEGMENT_PAID_BG} />}
-                label={`${featuredPaid}/${DISTRIBUTIONS_PER_BOND} reward distributions completed`}
-              />
-            )}
-            <LegendKey swatch={<Swatch bg={SEGMENT_REMAINING_BG} />} label="Term remaining" />
+            <LegendKey
+              swatch={<Swatch bg={SEGMENT_PAID_BG} />}
+              label="Completed reward distribution"
+            />
+            <LegendKey
+              swatch={<Swatch bg={SEGMENT_REMAINING_BG} />}
+              label="Upcoming reward distribution"
+            />
             <LegendKey
               swatch={
                 <Box w={4} h={3} borderRadius="redesign.xs" bg="surfaceFifth" opacity={0.3} />
               }
-              label="One reward distribution · half a cycle"
+              label="One reward distribution"
             />
             {statesShown.has('upcoming') && (
               <LegendKey swatch={<Swatch dashed />} label="Scheduled · not yet started" />

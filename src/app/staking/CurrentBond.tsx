@@ -222,7 +222,6 @@ export function CurrentBond({
 
   return (
     <Stack gap={4}>
-      <Text textStyle="heading-md">Current bond</Text>
       <Flex
         gap={[3, 4]}
         p={[3, 4]}
