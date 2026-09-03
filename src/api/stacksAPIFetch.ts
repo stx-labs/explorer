@@ -1,7 +1,13 @@
+import { isConfiguredApiUrl } from '@/common/utils/network-utils';
+
 export async function stacksAPIFetch(url: string, options: RequestInit = {}) {
   const reqHeaders = new Headers(options.headers || {});
 
-  reqHeaders.set('x-api-key', process.env.EXPLORER_STACKS_API_KEY || '');
+  // The explorer's key belongs to the configured public API servers only. Several server
+  // components derive the URL from a visitor-supplied `api` parameter; that host must never see it.
+  if (isConfiguredApiUrl(url)) {
+    reqHeaders.set('x-api-key', process.env.EXPLORER_STACKS_API_KEY || '');
+  }
 
   try {
     const { headers: getHeaders } = await import('next/headers');
