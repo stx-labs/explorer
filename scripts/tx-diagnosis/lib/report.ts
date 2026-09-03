@@ -88,6 +88,21 @@ function table(rows: [string, string | number][]): string[] {
   return ['| | |', '|---|---|', ...rows.map(([k, v]) => `| ${k} | ${v} |`)];
 }
 
+const MARKDOWN_TABLE_ESCAPES: Record<string, string> = {
+  '&': '&amp;',
+  '<': '&lt;',
+  '>': '&gt;',
+  '\\': '\\\\',
+  '|': '\\|',
+  '\r': ' ',
+  '\n': ' ',
+};
+
+/** Keep untrusted diagnostic text inside one Markdown table cell. */
+export function escapeMarkdownTableCell(value: string): string {
+  return value.replace(/[&<>\\|\r\n]/g, character => MARKDOWN_TABLE_ESCAPES[character]);
+}
+
 interface Shape {
   key: string;
   count: number;
@@ -259,7 +274,7 @@ export function renderReport(report: Report, diff?: BaselineDiff): string {
     for (const c of failing)
       for (const f of c.rubric.failed)
         lines.push(
-          `| [${c.txId.slice(0, 10)}…](${c.explorerUrl}) | \`${f.rule}\` | ${f.detail.replace(/\|/g, '\\|').slice(0, 160)} |`
+          `| [${c.txId.slice(0, 10)}…](${c.explorerUrl}) | \`${f.rule}\` | ${escapeMarkdownTableCell(f.detail.slice(0, 160))} |`
         );
   } else {
     lines.push('None.');
