@@ -6,6 +6,7 @@ export type SemanticTag =
   | 'slippage'
   | 'oracle'
   | 'expired'
+  | 'taken'
   | 'already'
   | 'too_early'
   | 'insufficient'
@@ -25,6 +26,11 @@ const RULES: [SemanticTag, RegExp][] = [
   ],
   ['oracle', /ORACLE|PRICE[-_]FEED|PYTH|STALE[-_]PRICE/],
   ['expired', /EXPIR|DEADLINE|TIMEOUT|TOO[-_]LATE|STALE/],
+  // Something (a name, a slot, an id) is held by someone else — retrying the same inputs cannot work.
+  [
+    'taken',
+    /NOT[-_]AVAILABLE|UNAVAILABLE|TAKEN|ALREADY[-_](REGISTERED|CLAIMED|MINTED|OWNED)|IN[-_]USE/,
+  ],
   ['already', /ALREADY|DUPLICATE|EXISTS/],
   ['too_early', /INTERVAL|COOLDOWN|TOO[-_]EARLY|TOO[-_]SOON|NOT[-_]YET|LOCKED[-_]PERIOD/],
   ['insufficient', /INSUFFICIENT|NOT[-_]ENOUGH|BALANCE|NO[-_]FUNDS|UNDERFUNDED|INSOLVENT/],
@@ -51,3 +57,15 @@ export function tagForName(name: string | undefined | null): SemanticTag | undef
   }
   return 'unknown';
 }
+
+/**
+ * Tags whose failures are decided by on-chain state, not by timing or prices: repeating the same
+ * call with the same inputs cannot succeed, so copy must never say "retry".
+ */
+export const DETERMINISTIC_TAGS: ReadonlySet<SemanticTag> = new Set<SemanticTag>([
+  'taken',
+  'already',
+  'unauthorized',
+  'dust',
+  'limit',
+]);

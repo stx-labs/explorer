@@ -23,7 +23,11 @@ interface AddressTxItem {
     tx_id: string;
     tx_status: string;
     block_height?: number;
-    contract_call?: { contract_id: string; function_name: string };
+    contract_call?: {
+      contract_id: string;
+      function_name: string;
+      function_args?: { repr: string }[];
+    };
   };
 }
 
@@ -48,8 +52,10 @@ export function useTxDiagnosis(tx: FailedContractCallTx): {
   const { data: contract } = useContractById(contractId, seeded ? { initialData: seeded } : {});
   const called: ContractInfo | null = useMemo(
     () =>
-      contract?.source_code ? { contract_id: contractId, source_code: contract.source_code } : null,
-    [contract?.source_code, contractId]
+      contract?.source_code
+        ? { contract_id: contractId, source_code: contract.source_code, abi: contract.abi }
+        : null,
+    [contract?.source_code, contract?.abi, contractId]
   );
 
   const base = useMemo(() => diagnoseSync(tx, called), [tx, called]);
@@ -86,6 +92,7 @@ export function useTxDiagnosis(tx: FailedContractCallTx): {
             block_height: r.tx.block_height,
             contract_id: r.tx.contract_call?.contract_id,
             function_name: r.tx.contract_call?.function_name,
+            function_args_repr: r.tx.contract_call?.function_args?.map(a => a.repr),
           }));
         },
         addressTxCount: async address => {

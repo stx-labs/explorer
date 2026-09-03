@@ -4,6 +4,8 @@ import {
   contractPrincipalsIn,
   excerpt,
   findFunctionBody,
+  functionSourceLines,
+  listItemCount,
   reachableFunctions,
   siteLines,
 } from './clarity-source';
@@ -24,13 +26,16 @@ import {
   summarizePostCondition,
 } from './templates';
 import {
+  BatchInfo,
   ContractInfo,
   ContractLoader,
   Correlations,
   Diagnosis,
   ENGINE_VERSION,
   FailedContractCallTx,
+  FunctionSource,
   HistoryLoader,
+  ReadOnlyFunction,
   RuntimeFinding,
   SourceRef,
 } from './types';
@@ -47,6 +52,9 @@ interface AnalysisState {
   runtimeSource?: SourceRef;
   related: Correlations;
 }
+
+/** Enough for a whole entry point plus its helpers without turning the pack into the contract. */
+const FUNCTION_SOURCE_MAX_LINES = 250;
 
 const SITE_PATTERNS: Record<string, RegExp> = {
   ArithmeticUnderflow: /\(-\s/,
@@ -104,7 +112,68 @@ function runtimeFinding(
   return { runtime: { variant, detail, calleeCandidates: callees, candidateLines }, source };
 }
 
-function build(tx: FailedContractCallTx, state: AnalysisState): Diagnosis {
+/** The first list-typed argument: batch calls fail as a whole, and agents need the item count. */
+function batchInfo(tx: FailedContractCallTx): BatchInfo | undefined {
+  for (const a of tx.contract_call.function_args ?? []) {
+    const n = listItemCount(a.repr ?? '');
+    if (n !== null) return { argName: a.name, itemCount: n };
+  }
+  return undefined;
+}
+
+/** The called function and every in-contract helper it reaches, verbatim (capped). */
+function functionSource(
+  tx: FailedContractCallTx,
+  called: ContractInfo | null
+): FunctionSource | undefined {
+  if (!called) return undefined;
+  const fnName = tx.contract_call.function_name;
+  const bodies = reachableFunctions(called.source_code, fnName);
+  if (!bodies.length) return undefined;
+  const { lines, truncated } = functionSourceLines(
+    called.source_code,
+    bodies,
+    FUNCTION_SOURCE_MAX_LINES
+  );
+  return {
+    contractId: tx.contract_call.contract_id,
+    functionName: fnName,
+    helpers: bodies.map(b => b.name).filter(n => n !== fnName),
+    lines,
+    truncated,
+  };
+}
+
+interface AbiLike {
+  functions?: { name: string; access: string; args?: { name: string; type: unknown }[] }[];
+}
+
+function abiType(t: unknown): string {
+  if (typeof t === 'string') return t;
+  try {
+    return JSON.stringify(t);
+  } catch {
+    return 'unknown';
+  }
+}
+
+/** Read-only functions from the ABI: what an agent can call at this block to test hypotheses. */
+function readOnlyFunctions(called: ContractInfo | null): ReadOnlyFunction[] | undefined {
+  const abi = called?.abi as AbiLike | undefined;
+  if (!abi || !Array.isArray(abi.functions)) return undefined;
+  return abi.functions
+    .filter(f => f.access === 'read_only')
+    .map(f => ({
+      name: f.name,
+      args: (f.args ?? []).map(a => `${a.name}: ${abiType(a.type)}`),
+    }));
+}
+
+function build(
+  tx: FailedContractCallTx,
+  called: ContractInfo | null,
+  state: AnalysisState
+): Diagnosis {
   const { cls } = state;
   let built;
   let source: SourceRef | undefined;
@@ -154,6 +223,9 @@ function build(tx: FailedContractCallTx, state: AnalysisState): Diagnosis {
       value: a.repr,
       type: a.type,
     })),
+    batch: batchInfo(tx),
+    functionSource: functionSource(tx, called),
+    readOnlyFunctions: readOnlyFunctions(called),
     related: state.related,
     raw: { vmError: tx.vm_error ?? null, txResult: tx.tx_result ?? null },
   };
@@ -178,7 +250,7 @@ function initialState(tx: FailedContractCallTx, called: ContractInfo | null): An
  * contract, which the transaction page already has.
  */
 export function diagnoseSync(tx: FailedContractCallTx, called: ContractInfo | null): Diagnosis {
-  return build(tx, initialState(tx, called));
+  return build(tx, called, initialState(tx, called));
 }
 
 /**
@@ -204,9 +276,9 @@ export async function enrich(
       // keep the sync resolution
     }
   }
-  const provisional = build(tx, state);
+  const provisional = build(tx, called, state);
   state.related = await correlate(tx, provisional, loaders.history);
-  return build(tx, state);
+  return build(tx, called, state);
 }
 
 /** Convenience: load the called contract, then run both tiers. */

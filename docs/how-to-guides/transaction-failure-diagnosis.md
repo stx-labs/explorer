@@ -18,17 +18,31 @@ contract source.
 - `vm-error.ts` — parses stacks-core's seven post-condition failure formats and `RuntimeError` names.
 - `resolve-error-code.ts` — maps `(err uN)` to the `define-constant` that defines it (called
   contract first, then up to 3 callees, including contracts passed as trait arguments), or to a
-  Clarity built-in error code.
+  Clarity built-in error code. Also detects **masking**: a `fold` callback that unwraps its
+  accumulator with a fixed constant (`(unwrap! result ERR_X)`) replaces the failing item's real
+  error, so the code is reported as a placeholder at medium confidence (`errorCode.foldMask`), and
+  notes when the failing site precedes every `asserts!` of the function
+  (`errorCode.siteBeforeOtherChecks`).
 - `registry/known-errors.json` — curated copy for protocol-specific codes. Add an entry with an
-  exact contract `id` or a `namePattern` regex, then `summary`, `sender` and `developer` text.
+  exact contract `id` or a `namePattern` regex, then `summary`, `sender` and `developer` text. Copy
+  must cover every branch that raises the code, and must not say "retry" for deterministic failures
+  (tags in `DETERMINISTIC_TAGS`: `taken`, `already`, `unauthorized`, `dust`, `limit`).
 - `templates.ts` — all user-facing copy.
+- `correlate.ts` — best-effort correlations: a later success by the same sender on the same
+  function (compared by `function_args` reprs: `retryUsedSameArgs` distinguishes a true retry from a
+  call with different inputs), activity of a mismatched post-condition principal, balance at the
+  parent block.
 - `diagnose.ts` — `diagnoseSync` (no I/O; renders server-side) and `enrich` (bounded callee fetches
-  plus correlations: later successful retry, activity of a mismatched post-condition principal).
+  plus correlations). Also attaches `batch` (first list argument and its item count),
+  `functionSource` (the called function and the in-contract helpers it reaches, capped at 250 lines)
+  and `readOnlyFunctions` (from the ABI) for the context pack.
 
 ## Context pack
 
 - `GET /txid/{txid}/context.md?chain=mainnet` — Markdown for agents (diagnosis, facts, relevant
-  source with the failing line, further-data URLs, a playbook).
+  source with the failing line, the full text of the called function and its helpers, further-data
+  URLs including the contract's read-only functions, a playbook). List arguments longer than 300
+  characters are abbreviated with their item count; the JSON variant carries them in full.
 - `GET /txid/{txid}/context.json?chain=mainnet` — the same as JSON.
 - Non-failed or unknown transactions return `404`.
 - Responses are cacheable for a year at the edge (transactions are immutable) with a five-minute

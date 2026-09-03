@@ -8,6 +8,8 @@ import {
   excerpt,
   findErrorConstant,
   findFunctionBody,
+  firstAssertLine,
+  foldAccumulatorUnwrap,
   hasTraitParams,
   nativeAssetCalls,
   reachableFunctions,
@@ -40,17 +42,38 @@ export interface ResolveOptions {
 
 const DEFAULT_MAX_FETCHES = 3;
 
+/**
+ * Where a constant is thrown: the entry function first, then the in-contract helpers it reaches
+ * (fold / map callbacks, private helpers). Returns the body and the 1-based lines of the sites.
+ */
+function findUsage(
+  source: string,
+  entry: FunctionBody | null,
+  entryName: string,
+  name: string
+): { body: FunctionBody | null; lines: number[] } {
+  if (entry) {
+    const direct = usageLines(source, entry, name);
+    if (direct.length) return { body: entry, lines: direct };
+    for (const b of reachableFunctions(source, entryName)) {
+      if (b.name === entryName) continue;
+      const lines = usageLines(source, b, name);
+      if (lines.length) return { body: b, lines };
+    }
+  }
+  return { body: entry, lines: [] };
+}
+
 function sourceRefFor(
   contractId: string,
   source: string,
   match: ConstantMatch,
-  body: FunctionBody | null
+  usage: { body: FunctionBody | null; lines: number[] }
 ): SourceRef {
-  const lines = body ? usageLines(source, body, match.name) : [];
-  const failingLine = lines[0];
+  const failingLine = usage.lines[0];
   return {
     contractId,
-    functionName: body?.name,
+    functionName: usage.body?.name,
     failingLine,
     lines: excerpt(source, failingLine ?? match.line, 2, 1),
     note: failingLine
@@ -89,21 +112,31 @@ export function resolveErrorCodeSync(
     return { info: base, registry, tag: registry?.tag, complete: false };
   }
 
-  const match = findErrorConstant(called.source_code, code);
+  const source = called.source_code;
+  const match = findErrorConstant(source, code);
   if (match) {
+    const usage = findUsage(source, body, fnName, match.name);
+    const foldMask = foldAccumulatorUnwrap(source, fnName, match.name) ?? undefined;
+    const firstAssert = body ? firstAssertLine(source, body) : null;
+    const siteBeforeOtherChecks =
+      usage.body === body && usage.lines.length > 0 && firstAssert !== null
+        ? usage.lines[0] < firstAssert
+        : undefined;
     const info: ErrorCodeInfo = {
       ...base,
       name: match.name,
       definedIn: contractId,
       definitionLine: match.line,
-      usageLines: body ? usageLines(called.source_code, body, match.name) : [],
+      usageLines: usage.lines,
       comments: match.comments,
+      foldMask,
+      siteBeforeOtherChecks,
     };
     return {
       info,
       registry,
       tag: registry?.tag ?? tagForName(match.name),
-      source: sourceRefFor(contractId, called.source_code, match, body),
+      source: sourceRefFor(contractId, source, match, usage),
       complete: true,
     };
   }
@@ -174,10 +207,11 @@ export async function resolveErrorCode(
     const match = findErrorConstant(callee.source_code, code);
     if (!match) continue;
     // Usage inside the callee: search all of its functions for the first usage site.
-    let body: FunctionBody | null = null;
+    let usage: { body: FunctionBody | null; lines: number[] } = { body: null, lines: [] };
     for (const b of allFunctionBodies(callee.source_code)) {
-      if (usageLines(callee.source_code, b, match.name).length) {
-        body = b;
+      const lines = usageLines(callee.source_code, b, match.name);
+      if (lines.length) {
+        usage = { body: b, lines };
         break;
       }
     }
@@ -186,6 +220,7 @@ export async function resolveErrorCode(
       name: match.name,
       definedIn: candidates[i],
       definitionLine: match.line,
+      usageLines: usage.lines,
       comments: match.comments,
       candidatesTried: candidates.slice(0, i + 1),
     };
@@ -193,7 +228,7 @@ export async function resolveErrorCode(
       info,
       registry: sync.registry ?? lookupRegistry(candidates[i], code),
       tag: sync.registry?.tag ?? tagForName(match.name),
-      source: sourceRefFor(candidates[i], callee.source_code, match, body),
+      source: sourceRefFor(candidates[i], callee.source_code, match, usage),
       complete: true,
     };
   }

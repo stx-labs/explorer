@@ -3,6 +3,7 @@
  * aware of `;;` comments and string literals — enough to locate constants, function bodies, usage
  * sites and static callees without a full parser.
  */
+import type { FoldMask } from './types';
 
 export interface ConstantMatch {
   name: string;
@@ -177,6 +178,91 @@ export function allFunctionBodies(source: string): FunctionBody[] {
   return out;
 }
 
+/** Parameter names of a function, in order: `(define-private (f (a uint) (b (response …))))` → [a, b]. */
+export function functionParams(body: FunctionBody): string[] {
+  const headerStart = body.text.indexOf('(', 1);
+  if (headerStart < 0) return [];
+  const header = body.text.slice(headerStart, sexprEnd(body.text, headerStart));
+  const params: string[] = [];
+  let depth = 0;
+  for (let i = 0; i < header.length; i++) {
+    const ch = header[i];
+    if (ch === '(') {
+      depth++;
+      if (depth === 2) {
+        const m = header.slice(i + 1).match(new RegExp(`^\\s*(${NAME})`));
+        if (m) params.push(m[1]);
+      }
+    } else if (ch === ')') depth--;
+  }
+  return params;
+}
+
+/** Callback names passed to `fold` in the given bodies. */
+export function foldCallbackNames(bodies: FunctionBody[]): string[] {
+  const out = new Set<string>();
+  const re = new RegExp(`\\(fold\\s+(${NAME})\\s`, 'g');
+  for (const b of bodies) {
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(b.text))) out.add(m[1]);
+  }
+  return Array.from(out);
+}
+
+/**
+ * Detect the error-masking pattern `(unwrap! <accumulator> CONST)` in a fold callback reachable from
+ * `entry`: when an earlier item fails, the next iteration discards its error and returns CONST.
+ */
+export function foldAccumulatorUnwrap(
+  source: string,
+  entry: string,
+  constName: string
+): FoldMask | null {
+  const bodies = reachableFunctions(source, entry);
+  for (const cb of foldCallbackNames(bodies)) {
+    const body = findFunctionBody(source, cb);
+    if (!body) continue;
+    const acc = functionParams(body)[1];
+    if (!acc) continue;
+    const re = new RegExp(
+      `\\(unwrap(?:-err)?!\\s+${escapeRe(acc)}\\s+${escapeRe(constName)}(?![\\w\\-!?])`
+    );
+    const m = re.exec(body.text);
+    if (m) return { helper: cb, accumulatorParam: acc, line: lineOf(source, body.start + m.index) };
+  }
+  return null;
+}
+
+/** Number of top-level items in a `(list …)` repr, or null when the repr is not a list. */
+export function listItemCount(repr: string): number | null {
+  const t = repr.trim();
+  if (!t.startsWith('(list')) return null;
+  let i = 5;
+  let count = 0;
+  while (i < t.length) {
+    const ch = t[i];
+    if (ch === ' ' || ch === '\n' || ch === '\t') {
+      i++;
+      continue;
+    }
+    if (ch === ')') break;
+    if (ch === '(') {
+      i = sexprEnd(t, i);
+      count++;
+      continue;
+    }
+    while (i < t.length && !/[\s()]/.test(t[i])) i++;
+    count++;
+  }
+  return count;
+}
+
+/** 1-based line of the first `asserts!` inside `body`, or null. */
+export function firstAssertLine(source: string, body: FunctionBody): number | null {
+  const idx = body.text.indexOf('(asserts!');
+  return idx >= 0 ? lineOf(source, body.start + idx) : null;
+}
+
 /** Statically referenced `contract-call?` targets, `.name` resolved against `deployer`. */
 export function contractCallTargets(text: string, deployer: string): string[] {
   const out: string[] = [];
@@ -242,6 +328,30 @@ export function excerpt(
   const out: { n: number; code: string }[] = [];
   for (let n = from; n <= to; n++) out.push({ n, code: lines[n - 1].replace(/\t/g, '  ') });
   return out;
+}
+
+/** Numbered lines of whole function bodies, in source order, capped at `maxLines` in total. */
+export function functionSourceLines(
+  source: string,
+  bodies: FunctionBody[],
+  maxLines: number
+): { lines: { n: number; code: string }[]; truncated: boolean } {
+  const all = source.split('\n');
+  const out: { n: number; code: string }[] = [];
+  let truncated = false;
+  for (const body of [...bodies].sort((a, b) => a.start - b.start)) {
+    const from = body.line;
+    const to = from + body.text.split('\n').length - 1;
+    for (let n = from; n <= to; n++) {
+      if (out.length >= maxLines) {
+        truncated = true;
+        return { lines: out, truncated };
+      }
+      out.push({ n, code: all[n - 1].replace(/\t/g, '  ') });
+    }
+    if (out.length < maxLines) out.push({ n: to + 1, code: '' });
+  }
+  return { lines: out, truncated };
 }
 
 /** Native built-in transfer/mint/burn calls wrapped in an error-propagating form inside `body`. */

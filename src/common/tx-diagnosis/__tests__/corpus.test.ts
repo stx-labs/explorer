@@ -159,7 +159,7 @@ describe('golden corpus', () => {
         .map(f => f.parts.map(p => (typeof p === 'string' ? p : p.label)).join(''))
         .join('\n');
       expect(text).toMatch(/active account/);
-      expect(text).toMatch(/retried successfully/);
+      expect(text).toMatch(/A later call to the same function from your account succeeded in/);
     });
   });
 });

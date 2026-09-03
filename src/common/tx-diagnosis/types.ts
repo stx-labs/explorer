@@ -6,7 +6,7 @@ import type {
 } from '@stacks/stacks-blockchain-api-types';
 
 /** Bump when copy or classification changes so cached context packs are invalidated. */
-export const ENGINE_VERSION = '1';
+export const ENGINE_VERSION = '2';
 
 /**
  * `dropped` and `deploy_failure` are reserved: the engine never emits them yet, but consumers should
@@ -63,6 +63,17 @@ export interface SourceRef {
   note?: string;
 }
 
+/**
+ * A `fold` callback that unwraps its accumulator with a fixed error constant. When an earlier item
+ * fails, the next iteration replaces the real error with this constant, so the code in the result
+ * is a placeholder — the underlying cause is not recorded on chain.
+ */
+export interface FoldMask {
+  helper: string;
+  accumulatorParam: string;
+  line: number;
+}
+
 export interface ErrorCodeInfo {
   /** As written in the result, e.g. `u2003`, or the full repr for non-uint errors. */
   code: string;
@@ -77,6 +88,9 @@ export interface ErrorCodeInfo {
   /** True when the called function takes trait arguments (callee chosen at runtime). */
   dynamicDispatch: boolean;
   candidatesTried: string[];
+  foldMask?: FoldMask;
+  /** The failing site runs before every `asserts!` of the called function (e.g. in its `let`). */
+  siteBeforeOtherChecks?: boolean;
 }
 
 export type PostConditionProblem =
@@ -111,8 +125,30 @@ export interface RuntimeFinding {
 
 export interface Correlations {
   retriedSuccessfullyIn?: string;
+  /** Whether the later successful call used exactly the same arguments (undefined = unknown). */
+  retryUsedSameArgs?: boolean;
   pcPrincipalTxCount?: number;
   balanceAtParent?: { asset: string; balance: string };
+}
+
+/** The first list-typed argument, when the call is a batch over items. */
+export interface BatchInfo {
+  argName: string;
+  itemCount: number;
+}
+
+/** Full text of the called function and the in-contract helpers it reaches, for agents. */
+export interface FunctionSource {
+  contractId: string;
+  functionName: string;
+  helpers: string[];
+  lines: { n: number; code: string }[];
+  truncated: boolean;
+}
+
+export interface ReadOnlyFunction {
+  name: string;
+  args: string[];
 }
 
 export interface Diagnosis {
@@ -132,6 +168,9 @@ export interface Diagnosis {
   runtime?: RuntimeFinding;
   source?: SourceRef;
   args: { name: string; value: string; type: string }[];
+  batch?: BatchInfo;
+  functionSource?: FunctionSource;
+  readOnlyFunctions?: ReadOnlyFunction[];
   related: Correlations;
   raw: { vmError: string | null; txResult: { repr: string; hex: string } | null };
 }
@@ -140,6 +179,8 @@ export interface Diagnosis {
 export interface ContractInfo {
   contract_id: string;
   source_code: string;
+  /** Parsed ABI (`ContractInterfaceResponse`) when available. */
+  abi?: unknown;
 }
 
 export type ContractLoader = (contractId: string) => Promise<ContractInfo | null>;
@@ -150,6 +191,8 @@ export interface AddressTxSummary {
   block_height?: number;
   contract_id?: string;
   function_name?: string;
+  /** `repr` of each argument, for same-inputs comparison. */
+  function_args_repr?: string[];
 }
 
 export interface HistoryLoader {

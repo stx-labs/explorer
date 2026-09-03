@@ -59,6 +59,11 @@ Engine
 - [x] `native-errors.ts`, `tags.ts`, `registry/known-errors.json` (seeded, 23 codes)
 - [x] `templates.ts` — copy per class / subkind / tag (from the design sprint)
 - [x] `correlate.ts` — later successful retry, PC-principal activity, balance at parent block (gated)
+- [x] Post-review refinements from auditing agent output on three real failures (2026-09-03):
+      fold-accumulator masking detection, argument-aware retry matching, evaluation-order and
+      multi-site facts, `taken` tag, allow-mode evidence, registry fixes (`err-oracle-no-fallback`
+      both branches, dlmm masking copy, BNS-V2 `u118` / `u125`), richer context pack (full function
+      text, list-argument counts, read-only functions, playbook steps) — engine v2
 - [x] `diagnose.ts` — `diagnoseSync` (Tier 0, no I/O) and `enrich` (Tier 1)
 - [x] `context-pack.ts` — Markdown + JSON renderers, playbook, on-chain content delimited as data
 
@@ -147,4 +152,11 @@ In Progress
 - Events are never retained on failed txs; "what moved" comes from `vm_error` text, arguments and source.
 - Masked post-condition errors are 77% of post-condition failures in the corpus; genuine rollbacks are
   8/489 (asset-unchecked 5, amount 2, NFT 1, principal-mismatch 0).
+- Error-code masking is a distinct pattern from post-condition masking: the dlmm routers' nine fold
+  helpers each start with `(unwrap! result ERR_NO_RESULT_DATA)` on the accumulator, so `u2001` /
+  `u5001` never identify the failing step. The engine reports these as placeholders; the agent
+  playbook says to bisect the inputs with read-only calls instead of explaining the code.
+- "Retried successfully" originally matched sender + function only; a BNS `name-claim-fast` failure
+  (`ERR-NAME-NOT-AVAILABLE`) was followed by successes for other names, which is not a retry. The
+  match now compares argument reprs and the copy says which case applies.
 - Route handlers follow the existing `NextRequest` + `Response.json` / `next: { revalidate }` style.

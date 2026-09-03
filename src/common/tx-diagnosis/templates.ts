@@ -4,7 +4,7 @@
  * (because / most likely because / we couldn't determine), sender vs developer separated,
  * identifiers as chips (DetailRef).
  */
-import { contractName } from './clarity-source';
+import { contractName, listItemCount } from './clarity-source';
 import type { Classification } from './classify';
 import type { Resolution } from './resolve-error-code';
 import type { SemanticTag } from './tags';
@@ -98,6 +98,41 @@ function hedge(confidence: Confidence): string {
       : 'possibly because';
 }
 
+/** The first list-typed argument and its item count, for batch calls. */
+function batchArg(tx: FailedContractCallTx): { name: string; count: number } | undefined {
+  for (const a of tx.contract_call.function_args ?? []) {
+    const count = listItemCount(a.repr ?? '');
+    if (count !== null) return { name: a.name, count };
+  }
+  return undefined;
+}
+
+/**
+ * A call sent in allow mode without post-conditions has no wallet-side safety net: worth one line
+ * of evidence (and a developer note), never a headline — it did not cause the failure.
+ */
+function postConditionEvidence(tx: FailedContractCallTx, reached: boolean): Evidence | undefined {
+  const nPc = tx.post_conditions?.length ?? 0;
+  if (nPc)
+    return {
+      id: 'post_conditions',
+      label: 'post-conditions',
+      value: `${nPc} post-condition${nPc > 1 ? 's' : ''}${reached ? '' : ' (not reached)'}`,
+    };
+  if (tx.post_condition_mode === 'allow')
+    return { id: 'post_conditions', label: 'post-conditions', value: 'allow mode · none set' };
+  return undefined;
+}
+
+const ALLOW_MODE_NOTE =
+  'The call was sent in allow mode with no post-conditions, so a successful call could have moved any asset; deny mode with explicit post-conditions is safer.';
+
+function withAllowModeNote(tx: FailedContractCallTx, note?: string): RichPart[] | undefined {
+  const unsafe = tx.post_condition_mode === 'allow' && !(tx.post_conditions?.length ?? 0);
+  if (!unsafe) return note ? [note] : undefined;
+  return [note ? `${note} ${ALLOW_MODE_NOTE}` : ALLOW_MODE_NOTE];
+}
+
 // ---------------------------------------------------------------------------------------------
 // Tag copy for explicit contract errors
 // ---------------------------------------------------------------------------------------------
@@ -131,6 +166,14 @@ function tagCopy(tag: SemanticTag | undefined, name: string | undefined): TagCop
       return {
         headline: 'The transaction was mined after the deadline the app set for it.',
         sender: 'Retry — the new transaction gets a fresh deadline.',
+      };
+    case 'taken':
+      return {
+        headline: `What you asked for is already taken (${n}), so the call was rejected.`,
+        sender:
+          'Retrying with the same inputs cannot succeed. Choose a different one, or acquire it from its current holder through the app.',
+        developer:
+          'Check availability with a read-only call before broadcasting, and branch on the state you find instead of sending the claim regardless.',
       };
     case 'already':
       return {
@@ -180,7 +223,8 @@ function tagCopy(tag: SemanticTag | undefined, name: string | undefined): TagCop
     case 'not_found':
       return {
         headline: `The contract expected something that wasn't there (${n}).`,
-        sender: 'Retry; if it repeats, the app may be using stale data — reload it.',
+        sender:
+          'Reload the app and try once more. If it fails the same way again, the data the app used is wrong or stale — not unlucky timing.',
         developer:
           'A lookup returned none — check ids, pools or positions passed in the arguments.',
       };
@@ -215,13 +259,12 @@ function callFacts(tx: FailedContractCallTx): { fn: DetailRef; contract: DetailR
   };
 }
 
-function sourceLink(res: Resolution | undefined): Fact['link'] | undefined {
-  const line = res?.source?.failingLine ?? res?.info.definitionLine;
-  if (!res?.source || !line) return undefined;
-  const isCallee = res.source.contractId !== undefined;
+function sourceLink(res: Resolution | undefined, line?: number): Fact['link'] | undefined {
+  const n = line ?? res?.source?.failingLine ?? res?.info.definitionLine;
+  if (!res?.source || !n) return undefined;
   return {
-    label: `Line ${line} in ${isCallee ? contractName(res.source.contractId) : 'Source code'}`,
-    href: `?tab=sourceCode&line=${line}`,
+    label: `Line ${n} in ${contractName(res.source.contractId)}`,
+    href: `?tab=sourceCode&line=${n}`,
   };
 }
 
@@ -236,15 +279,30 @@ export function buildContractError(
   const name = res?.info.name;
   const registry = res?.registry;
   const native = res?.info.nativeFunction ? res.info : undefined;
+  const foldMask = res?.info.foldMask;
   const tag = res?.tag;
   const copy = tagCopy(tag, name);
+  const batch = batchArg(tx);
 
   let confidence: Confidence = name || registry ? 'high' : native ? 'medium' : 'low';
   let headline: string;
   let senderAction: string;
   let developer: string | undefined;
 
-  if (registry) {
+  if (foldMask) {
+    // The code is a placeholder written by the fold helper; the real error is not on chain.
+    const items = batch ? `one of the ${formatInt(batch.count)} items` : 'one of the items';
+    headline =
+      registry?.summary ??
+      `${items[0].toUpperCase()}${items.slice(1)} in this call failed, but the contract only recorded a placeholder error (${name ?? code}) in its place — the real cause is not on chain.`;
+    senderAction =
+      registry?.sender ??
+      'The whole call was cancelled and nothing moved. Retry with fewer items; if it fails again, the app can find the failing item by submitting them one at a time.';
+    developer =
+      registry?.developer ??
+      `${foldMask.helper} unwraps the fold accumulator (${foldMask.accumulatorParam}) with ${name ?? code}, which discards the failing item's error. Bisect the list or replay items individually at block ${formatInt(tx.block_height - 1)}; consider carrying the failing index and code through the accumulator.`;
+    confidence = 'medium';
+  } else if (registry) {
     headline = registry.summary;
     senderAction = registry.sender ?? copy?.sender ?? 'Retry; if it repeats, contact the app.';
     developer = registry.developer ?? copy?.developer ?? undefined;
@@ -265,46 +323,86 @@ export function buildContractError(
     confidence = name ? 'medium' : 'low';
   }
 
-  const facts: Fact[] = [
-    {
-      parts: [fn, ' on ', contract, ' ran and stopped at a check that failed.'],
-    },
-  ];
+  const facts: Fact[] = [];
   const line = res?.source?.failingLine;
-  if (name) {
-    const where =
-      res?.info.definedIn && res.info.definedIn !== tx.contract_call.contract_id
-        ? [' — defined in ', ref.contract(res.info.definedIn)]
-        : [];
+  const sites = res?.info.usageLines ?? [];
+  const where =
+    res?.info.definedIn && res.info.definedIn !== tx.contract_call.contract_id
+      ? [' — defined in ', ref.contract(res.info.definedIn)]
+      : [];
+
+  if (foldMask && name) {
     facts.push({
       parts: [
-        line ? `The check at line ${line} returned ` : 'It returned ',
-        ref.value(`(err ${code})`),
-        ' — ',
-        ref.constant(name),
-        ...where,
-        '.',
+        fn,
+        ' on ',
+        contract,
+        batch
+          ? ` processed the ${formatInt(batch.count)} items in “${batch.name}” one after another; one of them failed.`
+          : ' processed its items one after another; one of them failed.',
       ],
-      link: sourceLink(res),
     });
-  } else if (native) {
     facts.push({
       parts: [
-        'The built-in ',
-        ref.fn(native.nativeFunction!),
-        ' returned ',
+        'The helper ',
+        ref.fn(foldMask.helper),
+        ` (line ${foldMask.line}) unwraps the running result with `,
+        ref.constant(name),
+        ', so the failing item’s own error was replaced by ',
         ref.value(`(err ${code})`),
-        `: ${native.nativeMeaning}.`,
+        '. Which item failed, and why, is not recorded on chain.',
       ],
+      link: sourceLink(res, foldMask.line),
     });
   } else {
     facts.push({
-      parts: [
-        'It returned ',
-        ref.value(`(err ${code})`),
-        name ? '' : ' — a code the contract does not name.',
-      ],
+      parts: [fn, ' on ', contract, ' ran and stopped at a check that failed.'],
     });
+    if (name) {
+      facts.push({
+        parts: [
+          line ? `The check at line ${line} returned ` : 'It returned ',
+          ref.value(`(err ${code})`),
+          ' — ',
+          ref.constant(name),
+          ...where,
+          '.',
+        ],
+        link: sourceLink(res),
+      });
+      if (sites.length > 1) {
+        facts.push({
+          parts: [
+            `“${name}” is raised at ${sites.length} places in this function (lines ${sites.join(', ')}); the network doesn't record which one fired.`,
+          ],
+        });
+      }
+      if (res?.info.siteBeforeOtherChecks) {
+        facts.push({
+          parts: [
+            "This check runs before the function's other checks, so those were never evaluated.",
+          ],
+        });
+      }
+    } else if (native) {
+      facts.push({
+        parts: [
+          'The built-in ',
+          ref.fn(native.nativeFunction!),
+          ' returned ',
+          ref.value(`(err ${code})`),
+          `: ${native.nativeMeaning}.`,
+        ],
+      });
+    } else {
+      facts.push({
+        parts: [
+          'It returned ',
+          ref.value(`(err ${code})`),
+          ' — a code the contract does not name.',
+        ],
+      });
+    }
   }
   if (res?.info.comments?.length) {
     facts.push({
@@ -322,23 +420,26 @@ export function buildContractError(
   const evidence: Evidence[] = [{ id: 'tx_result', label: 'tx_result', value: cls.resultRepr }];
   if (name)
     evidence.push({ id: 'constant', label: name, value: line ? `${name} · line ${line}` : name });
+  if (foldMask)
+    evidence.push({ id: 'masked', label: 'masked', value: `masked by ${foldMask.helper}` });
   if (tag) evidence.push({ id: 'tag', label: 'tag', value: tag });
   if (native)
     evidence.push({ id: 'native', label: native.nativeFunction!, value: native.nativeMeaning! });
-  const nPc = tx.post_conditions?.length ?? 0;
-  if (nPc)
+  if (batch)
     evidence.push({
-      id: 'post_conditions',
-      label: 'post-conditions',
-      value: `${nPc} post-condition${nPc > 1 ? 's' : ''} (not reached)`,
+      id: 'batch',
+      label: 'batch',
+      value: `${formatInt(batch.count)} items in ${batch.name}`,
     });
+  const pcEvidence = postConditionEvidence(tx, false);
+  if (pcEvidence) evidence.push(pcEvidence);
 
   return {
     headline,
     senderAction,
     invariant: invariantFor(tx),
     whatHappened: facts,
-    developerNote: developer ? [developer] : undefined,
+    developerNote: withAllowModeNote(tx, developer),
     evidence,
     confidence,
   };
@@ -453,15 +554,18 @@ export function buildRuntimePanic(
       label: 'contracts called',
       value: `${n} contract${n > 1 ? 's' : ''} called`,
     });
+  const pcEvidence = postConditionEvidence(tx, false);
+  if (pcEvidence) evidence.push(pcEvidence);
 
   return {
     headline: copy.headline,
     senderAction: copy.likely ?? 'Retry; if it repeats, contact the app with this transaction id.',
     invariant: invariantFor(tx),
     whatHappened: facts,
-    developerNote: [
-      `Reproduce in Clarinet simnet with mainnet data at block ${formatInt(tx.block_height - 1)} to get the stack trace.`,
-    ],
+    developerNote: withAllowModeNote(
+      tx,
+      `Reproduce in Clarinet simnet with mainnet data at block ${formatInt(tx.block_height - 1)} to get the stack trace.`
+    ),
     evidence,
     confidence,
   };
@@ -735,9 +839,28 @@ export function correlationFacts(
     });
   }
   if (related.retriedSuccessfullyIn) {
-    facts.push({
-      parts: ['You retried successfully in ', ref.tx(related.retriedSuccessfullyIn), '.'],
-    });
+    const later = ref.tx(related.retriedSuccessfullyIn);
+    if (related.retryUsedSameArgs === true) {
+      facts.push({
+        parts: [
+          'You retried with the same inputs and it succeeded in ',
+          later,
+          ' — the failure was temporary.',
+        ],
+      });
+    } else if (related.retryUsedSameArgs === false) {
+      facts.push({
+        parts: [
+          'A later call to the same function with different inputs succeeded in ',
+          later,
+          '. That is not a retry of this call — the failure was specific to these inputs.',
+        ],
+      });
+    } else {
+      facts.push({
+        parts: ['A later call to the same function from your account succeeded in ', later, '.'],
+      });
+    }
   }
   return facts;
 }

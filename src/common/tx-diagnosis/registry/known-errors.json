@@ -1,5 +1,5 @@
 {
-  "$comment": "Curated explanations for protocol-specific error codes. `id` matches exactly; `namePattern` is a regex on the contract name (deployer-agnostic). `sender` / `developer` may be null.",
+  "$comment": "Curated explanations for protocol-specific error codes. `id` matches exactly; `namePattern` is a regex on the contract name (deployer-agnostic). `sender` / `developer` may be null. Copy must describe every path that raises the code, not just the most common one.",
   "contracts": [
     {
       "match": { "namePattern": "^dlmm-(swap|liquidity)-router-v-" },
@@ -7,9 +7,9 @@
         "u2001": {
           "name": "ERR_NO_RESULT_DATA",
           "tag": "not_found",
-          "summary": "One step of the multi-hop route produced no result, so the whole route was cancelled.",
-          "sender": "Retry; if it repeats, try a simpler route or a smaller amount.",
-          "developer": "A step in the route list returned none — check pool and bin selection for the route you built."
+          "summary": "One step of this multi-step swap failed, but the router only records a generic code in its place, so the step's real error is not on chain.",
+          "sender": "The whole route was cancelled and nothing moved. Retry with a simpler route or a smaller amount; if it repeats, the app can find the failing step by running the steps one at a time.",
+          "developer": "Each fold helper begins with `(unwrap! result ERR_NO_RESULT_DATA)` on the accumulator, which discards the error of the step that failed. Bisect the route or replay steps individually at this block; consider carrying the failing index and code through the accumulator."
         },
         "u2003": {
           "name": "ERR_MINIMUM_RECEIVED",
@@ -28,9 +28,9 @@
         "u5001": {
           "name": "ERR_NO_RESULT_DATA",
           "tag": "not_found",
-          "summary": "One step of the liquidity operation produced no result, so it was cancelled.",
-          "sender": "Retry; if it repeats, the position or bins you targeted may have changed.",
-          "developer": "A step returned none — check the bin / position list passed to the router."
+          "summary": "One of the positions in this batch failed, but the router only records a generic code in its place, so the position's real error is not on chain.",
+          "sender": "The whole batch was cancelled and nothing moved. Retry with fewer positions; if it repeats, the app can find the failing position by submitting them one at a time.",
+          "developer": "Each fold helper begins with `(unwrap! result ERR_NO_RESULT_DATA)` on the accumulator, which discards the error of the position that failed. Bisect the list or replay positions individually at this block (start with entries whose amounts are zero); consider carrying the failing index and code through the accumulator."
         }
       }
     },
@@ -95,9 +95,9 @@
         "u10153": {
           "name": "err-oracle-no-fallback",
           "tag": "oracle",
-          "summary": "The market couldn't read a price from its oracle and has no manual fallback, so it wasn't resolved.",
-          "sender": "Not caused by you. Try again later or contact the app.",
-          "developer": "Set a fallback price or wait for a fresh oracle update before resolving."
+          "summary": "The market couldn't use an oracle price — the read failed its checks or the price moved beyond the allowed band — and no manual fallback was set, so it wasn't resolved.",
+          "sender": "Nothing you can change: the market's governance (DAO or an authorised extension) has to set a manual price before resolution can proceed. Retrying only helps if the oracle problem was transient.",
+          "developer": "Read the market's start price and the current oracle price to see which branch fired (oracle failure vs. move beyond `max-move-bips`). If the price moved out of band, `set-manual-price` (DAO-gated) is the intended remedy; widening `max-move-bips` changes semantics for every market."
         }
       }
     },
@@ -223,6 +223,25 @@
           "tag": "already",
           "summary": "This account is already enrolled.",
           "sender": "Nothing to do.",
+          "developer": null
+        }
+      }
+    },
+    {
+      "match": { "id": "SP2QEZ06AGJ3RKJPBV14SY1V5BBFNAW33D96YPGZF.BNS-V2" },
+      "codes": {
+        "u118": {
+          "name": "ERR-NAME-NOT-AVAILABLE",
+          "tag": "taken",
+          "summary": "This name is already registered, so the claim was rejected.",
+          "sender": "Retrying the same claim cannot succeed. Check who holds the name and whether it has lapsed: an active name can only be bought from its owner; a lapsed one (past its grace period) is taken over through renewal, not through a new claim.",
+          "developer": "Check availability with the contract's read-only `get-bns-info` before broadcasting, and branch on the state you find (fresh claim vs. renewal of a lapsed name) instead of sending `name-claim-fast` regardless."
+        },
+        "u125": {
+          "name": "ERR-FAST-MINTED-BEFORE",
+          "tag": "taken",
+          "summary": "Someone registered this name before your preorder, so the register step was rejected.",
+          "sender": "The preorder path only wins when your preorder predates the other registration. The name is taken; buy it from the owner or wait for it to lapse.",
           "developer": null
         }
       }

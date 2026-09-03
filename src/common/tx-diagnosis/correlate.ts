@@ -1,4 +1,19 @@
-import type { Correlations, Diagnosis, FailedContractCallTx, HistoryLoader } from './types';
+import type {
+  AddressTxSummary,
+  Correlations,
+  Diagnosis,
+  FailedContractCallTx,
+  HistoryLoader,
+} from './types';
+
+function argsRepr(tx: FailedContractCallTx): string[] {
+  return (tx.contract_call.function_args ?? []).map(a => a.repr);
+}
+
+function sameArgs(a: string[] | undefined, b: string[]): boolean | undefined {
+  if (!a) return undefined;
+  return a.length === b.length && a.every((v, i) => v === b[i]);
+}
 
 /**
  * Cheap, deferred enrichments. Each is one API call, gated by class, and best-effort: a failure
@@ -19,14 +34,20 @@ export async function correlate(
       history
         .senderTransactions(tx.sender_address, 20)
         .then(list => {
-          const later = list.find(
-            t =>
+          const later = list.filter(
+            (t: AddressTxSummary) =>
               t.tx_status === 'success' &&
               t.contract_id === tx.contract_call.contract_id &&
               t.function_name === tx.contract_call.function_name &&
               (t.block_height ?? 0) > tx.block_height
           );
-          if (later) related.retriedSuccessfullyIn = later.tx_id;
+          if (!later.length) return;
+          const mine = argsRepr(tx);
+          // Prefer a true retry (same inputs); otherwise report the later call honestly as different.
+          const exact = later.find(t => sameArgs(t.function_args_repr, mine) === true);
+          const pick = exact ?? later[0];
+          related.retriedSuccessfullyIn = pick.tx_id;
+          related.retryUsedSameArgs = sameArgs(pick.function_args_repr, mine);
         })
         .catch(() => undefined)
     );

@@ -13,8 +13,21 @@ interface AddressTxItem {
     tx_id: string;
     tx_status: string;
     block_height?: number;
-    contract_call?: { contract_id: string; function_name: string };
+    contract_call?: {
+      contract_id: string;
+      function_name: string;
+      function_args?: { repr: string }[];
+    };
   };
+}
+
+function parseAbi(abi: unknown): unknown {
+  if (typeof abi !== 'string') return abi ?? undefined;
+  try {
+    return JSON.parse(abi);
+  } catch {
+    return undefined;
+  }
 }
 
 /** Loaders backed by the server-side Stacks API client (carries `EXPLORER_STACKS_API_KEY`). */
@@ -22,7 +35,9 @@ export function serverLoaders(apiUrl: string): DiagnoseLoaders {
   return {
     contracts: async id => {
       const c = await fetchContractInfo(apiUrl, id);
-      return c?.source_code ? { contract_id: id, source_code: c.source_code } : null;
+      return c?.source_code
+        ? { contract_id: id, source_code: c.source_code, abi: parseAbi(c.abi) }
+        : null;
     },
     history: {
       senderTransactions: async (sender, limit) => {
@@ -36,6 +51,7 @@ export function serverLoaders(apiUrl: string): DiagnoseLoaders {
           block_height: r.tx.block_height,
           contract_id: r.tx.contract_call?.contract_id,
           function_name: r.tx.contract_call?.function_name,
+          function_args_repr: r.tx.contract_call?.function_args?.map(a => a.repr),
         }));
       },
       addressTxCount: async address => {
