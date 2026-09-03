@@ -61,31 +61,46 @@ describe('context pack route handler', () => {
     expect(JSON.parse(await res.text())).toEqual({ a: 1 });
   });
 
-  it('answers 304 with the same caching headers when the ETag matches', async () => {
-    buildContextPack.mockResolvedValue({ status: 200, markdown: '# md', json: {} } as never);
+  it('answers 304 with the same caching headers when the builder confirms the validator', async () => {
+    buildContextPack.mockResolvedValue({ status: 304 });
+    const etag = `W/"${TX}-mainnet-v${ENGINE_VERSION}-markdown"`;
     const res = await handleContextPack(
-      request(`/txid/${TX}/context.md`, {
-        'if-none-match': `W/"${TX}-mainnet-v${ENGINE_VERSION}-markdown"`,
-      }),
+      request(`/txid/${TX}/context.md`, { 'if-none-match': etag }),
       Promise.resolve({ txId: TX }),
       'markdown'
     );
     expect(res.status).toBe(304);
-    expect(res.headers.get('etag')).toBe(`W/"${TX}-mainnet-v${ENGINE_VERSION}-markdown"`);
+    expect(res.headers.get('etag')).toBe(etag);
     expect(res.headers.get('cache-control')).toContain('s-maxage=31536000');
+    expect(await res.text()).toBe('');
   });
 
-  it('validates the representation before answering a matching validator', async () => {
-    buildContextPack.mockResolvedValue({ status: 200, markdown: '# md', json: {} } as never);
+  it('hands the validator to the builder, which checks the transaction exists first', async () => {
+    buildContextPack.mockResolvedValue({ status: 304 });
+    const etag = `W/"${TX}-mainnet-v${ENGINE_VERSION}-json"`;
     const res = await handleContextPack(
-      request(`/txid/${TX}/context.json?chain=mainnet`, {
-        'if-none-match': `W/"${TX}-mainnet-v${ENGINE_VERSION}-json"`,
-      }),
+      request(`/txid/${TX}/context.json?chain=mainnet`, { 'if-none-match': etag }),
       Promise.resolve({ txId: TX }),
       'json'
     );
     expect(res.status).toBe(304);
     expect(buildContextPack).toHaveBeenCalledTimes(1);
+    expect(buildContextPack).toHaveBeenCalledWith(
+      expect.objectContaining({ etag, ifNoneMatch: etag })
+    );
+  });
+
+  it('serves the representation when the validator does not match', async () => {
+    buildContextPack.mockResolvedValue({ status: 200, markdown: '# md', json: {} } as never);
+    const res = await handleContextPack(
+      request(`/txid/${TX}/context.md`, { 'if-none-match': 'W/"stale"' }),
+      Promise.resolve({ txId: TX }),
+      'markdown'
+    );
+    expect(res.status).toBe(200);
+    expect(buildContextPack).toHaveBeenCalledWith(
+      expect.objectContaining({ ifNoneMatch: 'W/"stale"' })
+    );
   });
 
   it('does not let a forged validator turn an unknown transaction into a 304', async () => {

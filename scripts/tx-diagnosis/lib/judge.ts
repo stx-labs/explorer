@@ -33,6 +33,8 @@ Grade the DIAGNOSIS SECTION ONLY (headline, what to do, what happened, developer
 Respond with JSON only: {"correctness":n,"clarity":n,"actionability":n,"honesty":n,"safety":n,"issues":["short, specific problems, if any"]}`;
 
 const MAX_PACK_CHARS = 14_000;
+/** Same override the official SDK honours; lets tests and proxies stand in for the API. */
+const BASE_URL = (process.env.ANTHROPIC_BASE_URL ?? 'https://api.anthropic.com').replace(/\/$/, '');
 
 async function gradeOne(txId: string, pack: string, opts: JudgeOptions): Promise<JudgeScore> {
   const body = {
@@ -47,7 +49,7 @@ async function gradeOne(txId: string, pack: string, opts: JudgeOptions): Promise
       },
     ],
   };
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
+  const res = await fetch(`${BASE_URL}/v1/messages`, {
     method: 'POST',
     headers: {
       'content-type': 'application/json',

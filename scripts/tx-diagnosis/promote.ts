@@ -4,7 +4,11 @@
  * output (verify it — that is the point), and the id appended to corpus-txids.json for the live
  * acceptance test.
  *
- *   pnpm diagnosis:promote -- --tx 0x… [--tx 0x…] [--notes "why this case matters"]
+ *   pnpm diagnosis:promote -- --tx 0x… [--tx 0x…] [--notes "why this case matters"] [--dry-run]
+ *
+ * The drafted label is a starting point, not ground truth: verify it against the source and edit
+ * it to the correct values when the engine is wrong — that is how a new failure shape becomes a
+ * regression test. --dry-run prints the drafted labels and writes nothing.
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -14,7 +18,7 @@ import { diagnose } from '../../src/common/tx-diagnosis/diagnose';
 import { ENGINE_VERSION, isFailedContractCall } from '../../src/common/tx-diagnosis/types';
 import type { ContractInfo, FailedContractCallTx } from '../../src/common/tx-diagnosis/types';
 import { StacksApi, toContractInfo } from './lib/api';
-import { list, parseArgs, str } from './lib/args';
+import { flag, list, parseArgs, str } from './lib/args';
 import { readJson, repoRoot, writeJson } from './lib/run';
 
 const log = (line: string) => process.stderr.write(`${line}\n`);
@@ -71,12 +75,14 @@ async function main() {
   const ids = list(args, 'tx');
   if (!ids.length) {
     log(
-      'usage: pnpm diagnosis:promote -- --tx <txid> [--tx <txid>] [--api <url>] [--notes <text>]'
+      'usage: pnpm diagnosis:promote -- --tx <txid> [--tx <txid>] [--api <url>] [--notes <text>] [--dry-run]'
     );
     process.exit(2);
   }
   const api = new StacksApi(str(args, 'api', 'https://api.hiro.so').replace(/\/$/, ''));
   const notes = args.values.get('notes')?.[0];
+  const dryRun = flag(args, 'dry-run');
+  const drafted: Label[] = [];
   const fixtures = path.join(repoRoot(), 'src', 'common', 'tx-diagnosis', '__fixtures__');
   const labelsPath = path.join(fixtures, 'labels.json');
   const corpusPath = path.join(fixtures, 'corpus-txids.json');
@@ -106,18 +112,8 @@ async function main() {
         }
       },
     });
-    writeJson(path.join(fixtures, 'txs', `${id}.json`), trimTx(tx));
-    for (const [cid, c] of Array.from(fetched)) {
-      const file = path.join(fixtures, 'contracts', `${cid}.json`);
-      if (fs.existsSync(file)) continue;
-      const fnName = cid === tx.contract_call.contract_id ? tx.contract_call.function_name : '';
-      writeJson(file, {
-        contract_id: cid,
-        source_code: fnName ? excerptSource(c.source_code, fnName) : c.source_code,
-      });
-    }
     const tag = d.evidence.find(e => e.id === 'tag')?.value ?? null;
-    labels.push({
+    const label: Label = {
       contract: tx.contract_call.contract_id,
       fn: tx.contract_call.function_name,
       result: tx.tx_result?.repr ?? '',
@@ -135,11 +131,30 @@ async function main() {
       notes: `${notes ? `${notes} — ` : ''}promoted ${new Date().toISOString().slice(0, 10)} from a live sample; expectations drafted from engine v${ENGINE_VERSION}, verify before relying on them`,
       tx_id: id,
       all_tx_ids: [id],
-    });
-    if (!corpus.includes(id)) corpus.push(id);
+    };
+    drafted.push(label);
+    if (!dryRun) {
+      writeJson(path.join(fixtures, 'txs', `${id}.json`), trimTx(tx));
+      for (const [cid, c] of Array.from(fetched)) {
+        const file = path.join(fixtures, 'contracts', `${cid}.json`);
+        if (fs.existsSync(file)) continue;
+        const fnName = cid === tx.contract_call.contract_id ? tx.contract_call.function_name : '';
+        writeJson(file, {
+          contract_id: cid,
+          source_code: fnName ? excerptSource(c.source_code, fnName) : c.source_code,
+        });
+      }
+      labels.push(label);
+      if (!corpus.includes(id)) corpus.push(id);
+    }
     log(
-      `${id}: ${d.class} · ${d.errorCode?.name ?? d.runtime?.variant ?? d.postCondition?.problem ?? d.subkind} · ${fetched.size} contract(s) saved`
+      `${id}: ${d.class} · ${d.errorCode?.name ?? d.runtime?.variant ?? d.postCondition?.problem ?? d.subkind} · ${fetched.size} contract(s) ${dryRun ? 'fetched' : 'saved'}`
     );
+  }
+  if (dryRun) {
+    process.stdout.write(`${JSON.stringify(drafted, null, 2)}\n`);
+    log(`dry run: ${drafted.length} label(s) drafted, nothing written`);
+    return;
   }
   writeJson(labelsPath, labels);
   writeJson(corpusPath, corpus);

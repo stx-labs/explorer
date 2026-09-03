@@ -46,6 +46,8 @@ import { getPostConditionCellText } from '../post-conditions/post-condition-tabl
 import { DetailChip, RichText } from './DetailChip';
 import { useTxDiagnosis } from './useTxDiagnosis';
 
+const NARRATIVE_MAX_WIDTH = '80ch';
+
 // ---------------------------------------------------------------------------------------------
 // Small pieces
 // ---------------------------------------------------------------------------------------------
@@ -633,13 +635,15 @@ export function WhyItFailed({ tx }: { tx: FailedContractCallTx }) {
         <Icon h={4} w={4} color="iconError" mt={1} flexShrink={0}>
           <XCircle weight="bold" />
         </Icon>
-        <Stack gap={2} flex={1}>
-          <Text textStyle="text-medium-md" color="textPrimary" data-test="why-failed-headline">
-            {d.headline}
-          </Text>
-          <Text textStyle="text-regular-sm" color="textPrimary" data-test="why-failed-action">
-            {d.senderAction}
-          </Text>
+        <Stack gap={2} flex={1} minW={0}>
+          <Stack gap={2} w="full" maxW={NARRATIVE_MAX_WIDTH}>
+            <Text textStyle="text-medium-md" color="textPrimary" data-test="why-failed-headline">
+              {d.headline}
+            </Text>
+            <Text textStyle="text-regular-sm" color="textPrimary" data-test="why-failed-action">
+              {d.senderAction}
+            </Text>
+          </Stack>
           <Flex gap={4} alignItems="center" flexWrap="wrap" justifyContent="space-between">
             <Text textStyle="text-regular-xs" color="textSecondary">
               {d.invariant}
@@ -667,44 +671,46 @@ export function WhyItFailed({ tx }: { tx: FailedContractCallTx }) {
         <>
           {/* Tier 1 — short, linked, plus the agent hand-off */}
           <Stack gap={5} px={5} py={5} bg="surfaceSecondary" data-test="why-failed-details">
-            <Stack gap={2}>
-              <SectionLabel>What happened</SectionLabel>
-              <Stack as="ol" gap={2} pl={0} listStyleType="none">
-                {d.whatHappened.map((fact, i) => (
-                  <Flex as="li" key={i} gap={3} alignItems="flex-start">
-                    <Text textStyle="text-mono-xs" color="textTertiary" minW={4} pt={1}>
-                      {i + 1}
-                    </Text>
-                    <Stack gap={1} flex={1} minW={0}>
-                      <RichText
-                        parts={fact.parts}
-                        color={fact.onChain ? 'textSecondary' : 'textPrimary'}
-                      />
-                      {fact.chips && (
-                        <Flex gap={1} flexWrap="wrap">
-                          {fact.chips.map(c => (
-                            <DetailChip key={c.value} detail={c} />
-                          ))}
-                        </Flex>
-                      )}
-                      {fact.link && <TabLink label={fact.link.label} href={fact.link.href} />}
-                    </Stack>
-                  </Flex>
-                ))}
+            <Stack gap={5} w="full" maxW={NARRATIVE_MAX_WIDTH}>
+              <Stack gap={2}>
+                <SectionLabel>What happened</SectionLabel>
+                <Stack as="ol" gap={2} pl={0} listStyleType="none">
+                  {d.whatHappened.map((fact, i) => (
+                    <Flex as="li" key={i} gap={3} alignItems="flex-start">
+                      <Text textStyle="text-mono-xs" color="textTertiary" minW={4} pt={1}>
+                        {i + 1}
+                      </Text>
+                      <Stack gap={1} flex={1} minW={0}>
+                        <RichText
+                          parts={fact.parts}
+                          color={fact.onChain ? 'textSecondary' : 'textPrimary'}
+                        />
+                        {fact.chips && (
+                          <Flex gap={1} flexWrap="wrap">
+                            {fact.chips.map(c => (
+                              <DetailChip key={c.value} detail={c} />
+                            ))}
+                          </Flex>
+                        )}
+                        {fact.link && <TabLink label={fact.link.label} href={fact.link.href} />}
+                      </Stack>
+                    </Flex>
+                  ))}
+                </Stack>
+                {isEnriching && (
+                  <Text textStyle="text-regular-xs" color="textTertiary">
+                    Checking related activity…
+                  </Text>
+                )}
               </Stack>
-              {isEnriching && (
-                <Text textStyle="text-regular-xs" color="textTertiary">
-                  Checking related activity…
-                </Text>
+
+              {d.developerNote && (
+                <Stack gap={1}>
+                  <SectionLabel>For developers</SectionLabel>
+                  <RichText parts={d.developerNote} />
+                </Stack>
               )}
             </Stack>
-
-            {d.developerNote && (
-              <Stack gap={1}>
-                <SectionLabel>For developers</SectionLabel>
-                <RichText parts={d.developerNote} />
-              </Stack>
-            )}
 
             {!isCustomNetwork && <CopyPromptButton contextUrl={contextUrl} />}
           </Stack>

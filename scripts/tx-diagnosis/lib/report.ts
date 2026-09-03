@@ -134,6 +134,7 @@ function shapeRow(s: Shape): string {
 }
 
 export interface BaselineDiff {
+  label: string;
   metricLines: string[];
   changedCases: string[];
 }
@@ -152,9 +153,10 @@ export function diffAgainst(current: Report, baseline: Report): BaselineDiff {
   compare('class', current.metrics.classes, baseline.metrics.classes);
   compare('outcome', current.metrics.outcomes, baseline.metrics.outcomes);
   compare('confidence', current.metrics.confidence, baseline.metrics.confidence);
-  metricLines.push(
-    `- rubric: ${pct(baseline.metrics.rubric.casesPassing, baseTotal)} → ${pct(current.metrics.rubric.casesPassing, total)} of cases pass every rule`
-  );
+  const rubricBefore = pct(baseline.metrics.rubric.casesPassing, baseTotal);
+  const rubricAfter = pct(current.metrics.rubric.casesPassing, total);
+  if (rubricBefore !== rubricAfter)
+    metricLines.push(`- rubric: ${rubricBefore} → ${rubricAfter} of cases pass every rule`);
   const baseById = new Map(baseline.cases.map(c => [c.txId, c]));
   const changedCases: string[] = [];
   for (const c of current.cases) {
@@ -170,7 +172,11 @@ export function diffAgainst(current: Report, baseline: Report): BaselineDiff {
     if (changes.length)
       changedCases.push(`- [${c.txId.slice(0, 10)}…](${c.explorerUrl}): ${changes.join('; ')}`);
   }
-  return { metricLines, changedCases };
+  return {
+    label: `engine v${baseline.engineVersion}, ${baseline.generatedAt}, ${baseTotal} cases`,
+    metricLines,
+    changedCases,
+  };
 }
 
 export function renderReport(report: Report, diff?: BaselineDiff): string {
@@ -231,6 +237,8 @@ export function renderReport(report: Report, diff?: BaselineDiff): string {
   }
   if (diff) {
     lines.push('## Against the baseline');
+    lines.push('');
+    lines.push(`Baseline: ${diff.label}.`);
     lines.push('');
     lines.push(...(diff.metricLines.length ? diff.metricLines : ['- no metric changes']));
     lines.push('');

@@ -20,21 +20,22 @@ contract source.
   `CheckErrors` variants that surface at runtime. Anything else classifies as `unknown_vm_error` with
   low-confidence copy — never as an app bug.
 - `resolve-error-code.ts` — maps `(err uN)` to the `define-constant` that defines it (called
-  contract first, then up to 3 callees: contracts passed for trait parameters, then `contract-call?`
-  targets reachable from the called function, then other principals in the arguments), or to a
-  Clarity built-in error code. A constant is attributed only when it is the single one thrown in
-  code the call can reach (or the single definition); when a contract defines a code under several
-  names, `errorCode.candidateNames` lists them and the copy says the network does not record which
-  check fired. In callees the search is restricted to the functions the call can enter: every
-  `contract-call?` through a trait variable is mapped to the argument bound to that parameter, and a
-  callee whose invoked functions never throw the constant is skipped. Registry copy is dropped when
-  its `name` disagrees with the source, and never used while the source is ambiguous. A Clarity
+  contract first, then up to 3 callees), or to a Clarity built-in error code. Callees are the
+  contracts that reachable `contract-call?` sites name literally or reach through a trait variable
+  bound to an argument (`resolvedContractCalls` carries bindings through ordinary helper calls); a
+  principal that merely appears in argument data is reported as data, never searched or described as
+  called. A constant is attributed only when it is the single one thrown in code the call can reach
+  (or the single definition); when several reachable definitions share the code — in one contract or
+  across callees — `errorCode.candidateNames` lists them and the copy says the network does not
+  record which check fired. In callees the search is restricted to the functions the call can enter,
+  and a callee whose invoked functions never throw the constant is skipped. Registry copy is dropped
+  when its `name` disagrees with the source, and never used while the source is ambiguous. A Clarity
   built-in (`stx-transfer?` …) is named as the cause only when nothing else reachable can return the
-  code; otherwise it is a hedged, low-confidence candidate until callees are ruled out. Also detects
-  **masking**: a `fold` callback that unwraps its
-  accumulator with a fixed constant (`(unwrap! result ERR_X)`) replaces the failing item's real
-  error, so the code is reported as a placeholder at medium confidence (`errorCode.foldMask`), and
-  notes when the failing site precedes every `asserts!` of the function
+  code; whenever the call reaches another contract it stays a hedged, low-confidence candidate, since
+  a failed call leaves no execution trace to rule the callee out. Also detects **masking**: a `fold`
+  callback that unwraps its accumulator with a fixed constant (`(unwrap! result ERR_X)`) replaces the
+  failing item's real error, so the code is reported as a placeholder at medium confidence
+  (`errorCode.foldMask`), and notes when the failing site precedes every `asserts!` of the function
   (`errorCode.siteBeforeOtherChecks`).
 - `registry/known-errors.json` — curated copy for protocol-specific codes. Add an entry with an
   exact contract `id` or a `namePattern` regex, then `summary`, `sender` and `developer` text. Copy
@@ -62,8 +63,9 @@ contract source.
   or `testnet`, an `api` parameter (if given) must be that chain's configured server, and any other
   query parameter is rejected — all with a cacheable `400` before any upstream request. Custom
   networks are deliberately not served here; the in-page card says so instead of linking.
-- A matching `If-None-Match` is answered `304` only after the transaction and representation are
-  validated, so a guessed validator cannot turn an unknown transaction into a cached success. The
+- A matching `If-None-Match` is answered `304` once the transaction has been fetched and found to be
+  a failed contract call — before any contract source is fetched, so conditional requests stay cheap,
+  but never for an unknown or non-failed transaction, so a guessed validator gains nothing. The
   validator is `W/"<txid>-<chain>-v<engine>-<format>"`.
 - Trust boundary: conclusions come from the templates and registry only. On-chain values (arguments,
   error text, source, comments) are rendered as code spans or numbered code blocks so they cannot
@@ -115,8 +117,9 @@ contract source.
   contract/function/result combination, with expectations in `labels.json`), adversarial synthetic
   cases (`audit-fixes.test.ts`: duplicate constants, two-trait dispatch, hedged built-ins, twin
   post-conditions, unknown `vm_error`, Markdown injection), a check that every registry entry names
-  its constant exactly as the committed contract source does, and key-scoping tests for the server
-  fetch wrapper (`src/api/__tests__/stacksAPIFetch.test.ts`).
+  its constant exactly as the committed contract source does, the deterministic rubric applied to
+  every golden diagnosis (`rubric.test.ts`, rules in `eval/rubric.ts`), and key-scoping tests for
+  the server fetch wrapper (`src/api/__tests__/stacksAPIFetch.test.ts`).
 - `TX_DIAGNOSIS_LIVE=1 pnpm exec jest src/common/tx-diagnosis/__tests__/acceptance.live.test.ts`
   re-fetches the full 484-transaction corpus (`corpus-txids.json`) from the public API (every id must
   be fetched) and checks the acceptance metrics: every post-condition failure classified consistently
@@ -125,3 +128,42 @@ contract source.
   codes (a name was found; whether it is the right one is what the golden labels and the adversarial
   cases check), and no `(err …)` result described as "would have succeeded". It takes several minutes
   and respects the public rate limit.
+
+## Evaluation harness
+
+`scripts/tx-diagnosis/` evaluates the engine against live failures, so regressions and new failure
+shapes surface before users report them. `pnpm diagnosis:build` compiles the engine and the scripts
+with `tsc` into a git-ignored `.build/` directory; the `diagnosis:*` scripts run that output under
+Node. Nothing here ships in the app, and no API key is ever sent to the Stacks API.
+
+- `pnpm diagnosis:eval` samples the most recent failed contract calls from the public API (default
+  100, at most 3 per contract/function/result combination so one busy router does not dominate the
+  sample), diagnoses each with live contract sources, checks every diagnosis against the
+  deterministic rubric in `src/common/tx-diagnosis/eval/rubric.ts` (the same rules the golden-corpus
+  test enforces) and writes `cases.json`, `report.json` and `report.md` to
+  `.ai-runs/tx-diagnosis/<timestamp>/` (git-ignored). The report leads with the shapes to triage —
+  unresolved or ambiguous codes, hedged built-ins, unknown `vm_error` strings, runtime panics — each
+  with an example transaction, then rubric failures and every shape seen.
+- Options: `--count N`, `--per-combo N`, `--max-pages N` (pages of 50 scanned before giving up);
+  `--tx <id>` (repeatable) evaluates specific transactions, e.g. from a user report; `--cases
+<run>/cases.json` re-runs an earlier sample after an engine change and `--baseline
+<run>/report.json` makes the report list every metric and every case whose class, outcome,
+  confidence, constant or headline changed; `--correlate` also exercises the history loaders the
+  browser card uses; `--strict` exits 1 on any rubric failure; `--api`, `--chain`, `--explorer` and
+  `--out` override the defaults.
+- `--judge` adds an LLM grade of the diagnosis section of each context pack (correctness, clarity,
+  actionability, honesty, safety; 1–5, plus specific issues). Off by default, capped by
+  `--judge-limit` (default 25, maximum 100), model from `--judge-model` (default `claude-sonnet-5`);
+  needs `ANTHROPIC_API_KEY` and prints a token estimate before spending anything.
+  `ANTHROPIC_BASE_URL` redirects the calls (tests, proxies). The judge is advisory and never gates
+  anything; the deterministic rubric does.
+- `pnpm diagnosis:promote -- --tx <id> [--notes "why this case matters"]` turns a live case into
+  golden fixtures: the transaction (bulky unused fields trimmed), every contract the diagnosis
+  fetched (excerpted above 100 KB), a label in `labels.json` drafted from the current engine output
+  and the id in `corpus-txids.json`. The drafted label is a starting point, not ground truth: verify
+  `expected_err_name`, `expected_defined_in` and `expected_tag` against the source before committing
+  and edit them to the correct values when the engine is wrong — that is how a new failure shape
+  becomes a regression test. `--dry-run` prints the drafted labels and writes nothing.
+- When a new cause appears: run the harness, read "Shapes to triage", promote a representative
+  transaction, fix the resolver, parser or registry, re-run with `--cases` and `--baseline` to see
+  exactly what moved, and keep `pnpm test:unit` green.

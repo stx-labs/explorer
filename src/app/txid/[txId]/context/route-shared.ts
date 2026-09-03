@@ -72,7 +72,20 @@ export async function handleContextPack(
     apiUrl,
     network: chain,
     explorerBaseUrl: request.nextUrl.origin,
+    etag,
+    ifNoneMatch: request.headers.get('if-none-match'),
   });
+
+  // The transaction was fetched and is a failed contract call, so the representation exists and the
+  // matching validator skipped the contract fetches. A guessed validator for an unknown or
+  // non-failed transaction still gets the 404 below.
+  if (result.status === 304) {
+    // A 304 must repeat the caching headers of the 200 it stands in for (RFC 9110 §15.4.5).
+    return new Response(null, {
+      status: 304,
+      headers: { ...common, ETag: etag, 'Cache-Control': CACHE_CONTROL },
+    });
+  }
 
   if (result.status !== 200) {
     return new Response(result.reason, {
@@ -83,16 +96,6 @@ export async function handleContextPack(
         'Cache-Control': result.status === 404 ? 'public, max-age=60' : 'private, no-store',
         ...(result.retryAfter ? { 'Retry-After': result.retryAfter } : {}),
       },
-    });
-  }
-
-  // Validate that the representation exists before accepting a conditional request. The pack uses
-  // immutable transaction and contract data, so it is stable within an engine version after that.
-  if (request.headers.get('if-none-match') === etag) {
-    // A 304 must repeat the caching headers of the 200 it stands in for (RFC 9110 §15.4.5).
-    return new Response(null, {
-      status: 304,
-      headers: { ...common, ETag: etag, 'Cache-Control': CACHE_CONTROL },
     });
   }
 

@@ -11,6 +11,7 @@
  * Re-running with --cases after an engine change and --baseline pointing at the previous report
  * shows exactly which diagnoses changed.
  */
+import fs from 'node:fs';
 import path from 'node:path';
 
 import { renderContextPackMarkdown } from '../../src/common/tx-diagnosis/context-pack';
@@ -225,7 +226,7 @@ async function main() {
   const diff = baselinePath ? diffAgainst(report, readJson<Report>(baselinePath)) : undefined;
   writeJson(path.join(outDir, 'report.json'), report);
   const md = renderReport(report, diff);
-  require('node:fs').writeFileSync(path.join(outDir, 'report.md'), md);
+  fs.writeFileSync(path.join(outDir, 'report.md'), md);
 
   const m = report.metrics;
   log('');
