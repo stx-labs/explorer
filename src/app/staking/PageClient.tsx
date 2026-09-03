@@ -9,8 +9,9 @@ import { PeriodsOverview } from './PeriodsOverview';
 import { StackingOverview } from './StackingOverview';
 import { StakingActivity } from './StakingActivity';
 import { HowToParticipateButton, StakingStats } from './StakingStats';
-import { SCHEDULED_BONDS_AHEAD, SHOW_SCHEDULED_BONDS } from './consts';
-import {
+import { SCHEDULED_BONDS_AHEAD } from './consts';
+import type {
+  ActivityGroup,
   Bond,
   BondRewards,
   CycleRewards,
@@ -28,22 +29,16 @@ export interface StakingPageData {
   cycleRewards: Record<number, CycleRewards>;
   pox5FirstCycleId?: number;
   currentBurnHeight: number;
-  /** Passed in from the server so the client renders the same dates. */
   nowMs: number;
   rewardCycleLength: number;
   prepareCycleLength: number;
   firstBurnchainBlockHeight: number;
   enrollments: EnrollmentShare[];
   activity: StakingActivityEvent[];
-  /** BTC rewarded by bonds to date, which differs from what has been claimed. */
   rewarded?: BondRewards;
-  selectedActivityGroup?: string;
-  chain: string;
-  /** Bitcoin taken in by the running cycle so far, measured from payouts. */
+  selectedActivityGroup?: ActivityGroup;
   currentCycleAccruedSats?: string;
-  /** Daily price history, so settled cycles are priced at the time they ended. */
   prices?: DailyPrices;
-  /** Real cycle end times, where the chain has been asked for them. */
   cycleEndTimes?: Record<number, number>;
 }
 
@@ -62,13 +57,10 @@ export function StakingPageClient({
   activity,
   rewarded,
   selectedActivityGroup,
-  chain,
   currentCycleAccruedSats,
   prices,
   cycleEndTimes,
 }: StakingPageData) {
-  // The bond to feature, and the one after it. The next bond may not exist on
-  // chain yet, in which case its term comes from the contract's fixed cadence.
   const featuredIndex = getFeaturedBondIndex(bonds);
   const featuredBond = bonds.find(bond => bond.index === featuredIndex);
   const onChainNext = bonds.find(bond => bond.index === (featuredIndex ?? 0) + 1);
@@ -87,11 +79,9 @@ export function StakingPageClient({
         )[0]
       : undefined;
 
-  // Bonds the cadence guarantees beyond the last one on chain, so the timeline
-  // reads forward rather than stopping at whatever exists today.
   const lastOnChain = [...bonds].sort((a, b) => b.index - a.index)[0];
   const scheduledBonds =
-    SHOW_SCHEDULED_BONDS && lastOnChain && rewardCycleLength
+    lastOnChain && rewardCycleLength
       ? projectScheduledBonds(
           lastOnChain.index,
           lastOnChain.schedule?.activation?.bitcoin_height ?? 0,
@@ -100,13 +90,8 @@ export function StakingPageClient({
         )
       : [];
 
-  // The same rhythm as the home page: a large gap between sections, and a
-  // small one between a section's heading and its content.
   return (
     <Stack gap={{ base: 16, md: 18, lg: 20, xl: 24 }}>
-      {/* One top-level heading over the bond sections, which are its
-          subheadings: the current bond, where it sits among the others, and
-          what has happened to them. */}
       <Stack gap={{ base: 10, lg: 12 }}>
         <Text textStyle="heading-md">Bitcoin Staking</Text>
         <Stack gap={4}>
@@ -123,13 +108,11 @@ export function StakingPageClient({
             rewardsByBond={rewarded?.byBondIndex}
           />
           <CurrentBond
-            bonds={bonds}
             featuredBond={featuredBond}
             nextBond={nextBond}
             enrollments={enrollments}
             rewardCycleLength={rewardCycleLength}
             prepareCycleLength={prepareCycleLength}
-            firstBurnchainBlockHeight={firstBurnchainBlockHeight}
             currentBurnHeight={currentBurnHeight}
             nowMs={nowMs}
           />

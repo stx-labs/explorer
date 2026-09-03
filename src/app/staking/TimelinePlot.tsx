@@ -1,46 +1,30 @@
 'use client';
 
-import { ChartTooltipSurface } from '@/app/_components/NetworkOverview/ChartTooltip';
+import { ChartTooltipSurface } from '@/common/components/ChartTooltipSurface';
 import { Text } from '@/ui/Text';
 import { Box, Flex, Stack } from '@chakra-ui/react';
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
 
-import { BondTooltip, BondTooltipData } from './BondTooltip';
+import { BondTooltip } from './BondTooltip';
+import type { BondTooltipData } from './BondTooltip';
 import { DISTRIBUTIONS_PER_BOND } from './consts';
-import {
-  BondTimelineState,
-  DistributionGridCell,
-  approximateBurnHeightAt,
-  burnHeightToRewardCycle,
-} from './projections';
+import type { BondTimelineState, DistributionGridCell } from './projections';
+import { approximateBurnHeightAt, burnHeightToRewardCycle } from './projections';
 import { formatDateWithYear } from './utils';
 
-/** Row geometry, in spacing units, shared by the rows and the overlay drawn over them. */
 export const ROW_LABEL_WIDTH = 20;
 const ROW_HEIGHT = 7;
 const ROW_GAP = 2.5;
 const PLOT_TOP = 9;
 
-/** How quickly the card and its guide line follow the pointer. */
 const FOLLOW_MS = 150;
-/**
- * How long a bar stays hovered after the pointer leaves it: long enough to
- * cross the gap into the card, whose links need the pointer to reach them.
- */
+
 const BAR_GRACE_MS = 200;
-/** Space between the pointer and the card, so the card never sits under it. */
+
 const POINTER_OFFSET = 14;
-/** The card's resting distance from the top of the plot. */
+
 const REST_TOP = 4;
 
-/**
- * A bond's term drawn as its 24 reward distributions.
- *
- * Dividing the bar by distribution rather than by elapsed time shows how much
- * of the term has actually paid out, which is what a reader is asking. Colour
- * carries the same meaning for every bond, since the page has no wallet and so
- * no notion of whose a bond is.
- */
 export const SEGMENT_PAID_BG = 'accent.stacks-500';
 export const SEGMENT_REMAINING_BG = 'accent.stacks-300';
 
@@ -51,8 +35,6 @@ function Bar({
   state: BondTimelineState;
   distributionsPaid: number;
 }) {
-  // A bond that has not started has no distributions to divide, and its term is
-  // an outline rather than a fill.
   if (state === 'upcoming') {
     return (
       <Box
@@ -64,8 +46,6 @@ function Bar({
       />
     );
   }
-  // Divided into the distributions the bond receives, so the fill shows how
-  // much of the term has actually paid out rather than only how far it has run.
   return (
     <Flex h={ROW_HEIGHT} w="100%" gap="1px" borderRadius="redesign.xs" overflow="hidden">
       {Array.from({ length: DISTRIBUTIONS_PER_BOND }, (_, index) => (
@@ -88,10 +68,8 @@ export interface TimelineRow {
   widthPercent: number;
 }
 
-/** A row as the plot draws it: the bar geometry plus what the card says about it. */
 export type PlotRow = TimelineRow & { tooltip: BondTooltipData };
 
-/** Where the pointer is over the plot, in plot pixels, plus the plot's size. */
 interface PlotPointer {
   x: number;
   y: number;
@@ -99,14 +77,6 @@ interface PlotPointer {
   plotHeight: number;
 }
 
-/**
- * The one card that is always on the plot.
- *
- * At rest it names today on the today line. With a pointer over the plot it
- * follows it, naming the moment underneath; over a bar it grows into that
- * bond's details. Size is measured from the content and animated, so the card
- * morphs between the two rather than snapping.
- */
 function HoverCard({
   pointer,
   restPercent,
@@ -115,11 +85,8 @@ function HoverCard({
   children,
 }: {
   pointer?: PlotPointer;
-  /** Where the card rests, as a share of the plot width. */
   restPercent: number;
-  /** The plot's width in pixels once measured, so rest and hover share one coordinate space. */
   plotWidth?: number;
-  /** Whether the content is the bond details rather than a one-line label. */
   rich: boolean;
   children: React.ReactNode;
 }) {
@@ -139,10 +106,6 @@ function HoverCard({
   const width = size?.width ?? 0;
   const height = size?.height ?? 0;
 
-  // Centred on the pointer, kept inside the plot, and flipped above the
-  // pointer when there is no room below. At rest it sits on the today line.
-  // Pixel transforms rather than left/top, so following the pointer moves the
-  // card on the compositor instead of relaying out the plot.
   let x: number | undefined;
   let y = REST_TOP;
   if (pointer) {
@@ -158,24 +121,18 @@ function HoverCard({
 
   return (
     <ChartTooltipSurface
-      // The shared surface is a light 24% film in dark mode, tuned for a
-      // sparse chart. This card carries a table of figures over dense bars, so
-      // it needs a dark backdrop in both modes to stay legible.
       bg="var(--stacks-colors-alpha-black-alpha-800)"
       position="absolute"
       top={0}
-      // Until the plot is measured, the card sits on today by percentage.
       left={x === undefined ? `calc(${restPercent}% - ${width / 2}px)` : 0}
       w={size ? undefined : 'max-content'}
       overflow="hidden"
       zIndex={2}
-      // Interactive only while it shows a bond, whose details carry links.
       pointerEvents={rich ? 'auto' : 'none'}
       data-hover-card="true"
       willChange="transform"
       transition={`transform ${FOLLOW_MS}ms ease-out, width ${FOLLOW_MS}ms ease-out, height ${FOLLOW_MS}ms ease-out`}
       _motionReduce={{ transition: 'none' }}
-      // Inline, so a value that changes every frame does not mint a new class.
       style={{
         transform: x === undefined ? undefined : `translate3d(${x}px, ${y}px, 0)`,
         width: size ? `${size.width}px` : undefined,
@@ -189,23 +146,16 @@ function HoverCard({
   );
 }
 
-/**
- * The bars and the grid beneath them.
- *
- * Memoised, because pointer moves update state many times a second and the
- * several hundred cells here must not be rebuilt each time. Nothing about
- * hovering reaches this block as a prop; the bar's own dim is plain CSS.
- */
 const TimelineRows = memo(function TimelineRows({
   rows,
   cells,
+  onBondFocus,
 }: {
   rows: TimelineRow[];
   cells: DistributionGridCell[];
+  onBondFocus: (index: number, element: HTMLElement) => void;
 }) {
   return (
-    // Above the overlay's column highlight, so bars cover it and the
-    // translucent cells tint it.
     <Stack gap={ROW_GAP} position="relative" zIndex={1}>
       {rows.map(row => (
         <Flex key={row.index} align="center">
@@ -230,17 +180,22 @@ const TimelineRows = memo(function TimelineRows({
             ))}
             <Box
               data-bond-index={row.index}
+              role="img"
+              tabIndex={0}
+              aria-label={`${row.label}, ${row.state}, ${row.distributionsPaid} of ${DISTRIBUTIONS_PER_BOND} reward distributions completed`}
+              onFocus={event => onBondFocus(row.index, event.currentTarget)}
               position="absolute"
               left={`${row.leftPercent}%`}
               width={`${row.widthPercent}%`}
               minW={1}
-              // Matches the bar inside it, so the hover ring follows the same
-              // rounding rather than boxing it in.
               borderRadius="redesign.xs"
-              // Hovering emphasises rather than fades: the bar grows into the
-              // gap between rows and takes a ring. Only the vertical scales,
-              // since its width and position carry the term's dates.
               _hover={{
+                transform: 'scaleY(1.15)',
+                outline: '2px solid',
+                outlineColor: 'textPrimary',
+                zIndex: 1,
+              }}
+              _focusVisible={{
                 transform: 'scaleY(1.15)',
                 outline: '2px solid',
                 outlineColor: 'textPrimary',
@@ -258,13 +213,6 @@ const TimelineRows = memo(function TimelineRows({
   );
 });
 
-/**
- * The bars, the grid, and the hover layer over them.
- *
- * Owns the pointer state, so the many updates a second it produces re-render
- * only this subtree, and within it only the small hover layer, never the
- * section heading, tabs and legend around it.
- */
 export function TimelinePlot({
   rows,
   cells,
@@ -284,19 +232,15 @@ export function TimelinePlot({
   rewardCycleLength: number;
   firstBurnchainBlockHeight: number;
 }) {
-  // Pointer position is measured against the plot area rather than the row,
-  // since the labels take a fixed strip on the left.
   const plotRef = useRef<HTMLDivElement>(null);
   const [pointer, setPointer] = useState<PlotPointer>();
   const [hoveredBondIndex, setHoveredBondIndex] = useState<number>();
   const barGrace = useRef<ReturnType<typeof setTimeout>>(undefined);
-  // Mirrors hoveredBondIndex for the frame callback, which never re-binds.
   const hoveredRef = useRef<number>(undefined);
   const frame = useRef<number>(undefined);
   const latestMove = useRef<{ x: number; y: number; target: EventTarget | null }>(null);
   const trackCursor = useCallback((event: React.MouseEvent) => {
     latestMove.current = { x: event.clientX, y: event.clientY, target: event.target };
-    // One state update per frame, however many move events the browser sends.
     if (frame.current !== undefined) return;
     frame.current = requestAnimationFrame(() => {
       frame.current = undefined;
@@ -304,7 +248,6 @@ export function TimelinePlot({
       const rect = plotRef.current?.getBoundingClientRect();
       if (!move || !rect || rect.width <= 0) return;
       const target = move.target as HTMLElement | null;
-      // Reading the card: hold everything where it is so its links can be used.
       if (target?.closest?.('[data-hover-card]')) {
         clearTimeout(barGrace.current);
         return;
@@ -317,9 +260,6 @@ export function TimelinePlot({
       const bar = target?.closest?.('[data-bond-index]') as HTMLElement | null;
       clearTimeout(barGrace.current);
       if (bar?.dataset.bondIndex !== undefined) {
-        // Over a bar the card anchors where the pointer entered, like a
-        // tooltip, so it can be reached rather than chased: a scheduled or
-        // enrolling bond's details carry links.
         const index = Number(bar.dataset.bondIndex);
         if (hoveredRef.current !== index) {
           hoveredRef.current = index;
@@ -329,9 +269,6 @@ export function TimelinePlot({
         return;
       }
       setPointer({ x, y: move.y - rect.top, plotWidth: rect.width, plotHeight: rect.height });
-      // Leaving a bar waits a beat before the card shrinks back, so a pointer
-      // crossing to the next bar, or into the card, does not flicker through
-      // the small state on the way.
       if (hoveredRef.current !== undefined) {
         barGrace.current = setTimeout(() => {
           hoveredRef.current = undefined;
@@ -348,6 +285,20 @@ export function TimelinePlot({
     setPointer(undefined);
     setHoveredBondIndex(undefined);
   }, []);
+  const focusBond = useCallback((index: number, element: HTMLElement) => {
+    const plotRect = plotRef.current?.getBoundingClientRect();
+    if (!plotRect || plotRect.width <= 0) return;
+    const barRect = element.getBoundingClientRect();
+    clearTimeout(barGrace.current);
+    hoveredRef.current = index;
+    setHoveredBondIndex(index);
+    setPointer({
+      x: Math.min(Math.max(barRect.left + barRect.width / 2 - plotRect.left, 0), plotRect.width),
+      y: barRect.top + barRect.height / 2 - plotRect.top,
+      plotWidth: plotRect.width,
+      plotHeight: plotRect.height,
+    });
+  }, []);
   useEffect(
     () => () => {
       clearTimeout(barGrace.current);
@@ -356,8 +307,6 @@ export function TimelinePlot({
     []
   );
 
-  // The plot's width, so the card and the line can be placed in pixels at rest
-  // as well as under the pointer.
   const [plotWidth, setPlotWidth] = useState<number>();
   useEffect(() => {
     const element = plotRef.current;
@@ -375,7 +324,6 @@ export function TimelinePlot({
     timeZone: 'UTC',
   });
 
-  // What the pointer is over, named in the chain's own terms.
   const pointerPercent = pointer ? (pointer.x / pointer.plotWidth) * 100 : undefined;
   const pointerLabel = (() => {
     if (pointerPercent === undefined) return undefined;
@@ -384,7 +332,6 @@ export function TimelinePlot({
     const atMs = bounds.startMs + (pointerPercent / 100) * span;
     const height = approximateBurnHeightAt(atMs, currentBurnHeight, nowMs);
     const cycle = burnHeightToRewardCycle(height, firstBurnchainBlockHeight, rewardCycleLength);
-    // Heights the chain has passed are known; the rest are projected.
     const prefix = height > currentBurnHeight ? '~' : '';
     return [
       cycle !== undefined ? `cycle ${cycle}` : undefined,
@@ -405,16 +352,19 @@ export function TimelinePlot({
         );
 
   return (
-    <Box position="relative" pt={PLOT_TOP} onMouseMove={trackCursor} onMouseLeave={clearCursor}>
-      <TimelineRows rows={rows} cells={cells} />
+    <Box
+      position="relative"
+      pt={PLOT_TOP}
+      onMouseMove={trackCursor}
+      onMouseLeave={clearCursor}
+      onBlurCapture={event => {
+        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) clearCursor();
+      }}
+    >
+      <TimelineRows rows={rows} cells={cells} onBondFocus={focusBond} />
       <Flex position="absolute" inset={0} pointerEvents="none">
         <Box w={ROW_LABEL_WIDTH} flexShrink={0} pr={3} />
         <Box position="relative" flex={1} ref={plotRef}>
-          {/*
-            The distribution under the pointer, lit in every row. Drawn behind
-            the rows, so bars cover it and the translucent cells take its tint,
-            without re-rendering a single cell.
-          */}
           {hoveredCell &&
             rows.map((row, rowIndex) => (
               <Box
@@ -434,12 +384,10 @@ export function TimelinePlot({
                 }}
               />
             ))}
-          {/* One line: today at rest, the pointer while one is over the plot. */}
           <Box
             position="absolute"
             top={0}
             bottom={0}
-            // Until the plot is measured, it marks today by percentage.
             left={plotWidth === undefined ? `${todayPercent}%` : 0}
             borderLeft={pointer ? '1px solid' : '1px dashed'}
             borderColor={pointer ? 'neutral.sand-400' : 'redesignBorderSecondary'}
@@ -466,6 +414,7 @@ export function TimelinePlot({
             {hoveredRow ? (
               <BondTooltip
                 bond={hoveredRow.tooltip}
+                distributionsPaid={hoveredRow.distributionsPaid}
                 rewardCycleLength={rewardCycleLength}
                 currentBurnHeight={currentBurnHeight}
                 nowMs={nowMs}

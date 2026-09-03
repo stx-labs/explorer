@@ -6,12 +6,12 @@ import { Stack } from '@chakra-ui/react';
 import { StakingActivity } from '../StakingActivity';
 import { SubpageHeader } from '../SubpageHeader';
 import { ACTIVITY_PAGE_LIMIT, ACTIVITY_PAGE_SIZE } from '../consts';
-import { StakingActivityEvent } from '../data';
+import type { ActivityGroup, StakingActivityEvent } from '../data';
+import { bondLabel } from '../utils';
 
 export interface ActivityPageData {
   events: StakingActivityEvent[];
-  selectedGroup?: string;
-  /** Set when the feed is narrowed to a single bond. */
+  selectedGroup?: ActivityGroup;
   bondIndex?: number;
 }
 
@@ -20,7 +20,9 @@ export function ActivityPageClient({ events, selectedGroup, bondIndex }: Activit
     <Stack gap={6}>
       <SubpageHeader
         title={
-          bondIndex !== undefined ? `Bond ${bondIndex} transactions` : 'Bitcoin Staking activity'
+          bondIndex !== undefined
+            ? `${bondLabel(bondIndex)} transactions`
+            : 'Bitcoin Staking activity'
         }
       />
       <Stack gap={3}>
@@ -29,17 +31,21 @@ export function ActivityPageClient({ events, selectedGroup, bondIndex }: Activit
           selectedGroup={selectedGroup}
           pageSize={ACTIVITY_PAGE_SIZE}
           standalone
+          bondIndex={bondIndex}
+          txWindow={ACTIVITY_PAGE_LIMIT}
         />
-        {/*
-          The feed merges several contract functions, and the transaction
-          endpoint pages each one separately rather than the merged result, so
-          there is no offset that means "older than this" across the whole feed.
-          Saying so is better than pagination that quietly stops.
-        */}
-        {events.length >= ACTIVITY_PAGE_LIMIT && (
+
+        {bondIndex !== undefined ? (
           <Text textStyle="text-regular-xs" color="textSecondary">
-            Showing recent staking events, not a full historical feed.
+            {bondLabel(bondIndex)} events found among the {ACTIVITY_PAGE_LIMIT} newest staking
+            transactions. Older activity is not shown.
           </Text>
+        ) : (
+          events.length >= ACTIVITY_PAGE_LIMIT && (
+            <Text textStyle="text-regular-xs" color="textSecondary">
+              Showing recent staking events, not a full historical feed.
+            </Text>
+          )
         )}
       </Stack>
     </Stack>

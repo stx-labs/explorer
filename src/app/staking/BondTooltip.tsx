@@ -14,12 +14,8 @@ import {
   formatTimeRemaining,
   getRealizedRatePercent,
 } from './projections';
-import { formatBtc, satsToBtc } from './utils';
+import { formatBtc, formatRatePercent, satsToBtc } from './utils';
 
-/**
- * A bond's state, worded as the contract's own lifecycle rather than as the
- * three states the API reports.
- */
 const STATE_LABELS: Record<BondLifecycleState, string> = {
   scheduled: 'scheduled',
   enrolling: 'enrolling',
@@ -28,12 +24,6 @@ const STATE_LABELS: Record<BondLifecycleState, string> = {
   closed: 'closed',
 };
 
-/**
- * Badge colours, set explicitly rather than by palette.
- *
- * The tooltip sits on a dark surface, where the subtle palette variants are
- * tuned for a light one and lose their contrast.
- */
 const STATE_BADGES: Record<BondLifecycleState, { bg: string; color: string }> = {
   scheduled: { bg: 'neutral.sand-500', color: 'neutral.sand-50' },
   enrolling: { bg: 'accent.bitcoin-500', color: 'neutral.sand-950' },
@@ -42,20 +32,14 @@ const STATE_BADGES: Record<BondLifecycleState, { bg: string; color: string }> = 
   closed: { bg: 'neutral.sand-500', color: 'neutral.sand-50' },
 };
 
-/** Warmer than the page accent, which reads as red against the dark tooltip. */
 const ENROLLING_ACCENT = 'accent.bitcoin-500';
 
 export interface BondTooltipData {
   label: string;
   state: BondLifecycleState;
   schedule: BondSchedule;
-  /** Absent until the Endowment publishes the bond's parameters. */
   capacitySats?: bigint;
   lockedSats: bigint;
-  /**
-   * Undefined when the distribution history does not reach back to this bond,
-   * which is not the same as a bond that was rewarded nothing.
-   */
   rewardedSats?: bigint;
   targetRateBps?: number;
 }
@@ -73,12 +57,6 @@ function Row({ label, value }: { label: string; value: string }) {
   );
 }
 
-/**
- * A way in, for bonds nobody can enrol in yet.
- *
- * Only shown before a bond opens: once it is running there is nothing left to
- * register interest in, and the yield is a fact rather than an estimate.
- */
 function TooltipAction({
   href,
   children,
@@ -110,11 +88,13 @@ function TooltipAction({
 
 export function BondTooltip({
   bond,
+  distributionsPaid,
   rewardCycleLength,
   currentBurnHeight,
   nowMs,
 }: {
   bond: BondTooltipData;
+  distributionsPaid: number;
   rewardCycleLength: number;
   currentBurnHeight: number;
   nowMs: number;
@@ -123,13 +103,8 @@ export function BondTooltip({
   const at = (height: number) =>
     formatDateShort(burnHeightToApproximateTimestamp(height, currentBurnHeight, nowMs));
 
-  // Heights the chain has already passed are dated exactly; the rest are
-  // projected from the block interval and marked as approximate.
   const date = (height: number) => `${height > currentBurnHeight ? '~' : ''}${at(height)}`;
 
-  // The countdown names when the range above it ends. The exception is a bond
-  // the contract has not created yet, whose next event is its own start. A
-  // closed bond has nothing left to count down to, so it shows how long it ran.
   const termBlocks = schedule.termEndHeight - schedule.activationHeight;
   const remainingBlocks =
     state === 'scheduled'
@@ -142,16 +117,6 @@ export function BondTooltip({
         ? `in ${formatTimeRemaining(remainingBlocks)}`
         : '';
 
-  const rate = (bps: number) => `${(bps / 100).toFixed(1)}%`;
-  const distributionsPaid = Math.min(
-    Math.max(
-      Math.floor(
-        (currentBurnHeight - schedule.activationHeight) / (termBlocks / DISTRIBUTIONS_PER_BOND || 1)
-      ),
-      0
-    ),
-    DISTRIBUTIONS_PER_BOND
-  );
   const rewarded =
     rewardedSats !== undefined
       ? `${formatBtc(rewardedSats)} · ${distributionsPaid} of ${DISTRIBUTIONS_PER_BOND}`
@@ -160,8 +125,6 @@ export function BondTooltip({
     capacitySats && capacitySats > BigInt(0)
       ? `${satsToBtc(lockedSats).toLocaleString(undefined, { maximumFractionDigits: 4 })} / ${formatBtc(capacitySats, 0)}`
       : formatBtc(lockedSats);
-  // Only computable once the rewards a bond actually produced are known. A
-  // bond outside the distribution history would otherwise realize at 0%.
   const realizedRate =
     rewardedSats !== undefined
       ? getRealizedRatePercent(rewardedSats, lockedSats, termBlocks, rewardCycleLength)
@@ -206,7 +169,7 @@ export function BondTooltip({
               )
             : state !== 'maturity' &&
               targetRateBps !== undefined && (
-                <Row label="Target rate" value={rate(targetRateBps)} />
+                <Row label="Target rate" value={formatRatePercent(targetRateBps)} />
               )}
           {state !== 'enrolling' && <Row label="Rewarded" value={rewarded} />}
         </Stack>
@@ -228,8 +191,6 @@ export function BondTooltip({
         </Text>
       )}
 
-      {/* A bond that has not opened yet is something to prepare for, so the
-          tooltip offers the two things a reader can actually do. */}
       {(state === 'scheduled' || state === 'enrolling') && (
         <Flex gap={4} pt={2} borderTop="1px solid" borderColor="neutral.sand-500" flexWrap="wrap">
           <TooltipAction href={STAKING_LINKS.estimateYield} arrow="out">

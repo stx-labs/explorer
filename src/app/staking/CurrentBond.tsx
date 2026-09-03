@@ -10,9 +10,11 @@ import { Tooltip } from '@/ui/Tooltip';
 import { Box, Flex, Icon, Stack } from '@chakra-ui/react';
 import { ArrowRight } from '@phosphor-icons/react';
 
-import { BondStateBadge, BondStateTone } from './BondStateBadge';
+import { BondStateBadge } from './BondStateBadge';
+import type { BondStateTone } from './BondStateBadge';
 import { GlossaryTerm } from './GlossaryTerm';
-import { Bond, EnrollmentShare } from './data';
+import { GENESIS_BOND_INDEX } from './consts';
+import type { Bond, EnrollmentShare } from './data';
 import {
   BondLifecycleState,
   burnHeightToApproximateTimestamp,
@@ -21,9 +23,8 @@ import {
   getBondSchedule,
   getDistributionCadence,
 } from './projections';
-import { formatBtc, formatDateWithYear, getBondDisplayName, toBigInt } from './utils';
+import { bondLabel, formatBtc, formatDateWithYear, toBigInt } from './utils';
 
-/** Term progress and the enrollment breakdown read as one pair of bars. */
 const BAR_HEIGHT = 2;
 
 const STATE_LABELS: Record<BondLifecycleState, string> = {
@@ -42,12 +43,6 @@ const STATE_TONES: Record<BondLifecycleState, BondStateTone> = {
   closed: 'closed',
 };
 
-/**
- * One segment per confirmed enrollment, sized by its share of the total.
- *
- * Shades alternate so neighbouring enrollments stay distinguishable without
- * implying any ranking between them.
- */
 function EnrollmentBar({
   enrollments,
   totalSats,
@@ -69,8 +64,6 @@ function EnrollmentBar({
             variant="redesignPrimary"
             size="lg"
             portalled
-            // The breakdown is about proportions, not participants, so a
-            // segment names its size rather than whose it is.
             content={`${formatBtc(sats)} · ${(share * 100).toFixed(1)}% of confirmed`}
           >
             <Box
@@ -86,10 +79,10 @@ function EnrollmentBar({
 }
 
 interface Milestone {
+  id: string;
   label: React.ReactNode;
   height: number;
   timestamp: number;
-  /** Passed milestones show a real date; future ones are projections. */
   isPast: boolean;
   isCurrent?: boolean;
 }
@@ -121,7 +114,6 @@ function LifecycleRow({ milestone }: { milestone: Milestone }) {
           textAlign="right"
           suppressHydrationWarning
         >
-          {/* Past dates are facts; future ones are projected, so they carry a ~. */}
           {isPast ? formatDateShort(timestamp) : `~${formatDateShort(timestamp)}`}
         </Text>
       </Flex>
@@ -130,25 +122,19 @@ function LifecycleRow({ milestone }: { milestone: Milestone }) {
 }
 
 export function CurrentBond({
-  bonds,
   featuredBond,
   nextBond,
   enrollments,
   rewardCycleLength,
   prepareCycleLength,
-  firstBurnchainBlockHeight,
   currentBurnHeight,
   nowMs,
 }: {
-  bonds: Bond[];
   featuredBond?: Bond;
-  /** The bond after the featured one, on chain or projected. */
   nextBond?: { index: number; activationHeight: number; termEndHeight: number };
-  /** Confirmed enrollments in the featured bond, one segment each. */
   enrollments: EnrollmentShare[];
   rewardCycleLength: number;
   prepareCycleLength: number;
-  firstBurnchainBlockHeight: number;
   currentBurnHeight: number;
   nowMs: number;
 }) {
@@ -165,15 +151,9 @@ export function CurrentBond({
   );
   const state = getBondLifecycleState(schedule, currentBurnHeight, true);
   const progress = getBondProgress(schedule, currentBurnHeight, rewardCycleLength);
-  // A bond's own distributions, counted from Day 0 rather than read off the
-  // chain-wide grid. The two agree, because a bond activates on a grid
-  // boundary, but counting from Day 0 is what makes "3 of 24" meaningful and
-  // keeps a not-yet-started bond from showing a distribution behind it.
   const cadence = getDistributionCadence(rewardCycleLength);
   const distributionHeight = (n: number) => schedule.activationHeight + n * cadence;
 
-  // The total is the sum of what has actually been confirmed on chain, not a
-  // capacity the bond was sized against.
   const enrolledSats = enrollments.reduce(
     (total, enrollment) => total + toBigInt(enrollment.btc),
     BigInt(0)
@@ -183,13 +163,17 @@ export function CurrentBond({
   const past = (height: number) => currentBurnHeight >= height;
 
   const milestones: Milestone[] = [
-    { label: 'Enrollment opened', height: schedule.enrollmentOpensHeight },
-    { label: 'Enrollment closed', height: schedule.enrollmentClosesHeight },
-    { label: 'Bond started · Day 0', height: schedule.activationHeight },
-    // Only a bond that has been paid has a latest distribution to show.
+    { id: 'enrollment-opened', label: 'Enrollment opened', height: schedule.enrollmentOpensHeight },
+    {
+      id: 'enrollment-closed',
+      label: 'Enrollment closed',
+      height: schedule.enrollmentClosesHeight,
+    },
+    { id: 'bond-started', label: 'Bond started · Day 0', height: schedule.activationHeight },
     ...(progress.paid > 0
       ? [
           {
+            id: 'latest-distribution',
             label: (
               <>
                 <GlossaryTerm entry="rewardDistribution">Latest distribution</GlossaryTerm> ·{' '}
@@ -204,13 +188,14 @@ export function CurrentBond({
     ...(progress.paid < progress.total
       ? [
           {
+            id: 'next-distribution',
             label: `Next distribution · ${progress.paid + 1} of ${progress.total}`,
             height: distributionHeight(progress.paid + 1),
           },
         ]
       : []),
-    { label: 'Bitcoin unlocks · L1', height: schedule.l1UnlockHeight },
-    { label: 'Term ends', height: schedule.termEndHeight },
+    { id: 'l1-unlock', label: 'Bitcoin unlocks · L1', height: schedule.l1UnlockHeight },
+    { id: 'term-ends', label: 'Term ends', height: schedule.termEndHeight },
   ]
     .map(m => ({
       ...m,
@@ -218,10 +203,9 @@ export function CurrentBond({
       isPast: past(m.height) && !m.isCurrent,
       isCurrent: !!m.isCurrent && past(m.height),
     }))
-    // Read top to bottom in the order the bond actually lives them.
     .sort((a, b) => a.height - b.height);
 
-  const name = getBondDisplayName(featuredBond);
+  const name = bondLabel(featuredBond.index);
   const cycleRange = `cycles ${featuredBond.schedule?.activation?.pox_cycle ?? '?'}–${
     (featuredBond.schedule?.unlock?.pox_cycle ?? 1) - 1
   }`;
@@ -242,9 +226,7 @@ export function CurrentBond({
               <BondStateBadge tone={STATE_TONES[state]} label={STATE_LABELS[state]} />
             </Flex>
             <Text textStyle="text-regular-sm" color="textSecondary">
-              {/* A bond that goes by name still needs its index stated
-                  somewhere; one titled "Bond 2" already carries it. */}
-              {name !== `Bond ${featuredBond.index}` && `Bond ${featuredBond.index} · `}
+              {featuredBond.index === GENESIS_BOND_INDEX && `Bond ${featuredBond.index} · `}
               <GlossaryTerm entry="bondTerm">{cycleRange}</GlossaryTerm> ·{' '}
               {(termEndHeight - activationHeight).toLocaleString()} blocks
             </Text>
@@ -270,12 +252,6 @@ export function CurrentBond({
             </Flex>
           </Stack>
 
-          {/*
-            A breakdown rather than a gauge. The bar always fills; its segments
-            are the confirmed enrollments in proportion to each other. There is
-            deliberately no denominator, so the page never publishes the
-            Endowment's allocation figure.
-          */}
           <Stack gap={2}>
             <Flex justify="space-between" gap={3} flexWrap="wrap" align="baseline">
               <Text textStyle="text-medium-sm">Confirmed bond enrollments</Text>
@@ -302,7 +278,6 @@ export function CurrentBond({
                 <Text textStyle="text-regular-xs" color="textSecondary">
                   Bond {nextBond.index} · term #{nextBond.activationHeight.toLocaleString()}
                 </Text>
-                {/* Drawn rather than a character, which renders long and thin. */}
                 <Icon w={3} h={3} color="textSecondary">
                   <ArrowRight weight="bold" />
                 </Icon>
@@ -327,7 +302,7 @@ export function CurrentBond({
           <Stack gap={0}>
             {milestones.map((milestone, index) => (
               <Box
-                key={milestone.height}
+                key={milestone.id}
                 py={2.5}
                 borderTop={index > 0 ? '1px solid' : undefined}
                 borderColor="redesignBorderSecondary"

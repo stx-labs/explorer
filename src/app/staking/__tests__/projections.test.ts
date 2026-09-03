@@ -1,32 +1,28 @@
 import {
+  applyStackingRewardWaterfall,
   bpsToPercent,
   burnHeightToApproximateTimestamp,
-  burnHeightToDistributionIndex,
-  distributionIndexToBurnHeight,
   formatTermDuration,
   formatTimeRemaining,
   getBarPosition,
-  getBondFillRatio,
   getBondLifecycleState,
   getBondProgress,
   getBondSchedule,
   getBondTimelineState,
   getCycleRewardsPerStx,
-  getCycleStackerRewardsSats,
+  getCycleStackerRewardsSatsBigInt,
   getCyclesPerYear,
   getDistributionCadence,
   getDistributionGridCells,
-  getDistributionSchedule,
+  getFeaturedBondIndex,
   getRealizedRatePercent,
   getStackingYieldForCompletedCycle,
-  getTargetPayoutPerDistributionSats,
   getTimelineBounds,
   getTimelineTicks,
   isCycleLengthPlausible,
   projectScheduledBonds,
 } from '../projections';
 
-// Real mainnet values, captured from /v2/pox while building this page.
 const MAINNET = {
   firstBurnchainBlockHeight: 666050,
   rewardCycleLength: 2100,
@@ -39,80 +35,7 @@ describe('getDistributionCadence', () => {
   });
 
   test('follows the network, rather than assuming mainnet', () => {
-    // Testnet runs 900-block cycles, so hardcoding 1050 would be wrong there.
     expect(getDistributionCadence(900)).toBe(450);
-  });
-});
-
-describe('distribution grid', () => {
-  test('round-trips an index through a burn height', () => {
-    const cadence = getDistributionCadence(MAINNET.rewardCycleLength);
-    const height = distributionIndexToBurnHeight(283, MAINNET.firstBurnchainBlockHeight, cadence);
-    expect(height).toBe(963200);
-    expect(burnHeightToDistributionIndex(height, MAINNET.firstBurnchainBlockHeight, cadence)).toBe(
-      283
-    );
-  });
-
-  test('is anchored to the first burnchain block, not to any bond', () => {
-    const cadence = getDistributionCadence(MAINNET.rewardCycleLength);
-    expect(distributionIndexToBurnHeight(0, MAINNET.firstBurnchainBlockHeight, cadence)).toBe(
-      MAINNET.firstBurnchainBlockHeight
-    );
-  });
-});
-
-describe('getDistributionSchedule', () => {
-  const nowMs = Date.UTC(2026, 7, 25, 19, 0, 0);
-
-  test('brackets the current height with the surrounding distributions', () => {
-    const schedule = getDistributionSchedule(
-      MAINNET.currentBurnHeight,
-      MAINNET.firstBurnchainBlockHeight,
-      MAINNET.rewardCycleLength,
-      nowMs
-    );
-    expect(schedule.latestHeight).toBe(963200);
-    expect(schedule.nextHeight).toBe(964250);
-    expect(schedule.latestHeight).toBeLessThanOrEqual(MAINNET.currentBurnHeight);
-    expect(schedule.nextHeight).toBeGreaterThan(MAINNET.currentBurnHeight);
-  });
-
-  test('next distribution lines up with the cycle boundary from /v2/pox', () => {
-    // /v2/pox reported reward_phase_start_block_height 964250 for cycle 142.
-    // Every other distribution boundary is a cycle start, so this is a real
-    // cross-check of the grid against an independently reported value.
-    const schedule = getDistributionSchedule(
-      MAINNET.currentBurnHeight,
-      MAINNET.firstBurnchainBlockHeight,
-      MAINNET.rewardCycleLength,
-      nowMs
-    );
-    expect(schedule.nextHeight).toBe(964250);
-  });
-
-  test('reports blocks remaining and projects a future date', () => {
-    const schedule = getDistributionSchedule(
-      MAINNET.currentBurnHeight,
-      MAINNET.firstBurnchainBlockHeight,
-      MAINNET.rewardCycleLength,
-      nowMs
-    );
-    expect(schedule.blocksUntilNext).toBe(203);
-    // 203 blocks * 10 minutes = 2030 minutes.
-    expect(schedule.nextApproximateTimestamp).toBe(nowMs + 2030 * 60 * 1000);
-    expect(schedule.projectionMethod).toBe('10min_per_block');
-  });
-
-  test('lands exactly on a boundary without skipping it', () => {
-    const schedule = getDistributionSchedule(
-      964250,
-      MAINNET.firstBurnchainBlockHeight,
-      MAINNET.rewardCycleLength,
-      nowMs
-    );
-    expect(schedule.latestHeight).toBe(964250);
-    expect(schedule.nextHeight).toBe(965300);
   });
 });
 
@@ -128,40 +51,6 @@ describe('burnHeightToApproximateTimestamp', () => {
   });
 });
 
-describe('getTargetPayoutPerDistributionSats', () => {
-  test('matches the contract formula: (sats * bps / 10000) / 50', () => {
-    // 1 BTC staked at a 3% target rate.
-    expect(getTargetPayoutPerDistributionSats(BigInt(100000000), 300)).toBe(BigInt(60000));
-  });
-
-  test('uses integer division, as the contract does', () => {
-    expect(getTargetPayoutPerDistributionSats(BigInt(1), 300)).toBe(BigInt(0));
-  });
-
-  test('is zero when no target rate is set', () => {
-    expect(getTargetPayoutPerDistributionSats(BigInt(100000000), 0)).toBe(BigInt(0));
-  });
-
-  test('24 distributions over a term approximate the annual target rate', () => {
-    // A 12-cycle term is 24 distributions. At 10 min/block that is ~175 days,
-    // so the total should land near 3% * (175/365) = ~1.44% of principal.
-    const principal = BigInt(100000000);
-    const total = getTargetPayoutPerDistributionSats(principal, 300) * BigInt(24);
-    expect(Number(total) / Number(principal)).toBeCloseTo(0.0144, 4);
-  });
-});
-
-describe('getBondFillRatio', () => {
-  test('reports how full a bond is', () => {
-    expect(getBondFillRatio(BigInt(50), BigInt(200))).toBe(0.25);
-  });
-
-  test('distinguishes empty from unknown', () => {
-    expect(getBondFillRatio(BigInt(0), BigInt(200))).toBe(0);
-    expect(getBondFillRatio(BigInt(0), BigInt(0))).toBeUndefined();
-  });
-});
-
 describe('bpsToPercent', () => {
   test('converts basis points to a percentage', () => {
     expect(bpsToPercent(300)).toBe(3);
@@ -169,33 +58,34 @@ describe('bpsToPercent', () => {
   });
 });
 
-/**
- * Real values captured from a live `calculate-rewards` event on mainnet
- * (tx 0xfeedce2f...), cycle 141. The same numbers come back from the
- * read-only functions `get-rewards-per-token-for-cycle` and
- * `get-total-shares-staked-for-cycle`.
- */
 const MAINNET_CYCLE_141 = {
   rewardsPerMicroStx: BigInt('350915540939'),
   stakedMicroStx: BigInt('392447554847960'),
-  // What the contract itself reported paying STX stackers, in sats.
   reportedStackerRewardsSats: 137_715_946,
 };
 
-describe('getCycleStackerRewardsSats', () => {
+describe('getCycleStackerRewardsSatsBigInt', () => {
   test('rebuilds the payout the contract reported', () => {
-    const rebuilt = getCycleStackerRewardsSats(
+    const rebuilt = getCycleStackerRewardsSatsBigInt(
       MAINNET_CYCLE_141.rewardsPerMicroStx,
       MAINNET_CYCLE_141.stakedMicroStx
     );
-    // One sat short of the reported figure. The contract divided to get its
-    // per-token number and dropped the remainder, so multiplying back cannot
-    // recover that last sat. Being within a sat on a 1.38 BTC payout is fine.
-    expect(MAINNET_CYCLE_141.reportedStackerRewardsSats - rebuilt).toBe(1);
+    expect(BigInt(MAINNET_CYCLE_141.reportedStackerRewardsSats) - rebuilt).toBe(BigInt(1));
   });
 
   test('is zero when nobody staked', () => {
-    expect(getCycleStackerRewardsSats(BigInt(0), BigInt(0))).toBe(0);
+    expect(getCycleStackerRewardsSatsBigInt(BigInt(0), BigInt(0))).toBe(BigInt(0));
+  });
+});
+
+describe('applyStackingRewardWaterfall', () => {
+  test('pays bonds before applying the reserve ratio', () => {
+    expect(applyStackingRewardWaterfall(BigInt(1000), BigInt(200))).toBe(BigInt(680));
+  });
+
+  test('does not produce negative rewards', () => {
+    expect(applyStackingRewardWaterfall(BigInt(100), BigInt(100))).toBe(BigInt(0));
+    expect(applyStackingRewardWaterfall(BigInt(100), BigInt(200))).toBe(BigInt(0));
   });
 });
 
@@ -219,8 +109,6 @@ describe('getCyclesPerYear', () => {
 });
 
 describe('getStackingYieldForCompletedCycle', () => {
-  // Cycle 141 had only had one of its two distributions when captured, so a
-  // finished cycle at that rate would be twice as much.
   const fullCycleRewardsPerMicroStx = MAINNET_CYCLE_141.rewardsPerMicroStx * BigInt(2);
 
   test('works out a yearly rate from a finished cycle', () => {
@@ -232,25 +120,7 @@ describe('getStackingYieldForCompletedCycle', () => {
     });
     expect(result.satsPerStxPerCycle).toBeCloseTo(0.70183108, 8);
     expect(result.satsPerStxPerYear).toBeCloseTo(17.5658, 3);
-    // The simple rate, then the same rate with each cycle's rewards restacked.
-    expect(result.aprPercent).toBeCloseTo(4.9928, 3);
     expect(result.apyPercent).toBeCloseTo(5.1143, 3);
-  });
-
-  test('the APY is the APR compounded once per cycle', () => {
-    // The distinction the wider ecosystem draws: stacking-tracker publishes
-    // both, and its APY is its APR compounded at the cycle frequency.
-    const result = getStackingYieldForCompletedCycle({
-      rewardsPerMicroStx: fullCycleRewardsPerMicroStx,
-      rewardCycleLength: 2100,
-      btcPriceUsd: 78519.865,
-      stxPriceUsd: 0.27625,
-    });
-    const cyclesPerYear = getCyclesPerYear(2100);
-    const compounded =
-      (Math.pow(1 + result.aprPercent! / 100 / cyclesPerYear, cyclesPerYear) - 1) * 100;
-    expect(result.apyPercent).toBeCloseTo(compounded, 6);
-    expect(result.apyPercent!).toBeGreaterThan(result.aprPercent!);
   });
 
   test('leaves the rate out when a price is missing', () => {
@@ -260,7 +130,6 @@ describe('getStackingYieldForCompletedCycle', () => {
       btcPriceUsd: undefined,
       stxPriceUsd: 0.27625,
     });
-    // The sats figures still stand on their own; only the percentage needs prices.
     expect(result.satsPerStxPerYear).toBeCloseTo(17.5658, 3);
     expect(result.apyPercent).toBeUndefined();
   });
@@ -279,7 +148,6 @@ describe('getStackingYieldForCompletedCycle', () => {
 
 describe('getBondTimelineState', () => {
   test('a bond whose unlock height has passed is finished', () => {
-    // The API never reports a finished bond, so this is worked out from heights.
     expect(getBondTimelineState(9000, 19800, 20000)).toBe('complete');
   });
 
@@ -327,7 +195,6 @@ describe('getTimelineBounds', () => {
     const bounds = getTimelineBounds(bars, Date.UTC(2026, 7, 26));
     expect(bounds.granularity).toBe('day');
     expect(bounds.startMs).toBe(Date.UTC(2026, 7, 23));
-    // Through to the start of the following day, so the last day is fully drawn.
     expect(bounds.endMs).toBe(Date.UTC(2026, 7, 29));
   });
 
@@ -365,7 +232,6 @@ describe('getTimelineTicks', () => {
   });
 
   test('thins out labels rather than crowding them', () => {
-    // Three weeks of days would be 21 labels, which is unreadable.
     const ticks = getTimelineTicks(Date.UTC(2026, 7, 1), Date.UTC(2026, 7, 22), 'day');
     expect(ticks.length).toBeLessThanOrEqual(8);
     expect(ticks[0].label).toBe('Aug 1');
@@ -384,12 +250,11 @@ describe('getTimelineTicks', () => {
 
 describe('isCycleLengthPlausible', () => {
   test('accepts real networks', () => {
-    expect(isCycleLengthPlausible(2100)).toBe(true); // mainnet, ~14.6 days
-    expect(isCycleLengthPlausible(900)).toBe(true); // testnet, ~6.25 days
+    expect(isCycleLengthPlausible(2100)).toBe(true);
+    expect(isCycleLengthPlausible(900)).toBe(true);
   });
 
   test('rejects cycles that pass in hours', () => {
-    // A 20-block cycle is about 3 hours, so a yearly rate from it is noise.
     expect(isCycleLengthPlausible(20)).toBe(false);
   });
 
@@ -407,26 +272,21 @@ describe('getStackingYieldForCompletedCycle on a fast network', () => {
       btcPriceUsd: 78519.865,
       stxPriceUsd: 0.27625,
     });
-    // The measured sats stand on their own.
     expect(result.satsPerStxPerCycle).toBeGreaterThan(0);
-    // The yearly rate does not.
     expect(result.apyPercent).toBeUndefined();
   });
 });
 
 describe('formatTermDuration', () => {
   test('describes a mainnet bond term in months', () => {
-    // 12 cycles of 2100 blocks is about 175 days.
     expect(formatTermDuration(12 * 2100)).toBe('6 months');
   });
 
   test('describes a testnet term in months too', () => {
-    // 12 cycles of 900 blocks is about 75 days.
     expect(formatTermDuration(12 * 900)).toBe('2 months');
   });
 
   test('drops to days on a fast network', () => {
-    // 12 cycles of 20 blocks is about 40 hours.
     expect(formatTermDuration(12 * 20)).toBe('2 days');
   });
 
@@ -447,7 +307,6 @@ describe('formatTermDuration', () => {
 
 describe('formatTimeRemaining', () => {
   test('counts down in minutes when the window is short', () => {
-    // Six blocks is an hour, so two blocks is twenty minutes.
     expect(formatTimeRemaining(2)).toBe('20 min');
     expect(formatTimeRemaining(6)).toBe('60 min');
   });
@@ -471,18 +330,11 @@ describe('formatTimeRemaining', () => {
   });
 
   test('is more precise than the term formatter', () => {
-    // The same block count reads as a whole hour in a term, but as minutes
-    // in a countdown, which is the point of having both.
     expect(formatTermDuration(4)).toBe('1 hour');
     expect(formatTimeRemaining(4)).toBe('40 min');
   });
 });
 
-/**
- * Mainnet Genesis, as laid out in Fab's Combo v5 lifecycle panel. Every height
- * below reproduces from contract constants alone, which is the point: the whole
- * lifecycle is arithmetic, not stored data.
- */
 const GENESIS = {
   activationHeight: 966_350,
   termEndHeight: 991_550,
@@ -498,7 +350,7 @@ describe('getBondSchedule', () => {
     GENESIS.prepareCycleLength
   );
 
-  test('reproduces every milestone in the design', () => {
+  test('derives every lifecycle milestone', () => {
     expect(schedule.enrollmentOpensHeight).toBe(962_150);
     expect(schedule.enrollmentClosesHeight).toBe(966_250);
     expect(schedule.activationHeight).toBe(966_350);
@@ -507,9 +359,6 @@ describe('getBondSchedule', () => {
   });
 
   test("the Bitcoin leg's L1 timelock opens one distribution before the term ends", () => {
-    // Day 175 in the protocol diagram: the L1 minimum unlock height, 1,050
-    // Bitcoin blocks before the L2 term end. The STX leg stays locked until
-    // the term ends, so this height is not an STX unlock.
     expect(schedule.termEndHeight - schedule.l1UnlockHeight).toBe(1050);
   });
 });
@@ -544,7 +393,6 @@ describe('getBondProgress', () => {
       GENESIS.rewardCycleLength,
       GENESIS.prepareCycleLength
     );
-    // Fab's board shows "Day 22 of 175" with 3 of 24 paid.
     const progress = getBondProgress(schedule, 969_500, GENESIS.rewardCycleLength);
     expect(progress.paid).toBe(3);
     expect(progress.total).toBe(24);
@@ -569,7 +417,6 @@ describe('projectScheduledBonds', () => {
   test('spaces future bonds two cycles apart', () => {
     const projected = projectScheduledBonds(1, 966_350, 2100, 3);
     expect(projected.map(b => b.index)).toEqual([2, 3, 4]);
-    // Fab's board shows Bond 2 starting at #970,550.
     expect(projected[0].activationHeight).toBe(970_550);
     expect(projected[0].termEndHeight).toBe(995_750);
     expect(projected[1].activationHeight - projected[0].activationHeight).toBe(4200);
@@ -582,10 +429,10 @@ describe('projectScheduledBonds', () => {
 
 describe('getRealizedRatePercent', () => {
   test('lands near the target rate for a full term at nominal pace', () => {
-    // 100 BTC bonded at a 3% target pays 24 x (3%/50) = 1.44 BTC over ~175 days.
     const paid = BigInt(144_000_000);
-    const rate = getRealizedRatePercent(BigInt(10_000_000_000), paid, 12 * 2100, 2100);
-    expect(rate).toBeDefined();
+    const bonded = BigInt(10_000_000_000);
+    const rate = getRealizedRatePercent(paid, bonded, 12 * 2100, 2100);
+    expect(rate).toBeCloseTo(3.003, 3);
   });
 
   test('is undefined when nothing was bonded', () => {
@@ -593,14 +440,35 @@ describe('getRealizedRatePercent', () => {
   });
 
   test('refuses to annualize a term measured in hours', () => {
-    // A regtest chain runs 20-block cycles, so a 12-cycle term finishes in
-    // under two days. A 4.8% return over that period annualizes past 1000%,
-    // which describes the block interval rather than the bond.
     expect(getRealizedRatePercent(BigInt(4800), BigInt(100_000), 240, 20)).toBeUndefined();
-    // The same figures over a mainnet-length cycle stay a sensible rate.
     const rate = getRealizedRatePercent(BigInt(4800), BigInt(100_000), 12 * 2100, 2100);
     expect(rate).toBeDefined();
     expect(rate!).toBeLessThan(20);
+  });
+});
+
+describe('getFeaturedBondIndex', () => {
+  test('uses the newest active bond', () => {
+    expect(
+      getFeaturedBondIndex([
+        { index: 1, status: 'active' },
+        { index: 2, status: 'active' },
+        { index: 3, status: 'upcoming' },
+      ])
+    ).toBe(2);
+  });
+
+  test('uses the nearest upcoming bond when none are active', () => {
+    expect(
+      getFeaturedBondIndex([
+        { index: 4, status: 'upcoming' },
+        { index: 2, status: 'upcoming' },
+      ])
+    ).toBe(2);
+  });
+
+  test('returns nothing when no bond can be featured', () => {
+    expect(getFeaturedBondIndex([{ index: 1, status: 'complete' }])).toBeUndefined();
   });
 });
 
@@ -615,7 +483,6 @@ describe('getDistributionGridCells', () => {
   };
 
   it('tiles the span with consecutive chain-wide cells, clipping the ends', () => {
-    // Height 95 to height 125 crosses cells 9 (90-100) through 12 (120-130).
     const cells = getDistributionGridCells({
       ...grid,
       startMs: nowMs - 5 * BLOCK_MS,

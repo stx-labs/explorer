@@ -18,16 +18,12 @@ import { Box, Flex, Grid, Icon, Stack } from '@chakra-ui/react';
 import { Info } from '@phosphor-icons/react';
 import { useCallback, useMemo } from 'react';
 
-import {
-  MAINNET_HISTORIC_CYCLES,
-  PREVIOUS_CYCLES_LIMIT,
-  RESERVE_RATIO_PERCENT,
-  STAKING_LINKS,
-} from './consts';
+import { MAINNET_HISTORIC_CYCLES, PREVIOUS_CYCLES_LIMIT, STAKING_LINKS } from './consts';
 import { CycleRow, cycleColumns, toCycleRow } from './cycleColumns';
 import { CycleRewards, PoxCycle } from './data';
 import { DailyPrices, getCyclePrices } from './prices';
 import {
+  applyStackingRewardWaterfall,
   burnHeightToApproximateTimestamp,
   formatTermDuration,
   getCycleStackerRewardsSatsBigInt,
@@ -74,24 +70,18 @@ export function StackingOverview({
   firstBurnchainBlockHeight: number;
   currentBurnHeight: number;
   nowMs: number;
-  /** Daily price history, so a finished cycle is priced at the time it ended. */
   prices?: DailyPrices;
-  /** Real cycle end times, where the chain has been asked for them. */
   cycleEndTimes?: Record<number, number>;
-  /** Bitcoin taken in by the running cycle so far, measured from payouts. */
   currentCycleAccruedSats?: string;
-  /** Sats diverted to bonds per cycle, which lowers the stacker yield. */
   bondRewardsByCycle?: Record<number, bigint>;
 }) {
   const { stxPrice, btcPrice } = useGlobalContext().tokenPrice;
   const network = useGlobalContext().activeNetwork;
-  // These figures name mainnet cycles, so they are only meaningful there.
   const historic = network.mode === NetworkModes.Mainnet ? MAINNET_HISTORIC_CYCLES : undefined;
-  const currentCycleId = poxInfo?.current_cycle?.id;
-  const stackedStx = (poxInfo?.current_cycle?.stacked_ustx ?? 0) / MICROSTACKS_IN_STACKS;
-  const blocksUntilNextCycle = poxInfo?.next_reward_cycle_in ?? 0;
-  const rewardCycleLength = poxInfo?.reward_cycle_length ?? 0;
-
+  const currentCycleId = poxInfo.current_cycle?.id;
+  const stackedStx = (poxInfo.current_cycle?.stacked_ustx ?? 0) / MICROSTACKS_IN_STACKS;
+  const blocksUntilNextCycle = poxInfo.next_reward_cycle_in ?? 0;
+  const rewardCycleLength = poxInfo.reward_cycle_length ?? 0;
   const cycleStartHeight = useCallback(
     (cycleNumber: number) => firstBurnchainBlockHeight + cycleNumber * rewardCycleLength,
     [firstBurnchainBlockHeight, rewardCycleLength]
@@ -106,30 +96,21 @@ export function StackingOverview({
   const elapsed = rewardCycleLength > 0 ? 1 - blocksUntilNextCycle / rewardCycleLength : 0;
   const daysLeft = formatTermDuration(blocksUntilNextCycle);
 
-  // The callout reports the last settled cycle: a running one holds only part
-  // of its rewards.
   const lastSettled = cycles
     .filter(cycle => currentCycleId === undefined || cycle.cycle_number < currentCycleId)
     .sort((a, b) => b.cycle_number - a.cycle_number)[0];
   const lastSettledRewards = lastSettled ? cycleRewards[lastSettled.cycle_number] : undefined;
-  // The running cycle's rewards to date, read from the contract like any other.
   const currentCycleRewards =
     currentCycleId !== undefined ? cycleRewards[currentCycleId] : undefined;
-  // Stackers take what is left once the reserve has its share.
-  //
-  // The waterfall pays bonds first, so the correct figure is
-  // 0.85 x (gross - bonds). This applies the 0.85 to the whole gross, which
-  // overstates the stacker share by 0.85 x bonds. It reads correctly only
-  // while the bond tranche rounds to nothing against the staked total.
-  //
-  // Deducting it needs the bonds' accrued share part-way through a cycle,
-  // which the contract has not credited yet either, so it would have to be
-  // modelled from each active bond's target payout per distribution. Worth
-  // doing once bonds hold enough to move this number.
-  const accruedGross = currentCycleAccruedSats ? BigInt(currentCycleAccruedSats) : undefined;
+  const accruedGross =
+    currentCycleAccruedSats !== undefined ? BigInt(currentCycleAccruedSats) : undefined;
+  const currentCycleBondRewards =
+    currentCycleId !== undefined && bondRewardsByCycle
+      ? (bondRewardsByCycle[currentCycleId] ?? BigInt(0))
+      : undefined;
   const accruedToStackersSats =
-    accruedGross !== undefined
-      ? (accruedGross * BigInt(100 - RESERVE_RATIO_PERCENT)) / BigInt(100)
+    accruedGross !== undefined && currentCycleBondRewards !== undefined
+      ? applyStackingRewardWaterfall(accruedGross, currentCycleBondRewards)
       : undefined;
   const currentCycleSats = currentCycleRewards
     ? getCycleStackerRewardsSatsBigInt(
@@ -137,14 +118,18 @@ export function StackingOverview({
         currentCycleRewards.stakedMicroStx
       )
     : undefined;
+  const currentRewardText =
+    accruedToStackersSats !== undefined
+      ? `~${formatBtc(accruedToStackersSats, 2)} rewarded so far`
+      : currentCycleSats !== undefined
+        ? `${formatBtc(currentCycleSats, 2)} rewarded`
+        : undefined;
   const lastSettledSats = lastSettledRewards
     ? getCycleStackerRewardsSatsBigInt(
         lastSettledRewards.rewardsPerMicroStx,
         lastSettledRewards.stakedMicroStx
       )
     : undefined;
-  // The cycle has finished, so it is priced at the day it ended rather than at
-  // today's rates, which would move a settled figure every time the market did.
   const lastSettledEndMs = lastSettled
     ? (cycleEndTimes?.[lastSettled.cycle_number] ??
       at(cycleStartHeight(lastSettled.cycle_number + 1)))
@@ -165,8 +150,6 @@ export function StackingOverview({
   const rows = useMemo<CycleRow[]>(
     () =>
       cycles
-        // Finished cycles only. A running cycle holds part of its rewards, and
-        // the API also returns cycles that have not started.
         .filter(cycle => currentCycleId === undefined || cycle.cycle_number < currentCycleId)
         .map(cycle =>
           toCycleRow({
@@ -241,8 +224,6 @@ export function StackingOverview({
                   {currentCycleId ?? '-'}
                 </Text>
               </Stack>
-              {/* The bar below draws the same progress; the pill states it for
-                readers who want the number rather than the shape. */}
               <Pill>
                 {Math.round(Math.min(Math.max(elapsed, 0), 1) * 100)}% complete
                 {daysLeft && ` · ends in ~${daysLeft}`}
@@ -260,26 +241,17 @@ export function StackingOverview({
                   </Text>
                 )}
               </Flex>
-              {/*
-              What the running cycle has settled so far. The contract credits
-              rewards once per distribution rather than per block, so the count
-              is shown alongside: without it, a cycle that has not reached its
-              first distribution reads as earning nothing.
-            */}
-              {currentCycleSats !== undefined && (
+              {currentRewardText && (
                 <Flex gap={1} align="center">
                   <Text textStyle="text-regular-sm" color="textSecondary">
-                    {accruedToStackersSats !== undefined
-                      ? `~${formatBtc(accruedToStackersSats, 2)} rewarded so far`
-                      : `${formatBtc(currentCycleSats, 2)} rewarded`}{' '}
-                    · APY will be calculated at the end of the cycle
+                    {currentRewardText} · APY will be calculated at the end of the cycle
                   </Text>
                   <Tooltip
                     variant="redesignPrimary"
                     size="lg"
                     portalled
                     contentProps={{ maxW: '18rem', whiteSpace: 'normal' }}
-                    content="Rewards are distributed halfway through a cycle, and at the end of the cycle. In between, this shows the rewards paid so far, less the reserve."
+                    content="Rewards are distributed halfway through a cycle and at its end. In between, this shows rewards paid so far after bond rewards and the reserve."
                   >
                     <Icon w={3.5} h={3.5} color="iconSecondary" cursor="help">
                       <Info />
@@ -289,7 +261,6 @@ export function StackingOverview({
               )}
             </Stack>
 
-            {/* Drawn as the home page draws its cycle: labels, the line, dates, then blocks. */}
             <Stack gap={4}>
               <Stack gap={1}>
                 <Flex justify="space-between">
@@ -326,7 +297,6 @@ export function StackingOverview({
                   ~ {formatDateShort(at(currentEnd))}
                 </Text>
               </Flex>
-              {/* The end height is in the future, so it has no block page to link to. */}
               <Flex justify="space-between" gap={3} align="flex-start">
                 <BlockHeightBadge blockType="btc" blockHeight={currentStart} />
                 <BlockHeightBadge blockType="btc" blockHeight={currentEnd} disableLink />
@@ -334,8 +304,6 @@ export function StackingOverview({
             </Stack>
           </Stack>
 
-          {/* Equal tracks rather than flex growth, which hands each card its
-              content height and the remainder to the other. */}
           <Grid
             gap={3}
             flex={{ base: '1 1 auto', lg: '2 1 0' }}
@@ -349,8 +317,6 @@ export function StackingOverview({
               borderColor="redesignBorderSecondary"
               borderRadius="redesign.xl"
               p={[4, 5]}
-              // Three bands rather than a block at the top: the label, the
-              // cycle, and when it starts at the foot of the card.
               justify={{ base: 'flex-start', lg: 'space-between' }}
             >
               <Text textStyle="text-regular-sm" color="textSecondary">
@@ -367,12 +333,6 @@ export function StackingOverview({
               </Text>
             </Stack>
 
-            {/*
-              The settled cycle, in the same shape as the one ahead: the cycle
-              itself, then what it returned. The rewards figure is a contract
-              read and the rate is derived from it, so the caption names the
-              method rather than hedging about it.
-            */}
             {lastSettled && lastSettledSats !== undefined && (
               <Stack
                 gap={2}

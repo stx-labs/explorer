@@ -1,8 +1,8 @@
 import { NetworkModes } from '@/common/types/network';
-import { logError } from '@/common/utils/error-utils';
 
 import { ACTIVITY_PAGE_LIMIT } from '../consts';
-import { ActivityGroup, StakingActivityEvent, fetchPoxInfo, fetchStakingActivity } from '../data';
+import { fetchPoxInfo, fetchStakingActivity, parseActivityGroup } from '../data';
+import { load } from '../load';
 import { ActivityPageClient } from './PageClient';
 
 interface ActivitySearchParams {
@@ -24,29 +24,31 @@ export default async function StakingActivityPage(props: {
 
   const parsedBond = Number.parseInt(bond ?? '', 10);
   const bondIndex = Number.isFinite(parsedBond) ? parsedBond : undefined;
+  const selectedActivityGroup = parseActivityGroup(activityGroup);
 
-  let events: StakingActivityEvent[] = [];
-  try {
-    const poxInfo = await fetchPoxInfo(chain, api);
-    if (poxInfo?.contract_id) {
-      // Only groups the page offers are accepted, so an unknown value in the
-      // URL falls back to the unfiltered feed rather than returning nothing.
-      const group = (['distributions', 'enrollments', 'unlocks', 'bonds'] as ActivityGroup[]).find(
-        candidate => candidate === activityGroup
-      );
-      const all = await fetchStakingActivity(
-        poxInfo.contract_id,
-        chain,
-        api,
-        ACTIVITY_PAGE_LIMIT,
-        group
-      );
-      // A bond's own transactions are the subset whose events name it.
-      events = bondIndex === undefined ? all : all.filter(event => event.bondIndex === bondIndex);
-    }
-  } catch (error) {
-    logError(error as Error, 'Activity page: fetch activity', { chain }, 'error');
-  }
+  const poxInfo = await load(fetchPoxInfo(chain, api), 'Activity page: fetch pox info', chain);
+  const all = poxInfo?.contract_id
+    ? await load(
+        fetchStakingActivity(
+          poxInfo.contract_id,
+          chain,
+          api,
+          ACTIVITY_PAGE_LIMIT,
+          selectedActivityGroup
+        ),
+        'Activity page: fetch activity',
+        chain
+      )
+    : undefined;
+  const events = (all ?? []).filter(
+    event => bondIndex === undefined || event.bondIndex === bondIndex
+  );
 
-  return <ActivityPageClient events={events} selectedGroup={activityGroup} bondIndex={bondIndex} />;
+  return (
+    <ActivityPageClient
+      events={events}
+      selectedGroup={selectedActivityGroup}
+      bondIndex={bondIndex}
+    />
+  );
 }

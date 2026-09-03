@@ -18,15 +18,15 @@ import { TabsLabel, TabsList, TabsRoot, TabsTrigger } from '@/ui/Tabs';
 import { Text } from '@/ui/Text';
 import { Flex, Icon, Stack } from '@chakra-ui/react';
 import { Coins, Flag, Link as LinkIcon, LockOpen } from '@phosphor-icons/react';
-import { ColumnDef } from '@tanstack/react-table';
+import type { ColumnDef } from '@tanstack/react-table';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { Transaction } from '@stacks/stacks-blockchain-api-types';
+import type { Transaction } from '@stacks/stacks-blockchain-api-types';
 
-import { ActivityGroup, StakingActivityEvent } from './data';
+import type { ActivityGroup, StakingActivityEvent } from './data';
+import { bondLabel } from './utils';
 
-/** The unfiltered view. Not a group the API knows, so it cannot collide. */
 const ALL_GROUPS = 'all';
 
 const GROUP_LABELS: { value: ActivityGroup | typeof ALL_GROUPS; label: string }[] = [
@@ -37,7 +37,6 @@ const GROUP_LABELS: { value: ActivityGroup | typeof ALL_GROUPS; label: string }[
   { value: 'bonds', label: 'Bonds' },
 ];
 
-/** A tinted square per event kind, so a scan of the column reads by colour and shape. */
 const GROUP_ICONS: Record<ActivityGroup, { icon: React.ReactNode; bg: string; color: string }> = {
   distributions: { icon: <Coins />, bg: 'accent.stacks-200', color: 'accent.stacks-600' },
   enrollments: { icon: <LinkIcon />, bg: 'feedback.blue-200', color: 'feedback.blue-600' },
@@ -77,7 +76,6 @@ const activityColumns: ColumnDef<StakingActivityEvent>[] = [
         <Flex gap={3} align="center">
           <EventIcon group={row.group} />
           <Stack gap={0.5}>
-            {/* The title is the row's link, as it is in the transactions table. */}
             <TxLink txId={row.txId} variant="tableLink">
               <Text textStyle="text-medium-sm" whiteSpace="nowrap">
                 {row.label}
@@ -138,7 +136,7 @@ const activityColumns: ColumnDef<StakingActivityEvent>[] = [
       return (
         <Flex gap={1.5} align="center">
           {TxLinkCellRenderer(row.txId)}
-          {/* Failures stay visible; hiding them would misrepresent the record. */}
+
           {row.txStatus !== 'success' && (
             <StatusTag status={row.txStatus as Transaction['tx_status']} />
           )}
@@ -167,7 +165,7 @@ const activityColumns: ColumnDef<StakingActivityEvent>[] = [
   },
 ];
 
-function ActionFilter({ selected }: { selected?: string }) {
+function ActionFilter({ selected }: { selected?: ActivityGroup }) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -186,8 +184,6 @@ function ActionFilter({ selected }: { selected?: string }) {
   );
 
   return (
-    // The same tab strip the home page uses to switch block views, so a
-    // filter here looks like a filter anywhere else in the explorer.
     <TabsRoot
       variant="primary"
       size="redesignMd"
@@ -201,7 +197,7 @@ function ActionFilter({ selected }: { selected?: string }) {
         <TabsLabel as="span" id="staking-activity-filter-label" whiteSpace="nowrap">
           Filter:
         </TabsLabel>
-        {/* Takes the room left beside the label, rather than the full width plus the label. */}
+
         <ScrollIndicator scrollIndicatorPositionerProps={{ flex: 1, minW: 0, w: 'auto' }}>
           <TabsList aria-labelledby="staking-activity-filter-label">
             {GROUP_LABELS.map(chip => (
@@ -216,7 +212,18 @@ function ActionFilter({ selected }: { selected?: string }) {
   );
 }
 
-function NoActivity() {
+function NoActivity({ bondIndex, txWindow }: { bondIndex?: number; txWindow?: number }) {
+  if (bondIndex !== undefined) {
+    return (
+      <Stack gap={1} py={8} align="center">
+        <Text textStyle="text-medium-sm">No recent activity for {bondLabel(bondIndex)}</Text>
+        <Text textStyle="text-regular-sm" color="textSecondary" textAlign="center">
+          Its events are not among the {txWindow ?? 'most recent'} newest staking transactions.
+          Older activity is not shown here.
+        </Text>
+      </Stack>
+    );
+  }
   return (
     <Stack gap={1} py={8} align="center">
       <Text textStyle="text-medium-sm">No activity yet</Text>
@@ -232,28 +239,31 @@ export function StakingActivity({
   selectedGroup,
   pageSize,
   standalone = false,
+  bondIndex,
+  txWindow,
 }: {
   events: StakingActivityEvent[];
-  selectedGroup?: string;
-  /** Set by the full activity page, which pages through what it fetched. */
+  selectedGroup?: ActivityGroup;
   pageSize?: number;
-  /**
-   * True on the full activity page, which supplies its own title and has no
-   * "view all" to point at, and reserves the height other list pages do.
-   */
   standalone?: boolean;
+  bondIndex?: number;
+  txWindow?: number;
 }) {
   const network = useGlobalContext().activeNetwork;
   const [pageIndex, setPageIndex] = useState(0);
 
-  // The feed merges several endpoints, so it is fetched whole and paged here
-  // rather than asked for by offset.
+  useEffect(() => {
+    setPageIndex(0);
+  }, [events, selectedGroup]);
   const page = useMemo(
     () => (pageSize ? events.slice(pageIndex * pageSize, (pageIndex + 1) * pageSize) : events),
     [events, pageIndex, pageSize]
   );
 
-  const viewAllHref = buildUrl('/staking/activity', network);
+  const viewAllHref = buildUrl(
+    selectedGroup ? `/staking/activity?activity=${selectedGroup}` : '/staking/activity',
+    network
+  );
   const showViewAll = !standalone && events.length > 0;
 
   return (
@@ -276,7 +286,7 @@ export function StakingActivity({
       <Table
         data={page}
         columns={activityColumns}
-        emptyTableUi={<NoActivity />}
+        emptyTableUi={<NoActivity bondIndex={bondIndex} txWindow={txWindow} />}
         tableContainerWrapper={table => (
           <TableContainer minH={standalone ? '500px' : undefined}>{table}</TableContainer>
         )}
@@ -293,7 +303,6 @@ export function StakingActivity({
             : undefined
         }
       />
-      {/* On a phone the link follows the table, as it does under the home page's transactions. */}
       {showViewAll && (
         <ButtonLink
           href={viewAllHref}

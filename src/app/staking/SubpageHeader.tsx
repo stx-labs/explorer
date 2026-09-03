@@ -6,13 +6,6 @@ import { ButtonLink } from '@/ui/ButtonLink';
 import { Text } from '@/ui/Text';
 import { Stack } from '@chakra-ui/react';
 
-/**
- * Title block for the pages that hang off /staking.
- *
- * The back link is the explorer's ButtonLink pointed backwards, and the title
- * is the heading the other list pages (blocks, transactions) use, so moving
- * between them never changes the size of the page title.
- */
 export function SubpageHeader({ title }: { title: string }) {
   const network = useGlobalContext().activeNetwork;
   return (

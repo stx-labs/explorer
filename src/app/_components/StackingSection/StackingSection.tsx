@@ -1,6 +1,7 @@
 'use client';
 
 import { useHomePageData } from '@/app/context';
+import { ProgressBar } from '@/common/components/ProgressBar';
 import { useGlobalContext } from '@/common/context/useGlobalContext';
 import { buildUrl } from '@/common/utils/buildUrl';
 import { formatDateShort } from '@/common/utils/date-utils';
@@ -14,7 +15,6 @@ import StacksIconThin from '@/ui/icons/StacksIconThin';
 import StxSquareIcon from '@/ui/icons/StxSquareIcon';
 import { Flex, HStack, Icon, Stack } from '@chakra-ui/react';
 
-import { ProgressBar } from '../../../common/components/ProgressBar';
 import { SSRDisabledMessage } from '../SSRDisabledMessage';
 
 function CycleHeader() {

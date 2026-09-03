@@ -1,9 +1,5 @@
 import { readCumulativePaidSats, readTopic, readUint } from '../data';
 
-/**
- * Captured verbatim from the pox-5 contract's event log. The activity feed
- * reads these strings, so the tests use the real thing rather than a mock.
- */
 const BOND_DISTRIBUTION =
   '(tuple (accrued-rewards-per-sat u2000000000000000) (bond-index u306) (bond-rewards u400) ' +
   '(bond-staked-sats u200000) (cumulative-rewards-per-sat u4000000000000000) ' +
@@ -32,8 +28,6 @@ describe('readUint', () => {
   });
 
   test('does not confuse one key for another that contains it', () => {
-    // "rewards-per-sat" appears inside "accrued-rewards-per-sat" and
-    // "cumulative-rewards-per-sat", so an unanchored match would pick the wrong one.
     expect(readUint(BOND_DISTRIBUTION, 'cumulative-rewards-per-sat')).toBe(
       BigInt('4000000000000000')
     );
@@ -52,7 +46,6 @@ describe('readUint', () => {
 
 describe('readCumulativePaidSats', () => {
   test('multiplies the per-sat rate back out by what the bond holds', () => {
-    // 4e15 per sat x 200,000 sats / 1e18 = 800 sats paid so far.
     expect(readCumulativePaidSats(BOND_DISTRIBUTION)).toBe(BigInt(800));
   });
 

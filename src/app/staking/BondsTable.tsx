@@ -12,16 +12,16 @@ import { useMemo } from 'react';
 import { AnnotatedValue, NO_VALUE } from './AnnotatedValue';
 import { BondStateBadge } from './BondStateBadge';
 import { BONDS_TABLE_LIMIT } from './consts';
-import { Bond } from './data';
+import type { Bond } from './data';
 import {
   bpsToPercent,
   burnHeightToApproximateTimestamp,
   getRealizedRatePercent,
 } from './projections';
 import {
+  bondLabel,
   formatBtc,
   formatSbtc,
-  getBondDisplayName,
   getBondStatusLabel,
   isBondPending,
   toBigInt,
@@ -38,16 +38,12 @@ export interface BondRow {
   unlockCycle: number;
   capacitySats: bigint;
   lockedSats: bigint;
-  /** Undefined when the distribution history does not reach back to this bond. */
   rewardedSats?: bigint;
   targetRatePercent: number;
-  /** What the bond actually returned, known only once its term has ended. */
   realizedRatePercent?: number;
-  /** Why there is no realized rate, so a blank cell can say what it means. */
   realizedRateUnavailable?: 'running' | 'nothingBonded' | 'outOfHistory' | 'cycleTooShort';
   registeredCount: number;
   allowedCount: number;
-  /** Rough dates for the term, projected from block heights. */
   activationMs: number;
   unlockMs: number;
 }
@@ -63,12 +59,8 @@ export function toBondRow(
   const lockedSats = toBigInt(bond.balances?.locked?.btc);
   const activationHeight = bond.schedule?.activation?.bitcoin_height ?? 0;
   const unlockHeight = bond.schedule?.unlock?.bitcoin_height ?? 0;
-  const rewardedSats = rewardsByBond?.[bond.index];
-  // A rate is only realized once the term has finished. Before that the bond is
-  // still paying out, so any figure would understate what it returns.
+  const rewardedSats = rewardsByBond ? (rewardsByBond[bond.index] ?? BigInt(0)) : undefined;
   const hasClosed = unlockHeight > 0 && currentBurnHeight >= unlockHeight;
-  // A bond nobody staked into has no principal to measure a return against,
-  // which is not the same as one that returned nothing.
   const realizedRate =
     hasClosed && rewardedSats !== undefined && rewardCycleLength
       ? getRealizedRatePercent(
@@ -82,12 +74,12 @@ export function toBondRow(
     activationMs: burnHeightToApproximateTimestamp(activationHeight, currentBurnHeight, nowMs),
     unlockMs: burnHeightToApproximateTimestamp(unlockHeight, currentBurnHeight, nowMs),
     index: bond.index,
-    name: getBondDisplayName(bond),
+    name: bondLabel(bond.index),
     status: getBondStatusLabel(bond.status),
     isPending: isBondPending(bond.status),
-    activationHeight: bond.schedule?.activation?.bitcoin_height ?? 0,
+    activationHeight,
     activationCycle: bond.schedule?.activation?.pox_cycle ?? 0,
-    unlockHeight: bond.schedule?.unlock?.bitcoin_height ?? 0,
+    unlockHeight,
     unlockCycle: bond.schedule?.unlock?.pox_cycle ?? 0,
     capacitySats,
     lockedSats,
@@ -109,8 +101,6 @@ export function toBondRow(
   };
 }
 
-/** Why a rate cannot be shown, so an empty cell is not read as a zero. */
-/** Why a rate cannot be shown, so an empty cell is not read as a zero. */
 function reasonNote(reason?: string): string | undefined {
   return reason ? UNAVAILABLE_REASONS[reason] : undefined;
 }
@@ -124,11 +114,6 @@ const UNAVAILABLE_REASONS: Record<string, string> = {
     'Reward cycles on this network are shorter than a day, so a term returns its full rate too quickly for an annual figure to mean anything.',
 };
 
-/**
- * Value columns read as pending rather than as a hard zero for upcoming bonds:
- * an on-chain bond that has not activated genuinely has no balances yet, which
- * is different from an active bond that nobody has staked into.
- */
 function PendingOr({ isPending, children }: { isPending: boolean; children: React.ReactNode }) {
   if (isPending) {
     return (
@@ -147,7 +132,6 @@ const bondColumns: ColumnDef<BondRow>[] = [
     accessorKey: 'name',
     enableSorting: false,
     size: 110,
-    // Which bond a row belongs to has to stay readable while the rest scrolls.
     meta: { isPinned: 'left' },
     cell: info => (
       <Text textStyle="text-medium-sm" whiteSpace="nowrap">
@@ -223,10 +207,6 @@ const bondColumns: ColumnDef<BondRow>[] = [
   },
   {
     id: 'targetRate',
-    // "Target" distinguishes this from the realised Gross APY in the Stacking
-    // cycles table. This one is a contract parameter the bond promises; that
-    // one is what stackers actually rewarded. Different numerator and
-    // denominator, so they are not comparable.
     header: 'Target APY',
     accessorKey: 'targetRatePercent',
     enableSorting: false,
@@ -240,8 +220,6 @@ const bondColumns: ColumnDef<BondRow>[] = [
   },
   {
     id: 'realizedRate',
-    // Blank until a bond has closed and its distributions are all recorded, so
-    // an in-flight bond never reads as having underperformed.
     header: 'Realized rate',
     accessorKey: 'realizedRatePercent',
     enableSorting: false,
@@ -277,8 +255,6 @@ const bondColumns: ColumnDef<BondRow>[] = [
   },
   {
     id: 'rewarded',
-    // Rewards the bond has generated. The endpoint's `paid_out` counts withdrawals,
-    // so a bond that has been rewarded for months reads zero until someone claims.
     header: 'Rewarded',
     accessorKey: 'rewardedSats',
     enableSorting: false,
@@ -325,17 +301,11 @@ export function BondsTable({
   currentBurnHeight: number;
   nowMs: number;
   rewardsByBond?: Record<number, bigint>;
-  /** Needed to express a bond's rewards as an annual rate. */
   rewardCycleLength?: number;
-  /** Rows to show. The full bonds page raises this above the section's cap. */
   limit?: number;
-  /** Set by the full bonds page, which pages through every bond on chain. */
   pagination?: React.ComponentProps<typeof Table>['pagination'];
-  /** The full bonds page reserves the height the other list pages do. */
   fullPage?: boolean;
 }) {
-  // Newest first, capped. The count of what is not shown is rendered above the
-  // table so the list never looks complete when it is not.
   const data = useMemo(
     () =>
       [...bonds]
@@ -350,8 +320,6 @@ export function BondsTable({
       columns={bondColumns}
       emptyTableUi={<NoBondsYet />}
       pagination={pagination}
-      // The same card and horizontal scroll every other explorer table gets,
-      // which is also what keeps nine columns reachable on a phone.
       tableContainerWrapper={table => (
         <TableContainer pt={{ base: 3, lg: 4 }} minH={fullPage ? '500px' : undefined}>
           {table}

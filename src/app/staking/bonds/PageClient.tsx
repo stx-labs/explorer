@@ -32,7 +32,6 @@ export function BondsPageClient({
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Paging lives in the URL so a page of bonds can be linked to directly.
   const handlePageChange = useCallback(
     (page: { pageIndex: number }) => {
       const params = new URLSearchParams(searchParams?.toString() ?? '');

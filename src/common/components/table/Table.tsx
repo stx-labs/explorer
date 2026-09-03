@@ -56,9 +56,6 @@ export const getCommonPinningStyles = <T,>(column: Column<T>) => {
   }
 
   return {
-    // A pinned cell needs an opaque backdrop so scrolled columns do not show
-    // through. It matches the page rather than the card, which is what sits
-    // behind these tables.
     bg: 'surfaceTertiary',
     _groupHover: { bg: 'surfaceSecondary' },
     left: isPinned === 'left' ? `${column.getStart('left')}px` : undefined,
@@ -426,11 +423,8 @@ export function Table<T>({
                     {header.column.columnDef.meta?.tooltip && (
                       <Tooltip
                         content={header.column.columnDef.meta.tooltip}
-                        // Without a cap a long explanation runs off as one line.
                         contentProps={{ maxW: '20rem', whiteSpace: 'normal' }}
                       >
-                        {/* Sized to the header's line box: taller than that and
-                            it overflows the cell and clips against the rule. */}
                         <Icon h={3.5} w={3.5} flexShrink={0} color="iconSecondary">
                           <Info />
                         </Icon>

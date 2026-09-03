@@ -1,30 +1,8 @@
+import { ChartTooltipSurface } from '@/common/components/ChartTooltipSurface';
 import { truncateMiddle } from '@/common/utils/utils';
 import { useColorMode } from '@/components/ui/color-mode';
 import { Text } from '@/ui/Text';
-import { Stack, StackProps } from '@chakra-ui/react';
 import { TooltipProps } from 'recharts';
-
-/**
- * The surface every hover card on a chart or timeline sits on: translucent and
- * blurred, so it stays readable over whatever it happens to cover.
- */
-export function ChartTooltipSurface({ children, ...props }: StackProps) {
-  const { colorMode } = useColorMode();
-  return (
-    <Stack
-      bg={
-        colorMode === 'light'
-          ? 'var(--stacks-colors-alpha-black-alpha-700)'
-          : 'var(--stacks-colors-alpha-sand-alpha-400)'
-      }
-      backdropFilter="blur(8px)"
-      borderRadius="redesign.sm"
-      {...props}
-    >
-      {children}
-    </Stack>
-  );
-}
 
 export function ChartTooltip({ active, payload, label }: TooltipProps<number, string>) {
   const { colorMode } = useColorMode();

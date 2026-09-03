@@ -3,13 +3,6 @@
 import { Badge, DefaultBadgeLabel } from '@/ui/Badge';
 import { Box, Flex } from '@chakra-ui/react';
 
-/**
- * Where a bond is in its life, drawn with the explorer's Badge recipe so it
- * sits beside the transaction and block badges used elsewhere.
- *
- * Tones are colour meanings rather than contract states, so the API's two
- * statuses and the contract's five lifecycle states can both map onto them.
- */
 export type BondStateTone = 'active' | 'pending' | 'enrolling' | 'maturity' | 'closed';
 
 const DOT_COLORS: Record<BondStateTone, string> = {

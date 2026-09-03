@@ -10,7 +10,7 @@ import { Text } from '@/ui/Text';
 import { Box, Flex, Stack } from '@chakra-ui/react';
 import { useMemo, useState } from 'react';
 
-import { BondTooltipData } from './BondTooltip';
+import type { BondTooltipData } from './BondTooltip';
 import { BondsTable } from './BondsTable';
 import {
   ROW_LABEL_WIDTH,
@@ -24,7 +24,7 @@ import {
   TIMELINE_BONDS_AFTER,
   TIMELINE_BONDS_BEFORE,
 } from './consts';
-import { Bond } from './data';
+import type { Bond } from './data';
 import {
   burnHeightToApproximateTimestamp,
   formatTermDuration,
@@ -37,7 +37,7 @@ import {
   getTimelineBounds,
   getTimelineTicks,
 } from './projections';
-import { bondLabel, getBondDisplayName, toBigInt } from './utils';
+import { bondLabel, toBigInt } from './utils';
 
 function LegendKey({ swatch, label }: { swatch: React.ReactNode; label: string }) {
   return (
@@ -75,11 +75,8 @@ export function PeriodsOverview({
   nowMs,
 }: {
   bonds: Bond[];
-  /** Keeps the top row the same bond the Current bond section features. */
   featuredIndex?: number;
-  /** Sats rewarded per bond, passed through to the table view. */
   rewardsByBond?: Record<number, bigint>;
-  /** Bonds the cadence guarantees but the chain has not created yet. */
   scheduledBonds?: { index: number; activationHeight: number; termEndHeight: number }[];
   rewardCycleLength: number;
   prepareCycleLength: number;
@@ -92,8 +89,6 @@ export function PeriodsOverview({
   const viewAllHref = buildUrl('/staking/bonds', network);
 
   const { rows, bounds, ticks, todayPercent, cells } = useMemo(() => {
-    // The featured bond leads, then the ones that follow it, so the timeline
-    // and the Current bond section always agree on what "current" means.
     const cadence = getDistributionCadence(rewardCycleLength);
     const countDistributionsPaid = (activationHeight: number) =>
       cadence > 0
@@ -109,10 +104,6 @@ export function PeriodsOverview({
       bond => (bond.schedule?.unlock?.bitcoin_height ?? 0) > currentBurnHeight
     );
     const current = featuredPosition >= 0 ? featuredPosition : Math.max(fallback, 0);
-    // The recent past leads into the current bond, so the timeline reads as a
-    // sequence rather than starting at whatever happens to be running. The two
-    // windows are counted separately, so widening the past never eats into the
-    // bonds shown ahead.
     const from = Math.max(current - TIMELINE_BONDS_BEFORE, 0);
     const onChain = byIndex.slice(from, current + TIMELINE_BONDS_AFTER + 1);
     const forwardOnChain = onChain.length - (current - from);
@@ -129,16 +120,13 @@ export function PeriodsOverview({
         );
         return {
           index: bond.index,
-          label: getBondDisplayName(bond),
-          lockedSats: toBigInt(bond.balances?.locked?.btc),
+          label: bondLabel(bond.index),
           startMs: burnHeightToApproximateTimestamp(activationHeight, currentBurnHeight, nowMs),
           endMs: burnHeightToApproximateTimestamp(unlockHeight, currentBurnHeight, nowMs),
           state: getBondTimelineState(activationHeight, unlockHeight, currentBurnHeight),
           distributionsPaid: countDistributionsPaid(activationHeight),
-          activationHeight,
-          unlockHeight,
           tooltip: {
-            label: getBondDisplayName(bond),
+            label: bondLabel(bond.index),
             state: getBondLifecycleState(schedule, currentBurnHeight, true),
             schedule,
             capacitySats: toBigInt(bond.parameters?.btc_capacity),
@@ -148,15 +136,11 @@ export function PeriodsOverview({
           } satisfies BondTooltipData,
         };
       }),
-      // Bonds the contract will create on its fixed cadence. Their timing is
-      // arithmetic; their parameters are not knowable until the Endowment sets
-      // them, so they carry no balances and read as not started.
       ...scheduledBonds
         .slice(0, Math.max(TIMELINE_BONDS_AFTER + 1 - forwardOnChain, 0))
         .map(scheduled => ({
           index: scheduled.index,
           label: bondLabel(scheduled.index),
-          lockedSats: BigInt(0),
           startMs: burnHeightToApproximateTimestamp(
             scheduled.activationHeight,
             currentBurnHeight,
@@ -169,12 +153,8 @@ export function PeriodsOverview({
           ),
           state: 'upcoming' as const,
           distributionsPaid: 0,
-          activationHeight: scheduled.activationHeight,
-          unlockHeight: scheduled.termEndHeight,
           tooltip: {
             label: bondLabel(scheduled.index),
-            // A bond the contract has not created yet has no parameters to
-            // report, so it always reads as scheduled.
             state: 'scheduled' as const,
             schedule: getBondSchedule(
               scheduled.activationHeight,
@@ -228,8 +208,6 @@ export function PeriodsOverview({
 
   if (rows.length === 0) return null;
 
-  // When the next bond's terms become knowable. Offering and target rate are
-  // set when enrollment opens, which the cadence fixes relative to its start.
   const nextBond = rows.find(row => row.tooltip.state === 'scheduled');
   const leadTime = formatTermDuration(BOND_GAP_CYCLES * rewardCycleLength);
   const nextBondNote =
@@ -257,7 +235,6 @@ export function PeriodsOverview({
         </ButtonLink>
       </Flex>
       <Flex align="center" gap={4} flexWrap="wrap" justify="space-between">
-        {/* The view switch the blocks page uses, so the two read as one control. */}
         <TabsRoot
           variant="primary"
           size="redesignMd"
@@ -291,10 +268,8 @@ export function PeriodsOverview({
         />
       ) : (
         <Stack gap={4} bg="surfaceSecondary" borderRadius="redesign.xl" px={[4, 6]} py={[4, 5]}>
-          {/* A narrow screen scrolls the plot the way it scrolls a wide table. */}
           <ScrollIndicator>
             <Box minW="32rem">
-              {/* Axis: labels above a rule, with a tick at each division. */}
               <Flex>
                 <Box w={ROW_LABEL_WIDTH} flexShrink={0} />
                 <Box position="relative" flex={1} h={8}>
@@ -378,7 +353,6 @@ export function PeriodsOverview({
           </Flex>
         </Stack>
       )}
-      {/* On a phone the link follows the content, as it does on the home page. */}
       <ButtonLink href={viewAllHref} buttonLinkSize="big" display={{ base: 'inline', md: 'none' }}>
         View all bonds
       </ButtonLink>

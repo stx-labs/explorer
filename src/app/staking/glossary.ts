@@ -1,19 +1,11 @@
-/**
- * Definitions for the protocol terms the page uses without explaining.
- *
- * Each is stated from the pox-5 contract rather than paraphrased, so the page
- * teaches the mechanism instead of leaving readers to infer it, and links to
- * the matching section of the PoX-5 glossary for the fuller treatment.
- */
 const DOCS_GLOSSARY = 'https://docs.stacks.co/pox-5/glossary';
 export interface GlossaryEntry {
   term: string;
   definition: string;
-  /** The link is hidden when absent. */
   docsUrl: string;
 }
 
-export const GLOSSARY: Record<string, GlossaryEntry> = {
+export const GLOSSARY = {
   bondTerm: {
     term: 'Bond term',
     definition:
@@ -38,4 +30,4 @@ export const GLOSSARY: Record<string, GlossaryEntry> = {
       'The minimum STX that must be locked alongside bonded BTC, as a share of its value. A registration below the minimum is not accepted.',
     docsUrl: `${DOCS_GLOSSARY}#paired-btc-and-paired-stx`,
   },
-};
+} satisfies Record<string, GlossaryEntry>;

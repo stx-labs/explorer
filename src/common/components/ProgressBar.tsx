@@ -1,9 +1,8 @@
-import { Box, BoxProps, Stack } from '@chakra-ui/react';
+import { Box, Stack } from '@chakra-ui/react';
+import type { BoxProps } from '@chakra-ui/react';
 
-/**
- * The progress line used for the Stacking cycle on the home page. Shared so
- * every cycle or term that fills up over time is drawn the same way.
- */
+const PROGRESS_KNOB_DIAMETER = 1;
+
 function ProgressKnob({ diameter, ...boxProps }: { diameter: number } & BoxProps) {
   return (
     <Box
@@ -20,8 +19,9 @@ function ProgressKnob({ diameter, ...boxProps }: { diameter: number } & BoxProps
   );
 }
 
-export function ProgressBar({ percentage }: { percentage?: number }) {
-  const PROGRESS_KNOB_DIAMETER = 1;
+export function ProgressBar({ percentage = 0 }: { percentage?: number }) {
+  const progress = Math.min(Math.max(percentage, 0), 100);
+
   return (
     <Stack
       bg={{
@@ -37,7 +37,7 @@ export function ProgressBar({ percentage }: { percentage?: number }) {
         bg={'accent.stacks-500'}
         h={2}
         borderRadius={'redesign.2xl'}
-        w={`${percentage}%`}
+        w={`${progress}%`}
         position="absolute"
         boxShadow={'0px 2px 10px 0px rgba(255, 85, 18, 0.50)'}
       />

@@ -10,8 +10,7 @@ import { DailyPrices, getCyclePrices } from './prices';
 import { getCycleStackerRewardsSatsBigInt, getStackingYieldForCompletedCycle } from './projections';
 import { formatBtc, formatDateWithYear } from './utils';
 
-/** Cycles before pox-5 have no reward record to read. */
-const NO_REWARD_DATA = 'Only cycles from pox-5 onward report rewards on chain.';
+const NO_REWARD_DATA = 'On-chain reward data is unavailable for this cycle.';
 
 const SHARED_WITH_BONDS =
   'Bitcoin bonds were active this cycle, so its rewards were shared between bonds and STX stackers. Cycles before Bitcoin Staking are not directly comparable.';
@@ -19,25 +18,14 @@ const SHARED_WITH_BONDS =
 const FROM_STACKING_TRACKER =
   'This cycle predates pox-5, so the figure comes from stacking-tracker.com rather than a contract read.';
 
-/** A figure with a note on where it came from, when that is not the chain. */
 export interface CycleRow {
   cycleNumber: number;
   totalStackedStx: number;
   totalSigners: number;
-  /** BTC paid to STX stackers over the cycle, in sats. */
   rewardsSats: bigint;
   apyPercent: number | undefined;
-  /** Whether the rate used end-of-cycle prices rather than today's. */
-  pricedAtEnd?: boolean;
-  /** Figures for a pre-pox-5 cycle, which the chain cannot report. */
   historic?: { rewardsBtc: number; apyPercent: number };
-  /** Whether Bitcoin bonds were paid ahead of stackers in this cycle. */
   sharedWithBonds?: boolean;
-  /**
-   * False for cycles that ran before pox-5. The pox-5 contract has no record of
-   * them, so it reports zero, and showing that as "0%" would read as "nobody
-   * rewarded anything" instead of "we cannot see it from here".
-   */
   hasRewardData: boolean;
   startedHeight: number;
   startedMs: number;
@@ -115,8 +103,6 @@ export const cycleColumns: ColumnDef<CycleRow>[] = [
           <AnnotatedValue value={NO_VALUE} note={NO_REWARD_DATA} />
         );
       }
-      // Bonds are paid ahead of stackers, so a shared cycle lowers this figure
-      // as well as the yield derived from it.
       if (row.sharedWithBonds) {
         return <AnnotatedValue value={formatBtc(row.rewardsSats)} note={SHARED_WITH_BONDS} />;
       }
@@ -132,7 +118,6 @@ export const cycleColumns: ColumnDef<CycleRow>[] = [
     header: 'Gross APY',
     accessorKey: 'apyPercent',
     enableSorting: false,
-    // Wider than the label alone: the header also carries an info icon.
     size: 130,
     meta: {
       textAlign: 'right',
@@ -159,8 +144,6 @@ export const cycleColumns: ColumnDef<CycleRow>[] = [
           </Text>
         );
       }
-      // A cycle that paid bonds is not comparable with one that did not, so it
-      // says so rather than leaving the lower number to be read as a decline.
       return <AnnotatedValue value={value} note={SHARED_WITH_BONDS} />;
     },
   },
@@ -177,12 +160,6 @@ export const cycleColumns: ColumnDef<CycleRow>[] = [
   },
 ];
 
-/**
- * Turns a cycle into a table row.
- *
- * Shared by the section on the staking page and the full cycle history, so the
- * two cannot disagree about what a cycle generated or when it ran.
- */
 export function toCycleRow({
   cycle,
   rewards,
@@ -203,24 +180,19 @@ export function toCycleRow({
   rewardCycleLength: number;
   cycleStartHeight: (cycleNumber: number) => number;
   at: (height: number) => number;
-  /** Live prices, used for the cycle still running. */
   btcPrice?: number;
   stxPrice?: number;
-  /** Daily history, so a finished cycle is priced at the time it ended. */
   prices?: DailyPrices;
-  /** Real cycle end times, where the chain has been asked for them. */
   cycleEndTimes?: Record<number, number>;
-  /** Figures for cycles the chain cannot report, keyed by cycle number. */
   historic?: Record<number, { rewardsBtc: number; apyPercent: number }>;
-  /** Sats diverted to bonds per cycle, which lowers the stacker yield. */
   bondRewardsByCycle?: Record<number, bigint>;
 }): CycleRow {
-  const hasRewardData = pox5FirstCycleId !== undefined && cycle.cycle_number >= pox5FirstCycleId;
-  // A read beats the projection, which drifts further the older the cycle is.
+  const hasRewardData =
+    rewards !== undefined &&
+    pox5FirstCycleId !== undefined &&
+    cycle.cycle_number >= pox5FirstCycleId;
   const endedMs =
     cycleEndTimes?.[cycle.cycle_number] ?? at(cycleStartHeight(cycle.cycle_number + 1));
-  // A finished cycle is priced at its own end; one still running has no end to
-  // price at, so it takes the live rate.
   const atEnd = prices ? getCyclePrices(prices, endedMs) : undefined;
   const yieldForCycle = rewards
     ? getStackingYieldForCompletedCycle({
@@ -243,7 +215,6 @@ export function toCycleRow({
     startedMs: at(cycleStartHeight(cycle.cycle_number)),
     endedHeight: cycleStartHeight(cycle.cycle_number + 1),
     endedMs,
-    pricedAtEnd: atEnd?.btcPriceUsd !== undefined && atEnd?.stxPriceUsd !== undefined,
     sharedWithBonds: (bondRewardsByCycle?.[cycle.cycle_number] ?? BigInt(0)) > BigInt(0),
     historic: historic?.[cycle.cycle_number],
   };

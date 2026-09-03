@@ -1,7 +1,7 @@
+import { OverviewCard } from '@/common/components/OverviewCard';
 import { Text } from '@/ui/Text';
 import StxThinIcon from '@/ui/icons/StacksThinIcon';
-import { Flex, Grid, Icon, Stack, StackProps } from '@chakra-ui/react';
-import { ReactNode } from 'react';
+import { Flex, Grid, Icon, Stack } from '@chakra-ui/react';
 
 export const Overview = () => {
   return (
@@ -78,64 +78,3 @@ const overviewCards = [
     stat: 643,
   },
 ];
-
-export const OverviewCard = ({
-  title,
-  stat,
-  subStat,
-  caption,
-  ...rest
-}: {
-  title: ReactNode;
-  stat: ReactNode;
-  /** Sits beside the figure; keep it short. */
-  subStat?: ReactNode;
-  /** A line under the figure, for context too long to sit beside it. */
-  caption?: ReactNode;
-} & Omit<StackProps, 'title'>) => {
-  return (
-    <Stack
-      aria-label={typeof title === 'string' ? title : undefined}
-      py={3}
-      px={4}
-      bg="surfacePrimary"
-      borderRadius="redesign.md"
-      {...rest}
-      css={{
-        '&:first-of-type': {
-          bg: 'linear-gradient(138deg, var(--stacks-colors-surface-primary) 73.53%, #FF5512 161.25%)',
-        },
-      }}
-    >
-      <Text textStyle="text-medium-sm" color={'textSecondary'} whiteSpace="nowrap">
-        {title}
-      </Text>
-      <Flex gap={1.5} alignItems="baseline">
-        {typeof stat === 'number' || typeof stat === 'string' ? (
-          <Text
-            fontWeight="medium"
-            textStyle="heading-sm"
-            color={'textPrimary'}
-            whiteSpace="nowrap"
-          >
-            {stat}
-          </Text>
-        ) : (
-          stat
-        )}
-        {typeof subStat === 'string' || typeof subStat === 'number' ? (
-          <Text textStyle="text-regular-sm" color={'textSecondary'} whiteSpace="nowrap">
-            {subStat}
-          </Text>
-        ) : (
-          subStat
-        )}
-      </Flex>
-      {caption && (
-        <Text textStyle="text-regular-xs" color="textSecondary">
-          {caption}
-        </Text>
-      )}
-    </Stack>
-  );
-};

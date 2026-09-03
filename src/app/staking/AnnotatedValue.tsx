@@ -5,13 +5,6 @@ import { Tooltip } from '@/ui/Tooltip';
 import { Flex, Icon } from '@chakra-ui/react';
 import { Info } from '@phosphor-icons/react';
 
-/**
- * A table figure that carries an explanation.
- *
- * Used where a cell would otherwise mislead: a dash that could read as zero, or
- * a number derived differently from the ones beside it. Without a note it is
- * plain text, so a cell can drop the icon when it has nothing to add.
- */
 export function AnnotatedValue({ value, note }: { value: string; note?: string }) {
   if (!note) {
     return (
@@ -40,5 +33,4 @@ export function AnnotatedValue({ value, note }: { value: string; note?: string }
   );
 }
 
-/** The em dash a cell shows when it has no figure to report. */
 export const NO_VALUE = '—';
