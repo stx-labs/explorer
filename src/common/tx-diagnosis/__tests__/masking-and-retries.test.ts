@@ -139,7 +139,6 @@ describe('diagnosis: masked fold errors', () => {
       explorerBaseUrl: 'https://explorer.hiro.so',
       apiUrl: 'https://api.hiro.so',
       network: 'mainnet',
-      generatedAt: new Date('2026-09-03T00:00:00Z'),
     });
     expect(md).toContain('- MASKED:');
     expect(md).toContain(`Full text of \`${GOLDEN.fn}\``);

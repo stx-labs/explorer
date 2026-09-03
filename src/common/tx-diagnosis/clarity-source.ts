@@ -26,10 +26,21 @@ export interface FunctionBody {
   text: string;
 }
 
-/** A `contract-call?` site; `target` is null when the callee is a trait variable (chosen at runtime). */
+/**
+ * A `contract-call?` site. `target` is the literal callee when the source names one; for a trait
+ * variable it is null and `variable` carries the variable's name so the caller can map it to the
+ * argument that bound it.
+ */
 export interface CallSite {
   target: string | null;
   fn: string;
+  variable?: string;
+}
+
+/** A trait-typed parameter and the contract principal the transaction passed for it. */
+export interface TraitBinding {
+  param: string;
+  principal: string;
 }
 
 const NAME = '[A-Za-z0-9_\\-!?+<>=*/]+';
@@ -234,17 +245,22 @@ export function functionParams(body: FunctionBody): string[] {
 }
 
 /**
- * Contract principals passed for trait-typed parameters, by position — the callees a
- * dynamic-dispatch function actually reached, as opposed to any principal that appears in the data.
+ * Trait-typed parameters mapped, by position, to the contract principal the transaction passed for
+ * each: the callees a dynamic-dispatch function actually reached through those variables.
  */
-export function traitArgPrincipals(body: FunctionBody, argReprs: string[]): string[] {
-  const out: string[] = [];
+export function traitBindings(body: FunctionBody, argReprs: string[]): TraitBinding[] {
+  const out: TraitBinding[] = [];
   functionParamTypes(body).forEach((p, i) => {
     if (!/^<[^>]+>$/.test(p.type) || !argReprs[i]) return;
     const m = argReprs[i].trim().match(new RegExp(`^'?(${PRINCIPAL})$`));
-    if (m) out.push(m[1]);
+    if (m) out.push({ param: p.name, principal: m[1] });
   });
-  return Array.from(new Set(out));
+  return out;
+}
+
+/** Contract principals bound to trait parameters, in parameter order. */
+export function traitArgPrincipals(body: FunctionBody, argReprs: string[]): string[] {
+  return Array.from(new Set(traitBindings(body, argReprs).map(b => b.principal)));
 }
 
 /** Callback names passed to `fold` in the given bodies. */
@@ -314,7 +330,7 @@ export function firstAssertLine(source: string, body: FunctionBody): number | nu
 
 /**
  * `contract-call?` sites in `text`: literal targets (`.name` resolved against `deployer`) and trait
- * variables (`target: null`), with the function called on each.
+ * variables (`target: null`, the variable in `variable`), with the function called on each.
  */
 export function contractCallSites(text: string, deployer: string): CallSite[] {
   const out: CallSite[] = [];
@@ -325,12 +341,9 @@ export function contractCallSites(text: string, deployer: string): CallSite[] {
   let m: RegExpExecArray | null;
   while ((m = re.exec(text))) {
     const ref = m[1];
-    const target = ref.startsWith("'")
-      ? ref.slice(1)
-      : ref.startsWith('.')
-        ? `${deployer}${ref}`
-        : null;
-    out.push({ target, fn: m[2] });
+    if (ref.startsWith("'")) out.push({ target: ref.slice(1), fn: m[2] });
+    else if (ref.startsWith('.')) out.push({ target: `${deployer}${ref}`, fn: m[2] });
+    else out.push({ target: null, fn: m[2], variable: ref });
   }
   return out;
 }
@@ -342,13 +355,22 @@ export function contractCallTargets(text: string, deployer: string): string[] {
   return Array.from(new Set(out));
 }
 
-/** Contract principals appearing anywhere in argument reprs (trait args, lists of tuples, …). */
+/** Remove `"…"` / `u"…"` string literals so their contents are not mistaken for code. */
+export function stripStringLiterals(text: string): string {
+  return text.replace(/u?"(?:[^"\\]|\\.)*"/g, '""');
+}
+
+/**
+ * Contract principals appearing in argument reprs outside string literals (trait args, lists of
+ * tuples, …). These are names the data carries, not proof that the contract was called.
+ */
 export function contractPrincipalsIn(reprs: string[]): string[] {
   const out = new Set<string>();
   const re = new RegExp(`'?(${PRINCIPAL})`, 'g');
   for (const r of reprs) {
+    const text = stripStringLiterals(r);
     let m: RegExpExecArray | null;
-    while ((m = re.exec(r))) out.add(m[1]);
+    while ((m = re.exec(text))) out.add(m[1]);
   }
   return Array.from(out);
 }
@@ -370,6 +392,17 @@ export function usageLines(source: string, body: FunctionBody, name: string): nu
     lines.push(lineOf(source, body.start + m.index));
   }
   return Array.from(new Set(lines));
+}
+
+/** 1-based lines in `bodies` that return the code literally, e.g. `(err u1)` without a constant. */
+export function literalErrSites(source: string, bodies: FunctionBody[], code: string): number[] {
+  const re = new RegExp(`\\(err\\s+${escapeRe(code)}\\s*\\)`, 'g');
+  const out: number[] = [];
+  for (const body of bodies) {
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(body.text))) out.push(lineOf(source, body.start + m.index));
+  }
+  return Array.from(new Set(out)).sort((a, b) => a - b);
 }
 
 /** Lines (1-based) in `body` matching `re`. */
@@ -420,17 +453,26 @@ export function functionSourceLines(
   return { lines: out, truncated };
 }
 
-/** Native built-in transfer/mint/burn calls wrapped in an error-propagating form inside `bodies`. */
-export function nativeAssetCalls(bodies: FunctionBody | FunctionBody[]): string[] {
+const NATIVE_ASSET_CALL =
+  /\((?:try!|unwrap!|unwrap-panic|unwrap-err!)\s+\((stx-transfer\?|stx-transfer-memo\?|stx-burn\?|ft-transfer\?|ft-mint\?|ft-burn\?|nft-transfer\?|nft-mint\?|nft-burn\?)/g;
+
+/** Every native transfer/mint/burn call wrapped in an error-propagating form, one entry per site. */
+export function nativeAssetCallSites(
+  bodies: FunctionBody | FunctionBody[]
+): { fn: string; index: number }[] {
   const list = Array.isArray(bodies) ? bodies : [bodies];
-  const re =
-    /\((?:try!|unwrap!|unwrap-panic|unwrap-err!)\s+\((stx-transfer\?|stx-transfer-memo\?|stx-burn\?|ft-transfer\?|ft-mint\?|ft-burn\?|nft-transfer\?|nft-mint\?|nft-burn\?)/g;
-  const out = new Set<string>();
+  const out: { fn: string; index: number }[] = [];
   for (const body of list) {
+    const re = new RegExp(NATIVE_ASSET_CALL.source, 'g');
     let m: RegExpExecArray | null;
-    while ((m = re.exec(body.text))) out.add(m[1]);
+    while ((m = re.exec(body.text))) out.push({ fn: m[1], index: body.start + m.index });
   }
-  return Array.from(out);
+  return out;
+}
+
+/** Distinct native built-ins called in an error-propagating form inside `bodies`. */
+export function nativeAssetCalls(bodies: FunctionBody | FunctionBody[]): string[] {
+  return Array.from(new Set(nativeAssetCallSites(bodies).map(s => s.fn)));
 }
 
 export function contractDeployer(contractId: string): string {

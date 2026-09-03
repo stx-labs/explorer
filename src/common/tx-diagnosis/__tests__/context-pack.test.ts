@@ -16,7 +16,6 @@ describe('context pack', () => {
     explorerBaseUrl: 'https://explorer.hiro.so',
     apiUrl: 'https://api.hiro.so',
     network: 'mainnet',
-    generatedAt: new Date('2026-09-03T12:00:00Z'),
   };
 
   it('renders every section an agent needs', () => {
@@ -55,7 +54,6 @@ describe('context pack', () => {
     expect(json.diagnosis.class).toBe('post_condition');
     expect(json.transaction.tx_id).toBe(SBTC_TX_ID);
     expect(json.playbook).toBe(PLAYBOOK);
-    expect(json.generatedAt).toBe('2026-09-03T12:00:00.000Z');
   });
 
   it('keeps the copy prompt short enough for URL prefills', () => {

@@ -296,7 +296,8 @@ export function buildContractError(
   const copy = tagCopy(tag, name);
   const batch = batchArg(tx);
 
-  let confidence: Confidence = name || registry ? 'high' : native ? 'medium' : 'low';
+  let confidence: Confidence =
+    name || registry ? 'high' : native ? (native.nativeTentative ? 'low' : 'medium') : 'low';
   let headline: string;
   let senderAction: string;
   let developer: string | undefined;
@@ -324,6 +325,12 @@ export function buildContractError(
     headline = registry.summary;
     senderAction = registry.sender ?? copy?.sender ?? 'Retry; if it repeats, contact the app.';
     developer = registry.developer ?? copy?.developer ?? undefined;
+  } else if (native && native.nativeTentative) {
+    // The built-in is one way this code can arise; a callee or another site is not ruled out.
+    headline = `The contract rejected this call with error ${code} — possibly because ${native.nativeMeaning}, though another step in the call can return the same code.`;
+    senderAction =
+      'Check the balance the app used; if it was sufficient, the app can tell you which step failed.';
+    confidence = 'low';
   } else if (native) {
     headline = `This call failed because ${native.nativeMeaning}.`;
     senderAction = 'Check the balance or details the app used and retry.';
@@ -399,7 +406,7 @@ export function buildContractError(
       if (sites.length > 1) {
         facts.push({
           parts: [
-            `“${name}” is raised at ${sites.length} places in this function (lines ${sites.join(', ')}); the network doesn't record which one fired.`,
+            `“${name}” is raised at ${sites.length} places in the code this call reaches (lines ${sites.join(', ')}); the network doesn't record which one fired.`,
           ],
         });
       }
@@ -410,6 +417,16 @@ export function buildContractError(
           ],
         });
       }
+    } else if (native && native.nativeTentative) {
+      facts.push({
+        parts: [
+          'The built-in ',
+          ref.fn(native.nativeFunction!),
+          ' returns ',
+          ref.value(`(err ${code})`),
+          ` when ${native.nativeMeaning}. It is one of the steps in this call that can produce this code, and the network doesn't record which step failed.`,
+        ],
+      });
     } else if (native) {
       facts.push({
         parts: [
@@ -460,7 +477,13 @@ export function buildContractError(
     });
   if (tag) evidence.push({ id: 'tag', label: 'tag', value: tag });
   if (native)
-    evidence.push({ id: 'native', label: native.nativeFunction!, value: native.nativeMeaning! });
+    evidence.push({
+      id: 'native',
+      label: native.nativeFunction!,
+      value: native.nativeTentative
+        ? `${native.nativeFunction} · one candidate`
+        : native.nativeMeaning!,
+    });
   if (batch)
     evidence.push({
       id: 'batch',
@@ -573,6 +596,15 @@ export function buildRuntimePanic(
     });
   } else {
     facts.push({ parts: [`The failure was a ${rt.variant}${detail}.`] });
+  }
+  const named = rt.argumentPrincipals?.length ?? 0;
+  if (named) {
+    facts.push({
+      parts: [
+        `The arguments also name ${named} other contract${named > 1 ? 's' : ''} that may have been reached:`,
+      ],
+      chips: rt.argumentPrincipals!.map(ref.contract),
+    });
   }
   facts.push({
     parts: [

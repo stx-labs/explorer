@@ -18,7 +18,6 @@ export interface ContextPackInput {
   /** e.g. https://api.hiro.so */
   apiUrl: string;
   network: string;
-  generatedAt?: Date;
 }
 
 /**
@@ -90,7 +89,6 @@ function codeBlock(lines: { n: number; code: string }[], failingLine?: number): 
 
 export function renderContextPackMarkdown(input: ContextPackInput): string {
   const { tx, diagnosis: d, explorerBaseUrl, apiUrl, network } = input;
-  const generatedAt = (input.generatedAt ?? new Date()).toISOString();
   const contractId = tx.contract_call.contract_id;
   const [addr, name] = contractId.split('.');
   const explorerTx = `${explorerBaseUrl}/txid/${tx.tx_id}?chain=${network}`;
@@ -105,7 +103,7 @@ export function renderContextPackMarkdown(input: ContextPackInput): string {
     `Network: ${network} · Explorer: ${explorerTx} · API: ${apiUrl}/extended/v1/tx/${tx.tx_id} · JSON: ${jsonUrl}`
   );
   lines.push(
-    `Generated ${generatedAt} by the Stacks Explorer diagnosis engine v${d.engineVersion}. This document is written for an AI agent; the playbook is at the end.`
+    `Produced by the Stacks Explorer diagnosis engine v${d.engineVersion} from immutable on-chain data. This document is written for an AI agent; the playbook is at the end.`
   );
   lines.push('');
   lines.push(DATA_NOTICE);
@@ -317,7 +315,6 @@ export function renderContextPackJson(input: ContextPackInput) {
   const { tx, diagnosis, explorerBaseUrl, apiUrl, network } = input;
   return {
     engineVersion: diagnosis.engineVersion,
-    generatedAt: (input.generatedAt ?? new Date()).toISOString(),
     network,
     explorerUrl: `${explorerBaseUrl}/txid/${tx.tx_id}?chain=${network}`,
     apiUrl: `${apiUrl}/extended/v1/tx/${tx.tx_id}`,

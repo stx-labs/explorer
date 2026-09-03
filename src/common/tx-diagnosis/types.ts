@@ -97,6 +97,15 @@ export interface ErrorCodeInfo {
   /** Set when the code matches a Clarity built-in (stx-transfer?, ft-transfer?, …). */
   nativeFunction?: string;
   nativeMeaning?: string;
+  /**
+   * The built-in is one candidate, not an established cause: another reachable path (a callee not
+   * yet ruled out, a second call site, a literal `(err uN)`) can return the same code.
+   */
+  nativeTentative?: boolean;
+  /** Number of reachable sites calling the matched built-in. */
+  nativeSiteCount?: number;
+  /** Lines in reachable code returning the code literally, e.g. `(err u1)`. */
+  literalSites?: number[];
   /** True when the called function takes trait arguments (callee chosen at runtime). */
   dynamicDispatch: boolean;
   candidatesTried: string[];
@@ -134,8 +143,13 @@ export interface PostConditionFinding {
 export interface RuntimeFinding {
   variant: string;
   detail?: string;
-  /** Contracts the failing function may have reached (in-contract helpers followed). */
+  /**
+   * Contracts the failing function calls: literal `contract-call?` targets in code it reaches and
+   * contracts bound to its trait parameters.
+   */
   calleeCandidates: string[];
+  /** Other contract principals named in the argument data; possibly reached, not proven to be. */
+  argumentPrincipals?: string[];
   /** Line numbers of candidate sites in the called contract, when exactly one kind of site exists. */
   candidateLines: number[];
 }

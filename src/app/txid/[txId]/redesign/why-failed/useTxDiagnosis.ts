@@ -83,7 +83,7 @@ export function useTxDiagnosis(
     () => ({
       contracts: async id => {
         const c = await queryClient.fetchQuery({
-          queryKey: ['contractById', id],
+          queryKey: ['contractById', id, apiUrl],
           queryFn: async () => {
             const raw = await callApiWithErrorHandling(
               apiClient,
@@ -136,7 +136,7 @@ export function useTxDiagnosis(
         },
       },
     }),
-    [apiClient, queryClient]
+    [apiClient, queryClient, apiUrl]
   );
 
   // Keys carry the API URL: the same transaction id means different data on another network.

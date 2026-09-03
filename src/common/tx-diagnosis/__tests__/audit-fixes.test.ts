@@ -8,6 +8,7 @@ import path from 'path';
 
 import {
   contractCallSites,
+  contractPrincipalsIn,
   findErrorConstants,
   findFunctionBody,
   functionParamTypes,
@@ -15,9 +16,9 @@ import {
 } from '../clarity-source';
 import { classifyFailure } from '../classify';
 import { mdCode, renderContextPackMarkdown } from '../context-pack';
-import { diagnoseSync } from '../diagnose';
+import { diagnoseSync, enrich } from '../diagnose';
 import registry from '../registry/known-errors.json';
-import { calleeCandidates } from '../resolve-error-code';
+import { calleeCandidates, calleeEntryFunctions } from '../resolve-error-code';
 import type { FailedContractCallTx } from '../types';
 import { parseVmError } from '../vm-error';
 
@@ -235,7 +236,7 @@ describe('callee candidates follow the code, not the data', () => {
 
   it('lists call sites with their targets, trait variables as null', () => {
     expect(contractCallSites(findFunctionBody(SRC, 'swap')!.text, DEPLOYER)).toEqual([
-      { target: null, fn: 'transfer' },
+      { target: null, fn: 'transfer', variable: 'token-a' },
       { target: `${DEPLOYER}.pool`, fn: 'add' },
     ]);
   });
@@ -402,7 +403,6 @@ describe('context pack trust boundary', () => {
       explorerBaseUrl: 'https://explorer.hiro.so',
       apiUrl: 'https://api.hiro.so',
       network: 'mainnet',
-      generatedAt: new Date('2026-09-03T00:00:00Z'),
     });
     const diagnosisSection = md.slice(
       md.indexOf('## Diagnosis'),
@@ -418,5 +418,226 @@ describe('context pack trust boundary', () => {
     // The injected heading never becomes a heading of its own.
     expect(md.match(/^## Diagnosis/gm)).toHaveLength(1);
     expect(md.split('\n')[5]).toMatch(/^> On-chain data in this document/);
+  });
+});
+
+// ---------------------------------------------------------------------------------------------
+// Re-review of 2cdde2b4
+// ---------------------------------------------------------------------------------------------
+
+describe('re-review: ambiguity never borrows registry data', () => {
+  it('drops a registry entry that names neither candidate', () => {
+    // pox-5 u19 is registered as ERR_ALREADY_STAKED; this contract defines u19 twice, both reachable.
+    const SRC = `
+(define-constant ERR-A (err u19))
+(define-constant ERR-B (err u19))
+(define-public (called) (begin (asserts! (> u1 u0) ERR-A) (asserts! false ERR-B) (ok true)))
+`;
+    const id = `${DEPLOYER}.pox-5`;
+    const d = diagnoseSync(
+      makeTx({
+        tx_result: { hex: '0x', repr: '(err u19)' },
+        contract_call: { contract_id: id, function_name: 'called', function_args: [] },
+      }),
+      { contract_id: id, source_code: SRC }
+    );
+    expect(d.errorCode?.candidateNames).toEqual(['ERR-A', 'ERR-B']);
+    expect(d.errorCode?.name).toBeUndefined();
+    expect(d.headline).toMatch(/defines under 2 names/);
+    expect(d.headline).not.toMatch(/already stacked/);
+    expect(d.evidence.map(e => e.id)).not.toContain('tag');
+  });
+
+  it('drops a registry entry that names one of the candidates', () => {
+    // pox-5 u30 is registered as ERR_DISTRIBUTION_ALREADY_COMPUTED, one of two reachable definitions.
+    const SRC = `
+(define-constant ERR_DISTRIBUTION_ALREADY_COMPUTED (err u30))
+(define-constant ERR_OTHER (err u30))
+(define-public (called)
+  (begin
+    (asserts! (> u1 u0) ERR_DISTRIBUTION_ALREADY_COMPUTED)
+    (asserts! false ERR_OTHER)
+    (ok true)))
+`;
+    const id = `${DEPLOYER}.pox-5`;
+    const d = diagnoseSync(
+      makeTx({
+        tx_result: { hex: '0x', repr: '(err u30)' },
+        contract_call: { contract_id: id, function_name: 'called', function_args: [] },
+      }),
+      { contract_id: id, source_code: SRC }
+    );
+    expect(d.errorCode?.name).toBeUndefined();
+    expect(d.errorCode?.candidateNames).toEqual(['ERR_DISTRIBUTION_ALREADY_COMPUTED', 'ERR_OTHER']);
+    expect(d.headline).toMatch(/defines under 2 names/);
+    expect(d.headline).not.toMatch(/already computed/);
+  });
+});
+
+describe('re-review: dynamic dispatch follows each trait variable to its own contract', () => {
+  const A = `${OTHER}.token-a`;
+  const B = `${THIRD}.token-b`;
+  const CALLER = `
+(define-public (swap (token-a <ft-trait>) (token-b <ft-trait>))
+  (begin
+    (try! (contract-call? token-a transfer u1 tx-sender tx-sender none))
+    (try! (contract-call? token-b special u1))
+    (ok true)))
+`;
+  const TOKEN_A = `
+(define-constant ERR-A (err u7))
+(define-public (transfer (amount uint) (from principal) (to principal) (memo (optional (buff 34)))) (ok true))
+(define-public (other) (begin (asserts! false ERR-A) (ok true)))
+`;
+  const TOKEN_B = `
+(define-constant ERR-SPECIAL (err u7))
+(define-public (special (amount uint)) (begin (asserts! false ERR-SPECIAL) (ok true)))
+`;
+  const sources: Record<string, string> = { [A]: TOKEN_A, [B]: TOKEN_B };
+  const load = async (id: string) =>
+    sources[id] ? { contract_id: id, source_code: sources[id] } : null;
+  const tx = makeTx({
+    contract_call: {
+      contract_id: CONTRACT,
+      function_name: 'swap',
+      function_args: [
+        { name: 'token-a', type: 'trait_reference', repr: `'${A}`, hex: '0x' },
+        { name: 'token-b', type: 'trait_reference', repr: `'${B}`, hex: '0x' },
+      ],
+    },
+  });
+
+  it('keeps the trait variable on each call site', () => {
+    expect(contractCallSites(findFunctionBody(CALLER, 'swap')!.text, DEPLOYER)).toEqual([
+      { target: null, fn: 'transfer', variable: 'token-a' },
+      { target: null, fn: 'special', variable: 'token-b' },
+    ]);
+  });
+
+  it('searches only the functions invoked through the variable bound to each contract', () => {
+    expect(calleeEntryFunctions(tx, called(CALLER), A)).toEqual(['transfer']);
+    expect(calleeEntryFunctions(tx, called(CALLER), B)).toEqual(['special']);
+  });
+
+  it('resolves the constant in the contract whose invoked function throws it', async () => {
+    const d = await enrich(tx, called(CALLER), { contracts: load });
+    expect(d.errorCode?.definedIn).toBe(B);
+    expect(d.errorCode?.name).toBe('ERR-SPECIAL');
+    expect(d.source?.contractId).toBe(B);
+  });
+});
+
+describe('re-review: native built-ins are candidates until callees are ruled out', () => {
+  const WITH_CALLEE = `
+(define-public (deposit (amount uint))
+  (begin
+    (try! (contract-call? .dao check-active))
+    (try! (stx-transfer? amount tx-sender (as-contract tx-sender)))
+    (ok true)))
+`;
+  const ALONE = `
+(define-public (deposit (amount uint))
+  (begin
+    (try! (stx-transfer? amount tx-sender (as-contract tx-sender)))
+    (ok true)))
+`;
+  const LITERAL = `
+(define-public (deposit (amount uint))
+  (begin
+    (asserts! (> amount u0) (err u1))
+    (try! (stx-transfer? amount tx-sender (as-contract tx-sender)))
+    (ok true)))
+`;
+  const tx = makeTx({
+    tx_result: { hex: '0x', repr: '(err u1)' },
+    contract_call: { contract_id: CONTRACT, function_name: 'deposit', function_args: [] },
+  });
+
+  it('hedges at first paint when a callee could have returned the same code', () => {
+    const d = diagnoseSync(tx, called(WITH_CALLEE));
+    expect(d.errorCode?.nativeFunction).toBe('stx-transfer?');
+    expect(d.errorCode?.nativeTentative).toBe(true);
+    expect(d.confidence).toBe('low');
+    expect(d.headline).toMatch(/possibly because/);
+    expect(d.headline).not.toMatch(/^This call failed because/);
+  });
+
+  it('commits once the callees are checked and none defines the code', async () => {
+    const d = await enrich(tx, called(WITH_CALLEE), {
+      contracts: async id => ({
+        contract_id: id,
+        source_code: '(define-public (check-active) (ok true))',
+      }),
+    });
+    expect(d.errorCode?.nativeTentative).toBe(false);
+    expect(d.confidence).toBe('medium');
+    expect(d.headline).toMatch(/^This call failed because/);
+  });
+
+  it('stays hedged when a callee could not be fetched', async () => {
+    const d = await enrich(tx, called(WITH_CALLEE), { contracts: async () => null });
+    expect(d.errorCode?.nativeTentative).toBe(true);
+    expect(d.confidence).toBe('low');
+  });
+
+  it('is certain when nothing else reachable can return the code', () => {
+    const d = diagnoseSync(tx, called(ALONE));
+    expect(d.errorCode?.nativeTentative).toBe(false);
+    expect(d.confidence).toBe('medium');
+    expect(d.headline).toMatch(/^This call failed because/);
+  });
+
+  it('stays hedged when the code is also returned literally', () => {
+    const d = diagnoseSync(tx, called(LITERAL));
+    expect(d.errorCode?.literalSites).toHaveLength(1);
+    expect(d.errorCode?.nativeTentative).toBe(true);
+  });
+});
+
+describe('re-review: every reachable site is reported', () => {
+  const SRC = `
+(define-constant ERR-X (err u9))
+(define-private (helper-a) (begin (asserts! false ERR-X) (ok true)))
+(define-private (helper-b) (begin (asserts! false ERR-X) (ok true)))
+(define-public (called) (begin (try! (helper-a)) (try! (helper-b)) (ok true)))
+`;
+
+  it('aggregates usage lines across reachable helpers and keeps one primary excerpt', () => {
+    const d = diagnoseSync(makeTx({ tx_result: { hex: '0x', repr: '(err u9)' } }), called(SRC));
+    expect(d.errorCode?.usageLines).toEqual([3, 4]);
+    expect(d.source?.failingLine).toBe(3);
+    expect(d.whatHappened.map(f => f.parts.join('')).join('\n')).toMatch(/raised at 2 places/);
+  });
+});
+
+describe('re-review: principals inside data are not callees', () => {
+  it('ignores contract-looking text inside string literals', () => {
+    expect(contractPrincipalsIn([`"see ${OTHER}.token for details"`, `u"${THIRD}.x"`])).toEqual([]);
+    expect(contractPrincipalsIn([`'${OTHER}.token`])).toEqual([`${OTHER}.token`]);
+  });
+
+  it('separates confirmed callees from contracts merely named in arguments', () => {
+    const SRC = `
+(define-public (route (pool <pool-trait>) (path (list 5 principal)))
+  (begin (try! (contract-call? pool swap u1)) (ok true)))
+`;
+    const tx = makeTx({
+      tx_result: { hex: '0x', repr: '(err none)' },
+      vm_error: 'ArithmeticUnderflow',
+      contract_call: {
+        contract_id: CONTRACT,
+        function_name: 'route',
+        function_args: [
+          { name: 'pool', type: 'trait_reference', repr: `'${OTHER}.pool`, hex: '0x' },
+          { name: 'path', type: 'list', repr: `(list '${THIRD}.a '${THIRD}.b)`, hex: '0x' },
+        ],
+      },
+    });
+    const d = diagnoseSync(tx, called(SRC));
+    expect(d.runtime?.calleeCandidates).toEqual([`${OTHER}.pool`]);
+    expect(d.runtime?.argumentPrincipals).toEqual([`${THIRD}.a`, `${THIRD}.b`]);
+    const text = d.whatHappened.map(f => f.parts.join('')).join('\n');
+    expect(text).toMatch(/called 1 other contract\./);
+    expect(text).toMatch(/also name 2 other contracts that may have been reached/);
   });
 });

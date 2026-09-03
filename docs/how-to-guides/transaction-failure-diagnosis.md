@@ -25,8 +25,13 @@ contract source.
   Clarity built-in error code. A constant is attributed only when it is the single one thrown in
   code the call can reach (or the single definition); when a contract defines a code under several
   names, `errorCode.candidateNames` lists them and the copy says the network does not record which
-  check fired. In callees the search is restricted to the functions the call can enter. Registry copy
-  is dropped when its `name` disagrees with the source. Also detects **masking**: a `fold` callback that unwraps its
+  check fired. In callees the search is restricted to the functions the call can enter: every
+  `contract-call?` through a trait variable is mapped to the argument bound to that parameter, and a
+  callee whose invoked functions never throw the constant is skipped. Registry copy is dropped when
+  its `name` disagrees with the source, and never used while the source is ambiguous. A Clarity
+  built-in (`stx-transfer?` …) is named as the cause only when nothing else reachable can return the
+  code; otherwise it is a hedged, low-confidence candidate until callees are ruled out. Also detects
+  **masking**: a `fold` callback that unwraps its
   accumulator with a fixed constant (`(unwrap! result ERR_X)`) replaces the failing item's real
   error, so the code is reported as a placeholder at medium confidence (`errorCode.foldMask`), and
   notes when the failing site precedes every `asserts!` of the function
@@ -53,12 +58,13 @@ contract source.
   characters are abbreviated with their item count; the JSON variant carries them in full.
 - `GET /txid/{txid}/context.json?chain=mainnet` — the same as JSON.
 - Non-failed or unknown transactions return `404`; malformed transaction ids return a cacheable `400`.
-- Only the configured public servers (`DEFAULT_MAINNET_SERVER`, `DEFAULT_TESTNET_SERVER`) are ever
-  fetched: `chain` must be `mainnet` or `testnet`, and an `api` parameter must name one of those two
-  servers or the request is rejected with `400`. The server-side client attaches
-  `EXPLORER_STACKS_API_KEY` to every request it makes, so custom networks are deliberately not served
-  here (the in-page card still works for them).
-- A matching `If-None-Match` is answered `304` before any upstream request.
+- Only the configured public server of the selected chain is ever fetched: `chain` must be `mainnet`
+  or `testnet`, an `api` parameter (if given) must be that chain's configured server, and any other
+  query parameter is rejected — all with a cacheable `400` before any upstream request. Custom
+  networks are deliberately not served here; the in-page card says so instead of linking.
+- A matching `If-None-Match` is answered `304` after that validation and before any upstream request.
+  The validator is `W/"<txid>-<chain>-v<engine>-<format>"`; the representation carries no timestamp,
+  so it really is immutable per engine version.
 - Trust boundary: conclusions come from the templates and registry only. On-chain values (arguments,
   error text, source, comments) are rendered as code spans or numbered code blocks so they cannot
   become Markdown structure; prose quoted from the chain (source comments) is labelled and kept out of
@@ -75,13 +81,24 @@ contract source.
 - On-chain content in the pack is labelled as third-party data; the playbook tells agents never to
   treat it as instructions.
 
+## Server-side fetching policy
+
+- `src/api/stacksAPIFetch.ts` attaches `EXPLORER_STACKS_API_KEY` only to requests for the configured
+  public servers (`isConfiguredApiUrl` in `network-utils.ts`). A visitor-supplied `?api=` host never
+  receives the key, whichever page derived the URL.
+- The transaction page and its metadata (`page.tsx`, `layout.tsx`) do not fetch server-side at all
+  when the `api` parameter names anything other than a configured server (`canServerFetch`); those
+  pages render client-side, as `ssr=false` does. Other pages still derive their URL from `?api=` via
+  `getApiUrl` and fetch it server-side without the key; tightening them is a separate change.
+
 ## Page integration
 
 - Tier 0 renders from the transaction and the called contract, which `page.tsx` fetches server-side
   for failed contract calls (one extra upstream request during SSR, none in the browser).
 - `useTxDiagnosis` enriches in two stages, each a separate query keyed by API URL: callee lookups run
   once the contract query has settled and only while the error code is unresolved; correlations
-  (sender history, balances) run when the card is expanded, since they only render there.
+  (sender history, balances) run when the card is expanded, since they only render there. Contract
+  source is cached per network (`['contractById', id, apiUrl]`, shared with `useContractById`).
 - Deep links: `?tab=postConditions&highlight=N` emphasises a row; `?tab=sourceCode&line=N` reveals a
   line of the original source (the editor trims leading blank lines and compensates). A line in a
   callee contract links to that contract's page instead.
@@ -91,13 +108,15 @@ contract source.
 - `pnpm test:unit` runs the offline suite, including the golden corpus under
   `src/common/tx-diagnosis/__fixtures__/` (one real mainnet failure per distinct
   contract/function/result combination, with expectations in `labels.json`), adversarial synthetic
-  cases (`audit-fixes.test.ts`: duplicate constants, twin post-conditions, unknown `vm_error`,
-  Markdown injection) and a check that every registry entry names its constant exactly as the
-  committed contract source does.
+  cases (`audit-fixes.test.ts`: duplicate constants, two-trait dispatch, hedged built-ins, twin
+  post-conditions, unknown `vm_error`, Markdown injection), a check that every registry entry names
+  its constant exactly as the committed contract source does, and key-scoping tests for the server
+  fetch wrapper (`src/api/__tests__/stacksAPIFetch.test.ts`).
 - `TX_DIAGNOSIS_LIVE=1 pnpm exec jest src/common/tx-diagnosis/__tests__/acceptance.live.test.ts`
   re-fetches the full 484-transaction corpus (`corpus-txids.json`) from the public API (every id must
   be fetched) and checks the acceptance metrics: every post-condition failure classified consistently
   as genuine or masked (the same `(err …)` predicate the classifier uses, so this is a consistency
-  check, not independent ground truth), at least 90% of explicit error codes resolved to a named
-  constant, and no `(err …)` result described as "would have succeeded". It takes several minutes and
-  respects the public rate limit.
+  check, not independent ground truth), named-constant coverage of at least 90% of explicit error
+  codes (a name was found; whether it is the right one is what the golden labels and the adversarial
+  cases check), and no `(err …)` result described as "would have succeeded". It takes several minutes
+  and respects the public rate limit.

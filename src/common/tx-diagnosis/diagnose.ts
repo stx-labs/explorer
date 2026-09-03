@@ -8,6 +8,7 @@ import {
   listItemCount,
   reachableFunctions,
   siteLines,
+  traitArgPrincipals,
 } from './clarity-source';
 import { Classification, classifyFailure } from './classify';
 import { correlate } from './correlate';
@@ -64,6 +65,11 @@ const SITE_PATTERNS: Record<string, RegExp> = {
   UnwrapFailure: /\(unwrap-(?:panic|err-panic)\s/,
 };
 
+/**
+ * Where a runtime panic could have happened. Callees are contracts the code provably calls (literal
+ * targets in reachable code, contracts bound to trait parameters); other principals in the
+ * arguments are reported separately as data that may or may not have been reached.
+ */
 function runtimeFinding(
   tx: FailedContractCallTx,
   cls: Classification,
@@ -74,26 +80,26 @@ function runtimeFinding(
 } {
   const variant = cls.vmError?.kind === 'runtime' ? cls.vmError.variant : cls.subkind;
   const detail = cls.vmError?.kind === 'runtime' ? cls.vmError.detail : undefined;
-  const fromArgs = contractPrincipalsIn(
-    (tx.contract_call.function_args ?? []).map(a => a.repr ?? '')
-  );
-  let callees: string[] = [...fromArgs];
+  const contractId = tx.contract_call.contract_id;
+  const argReprs = (tx.contract_call.function_args ?? []).map(a => a.repr ?? '');
+  const confirmed: string[] = [];
   let candidateLines: number[] = [];
   let source: SourceRef | undefined;
 
   if (called) {
-    const deployer = contractDeployer(tx.contract_call.contract_id);
+    const deployer = contractDeployer(contractId);
+    const entry = findFunctionBody(called.source_code, tx.contract_call.function_name);
+    if (entry) confirmed.push(...traitArgPrincipals(entry, argReprs));
     const bodies = reachableFunctions(called.source_code, tx.contract_call.function_name);
-    callees.push(...bodies.flatMap(b => contractCallTargets(b.text, deployer)));
+    confirmed.push(...bodies.flatMap(b => contractCallTargets(b.text, deployer)));
     const pattern = SITE_PATTERNS[variant];
     if (pattern) {
       candidateLines = bodies.flatMap(b => siteLines(called.source_code, b, pattern));
     }
-    const entry = findFunctionBody(called.source_code, tx.contract_call.function_name);
     if (entry) {
       const line = candidateLines.length === 1 ? candidateLines[0] : entry.line;
       source = {
-        contractId: tx.contract_call.contract_id,
+        contractId,
         functionName: entry.name,
         lines: excerpt(
           called.source_code,
@@ -109,8 +115,20 @@ function runtimeFinding(
       };
     }
   }
-  callees = Array.from(new Set(callees)).filter(c => c !== tx.contract_call.contract_id);
-  return { runtime: { variant, detail, calleeCandidates: callees, candidateLines }, source };
+  const calleeCandidates = Array.from(new Set(confirmed)).filter(c => c !== contractId);
+  const argumentPrincipals = contractPrincipalsIn(argReprs).filter(
+    c => c !== contractId && !calleeCandidates.includes(c)
+  );
+  return {
+    runtime: {
+      variant,
+      detail,
+      calleeCandidates,
+      argumentPrincipals: argumentPrincipals.length ? argumentPrincipals : undefined,
+      candidateLines,
+    },
+    source,
+  };
 }
 
 /** The first list-typed argument: batch calls fail as a whole, and agents need the item count. */

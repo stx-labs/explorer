@@ -587,6 +587,8 @@ export function WhyItFailed({ tx }: { tx: FailedContractCallTx }) {
   const [expanded, setExpanded] = useState(false);
   const { diagnosis, isEnriching } = useTxDiagnosis(tx, { expanded });
   const contextUrl = useContextPackUrl(tx.tx_id);
+  // The context routes only serve the public networks (the server never fetches custom hosts).
+  const isCustomNetwork = !!useGlobalContext().activeNetwork.isCustomNetwork;
   const d = diagnosis;
 
   return (
@@ -690,20 +692,26 @@ export function WhyItFailed({ tx }: { tx: FailedContractCallTx }) {
                 <Text textStyle="text-regular-sm" color="textPrimary">
                   Give your agent context to explore more:
                 </Text>
-                <CopyPromptButton contextUrl={contextUrl} />
+                {!isCustomNetwork && <CopyPromptButton contextUrl={contextUrl} />}
               </Flex>
-              <Link
-                href={contextUrl}
-                variant="underline"
-                textStyle="text-mono-xs"
-                color="textPrimary"
-                wordBreak="break-all"
-                target="_blank"
-                rel="noreferrer"
-                data-test="why-failed-context-link"
-              >
-                {contextUrl.replace(/^https?:\/\//, '')}
-              </Link>
+              {isCustomNetwork ? (
+                <Text textStyle="text-regular-xs" color="textSecondary">
+                  Context packs are available on mainnet and testnet only.
+                </Text>
+              ) : (
+                <Link
+                  href={contextUrl}
+                  variant="underline"
+                  textStyle="text-mono-xs"
+                  color="textPrimary"
+                  wordBreak="break-all"
+                  target="_blank"
+                  rel="noreferrer"
+                  data-test="why-failed-context-link"
+                >
+                  {contextUrl.replace(/^https?:\/\//, '')}
+                </Link>
+              )}
             </Stack>
           </Stack>
 

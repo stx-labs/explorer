@@ -1,7 +1,7 @@
 /**
  * @jest-environment node
  */
-import { DEFAULT_MAINNET_SERVER } from '@/common/constants/env';
+import { DEFAULT_MAINNET_SERVER, DEFAULT_TESTNET_SERVER } from '@/common/constants/env';
 import * as server from '@/common/tx-diagnosis/server';
 import { ENGINE_VERSION } from '@/common/tx-diagnosis/types';
 import type { NextRequest } from 'next/server';
@@ -37,7 +37,7 @@ describe('context pack route handler', () => {
     expect(res.status).toBe(200);
     expect(res.headers.get('content-type')).toContain('text/markdown');
     expect(res.headers.get('cache-control')).toContain('s-maxage=31536000');
-    expect(res.headers.get('etag')).toBe(`W/"${TX}-v${ENGINE_VERSION}-markdown"`);
+    expect(res.headers.get('etag')).toBe(`W/"${TX}-mainnet-v${ENGINE_VERSION}-markdown"`);
     expect(res.headers.get('x-robots-tag')).toBe('noindex');
     expect(await res.text()).toBe('# md');
     expect(buildContextPack).toHaveBeenCalledWith(
@@ -65,20 +65,20 @@ describe('context pack route handler', () => {
     buildContextPack.mockResolvedValue({ status: 200, markdown: '# md', json: {} } as never);
     const res = await handleContextPack(
       request(`/txid/${TX}/context.md`, {
-        'if-none-match': `W/"${TX}-v${ENGINE_VERSION}-markdown"`,
+        'if-none-match': `W/"${TX}-mainnet-v${ENGINE_VERSION}-markdown"`,
       }),
       Promise.resolve({ txId: TX }),
       'markdown'
     );
     expect(res.status).toBe(304);
-    expect(res.headers.get('etag')).toBe(`W/"${TX}-v${ENGINE_VERSION}-markdown"`);
+    expect(res.headers.get('etag')).toBe(`W/"${TX}-mainnet-v${ENGINE_VERSION}-markdown"`);
     expect(res.headers.get('cache-control')).toContain('s-maxage=31536000');
   });
 
   it('answers a matching validator before doing any upstream work', async () => {
     const res = await handleContextPack(
       request(`/txid/${TX}/context.json?chain=mainnet`, {
-        'if-none-match': `W/"${TX}-v${ENGINE_VERSION}-json"`,
+        'if-none-match': `W/"${TX}-mainnet-v${ENGINE_VERSION}-json"`,
       }),
       Promise.resolve({ txId: TX }),
       'json'
@@ -144,5 +144,60 @@ describe('context pack route handler', () => {
     expect(res.headers.get('cache-control')).toBe('public, max-age=60');
     expect(res.headers.get('x-robots-tag')).toBe('noindex');
     expect(await res.text()).toBe('not a failed contract call');
+  });
+});
+
+describe('context pack route handler — re-review', () => {
+  beforeEach(() => jest.resetAllMocks());
+
+  it('rejects unexpected query parameters before doing any work', async () => {
+    const res = await handleContextPack(
+      request(`/txid/${TX}/context.md?chain=mainnet&nocache=1`),
+      Promise.resolve({ txId: TX }),
+      'markdown'
+    );
+    expect(res.status).toBe(400);
+    expect(buildContextPack).not.toHaveBeenCalled();
+  });
+
+  it("requires the api parameter to be the selected chain's own server", async () => {
+    const res = await handleContextPack(
+      request(
+        `/txid/${TX}/context.md?chain=mainnet&api=${encodeURIComponent(DEFAULT_TESTNET_SERVER)}`
+      ),
+      Promise.resolve({ txId: TX }),
+      'markdown'
+    );
+    expect(res.status).toBe(400);
+    expect(buildContextPack).not.toHaveBeenCalled();
+  });
+
+  it('validates the chain before honouring a validator', async () => {
+    const res = await handleContextPack(
+      request(`/txid/${TX}/context.md?chain=devnet`, {
+        'if-none-match': `W/"${TX}-devnet-v${ENGINE_VERSION}-markdown"`,
+      }),
+      Promise.resolve({ txId: TX }),
+      'markdown'
+    );
+    expect(res.status).toBe(400);
+    expect(buildContextPack).not.toHaveBeenCalled();
+  });
+
+  it('keys the validator on the chain and fetches from that chain’s server', async () => {
+    buildContextPack.mockResolvedValue({ status: 200, markdown: '# md', json: {} } as never);
+    const res = await handleContextPack(
+      request(`/txid/${TX}/context.md?chain=testnet`),
+      Promise.resolve({ txId: TX }),
+      'markdown'
+    );
+    expect(res.status).toBe(200);
+    expect(res.headers.get('etag')).toBe(`W/"${TX}-testnet-v${ENGINE_VERSION}-markdown"`);
+    expect(buildContextPack).toHaveBeenCalledWith(
+      expect.objectContaining({
+        apiUrl: DEFAULT_TESTNET_SERVER.replace(/\/$/, ''),
+        network: 'testnet',
+      })
+    );
   });
 });

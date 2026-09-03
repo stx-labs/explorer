@@ -75,6 +75,16 @@ Engine
       comments kept out of the diagnosis section; editor line offset for trimmed sources; callee
       lines link to the callee's page; two-stage enrichment keyed by API URL; chip overflow; wallet
       inference removed; balance lookup only for STX built-ins; live test requires the full corpus
+- [x] Re-review fixes (2026-09-03, second independent pass at `2cdde2b4`): API key attached only to
+      the configured public servers (`stacksAPIFetch`), transaction page + metadata never fetch a
+      visitor-supplied host server-side; trait variables mapped to their bound arguments so each
+      callee is searched only through the functions actually invoked on it; ambiguous resolutions
+      carry no registry data; built-in fallbacks hedged as candidates until callees are ruled out;
+      usage lines aggregated across helpers; string literals ignored when scanning arguments for
+      principals and argument-named contracts reported separately from confirmed callees; context
+      routes validate chain/API/params before the ETag (which now includes the chain) and reject
+      unexpected parameters; no timestamp in the pack; contract cache keyed per network; custom
+      networks told there is no pack; e2e generic assertion made real
 - [x] `diagnose.ts` — `diagnoseSync` (Tier 0, no I/O) and `enrich` (Tier 1)
 - [x] `context-pack.ts` — Markdown + JSON renderers, playbook, on-chain content delimited as data
 
@@ -161,7 +171,7 @@ Engine
 
 ## Status
 
-In Progress
+In Review
 
 ## Notes
 
@@ -172,10 +182,11 @@ In Progress
   helpers each start with `(unwrap! result ERR_NO_RESULT_DATA)` on the accumulator, so `u2001` /
   `u5001` never identify the failing step. The engine reports these as placeholders; the agent
   playbook says to bisect the inputs with read-only calls instead of explaining the code.
-- The transaction page's own server render (`page.tsx`) also passes `?api=` through to the
-  server-side fetcher, which attaches the API key to every host. That predates this work and is not
-  changed here; the context-pack routes refuse custom hosts. Worth a separate fix in
-  `stacksAPIFetch` (attach the key only to the configured servers).
+- `stacksAPIFetch` used to attach the API key to every host, and several server components derive
+  their API URL from a visitor-supplied `?api=`. The key is now scoped to the configured public
+  servers app-wide, and the transaction page + metadata no longer fetch custom hosts server-side.
+  Other pages (address, blocks, tokens, mempool …) still fetch a visitor-supplied host server-side,
+  without the key; blocking or allowlisting those is a separate change.
 - "Retried successfully" originally matched sender + function only; a BNS `name-claim-fast` failure
   (`ERR-NAME-NOT-AVAILABLE`) was followed by successes for other names, which is not a retry. The
   match now compares argument reprs and the copy says which case applies.

@@ -12,10 +12,12 @@ import {
   firstAssertLine,
   foldAccumulatorUnwrap,
   hasTraitParams,
-  nativeAssetCalls,
+  literalErrSites,
+  nativeAssetCallSites,
   reachableFromAny,
   reachableFunctions,
   traitArgPrincipals,
+  traitBindings,
   usageLines,
 } from './clarity-source';
 import { nativeErrorFor } from './native-errors';
@@ -46,7 +48,10 @@ export interface ResolveOptions {
 const DEFAULT_MAX_FETCHES = 3;
 
 interface Usage {
+  /** The body holding the primary site (the entry point when it has one), for the excerpt. */
   body: FunctionBody | null;
+  primaryLine?: number;
+  /** Every line in reachable code that throws the constant, ascending. */
   lines: number[];
 }
 
@@ -57,21 +62,27 @@ interface Pick {
   reachable: boolean;
 }
 
-/** Where `name` is thrown among `bodies`, checking `preferred` (the entry point) first. */
-function usageIn(
+/** Where `name` is thrown across `bodies`; the entry point's first use is the primary site, else the earliest. */
+function usageAcross(
   source: string,
   bodies: FunctionBody[],
   name: string,
   preferred: FunctionBody | null
 ): Usage {
-  const ordered = preferred
-    ? [preferred, ...bodies.filter(b => b.name !== preferred.name)]
-    : bodies;
-  for (const b of ordered) {
-    const lines = usageLines(source, b, name);
-    if (lines.length) return { body: b, lines };
+  const hits: { body: FunctionBody; line: number }[] = [];
+  for (const b of bodies) {
+    for (const line of usageLines(source, b, name)) hits.push({ body: b, line });
   }
-  return { body: preferred, lines: [] };
+  if (preferred && !bodies.some(b => b.name === preferred.name)) {
+    for (const line of usageLines(source, preferred, name)) hits.push({ body: preferred, line });
+  }
+  const inEntry = preferred ? hits.filter(h => h.body.name === preferred.name) : [];
+  const primary = (inEntry.length ? inEntry : hits).sort((a, b) => a.line - b.line)[0];
+  return {
+    body: primary?.body ?? preferred,
+    primaryLine: primary?.line,
+    lines: Array.from(new Set(hits.map(h => h.line))).sort((a, b) => a - b),
+  };
 }
 
 /**
@@ -84,16 +95,17 @@ function pickConstant(
   matches: ConstantMatch[],
   bodies: FunctionBody[],
   entry: FunctionBody | null
-): { pick?: Pick; ambiguous: string[] } {
+): { pick?: Pick; ambiguous: string[]; reachableCount: number } {
   const picks: Pick[] = matches.map(match => {
-    const usage = usageIn(source, bodies, match.name, entry);
+    const usage = usageAcross(source, bodies, match.name, entry);
     return { match, usage, reachable: usage.lines.length > 0 };
   });
   const reachable = picks.filter(p => p.reachable);
-  if (reachable.length === 1) return { pick: reachable[0], ambiguous: [] };
-  if (reachable.length > 1) return { ambiguous: reachable.map(p => p.match.name) };
-  if (picks.length === 1) return { pick: picks[0], ambiguous: [] };
-  return { ambiguous: picks.map(p => p.match.name) };
+  const reachableCount = reachable.length;
+  if (reachable.length === 1) return { pick: reachable[0], ambiguous: [], reachableCount };
+  if (reachable.length > 1) return { ambiguous: reachable.map(p => p.match.name), reachableCount };
+  if (picks.length === 1) return { pick: picks[0], ambiguous: [], reachableCount };
+  return { ambiguous: picks.map(p => p.match.name), reachableCount };
 }
 
 /** Registry copy is only trusted when it names the same constant the source resolves to. */
@@ -112,7 +124,7 @@ function sourceRefFor(
   match: ConstantMatch,
   usage: Usage
 ): SourceRef {
-  const failingLine = usage.lines[0];
+  const failingLine = usage.primaryLine;
   return {
     contractId,
     functionName: usage.body?.name,
@@ -124,19 +136,51 @@ function sourceRefFor(
   };
 }
 
-function ambiguousResolution(
-  base: ErrorCodeInfo,
-  definedIn: string,
-  names: string[],
-  registry: RegistryEntry | undefined
-): Resolution {
-  // A registry entry naming one of the candidates is still just one candidate: do not trust it.
-  const reg = registry && registry.name && !names.includes(registry.name) ? registry : undefined;
+/**
+ * The source defines the code under several names and cannot say which one fired. No registry
+ * data is used here: an entry naming one candidate would be a guess, and an entry naming something
+ * else would contradict the source.
+ */
+function ambiguousResolution(base: ErrorCodeInfo, definedIn: string, names: string[]): Resolution {
   return {
-    info: { ...base, name: reg?.name, candidateNames: names, definedIn },
-    registry: reg,
-    tag: reg?.tag,
+    info: { ...base, name: undefined, candidateNames: names, definedIn },
+    registry: undefined,
+    tag: undefined,
     complete: true,
+  };
+}
+
+interface NativeAssessment {
+  fn: string;
+  meaning: string;
+  siteCount: number;
+  literalSites: number[];
+  /** Reachable `contract-call?` sites that could have returned the code first. */
+  calleeSites: number;
+}
+
+/**
+ * A Clarity built-in can only be named as the cause when it is the single kind of built-in in
+ * reachable code that produces the code; whether it is *certain* also depends on there being no
+ * other reachable way to return the same code (callees, second sites, literal responses).
+ */
+function assessNative(
+  code: string,
+  reachable: FunctionBody[],
+  source: string,
+  deployer: string
+): NativeAssessment | null {
+  if (!/^u[1-4]$/.test(code)) return null;
+  const sites = nativeAssetCallSites(reachable).filter(s => nativeErrorFor(s.fn, code));
+  const kinds = Array.from(new Set(sites.map(s => s.fn)));
+  if (kinds.length !== 1) return null;
+  const native = nativeErrorFor(kinds[0], code)!;
+  return {
+    fn: kinds[0],
+    meaning: native.meaning,
+    siteCount: sites.length,
+    literalSites: literalErrSites(source, reachable, code),
+    calleeSites: reachable.flatMap(b => contractCallSites(b.text, deployer)).length,
   };
 }
 
@@ -175,7 +219,7 @@ export function resolveErrorCodeSync(
   const matches = findErrorConstants(source, code);
   if (matches.length) {
     const { pick, ambiguous } = pickConstant(source, matches, reachable, body);
-    if (!pick) return ambiguousResolution(base, contractId, ambiguous, registry);
+    if (!pick) return ambiguousResolution(base, contractId, ambiguous);
 
     const { match, usage } = pick;
     const reg = guardRegistry(registry, match.name);
@@ -184,8 +228,11 @@ export function resolveErrorCodeSync(
       : undefined;
     const firstAssert = body ? firstAssertLine(source, body) : null;
     const siteBeforeOtherChecks =
-      pick.reachable && usage.body === body && firstAssert !== null
-        ? usage.lines[0] < firstAssert
+      pick.reachable &&
+      usage.body?.name === body?.name &&
+      usage.primaryLine !== undefined &&
+      firstAssert !== null
+        ? usage.primaryLine < firstAssert
         : undefined;
     const info: ErrorCodeInfo = {
       ...base,
@@ -207,16 +254,26 @@ export function resolveErrorCodeSync(
     };
   }
 
-  // Native fallback is only conclusive when a single built-in could have produced the code.
-  if (body && /^u[1-4]$/.test(code)) {
-    const natives = nativeAssetCalls(reachable).filter(fn => nativeErrorFor(fn, code));
-    if (natives.length === 1) {
-      const native = nativeErrorFor(natives[0], code)!;
+  // Native fallback: one kind of built-in in reachable code produces the code. It is the cause only
+  // when nothing else reachable can return the code; otherwise it is a candidate until callees are
+  // ruled out (and stays one when a literal response or a second site exists).
+  if (body) {
+    const native = assessNative(code, reachable, source, contractDeployer(contractId));
+    if (native) {
+      const certain =
+        native.siteCount === 1 && native.literalSites.length === 0 && native.calleeSites === 0;
       return {
-        info: { ...base, nativeFunction: natives[0], nativeMeaning: native.meaning },
+        info: {
+          ...base,
+          nativeFunction: native.fn,
+          nativeMeaning: native.meaning,
+          nativeTentative: !certain,
+          nativeSiteCount: native.siteCount,
+          literalSites: native.literalSites,
+        },
         registry,
         tag: registry?.tag ?? 'insufficient',
-        complete: false, // a callee may still define it; native stays as fallback
+        complete: certain,
       };
     }
   }
@@ -227,7 +284,8 @@ export function resolveErrorCodeSync(
 /**
  * Candidate callee contracts, most likely first: contracts passed for the function's trait
  * parameters, then `contract-call?` targets in code the call reaches, then any other principal in
- * the arguments (route lists, tuples), then targets referenced elsewhere in the contract.
+ * the arguments (route lists, tuples — data, not proven calls), then targets referenced elsewhere
+ * in the contract.
  */
 export function calleeCandidates(tx: FailedContractCallTx, called: ContractInfo | null): string[] {
   const contractId = tx.contract_call.contract_id;
@@ -251,7 +309,9 @@ export function calleeCandidates(tx: FailedContractCallTx, called: ContractInfo 
 
 /**
  * Functions of `calleeId` the failed call can enter: literal `contract-call?` sites naming it, plus
- * every trait-variable site (the trait function is known even when the contract is chosen at runtime).
+ * sites through the trait variables the transaction bound to it. Trait variables bound to *another*
+ * contract are excluded; variables that cannot be mapped (e.g. drawn from a list) are kept as
+ * possible entries when nothing more specific exists.
  */
 export function calleeEntryFunctions(
   tx: FailedContractCallTx,
@@ -260,12 +320,21 @@ export function calleeEntryFunctions(
 ): string[] {
   if (!called) return [];
   const deployer = contractDeployer(tx.contract_call.contract_id);
-  const sites = reachableFunctions(called.source_code, tx.contract_call.function_name).flatMap(b =>
+  const fnName = tx.contract_call.function_name;
+  const argReprs = (tx.contract_call.function_args ?? []).map(a => a.repr ?? '');
+  const entry = findFunctionBody(called.source_code, fnName);
+  const bindings = entry ? traitBindings(entry, argReprs) : [];
+  const boundHere = new Set(bindings.filter(b => b.principal === calleeId).map(b => b.param));
+  const boundElsewhere = new Set(bindings.filter(b => b.principal !== calleeId).map(b => b.param));
+  const sites = reachableFunctions(called.source_code, fnName).flatMap(b =>
     contractCallSites(b.text, deployer)
   );
-  return Array.from(
-    new Set(sites.filter(s => s.target === calleeId || s.target === null).map(s => s.fn))
+  const direct = sites.filter(
+    s => s.target === calleeId || (s.variable !== undefined && boundHere.has(s.variable))
   );
+  if (direct.length) return Array.from(new Set(direct.map(s => s.fn)));
+  const unmapped = sites.filter(s => s.variable !== undefined && !boundElsewhere.has(s.variable));
+  return Array.from(new Set(unmapped.map(s => s.fn)));
 }
 
 /**
@@ -284,7 +353,8 @@ export async function resolveErrorCode(
   if (sync.complete) return sync;
 
   const max = options.maxCalleeFetches ?? DEFAULT_MAX_FETCHES;
-  const candidates = calleeCandidates(tx, called).slice(0, max);
+  const all = calleeCandidates(tx, called);
+  const candidates = all.slice(0, max);
   const fetched = await Promise.all(
     candidates.map(async id => {
       try {
@@ -303,12 +373,21 @@ export async function resolveErrorCode(
 
     const entries = calleeEntryFunctions(tx, called, candidates[i]);
     let bodies = entries.length ? reachableFromAny(callee.source_code, entries) : [];
+    // With the entry functions known, the constant must be thrown in code they reach; a
+    // definition used only elsewhere in the callee is not evidence that this callee failed.
+    const restricted = bodies.length > 0;
     if (!bodies.length) bodies = allFunctionBodies(callee.source_code);
     const tried = candidates.slice(0, i + 1);
     const registry = sync.registry ?? lookupRegistry(candidates[i], code);
-    const { pick, ambiguous } = pickConstant(callee.source_code, matches, bodies, null);
+    const { pick, ambiguous, reachableCount } = pickConstant(
+      callee.source_code,
+      matches,
+      bodies,
+      null
+    );
+    if (restricted && reachableCount === 0) continue;
     if (!pick) {
-      const res = ambiguousResolution(sync.info, candidates[i], ambiguous, registry);
+      const res = ambiguousResolution(sync.info, candidates[i], ambiguous);
       return { ...res, info: { ...res.info, candidatesTried: tried } };
     }
     const { match, usage } = pick;
@@ -322,6 +401,10 @@ export async function resolveErrorCode(
       comments: match.comments,
       reachable: pick.reachable,
       candidatesTried: tried,
+      // The code came from a callee constant, not from the built-in.
+      nativeFunction: undefined,
+      nativeMeaning: undefined,
+      nativeTentative: undefined,
     };
     return {
       info,
@@ -332,9 +415,13 @@ export async function resolveErrorCode(
     };
   }
 
-  return {
-    ...sync,
-    info: { ...sync.info, candidatesTried: candidates },
-    complete: true,
-  };
+  // No callee defines the code. A native candidate stays tentative only if a callee could not be
+  // checked, or the contract itself has another way to return the code.
+  const unchecked = all.length - candidates.length + fetched.filter(f => !f).length;
+  const info: ErrorCodeInfo = { ...sync.info, candidatesTried: candidates };
+  if (info.nativeFunction) {
+    info.nativeTentative =
+      unchecked > 0 || (info.nativeSiteCount ?? 1) > 1 || (info.literalSites?.length ?? 0) > 0;
+  }
+  return { ...sync, info, complete: true };
 }

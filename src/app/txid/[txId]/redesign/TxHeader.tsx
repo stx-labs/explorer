@@ -104,6 +104,7 @@ export const TxHeaderUnminimized = forwardRef<
       borderRadius={`calc(var(--stacks-radii-redesign-xl) + ${BORDER_WIDTH}px)`}
       boxShadow="elevation2"
       ref={ref}
+      data-test="tx-header"
     >
       <Stack p={4} gap={3} w="full" borderRadius="redesign.xl" bg="surfaceSecondary">
         <Flex gap={2}>
