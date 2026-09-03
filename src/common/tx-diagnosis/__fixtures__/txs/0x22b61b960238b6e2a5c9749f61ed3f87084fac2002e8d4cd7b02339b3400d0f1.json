@@ -1,0 +1,80 @@
+{
+  "tx_id": "0x22b61b960238b6e2a5c9749f61ed3f87084fac2002e8d4cd7b02339b3400d0f1",
+  "nonce": 21,
+  "fee_rate": "3000",
+  "sender_address": "SP3TP4PSXBGMSMYVAPVZ00ZN7PB79MAJ3X9SQP8H",
+  "sponsored": false,
+  "post_condition_mode": "deny",
+  "post_conditions": [
+    {
+      "principal": {
+        "type_id": "principal_standard",
+        "address": "SP11DP8H1Y9B7JYXC0T5AEZWENDWSSBCVKETSQ1R3"
+      },
+      "condition_code": "sent_less_than_or_equal_to",
+      "amount": "132645977",
+      "type": "fungible",
+      "asset": {
+        "asset_name": "sbtc-token",
+        "contract_address": "SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4",
+        "contract_name": "sbtc-token"
+      }
+    }
+  ],
+  "anchor_mode": "any",
+  "block_hash": "0xa75f8375d90c408af4b0c93e17f772f08182234ae99c723a8888e827c672b6a8",
+  "block_height": 8894106,
+  "block_time": 1788277679,
+  "block_time_iso": "2026-09-01T15:47:59.000Z",
+  "burn_block_time": 1788277260,
+  "burn_block_height": 965056,
+  "burn_block_time_iso": "2026-09-01T15:41:00.000Z",
+  "parent_burn_block_time": 1788277260,
+  "parent_burn_block_time_iso": "2026-09-01T15:41:00.000Z",
+  "canonical": true,
+  "tx_index": 1,
+  "tx_status": "abort_by_post_condition",
+  "tx_result": {
+    "hex": "0x070100000000000000000000000000000b4f",
+    "repr": "(ok u2895)"
+  },
+  "event_count": 0,
+  "parent_block_hash": "0x3ab34455fd4cad9f8ee88f324eb19ff93fd3c956f4715a35ad4d2926a0a045a6",
+  "is_unanchored": false,
+  "microblock_hash": "0x",
+  "microblock_sequence": 2147483647,
+  "microblock_canonical": true,
+  "execution_cost_read_count": 24,
+  "execution_cost_read_length": 40070,
+  "execution_cost_runtime": 51525,
+  "execution_cost_write_count": 6,
+  "execution_cost_write_length": 216,
+  "vm_error": "Post-condition check failure: Fungible asset SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token::sbtc-token was moved by SP3TP4PSXBGMSMYVAPVZ00ZN7PB79MAJ3X9SQP8H but not checked",
+  "events": [],
+  "tx_type": "contract_call",
+  "contract_call": {
+    "contract_id": "SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-withdrawal",
+    "function_name": "initiate-withdrawal-request",
+    "function_signature": "(define-public (initiate-withdrawal-request (amount uint) (recipient (tuple (hashbytes (buff 32)) (version (buff 1)))) (max-fee uint)))",
+    "function_args": [
+      {
+        "hex": "0x0100000000000000000000000007e80189",
+        "repr": "u132645257",
+        "name": "amount",
+        "type": "uint"
+      },
+      {
+        "hex": "0x0c00000002096861736862797465730200000014b39cf15bc971ee20c318611b7bf24d592b27e4bf0776657273696f6e020000000104",
+        "repr": "(tuple (hashbytes 0xb39cf15bc971ee20c318611b7bf24d592b27e4bf) (version 0x04))",
+        "name": "recipient",
+        "type": "(tuple (hashbytes (buff 32)) (version (buff 1)))"
+      },
+      {
+        "hex": "0x01000000000000000000000000000002d0",
+        "repr": "u720",
+        "name": "max-fee",
+        "type": "uint"
+      }
+    ]
+  }
+}

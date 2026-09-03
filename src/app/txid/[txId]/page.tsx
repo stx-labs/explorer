@@ -1,6 +1,7 @@
 import { fetchContractInfo, fetchTx } from '@/api/data-fetchers';
 import { getTokenPrice } from '@/app/getTokenPriceInfo';
 import { CommonSearchParams } from '@/app/transactions/page';
+import { isFailedContractCall } from '@/common/tx-diagnosis';
 import { NetworkModes } from '@/common/types/network';
 import { logError } from '@/common/utils/error-utils';
 import { getApiUrl } from '@/common/utils/network-utils';
@@ -9,6 +10,7 @@ import { validateStacksContractId } from '@/common/utils/utils';
 import {
   ContractInterfaceResponse,
   MempoolTransaction,
+  SmartContract,
   Transaction,
 } from '@stacks/stacks-blockchain-api-types';
 
@@ -48,6 +50,7 @@ export default async function Page(props: {
     btcPrice: 0,
   };
   let initialTxData: Transaction | MempoolTransaction | undefined;
+  let initialContractData: SmartContract | undefined;
   let numFunctions: number | undefined;
 
   const isContractId = validateStacksContractId(txId);
@@ -66,6 +69,23 @@ export default async function Page(props: {
       } else {
         initialTxData = await fetchTx(apiUrl, txId);
       }
+      // Failed contract calls: the "Why it failed" card needs the called contract's source for
+      // its first paint, so fetch it here (one extra request, only on failed contract-call pages).
+      if (isFailedContractCall(initialTxData)) {
+        try {
+          initialContractData = await fetchContractInfo(
+            apiUrl,
+            initialTxData.contract_call.contract_id
+          );
+        } catch (contractError) {
+          logError(
+            contractError as Error,
+            'Transaction Id page server-side fetch for called contract',
+            { txId, chain, api },
+            'warning'
+          );
+        }
+      }
     } catch (error) {
       logError(
         error as Error,
@@ -80,6 +100,7 @@ export default async function Page(props: {
     <TxIdPageDataProvider
       stxPrice={tokenPrice.stxPrice}
       initialTxData={initialTxData}
+      initialContractData={initialContractData}
       txId={txId}
       numFunctions={numFunctions}
       filters={{

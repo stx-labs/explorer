@@ -9,7 +9,7 @@ import { Button } from '@/ui/Button';
 import { ButtonLink } from '@/ui/ButtonLink';
 import { Text } from '@/ui/Text';
 import { Stack } from '@chakra-ui/react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 
 import { CodeEditor, DEFAULT_EDITOR_HEIGHT, withControls } from './CodeEditor';
 
@@ -22,6 +22,9 @@ export function Source({ contractId }: { contractId: string }) {
   const network = useGlobalContext().activeNetwork;
   const url = buildUrl(`/txid/${encodeURIComponent(deployTxId || contractId)}`, network);
   const pathname = usePathname();
+  // `?line=<n>` (set by the "Why it failed" card) reveals and highlights that line.
+  const lineParam = Number(useSearchParams().get('line'));
+  const revealLine = Number.isInteger(lineParam) && lineParam > 0 ? lineParam : undefined;
   const isDeployTxPage =
     pathname.startsWith('/txid/') &&
     (pathname.includes(contractId) || (!!deployTxId && pathname.includes(deployTxId)));
@@ -54,7 +57,7 @@ export function Source({ contractId }: { contractId: string }) {
           View deployment
         </ButtonLink>
       )}
-      <CodeEditorWithControls code={sourceCode || ''} />
+      <CodeEditorWithControls code={sourceCode || ''} revealLine={revealLine} />
     </Stack>
   );
 }

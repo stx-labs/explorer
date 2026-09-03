@@ -1,0 +1,59 @@
+{
+  "tx_id": "0x4352f6ba28935bc4ad290b33d31012eb753b7ba0abddbad6b51fc7b291de68e3",
+  "nonce": 53136,
+  "fee_rate": "2500000",
+  "sender_address": "SP1GBRTAXY96ZDYRQY4GR0M9JTXVYD2FGFRGV60FJ",
+  "sponsored": false,
+  "post_condition_mode": "allow",
+  "post_conditions": [],
+  "anchor_mode": "any",
+  "block_hash": "0x5f4ef05c17d08de3384b040b8fdbe0d4968f0db0152e44329c96bc28a3af096c",
+  "block_height": 8902749,
+  "block_time": 1788365210,
+  "block_time_iso": "2026-09-02T16:06:50.000Z",
+  "burn_block_time": 1788361783,
+  "burn_block_height": 965186,
+  "burn_block_time_iso": "2026-09-02T15:09:43.000Z",
+  "parent_burn_block_time": 1788361783,
+  "parent_burn_block_time_iso": "2026-09-02T15:09:43.000Z",
+  "canonical": true,
+  "tx_index": 0,
+  "tx_status": "abort_by_response",
+  "tx_result": {
+    "hex": "0x080100000000000000000000000000001389",
+    "repr": "(err u5001)"
+  },
+  "event_count": 0,
+  "parent_block_hash": "0xf6a1f45937d3f63eec4ac894149989629e74961acf265e61e1f7c21fedb080e8",
+  "is_unanchored": false,
+  "microblock_hash": "0x",
+  "microblock_sequence": 2147483647,
+  "microblock_canonical": true,
+  "execution_cost_read_count": 21,
+  "execution_cost_read_length": 171098,
+  "execution_cost_runtime": 1275553,
+  "execution_cost_write_count": 0,
+  "execution_cost_write_length": 0,
+  "vm_error": null,
+  "events": [],
+  "tx_type": "contract_call",
+  "contract_call": {
+    "contract_id": "SM1FKXGNZJWSTWDWXQZJNF7B5TV5ZB235JTCXYXKD.dlmm-liquidity-router-v-1-2",
+    "function_name": "add-liquidity-multi",
+    "function_signature": "(define-public (add-liquidity-multi (positions (list 333 (tuple (bin-id int) (max-x-liquidity-fee uint) (max-y-liquidity-fee uint) (min-dlp uint) (pool-trait trait_reference) (x-amount uint) (x-token-trait trait_reference) (y-amount uint) (y-token-trait trait_reference)))) (deadline-time (optional uint))))",
+    "function_args": [
+      {
+        "hex": "0x0b000000960c000000090662696e2d696400ffffffffffffffffffffffffffff\u2026",
+        "repr": "(list (tuple (bin-id -346) (max-x-liquidity-fee u0) (max-y-liquidity-fee u0) (min-dlp u1000) (pool-trait 'SM1FKXGNZJWSTWDWXQZJNF7B5TV5ZB235JTCXYXKD.dlmm-pool-stx-sbtc-v-1-bps-15) (x-amount u0) (x-token-trait 'SM1793C4R5PZ4NS4VQ4WMP7SKKYVH8JZEWSZ9HCCR.token-stx-v-1-2) (y-amount u73) (y-token-trait 'SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token)) (tuple (bin-id -345) (max-x-liquidity-fee u0) (max-y-liquidity-fee u0) (min-dlp u1000) (pool-trait 'SM1FKXGNZJWSTWDWXQZJNF7B5TV5ZB235JTCXYXKD.dlmm-pool-stx-sbtc-v-1-bps-15) (x-amount u0) (x-token-trait 'SM1793C4R5PZ4NS4VQ4WMP7SKKYVH8JZEWSZ9HCCR.token-stx-v-1-2) (y-amount u73) (y-token-trait 'SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token)) (tuple (bin-id -344) (max-x-liquidity-fee u0) (max-y-liquidity-fee u0) (min-dlp u1000) (pool-trait 'SM1FKXGNZJWSTWDWXQZJNF7B5TV5ZB235JTCXYXKD.dlmm-pool-stx-sbtc-v-1-bps-15) (x-amount u0) (x-token-trait 'SM1793C4R5PZ4NS4VQ4WMP7SKKYVH8JZEWSZ9HCCR.token-stx-v-1-2) (y-amount u73) (y-token-trait 'SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token)) (tuple (bin-id -343) (max-x-liquidity-fee u0) (max-y-liquidity-fee u0) (min-dlp u1000) (pool-trait 'SM1FKXGNZJWSTWDWXQZJNF7B5TV5ZB235JTCXYXKD.dlmm-pool-stx-sbtc-v-1-bps-15) (x-amount u0) (x-token-trait 'SM1793C4R5PZ4NS4VQ4WMP7SKKYVH8JZEWSZ9HCCR.token-stx-v-1-2) (y-amount u73) (y-token-trait 'SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token)) (tuple (bin-id -342) (max-x-liquidity-fee u0) (max-y-liquidity-fee u0) (min-dlp u1000) (pool-trait 'SM1FKXGNZJWSTWDWXQZJNF7B5TV5ZB235JTCXYXKD.dlmm-pool-stx-sbtc-v-1-bps-15) (x-amount u0) (x-token-trait 'SM1793C4R5PZ4NS4VQ4WMP7SKKYVH8JZEWSZ9HCCR.token-stx-v-1-2) (y-amount u72) (y-token-trait 'SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token)) (tuple (bin-id -341) (max-x-liquidity-fee u0) (max-y-liquidity-fee u0) (min-dlp u1000) (pool-trait 'SM1FKXGNZJWSTWDWXQZJNF7B5TV5ZB235JTCXYXKD.dlmm-pool-stx-sbtc-v-1-bps-15) (x-amount u0) (x-token-trait 'SM1793C4R5PZ4NS4VQ4WMP7SKKYVH8JZEWSZ9HCCR.token-stx-v-1-2) (y-amount u72) (y-token-trait 'SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token)) (tuple (bin-id -340) (max-x-liquidity-fee u0) (max-y-liquidity-fee u1) (min-dlp u1000) (pool-trait 'SM1FKXGNZJWSTWDWXQZJNF7B5TV5ZB235JTCXYXKD.dlmm-pool-stx-sbtc-v-1-bps-15) (x-amount u0) (x-token-trait 'SM1793C4R5PZ4NS4VQ4WMP7SKKYVH8JZEWSZ9HCCR.token-stx-v-1-2) (y-amount u144) (y-token-trait 'SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token)) (tuple (bin-id -339) (max-x-liquidity-fee u0) (max-y-liquidity-fee u0) (min-dlp u1000) (pool-trait 'SM1FKXGNZJWSTWDWXQZJNF7B5TV5ZB235JTCXYXKD.dlmm-pool-stx-sbtc-v-1-bps-15) (x-amount u0) (x-token-trait 'SM1793C4R5PZ4NS4VQ4WMP7SKKYVH8JZEWSZ9HCCR.token-stx-v-1-2) (y-amount u72) (y-token-trait 'SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token)) (tuple (bin-id -338) (max-x-liquidity-fee u0) (max-y-liquidity-fee u0) (min-dlp u1000) (pool-trait 'SM1FKXGNZJWSTWDWXQZJNF7B5TV5ZB235JTCXYXKD.dlmm-pool-stx-sbtc-v-1-bps-15) (x-amount u0) (x-token-trait 'SM1793C4R5PZ4NS4VQ4WMP7SKKYVH8JZEWSZ9HCCR.token-stx-v-1-2) (y-amount u71) (y-token-trait 'SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token)) (tuple (bin-id -337) (max-x-liquidity-fee u0) (max-y-liquidity-fee u0) (min-dlp u1000) (pool-trait 'SM1FKXGNZJWSTWDWXQZJNF7B5TV5ZB235JTCXYXKD.dlmm-pool-stx-sbtc-v-1-bps-15) (x-amount u0) (x-token-trait 'SM1793C4R5PZ4NS4VQ4WMP7SKKYVH8JZEWSZ9HCCR.token-stx-v-1-2) (y-amount u71) (y-token-trait 'SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token)) (tuple (bin-id -336) (max-x-liquidity-fee u0) (max-y-liquidity-fee u0) (min-dlp u1000) (pool-trait 'SM1FKXGNZJWSTWDWXQZJNF7B5TV5ZB235JTCXYXKD.dlmm-pool-stx-sbtc-v-1-bps-15) (x-amount u0) (x-token-trait 'SM1793C4R5PZ4NS4VQ4WMP7SKKYVH8JZEWSZ9HCCR.token-stx-v-1-2) (y-amount u71) (y-token-trait 'SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token)) (tuple (bin-id -335) (max-x-liquidity-fee u0) (max-y-liquidity-fee u0) (min-dlp u1000) (pool-trait 'SM1FKXGNZJWSTWDWXQZJNF7B5TV5ZB235JTCXYXKD.dlmm-pool-stx-sbtc-v-1-bps-15) (x-amount u0) (x-token-trait 'SM1793C4R5PZ4NS4VQ4WMP7SKKYVH8JZEWSZ9HCCR.token-stx-v-1-2)\u2026",
+        "name": "positions",
+        "type": "(list 333 (tuple (bin-id int) (max-x-liquidity-fee uint) (max-y-liquidity-fee uint) (min-dlp uint) (pool-trait trait_reference) (x-amount uint) (x-token-trait trait_reference) (y-amount uint) (y-token-trait trait_reference)))"
+      },
+      {
+        "hex": "0x0a010000000000000000000000006a984e3d",
+        "repr": "(some u1788366397)",
+        "name": "deadline-time",
+        "type": "(optional uint)"
+      }
+    ]
+  }
+}

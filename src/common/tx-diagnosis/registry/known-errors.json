@@ -1,0 +1,231 @@
+{
+  "$comment": "Curated explanations for protocol-specific error codes. `id` matches exactly; `namePattern` is a regex on the contract name (deployer-agnostic). `sender` / `developer` may be null.",
+  "contracts": [
+    {
+      "match": { "namePattern": "^dlmm-(swap|liquidity)-router-v-" },
+      "codes": {
+        "u2001": {
+          "name": "ERR_NO_RESULT_DATA",
+          "tag": "not_found",
+          "summary": "One step of the multi-hop route produced no result, so the whole route was cancelled.",
+          "sender": "Retry; if it repeats, try a simpler route or a smaller amount.",
+          "developer": "A step in the route list returned none — check pool and bin selection for the route you built."
+        },
+        "u2003": {
+          "name": "ERR_MINIMUM_RECEIVED",
+          "tag": "slippage",
+          "summary": "The swap would have returned less than the minimum you set, so it was cancelled.",
+          "sender": "Prices moved between quote and execution. Retry with a higher slippage tolerance or a smaller amount.",
+          "developer": null
+        },
+        "u2004": {
+          "name": "ERR_DEADLINE_PASSED",
+          "tag": "expired",
+          "summary": "The transaction was mined after the deadline the app set for it.",
+          "sender": "Retry — the new transaction gets a fresh deadline.",
+          "developer": null
+        },
+        "u5001": {
+          "name": "ERR_NO_RESULT_DATA",
+          "tag": "not_found",
+          "summary": "One step of the liquidity operation produced no result, so it was cancelled.",
+          "sender": "Retry; if it repeats, the position or bins you targeted may have changed.",
+          "developer": "A step returned none — check the bin / position list passed to the router."
+        }
+      }
+    },
+    {
+      "match": { "namePattern": "^stableswap-core-v-" },
+      "codes": {
+        "u1019": {
+          "name": "ERR_MINIMUM_X_AMOUNT",
+          "tag": "slippage",
+          "summary": "You would have received less of one token than the minimum you set.",
+          "sender": "Retry with a higher slippage tolerance.",
+          "developer": null
+        },
+        "u1023": {
+          "name": "ERR_MINIMUM_Y_AMOUNT",
+          "tag": "slippage",
+          "summary": "You would have received less of one token than the minimum you set.",
+          "sender": "Retry with a higher slippage tolerance.",
+          "developer": null
+        }
+      }
+    },
+    {
+      "match": { "namePattern": "^router-stableswap-velar-v-" },
+      "codes": {
+        "u6009": {
+          "name": "ERR_MINIMUM_RECEIVED",
+          "tag": "slippage",
+          "summary": "The swap would have returned less than the minimum you set.",
+          "sender": "Retry with a higher slippage tolerance or a smaller amount.",
+          "developer": null
+        }
+      }
+    },
+    {
+      "match": { "namePattern": "^amm-pool-v2-" },
+      "codes": {
+        "u2005": {
+          "name": "ERR-EXCEEDS-MAX-SLIPPAGE",
+          "tag": "slippage",
+          "summary": "The price moved more than the slippage you allowed.",
+          "sender": "Retry with a higher slippage tolerance or a smaller amount.",
+          "developer": null
+        }
+      }
+    },
+    {
+      "match": { "namePattern": "^emission-controller" },
+      "codes": {
+        "u931": {
+          "name": "ERR_EMISSION_INTERVAL",
+          "tag": "too_early",
+          "summary": "Emissions can be minted at most once per block, and this block's emission was already minted.",
+          "sender": "Wait for the next block and try again.",
+          "developer": null
+        }
+      }
+    },
+    {
+      "match": { "namePattern": "^bme\\d+-\\d+-market-" },
+      "codes": {
+        "u10153": {
+          "name": "err-oracle-no-fallback",
+          "tag": "oracle",
+          "summary": "The market couldn't read a price from its oracle and has no manual fallback, so it wasn't resolved.",
+          "sender": "Not caused by you. Try again later or contact the app.",
+          "developer": "Set a fallback price or wait for a fresh oracle update before resolving."
+        }
+      }
+    },
+    {
+      "match": { "id": "SP2C2YFP12AJZB4MABJBAJ55XECVS7E4PMMZ89YZR.arkadiko-oracle-v2-3" },
+      "codes": {
+        "u8403": {
+          "name": "ERR-SIGNATURES-NOT-UNIQUE",
+          "tag": "signature",
+          "summary": "The price update included duplicate signer signatures, so it was rejected.",
+          "sender": null,
+          "developer": "Each signature in the batch must come from a distinct signer."
+        }
+      }
+    },
+    {
+      "match": { "namePattern": "^bitflow-exec-" },
+      "codes": {
+        "u318": {
+          "name": "e03",
+          "tag": "slippage",
+          "summary": "The trade's value would have been below the minimum USD amount you set.",
+          "sender": "Retry with a lower minimum or a different amount.",
+          "developer": null
+        },
+        "u365": {
+          "name": "e07",
+          "tag": "limit",
+          "summary": "After applying the plan's caps there was nothing left to trade.",
+          "sender": "Check the amount and direction, then retry.",
+          "developer": null
+        }
+      }
+    },
+    {
+      "match": { "namePattern": "^vstsw-token-" },
+      "codes": {
+        "u4278": {
+          "name": "ERR_COOLDOWN_ALREADY_SET",
+          "tag": "already",
+          "summary": "An unstake cooldown is already in progress for this account.",
+          "sender": "Wait for the current cooldown to finish before unstaking again.",
+          "developer": null
+        }
+      }
+    },
+    {
+      "match": { "namePattern": "^pox-\\d$" },
+      "codes": {
+        "u19": {
+          "name": "ERR_ALREADY_STAKED",
+          "tag": "already",
+          "summary": "Your STX are already stacked, so this request was rejected.",
+          "sender": "Nothing to do — the existing stacking stays in place.",
+          "developer": null
+        },
+        "u30": {
+          "name": "ERR_DISTRIBUTION_ALREADY_COMPLETE",
+          "tag": "already",
+          "summary": "Rewards for this cycle were already calculated.",
+          "sender": "Nothing to do.",
+          "developer": null
+        }
+      }
+    },
+    {
+      "match": { "id": "SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-withdrawal" },
+      "codes": {
+        "u500": {
+          "name": "ERR_INVALID_ADDR_VERSION",
+          "tag": "not_found",
+          "summary": "The Bitcoin address type isn't supported for withdrawals.",
+          "sender": "Use a supported Bitcoin address type and retry.",
+          "developer": null
+        },
+        "u501": {
+          "name": "ERR_INVALID_ADDR_HASHBYTES",
+          "tag": "not_found",
+          "summary": "The Bitcoin address bytes were malformed.",
+          "sender": "Re-enter the Bitcoin address and retry.",
+          "developer": null
+        },
+        "u502": {
+          "name": "ERR_DUST_LIMIT",
+          "tag": "dust",
+          "summary": "The withdrawal amount is below the minimum (dust limit).",
+          "sender": "Withdraw a larger amount.",
+          "developer": null
+        },
+        "u506": {
+          "name": "ERR_FEE_TOO_HIGH",
+          "tag": "limit",
+          "summary": "The Bitcoin fee exceeded the maximum fee set on the request.",
+          "sender": null,
+          "developer": null
+        }
+      }
+    },
+    {
+      "match": { "namePattern": "^v0-\\d+-market$" },
+      "codes": {
+        "u400005": {
+          "name": "ERR-UNHEALTHY",
+          "tag": "health",
+          "summary": "The borrow would leave your position under-collateralised.",
+          "sender": "Borrow less or add collateral, then retry.",
+          "developer": null
+        },
+        "u400022": {
+          "name": "ERR-PRICE-FEED-UPDATE-FAILED",
+          "tag": "oracle",
+          "summary": "The market couldn't update its price feed before the borrow.",
+          "sender": "Not caused by you. Try again shortly.",
+          "developer": null
+        }
+      }
+    },
+    {
+      "match": { "namePattern": "^dual-stacking-v" },
+      "codes": {
+        "u101": {
+          "name": "ERR_ALREADY_ENROLLED",
+          "tag": "already",
+          "summary": "This account is already enrolled.",
+          "sender": "Nothing to do.",
+          "developer": null
+        }
+      }
+    }
+  ]
+}

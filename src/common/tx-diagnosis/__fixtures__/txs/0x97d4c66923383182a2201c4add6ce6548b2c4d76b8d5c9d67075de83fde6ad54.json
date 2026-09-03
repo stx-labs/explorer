@@ -1,0 +1,102 @@
+{
+  "tx_id": "0x97d4c66923383182a2201c4add6ce6548b2c4d76b8d5c9d67075de83fde6ad54",
+  "nonce": 1185,
+  "fee_rate": "3000",
+  "sender_address": "SP3KK94J424ZM0PKESVSWQ8X1YBMVM8TEGCN0YCR7",
+  "sponsored": false,
+  "post_condition_mode": "deny",
+  "post_conditions": [
+    {
+      "principal": {
+        "type_id": "principal_standard",
+        "address": "SP3KK94J424ZM0PKESVSWQ8X1YBMVM8TEGCN0YCR7"
+      },
+      "condition_code": "sent_equal_to",
+      "amount": "6218162853014",
+      "type": "fungible",
+      "asset": {
+        "asset_name": "alex",
+        "contract_address": "SP102V8P0F7JX67ARQ77WEA3D3CFB5XW39REDT0AM",
+        "contract_name": "token-alex"
+      }
+    },
+    {
+      "principal": {
+        "type_id": "principal_contract",
+        "address": "SP102V8P0F7JX67ARQ77WEA3D3CFB5XW39REDT0AM",
+        "contract_name": "amm-vault-v2-01"
+      },
+      "condition_code": "sent_greater_than_or_equal_to",
+      "amount": "751830868",
+      "type": "stx"
+    }
+  ],
+  "anchor_mode": "any",
+  "block_hash": "0x0c3a470bbbbb069432602e6e0d4e61f4b009ba2341db4fc39d10419060363e02",
+  "block_height": 8836268,
+  "block_time": 1787637971,
+  "block_time_iso": "2026-08-25T06:06:11.000Z",
+  "burn_block_time": 1787637620,
+  "burn_block_height": 963959,
+  "burn_block_time_iso": "2026-08-25T06:00:20.000Z",
+  "parent_burn_block_time": 1787637620,
+  "parent_burn_block_time_iso": "2026-08-25T06:00:20.000Z",
+  "canonical": true,
+  "tx_index": 4,
+  "tx_status": "abort_by_post_condition",
+  "tx_result": {
+    "hex": "0x0801000000000000000000000000000007d5",
+    "repr": "(err u2005)"
+  },
+  "event_count": 0,
+  "parent_block_hash": "0xbaa7e38187d11d33f44683422ef90680cf285f8040c97c3cda7138ae27e8c9ec",
+  "is_unanchored": false,
+  "microblock_hash": "0x",
+  "microblock_sequence": 2147483647,
+  "microblock_canonical": true,
+  "execution_cost_read_count": 54,
+  "execution_cost_read_length": 174024,
+  "execution_cost_runtime": 328462,
+  "execution_cost_write_count": 0,
+  "execution_cost_write_length": 0,
+  "vm_error": "Post-condition check failure on fungible asset SP102V8P0F7JX67ARQ77WEA3D3CFB5XW39REDT0AM.token-alex::alex owned by SP3KK94J424ZM0PKESVSWQ8X1YBMVM8TEGCN0YCR7: 6218162853014 SentEq 0",
+  "events": [],
+  "tx_type": "contract_call",
+  "contract_call": {
+    "contract_id": "SP102V8P0F7JX67ARQ77WEA3D3CFB5XW39REDT0AM.amm-pool-v2-01",
+    "function_name": "swap-helper",
+    "function_signature": "(define-public (swap-helper (token-x-trait trait_reference) (token-y-trait trait_reference) (factor uint) (dx uint) (min-dy (optional uint))))",
+    "function_args": [
+      {
+        "hex": "0x0616402da2c079e5d31d58b9cfc7286d1b1eb2f7834e0a746f6b656e2d616c6578",
+        "repr": "'SP102V8P0F7JX67ARQ77WEA3D3CFB5XW39REDT0AM.token-alex",
+        "name": "token-x-trait",
+        "type": "trait_reference"
+      },
+      {
+        "hex": "0x0616402da2c079e5d31d58b9cfc7286d1b1eb2f7834e0d746f6b656e2d777374782d7632",
+        "repr": "'SP102V8P0F7JX67ARQ77WEA3D3CFB5XW39REDT0AM.token-wstx-v2",
+        "name": "token-y-trait",
+        "type": "trait_reference"
+      },
+      {
+        "hex": "0x0100000000000000000000000005f5e100",
+        "repr": "u100000000",
+        "name": "factor",
+        "type": "uint"
+      },
+      {
+        "hex": "0x010000000000000000000005a7c7635496",
+        "repr": "u6218162853014",
+        "name": "dx",
+        "type": "uint"
+      },
+      {
+        "hex": "0x0a010000000000000000000000118142dd2c",
+        "repr": "(some u75183086892)",
+        "name": "min-dy",
+        "type": "(optional uint)"
+      }
+    ]
+  }
+}

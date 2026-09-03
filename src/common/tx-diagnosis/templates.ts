@@ -1,0 +1,745 @@
+/**
+ * All user-facing copy for the "Why it failed" card lives here. Structure and tone follow the
+ * design sprint (2026-09-03): second person, plain words, confidence expressed as wording
+ * (because / most likely because / we couldn't determine), sender vs developer separated,
+ * identifiers as chips (DetailRef).
+ */
+import { contractName } from './clarity-source';
+import type { Classification } from './classify';
+import type { Resolution } from './resolve-error-code';
+import type { SemanticTag } from './tags';
+import type {
+  Confidence,
+  Correlations,
+  DetailRef,
+  Evidence,
+  Fact,
+  FailedContractCallTx,
+  RichPart,
+  RuntimeFinding,
+} from './types';
+import { describeConditionCode } from './vm-error';
+
+// ---------------------------------------------------------------------------------------------
+// Detail refs
+// ---------------------------------------------------------------------------------------------
+
+export function truncateMiddle(value: string, start = 6, end = 5): string {
+  if (value.length <= start + end + 1) return value;
+  return `${value.slice(0, start)}…${value.slice(-end)}`;
+}
+
+export const ref = {
+  address: (a: string): DetailRef => ({
+    kind: 'address',
+    label: truncateMiddle(a, 6, 5),
+    value: a,
+    href: `/address/${a}`,
+  }),
+  contract: (id: string): DetailRef => ({
+    kind: 'contract',
+    label: contractName(id),
+    value: id,
+    href: `/txid/${id}`,
+  }),
+  fn: (name: string): DetailRef => ({ kind: 'function', label: name, value: name }),
+  tx: (id: string): DetailRef => ({
+    kind: 'tx',
+    label: truncateMiddle(id, 6, 4),
+    value: id,
+    href: `/txid/${id}`,
+  }),
+  constant: (name: string): DetailRef => ({ kind: 'constant', label: name, value: name }),
+  value: (v: string): DetailRef => ({ kind: 'value', label: v, value: v }),
+  asset: (assetId: string): DetailRef => ({
+    kind: 'asset',
+    label: assetName(assetId),
+    value: assetId,
+  }),
+};
+
+/** `SP….sbtc-token::sbtc-token` → `sbtc-token`; `STX` stays. */
+export function assetName(assetId: string): string {
+  if (assetId === 'STX' || /\.STX::STX$/.test(assetId)) return 'STX';
+  const idx = assetId.indexOf('::');
+  return idx >= 0 ? assetId.slice(idx + 2) : contractName(assetId);
+}
+
+export function formatStx(microStx: string | number): string {
+  const n = Number(microStx) / 1e6;
+  if (!isFinite(n)) return String(microStx);
+  return n.toLocaleString('en-US', { maximumFractionDigits: 6 });
+}
+
+export function formatInt(v: string | number): string {
+  const n = typeof v === 'string' ? Number(v.replace(/^u/, '')) : v;
+  return isFinite(n) ? n.toLocaleString('en-US') : String(v);
+}
+
+// ---------------------------------------------------------------------------------------------
+// Shared pieces
+// ---------------------------------------------------------------------------------------------
+
+export function invariantFor(tx: FailedContractCallTx, movedAsset?: string): string {
+  const fee = formatStx(tx.fee_rate);
+  const payer =
+    tx.sponsored && tx.sponsor_address
+      ? ` (paid by the sponsor ${truncateMiddle(tx.sponsor_address)})`
+      : '';
+  const tail = movedAsset ? `No ${assetName(movedAsset)} moved.` : 'Nothing else moved.';
+  return `Only the ${fee} STX fee was spent${payer}. ${tail}`;
+}
+
+function hedge(confidence: Confidence): string {
+  return confidence === 'high'
+    ? 'because'
+    : confidence === 'medium'
+      ? 'most likely because'
+      : 'possibly because';
+}
+
+// ---------------------------------------------------------------------------------------------
+// Tag copy for explicit contract errors
+// ---------------------------------------------------------------------------------------------
+
+interface TagCopy {
+  headline: string;
+  sender: string;
+  developer?: string;
+}
+
+function tagCopy(tag: SemanticTag | undefined, name: string | undefined): TagCopy | undefined {
+  const n = name ? `“${name}”` : 'an error';
+  switch (tag) {
+    case 'slippage':
+      return {
+        headline:
+          'The trade would have returned less than the minimum you set, so it was cancelled.',
+        sender:
+          'Prices moved between quote and execution. Retry with a higher slippage tolerance or a smaller amount.',
+        developer:
+          'Quote closer to submission or widen the minimum; consider a deadline so stale quotes fail fast.',
+      };
+    case 'oracle':
+      return {
+        headline:
+          "The contract couldn't get a usable price from its oracle, so the call was cancelled.",
+        sender: 'Not caused by you. Try again later or contact the app.',
+        developer: 'Check the oracle feed freshness and any fallback configuration.',
+      };
+    case 'expired':
+      return {
+        headline: 'The transaction was mined after the deadline the app set for it.',
+        sender: 'Retry — the new transaction gets a fresh deadline.',
+      };
+    case 'already':
+      return {
+        headline: `The contract reported this was already done (${n}), so nothing was changed.`,
+        sender:
+          'Nothing to do — the existing state stays in place. Check the app for the current status.',
+      };
+    case 'too_early':
+      return {
+        headline: `This can't be done yet — the contract enforces a waiting period (${n}).`,
+        sender: 'Wait for the period to pass and try again.',
+      };
+    case 'insufficient':
+      return {
+        headline: `You didn't have enough balance for this call (${n}).`,
+        sender: 'Top up the balance the app needs and retry.',
+      };
+    case 'health':
+      return {
+        headline:
+          'This would leave your position under-collateralised, so the contract refused it.',
+        sender: 'Borrow less or add collateral, then retry.',
+      };
+    case 'unauthorized':
+      return {
+        headline: `Your account isn't allowed to call this (${n}).`,
+        sender:
+          'This action is restricted — usually to the contract owner or an admin role. Nothing to retry.',
+        developer: 'Check the caller checks in the contract and which account the app signs with.',
+      };
+    case 'paused':
+      return {
+        headline: `This function is currently disabled or paused (${n}).`,
+        sender: 'Try again later or check the app for announcements.',
+      };
+    case 'dust':
+      return {
+        headline: `The amount is below the minimum the contract accepts (${n}).`,
+        sender: 'Use a larger amount.',
+      };
+    case 'signature':
+      return {
+        headline: `The signatures in this call were rejected (${n}).`,
+        sender: 'This is usually an operator-side problem; retry with fresh signatures.',
+        developer: 'Check signer uniqueness, message freshness and the signing payload.',
+      };
+    case 'not_found':
+      return {
+        headline: `The contract expected something that wasn't there (${n}).`,
+        sender: 'Retry; if it repeats, the app may be using stale data — reload it.',
+        developer:
+          'A lookup returned none — check ids, pools or positions passed in the arguments.',
+      };
+    case 'limit':
+      return {
+        headline: `A limit in the contract was exceeded (${n}).`,
+        sender: 'Reduce the amount or wait, then retry.',
+      };
+    default:
+      return undefined;
+  }
+}
+
+// ---------------------------------------------------------------------------------------------
+// Per-class builders
+// ---------------------------------------------------------------------------------------------
+
+export interface Built {
+  headline: string;
+  senderAction: string;
+  invariant: string;
+  whatHappened: Fact[];
+  developerNote?: RichPart[];
+  evidence: Evidence[];
+  confidence: Confidence;
+}
+
+function callFacts(tx: FailedContractCallTx): { fn: DetailRef; contract: DetailRef } {
+  return {
+    fn: ref.fn(tx.contract_call.function_name),
+    contract: ref.contract(tx.contract_call.contract_id),
+  };
+}
+
+function sourceLink(res: Resolution | undefined): Fact['link'] | undefined {
+  const line = res?.source?.failingLine ?? res?.info.definitionLine;
+  if (!res?.source || !line) return undefined;
+  const isCallee = res.source.contractId !== undefined;
+  return {
+    label: `Line ${line} in ${isCallee ? contractName(res.source.contractId) : 'Source code'}`,
+    href: `?tab=sourceCode&line=${line}`,
+  };
+}
+
+export function buildContractError(
+  tx: FailedContractCallTx,
+  cls: Classification,
+  res: Resolution | undefined,
+  masked?: { pcSummary: string }
+): Built {
+  const { fn, contract } = callFacts(tx);
+  const code = cls.errorCode ?? cls.resultRepr;
+  const name = res?.info.name;
+  const registry = res?.registry;
+  const native = res?.info.nativeFunction ? res.info : undefined;
+  const tag = res?.tag;
+  const copy = tagCopy(tag, name);
+
+  let confidence: Confidence = name || registry ? 'high' : native ? 'medium' : 'low';
+  let headline: string;
+  let senderAction: string;
+  let developer: string | undefined;
+
+  if (registry) {
+    headline = registry.summary;
+    senderAction = registry.sender ?? copy?.sender ?? 'Retry; if it repeats, contact the app.';
+    developer = registry.developer ?? copy?.developer ?? undefined;
+  } else if (native) {
+    headline = `This call failed because ${native.nativeMeaning}.`;
+    senderAction = 'Check the balance or details the app used and retry.';
+  } else if (copy && tag !== 'unknown') {
+    headline = copy.headline;
+    senderAction = copy.sender;
+    developer = copy.developer;
+  } else {
+    headline = name
+      ? `The contract rejected this call with the error “${name}” (${code}).`
+      : `The contract rejected this call with error ${code}.`;
+    senderAction = name
+      ? 'The app can tell you what this error means; the check that failed is linked below.'
+      : "The app can tell you what this code means; the contract's source is linked below.";
+    confidence = name ? 'medium' : 'low';
+  }
+
+  const facts: Fact[] = [
+    {
+      parts: [fn, ' on ', contract, ' ran and stopped at a check that failed.'],
+    },
+  ];
+  const line = res?.source?.failingLine;
+  if (name) {
+    const where =
+      res?.info.definedIn && res.info.definedIn !== tx.contract_call.contract_id
+        ? [' — defined in ', ref.contract(res.info.definedIn)]
+        : [];
+    facts.push({
+      parts: [
+        line ? `The check at line ${line} returned ` : 'It returned ',
+        ref.value(`(err ${code})`),
+        ' — ',
+        ref.constant(name),
+        ...where,
+        '.',
+      ],
+      link: sourceLink(res),
+    });
+  } else if (native) {
+    facts.push({
+      parts: [
+        'The built-in ',
+        ref.fn(native.nativeFunction!),
+        ' returned ',
+        ref.value(`(err ${code})`),
+        `: ${native.nativeMeaning}.`,
+      ],
+    });
+  } else {
+    facts.push({
+      parts: [
+        'It returned ',
+        ref.value(`(err ${code})`),
+        name ? '' : ' — a code the contract does not name.',
+      ],
+    });
+  }
+  if (res?.info.comments?.length) {
+    facts.push({
+      parts: [`The contract's own note on this error: “${res.info.comments.join(' ')}”`],
+    });
+  }
+  if (masked) {
+    facts.push({
+      parts: [
+        `Because the call failed, none of the expected transfers happened, so the post-condition “${masked.pcSummary}” failed too.`,
+      ],
+    });
+  }
+
+  const evidence: Evidence[] = [{ id: 'tx_result', label: 'tx_result', value: cls.resultRepr }];
+  if (name)
+    evidence.push({ id: 'constant', label: name, value: line ? `${name} · line ${line}` : name });
+  if (tag) evidence.push({ id: 'tag', label: 'tag', value: tag });
+  if (native)
+    evidence.push({ id: 'native', label: native.nativeFunction!, value: native.nativeMeaning! });
+  const nPc = tx.post_conditions?.length ?? 0;
+  if (nPc)
+    evidence.push({
+      id: 'post_conditions',
+      label: 'post-conditions',
+      value: `${nPc} post-condition${nPc > 1 ? 's' : ''} (not reached)`,
+    });
+
+  return {
+    headline,
+    senderAction,
+    invariant: invariantFor(tx),
+    whatHappened: facts,
+    developerNote: developer ? [developer] : undefined,
+    evidence,
+    confidence,
+  };
+}
+
+const RUNTIME_COPY: Record<string, { headline: string; likely?: string }> = {
+  ArithmeticUnderflow: {
+    headline:
+      "A calculation inside the contract went below zero, which Clarity doesn't allow, so the call was cancelled.",
+    likely:
+      'In swap and liquidity contracts this usually means the state changed after the app quoted you — refresh the app and retry; if it repeats, use a smaller amount.',
+  },
+  ArithmeticOverflow: {
+    headline:
+      'A calculation exceeded the largest number Clarity allows, so the call was cancelled.',
+    likely: 'Usually an amount or multiplier that is too large — check the values the app used.',
+  },
+  DivisionByZero: {
+    headline: 'The contract tried to divide by zero, so the call was cancelled.',
+    likely: 'Often an empty pool or a zero balance — retry later or with different parameters.',
+  },
+  UnwrapFailure: {
+    headline: "The contract expected a value that wasn't there, so the call was cancelled.",
+    likely:
+      'A missing entry or a failed inner call — usually an app bug or stale state; reload the app and retry.',
+  },
+  SupplyOverflow: {
+    headline: "Minting would push the token's supply past its cap, so the call was cancelled.",
+  },
+  SupplyUnderflow: {
+    headline: "Burning would take the token's supply below zero, so the call was cancelled.",
+  },
+  PoxAlreadyLocked: {
+    headline: 'Your STX are already locked for stacking, so this call was rejected.',
+    likely: 'Nothing to do — the existing lock stays in place.',
+  },
+  DefunctPoxContract: {
+    headline: 'This stacking contract is no longer active.',
+    likely: 'Use the current PoX contract through an up-to-date app.',
+  },
+  NoSuchToken: {
+    headline: "The contract referred to a token that doesn't exist, so the call was cancelled.",
+  },
+  BadBlockHeight: {
+    headline:
+      'The contract looked up a block height that is out of range, so the call was cancelled.',
+  },
+  MaxStackDepthReached: {
+    headline: 'The contract recursed too deeply, so the call was cancelled.',
+  },
+};
+
+export function buildRuntimePanic(
+  tx: FailedContractCallTx,
+  cls: Classification,
+  rt: RuntimeFinding
+): Built {
+  const { fn, contract } = callFacts(tx);
+  const copy = RUNTIME_COPY[rt.variant] ?? {
+    headline: `The contract hit an internal error (${rt.variant}), so the call was cancelled.`,
+  };
+  const n = rt.calleeCandidates.length;
+  const confidence: Confidence =
+    rt.candidateLines.length === 1 && n === 0 ? 'medium' : n > 4 ? 'low' : 'medium';
+
+  const facts: Fact[] = [
+    {
+      parts: [
+        fn,
+        ' on ',
+        contract,
+        n ? ` ran and called ${n} other contract${n > 1 ? 's' : ''}.` : ' ran.',
+      ],
+    },
+  ];
+  const detail = rt.detail ? ` (${rt.detail})` : '';
+  if (n) {
+    facts.push({
+      parts: [
+        `The failure was a ${rt.variant}${detail}. Clarity stops the whole transaction on the first one. It happened in this contract or one of the ${n} it called:`,
+      ],
+      chips: rt.calleeCandidates.map(ref.contract),
+    });
+  } else if (rt.candidateLines.length === 1) {
+    facts.push({
+      parts: [
+        `The failure was a ${rt.variant}${detail}, at line ${rt.candidateLines[0]} of `,
+        contract,
+        '.',
+      ],
+      link: {
+        label: `Line ${rt.candidateLines[0]} in Source code`,
+        href: `?tab=sourceCode&line=${rt.candidateLines[0]}`,
+      },
+    });
+  } else {
+    facts.push({ parts: [`The failure was a ${rt.variant}${detail}.`] });
+  }
+  facts.push({
+    parts: [
+      "The network doesn't keep a trace for failed calls, so the exact expression can't be pinpointed from here.",
+    ],
+  });
+
+  const evidence: Evidence[] = [
+    { id: 'tx_result', label: 'tx_result', value: cls.resultRepr },
+    { id: 'vm_error', label: 'vm_error', value: rt.variant },
+  ];
+  if (n)
+    evidence.push({
+      id: 'callees',
+      label: 'contracts called',
+      value: `${n} contract${n > 1 ? 's' : ''} called`,
+    });
+
+  return {
+    headline: copy.headline,
+    senderAction: copy.likely ?? 'Retry; if it repeats, contact the app with this transaction id.',
+    invariant: invariantFor(tx),
+    whatHappened: facts,
+    developerNote: [
+      `Reproduce in Clarinet simnet with mainnet data at block ${formatInt(tx.block_height - 1)} to get the stack trace.`,
+    ],
+    evidence,
+    confidence,
+  };
+}
+
+export function buildAnalysisError(tx: FailedContractCallTx, cls: Classification): Built {
+  const { fn, contract } = callFacts(tx);
+  const message = cls.vmError?.kind === 'analysis' ? cls.vmError.message : cls.subkind;
+  const noSuchContract = /NoSuchContract/i.test(message);
+  const badFn = /BadFunctionName|NoSuchPublicFunction|UndefinedFunction/i.test(message);
+  const trait = /Trait/i.test(message);
+  const headline = noSuchContract
+    ? "The app called a contract that doesn't exist on this network."
+    : badFn
+      ? "The app called a function that doesn't exist on this contract."
+      : trait
+        ? "A contract passed to this call doesn't implement the interface the function requires."
+        : 'The call failed a type check at runtime, so it was cancelled.';
+  return {
+    headline,
+    senderAction:
+      'Nothing you can fix — this is an app bug (wrong contract id or version). Report it to the app.',
+    invariant: invariantFor(tx),
+    whatHappened: [
+      {
+        parts: [
+          fn,
+          ' on ',
+          contract,
+          ' could not run: ',
+          ref.value(message.length > 120 ? `${message.slice(0, 117)}…` : message),
+        ],
+      },
+    ],
+    developerNote: [
+      'Check the contract id / version the app targets on this network and the trait implementations it passes.',
+    ],
+    evidence: [
+      { id: 'tx_result', label: 'tx_result', value: cls.resultRepr },
+      { id: 'vm_error', label: 'vm_error', value: message },
+    ],
+    confidence: 'high',
+  };
+}
+
+export function buildPostCondition(tx: FailedContractCallTx, cls: Classification): Built {
+  const { fn, contract } = callFacts(tx);
+  const pc = cls.postCondition!;
+  const sender = tx.sender_address;
+  const assetLabel = pc.asset ? assetName(pc.asset) : 'the asset';
+  const okRepr = cls.resultRepr;
+  const pcLink =
+    pc.index !== undefined
+      ? {
+          label: `Post-condition #${pc.index + 1}`,
+          href: `?tab=postConditions&highlight=${pc.index}`,
+        }
+      : { label: 'Post-conditions', href: '?tab=postConditions' };
+  const evidence: Evidence[] = [
+    { id: 'tx_result', label: 'tx_result', value: okRepr },
+    { id: 'mode', label: 'mode', value: `mode ${tx.post_condition_mode}` },
+  ];
+
+  switch (pc.problem) {
+    case 'principal_mismatch': {
+      evidence.push({
+        id: 'pc',
+        label: 'post-condition',
+        value: `pc[${pc.index}].principal ≠ sender`,
+      });
+      return {
+        headline: `The post-condition names a different account than the one that signed, so the ${assetLabel} transfer was rolled back.`,
+        senderAction:
+          "Make sure the app's connected account matches the one you sign with, then reconnect the wallet and retry.",
+        invariant: invariantFor(tx, pc.asset),
+        whatHappened: [
+          {
+            parts: [
+              fn,
+              ' on ',
+              contract,
+              ` moved ${assetLabel} from `,
+              ref.address(sender),
+              ' and returned ',
+              ref.value(okRepr),
+              '.',
+            ],
+          },
+          {
+            parts: [
+              'The post-condition allows that movement only from ',
+              ref.address(pc.principal!),
+              ' — not the sender. In deny mode, any movement that is not covered fails the transaction.',
+            ],
+            link: pcLink,
+          },
+        ],
+        developerNote: [
+          'Build post-conditions with ',
+          ref.constant('Pc.origin()'),
+          ', or the address that will sign at submit time — never a cached one.',
+        ],
+        evidence,
+        confidence: 'high',
+      };
+    }
+    case 'asset_unchecked': {
+      evidence.push({
+        id: 'pc',
+        label: 'post-condition',
+        value: `no post-condition covers ${assetLabel}`,
+      });
+      const mover =
+        pc.movedBy === sender
+          ? 'your account'
+          : pc.movedBy
+            ? `${truncateMiddle(pc.movedBy)}`
+            : 'an account';
+      return {
+        headline: `The app didn't declare that ${assetLabel} would move, so the wallet's safety check rejected the transaction.`,
+        senderAction:
+          'Retry from an updated version of the app; there is nothing else you can change.',
+        invariant: invariantFor(tx, pc.asset),
+        whatHappened: [
+          {
+            parts: [
+              fn,
+              ' on ',
+              contract,
+              ` moved ${assetLabel} from ${mover} and returned `,
+              ref.value(okRepr),
+              '.',
+            ],
+          },
+          {
+            parts: [
+              `None of the ${tx.post_conditions.length} post-condition${tx.post_conditions.length === 1 ? '' : 's'} covers ${assetLabel}. In deny mode, any movement that is not covered fails the transaction.`,
+            ],
+            link: pcLink,
+          },
+        ],
+        developerNote: [
+          'Add a post-condition covering ',
+          ref.asset(pc.asset ?? assetLabel),
+          pc.movedBy ? [' for ', ref.address(pc.movedBy)] : '',
+          '.',
+        ].flat(),
+        evidence,
+        confidence: 'high',
+      };
+    }
+    case 'amount_not_met': {
+      const cond = pc.conditionCode ? describeConditionCode(pc.conditionCode as never) : '';
+      evidence.push({
+        id: 'pc',
+        label: 'post-condition',
+        value: `expected ${cond} ${pc.expected}, actual ${pc.actual}`,
+      });
+      return {
+        headline: `The app said ${cond} ${formatInt(pc.expected!)} ${assetLabel} would leave ${pc.principal === sender ? 'your account' : truncateMiddle(pc.principal ?? '')}, but ${formatInt(pc.actual!)} would have — the safety check stopped it.`,
+        senderAction: 'Retry; if it repeats, the app is quoting the amount wrong.',
+        invariant: invariantFor(tx, pc.asset),
+        whatHappened: [
+          {
+            parts: [
+              fn,
+              ' on ',
+              contract,
+              ' returned ',
+              ref.value(okRepr),
+              `, moving ${formatInt(pc.actual!)} ${assetLabel} from `,
+              ref.address(pc.principal ?? sender),
+              '.',
+            ],
+          },
+          {
+            parts: [`The post-condition required ${cond} ${formatInt(pc.expected!)}.`],
+            link: pcLink,
+          },
+        ],
+        developerNote: [
+          'Set the condition with headroom (for example ',
+          ref.constant('willSendLte'),
+          ') and check token decimals and fees on transfer.',
+        ],
+        evidence,
+        confidence: 'high',
+      };
+    }
+    case 'nft':
+      evidence.push({ id: 'pc', label: 'post-condition', value: 'NFT movement not covered' });
+      return {
+        headline:
+          "The post-condition didn't cover the NFT that moved, so the transaction was rolled back.",
+        senderAction: 'Retry from an updated version of the app.',
+        invariant: invariantFor(tx, pc.asset),
+        whatHappened: [
+          {
+            parts: [
+              fn,
+              ' on ',
+              contract,
+              ' returned ',
+              ref.value(okRepr),
+              `, moving an NFT (${assetLabel}).`,
+            ],
+          },
+          {
+            parts: ['The post-conditions did not cover that NFT (or named a different asset id).'],
+            link: pcLink,
+          },
+        ],
+        developerNote: ['Check the NFT asset id and value in the post-condition.'],
+        evidence,
+        confidence: 'high',
+      };
+    default:
+      return {
+        headline:
+          "The contract succeeded, but a post-condition set by the app didn't hold, so the transaction was rolled back.",
+        senderAction: 'Retry; if it repeats, contact the app.',
+        invariant: invariantFor(tx),
+        whatHappened: [
+          { parts: [fn, ' on ', contract, ' returned ', ref.value(okRepr), '.'] },
+          {
+            parts: [
+              tx.vm_error
+                ? `The network reported: ${tx.vm_error}`
+                : 'The post-condition check failed.',
+            ],
+            link: pcLink,
+          },
+        ],
+        evidence,
+        confidence: 'medium',
+      };
+  }
+}
+
+/** Summary of a post-condition for the masked-error note, e.g. `pool sends at least 960,464 sbtc-token`. */
+export function summarizePostCondition(cls: Classification): string {
+  const pc = cls.postCondition;
+  const v = cls.vmError;
+  if (v?.kind === 'pc_amount') {
+    return `${truncateMiddle(v.principal)} sends ${describeConditionCode(v.code)} ${formatInt(v.expected)} ${assetName(v.asset)}`;
+  }
+  if (pc?.asset) return `${assetName(pc.asset)} post-condition`;
+  return 'post-condition';
+}
+
+/** Facts appended after correlations resolve. */
+export function correlationFacts(
+  tx: FailedContractCallTx,
+  related: Correlations,
+  cls: Classification
+): Fact[] {
+  const facts: Fact[] = [];
+  if (related.pcPrincipalTxCount && cls.postCondition?.principal) {
+    facts.push({
+      parts: [
+        ref.address(cls.postCondition.principal),
+        ` is an active account (${formatInt(related.pcPrincipalTxCount)} transactions) — most likely another account in your wallet.`,
+      ],
+    });
+  }
+  if (related.balanceAtParent) {
+    facts.push({
+      parts: [
+        `At the time, your ${assetName(related.balanceAtParent.asset)} balance was ${formatStx(related.balanceAtParent.balance)}.`,
+      ],
+    });
+  }
+  if (related.retriedSuccessfullyIn) {
+    facts.push({
+      parts: ['You retried successfully in ', ref.tx(related.retriedSuccessfullyIn), '.'],
+    });
+  }
+  return facts;
+}
+
+export { hedge };

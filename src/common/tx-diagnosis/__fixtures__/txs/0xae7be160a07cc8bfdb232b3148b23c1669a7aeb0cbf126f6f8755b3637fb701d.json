@@ -1,0 +1,106 @@
+{
+  "tx_id": "0xae7be160a07cc8bfdb232b3148b23c1669a7aeb0cbf126f6f8755b3637fb701d",
+  "nonce": 287,
+  "fee_rate": "500000",
+  "sender_address": "SP24H94V7S19VBC7KFT2K8GAPENV4H1F6B0VFM7MC",
+  "sponsored": false,
+  "post_condition_mode": "deny",
+  "post_conditions": [
+    {
+      "principal": {
+        "type_id": "principal_standard",
+        "address": "SP24H94V7S19VBC7KFT2K8GAPENV4H1F6B0VFM7MC"
+      },
+      "condition_code": "sent_less_than_or_equal_to",
+      "amount": "3641",
+      "type": "fungible",
+      "asset": {
+        "asset_name": "sbtc-token",
+        "contract_address": "SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4",
+        "contract_name": "sbtc-token"
+      }
+    },
+    {
+      "principal": {
+        "type_id": "principal_standard",
+        "address": "SP24H94V7S19VBC7KFT2K8GAPENV4H1F6B0VFM7MC"
+      },
+      "condition_code": "sent_less_than_or_equal_to",
+      "amount": "1591426752",
+      "type": "fungible",
+      "asset": {
+        "asset_name": "usdcx-token",
+        "contract_address": "SP120SBRBQJ00MCWS7TM5R8WJNTTKD5K0HFRC2CNE",
+        "contract_name": "usdcx"
+      }
+    }
+  ],
+  "anchor_mode": "any",
+  "block_hash": "0x63632065f34ce5bd8cb6ac8394d7fe94a750362aa28fb14bff0d6dba57a11fcf",
+  "block_height": 8884618,
+  "block_time": 1788178046,
+  "block_time_iso": "2026-08-31T12:07:26.000Z",
+  "burn_block_time": 1788177036,
+  "burn_block_height": 964873,
+  "burn_block_time_iso": "2026-08-31T11:50:36.000Z",
+  "parent_burn_block_time": 1788177036,
+  "parent_burn_block_time_iso": "2026-08-31T11:50:36.000Z",
+  "canonical": true,
+  "tx_index": 0,
+  "tx_status": "abort_by_post_condition",
+  "tx_result": {
+    "hex": "0x070c000000030d6163746976652d62696e2d696400000000000000000000000000000000aa136163746976652d62696e2d69642d64656c7461010000000000000000000000000000000007726573756c74730b0000004a0100000000000000000000000002c505480100000000000000000000000002c303110100000000000000000000000002c4fc690100000000000000000000000002c9b1620100000000000000000000000002bf61430100000000000000000000000002ba379f0100000000000000000000000002b242c20100000000000000000000000002b918290100000000000000000000000002bfacff0100000000000000000000000002bacce50100000000000000000000000002c08fa20100000000000000000000000002c45ff90100000000000000000000000002c7a9300100000000000000000000000002be587e0100000000000000000000000002b37f0e0100000000000000000000000002b54bda0100000000000000000000000002c04d290100000000000000000000000002b5d7ff01000000000000000000000000028a0ef301000000000000000000000000025a1d2f01000000000000000000000000024c3c7601000000000000000000000000024a7c6c01000000000000000000000000023ed3f0010000000000000000000000000244b221010000000000000000000000000245ddce010000000000000000000000000240cf510100000000000000000000000002408d6001000000000000000000000000023f6c69010000000000000000000000000236286001000000000000000000000000022b22b1010000000000000000000000000108c33d010000000000000000000000000106b8f50100000000000000000000000000ffd54f0100000000000000000000000000f4ad340100000000000000000000000000f31dd60100000000000000000000000000eefd430100000000000000000000000000f05be40100000000000000000000000000eec1c20100000000000000000000000000f2d75a010000000000000000000000000000644501000000000000000000000000000074a8010000000000000000000000000000758201000000000000000000000000000072b801000000000000000000000000000074f7010000000000000000000000000000796301000000000000000000000000000080ab0100000000000000000000000000007ee80100000000000000000000000000007ee401000000000000000000000000000080b8010000000000000000000000000000850f01000000000000000000000000000089b001000000000000000000000000000088610100000000000000000000000000008976010000000000000000000000000000860a01000000000000000000000000000084f10100000000000000000000000000008692010000000000000000000000000000869101000000000000000000000000000002d101000000000000000000000000000001ed010000000000000000000000000000020501000000000000000000000000000001f801000000000000000000000000000001dc010000000000000000000000000000020801000000000000000000000000000002d4010000000000000000000000000000020001000000000000000000000000000002f001000000000000000000000000000001fd01000000000000000000000000000002d201000000000000000000000000000003030100000000000000000000000000000212010000000000000000000000000000030a010000000000000000000000000000021e0100000000000000000000000000000218010000000000000000000000000000021f",
+    "repr": "(ok (tuple (active-bin-id 170) (active-bin-id-delta u0) (results (list u46466376 u46334737 u46464105 u46772578 u46096707 u45758367 u45236930 u45684777 u46116095 u45796581 u46174114 u46424057 u46639408 u46028926 u45317902 u45435866 u46157097 u45471743 u42602227 u39460143 u38550646 u38435948 u37671920 u38056481 u38133198 u37801809 u37784928 u37710953 u37103712 u36381361 u17351485 u17217781 u16766287 u16035124 u15932886 u15662403 u15752164 u15647170 u15914842 u25669 u29864 u30082 u29368 u29943 u31075 u32939 u32488 u32484 u32952 u34063 u35248 u34913 u35190 u34314 u34033 u34450 u34449 u721 u493 u517 u504 u476 u520 u724 u512 u752 u509 u722 u771 u530 u778 u542 u536 u543))))"
+  },
+  "event_count": 0,
+  "parent_block_hash": "0xc1da2ca244e3779fb8779fbb9ec805394a18cfc22f6cd0d580294e41409328a4",
+  "is_unanchored": false,
+  "microblock_hash": "0x",
+  "microblock_sequence": 2147483647,
+  "microblock_canonical": true,
+  "execution_cost_read_count": 3414,
+  "execution_cost_read_length": 15276929,
+  "execution_cost_runtime": 31956970,
+  "execution_cost_write_count": 814,
+  "execution_cost_write_length": 70632,
+  "vm_error": "Post-condition check failure: No checks for non-fungible asset SM1FKXGNZJWSTWDWXQZJNF7B5TV5ZB235JTCXYXKD.dlmm-pool-sbtc-usdcx-v-1-bps-10::pool-token-id moved by SP24H94V7S19VBC7KFT2K8GAPENV4H1F6B0VFM7MC",
+  "events": [],
+  "tx_type": "contract_call",
+  "contract_call": {
+    "contract_id": "SM1FKXGNZJWSTWDWXQZJNF7B5TV5ZB235JTCXYXKD.dlmm-liquidity-router-v-1-1",
+    "function_name": "add-relative-liquidity-same-multi",
+    "function_signature": "(define-public (add-relative-liquidity-same-multi (positions (list 288 (tuple (active-bin-id-offset int) (max-x-liquidity-fee uint) (max-y-liquidity-fee uint) (min-dlp uint) (x-amount uint) (y-amount uint)))) (pool-trait trait_reference) (x-token-trait trait_reference) (y-token-trait trait_reference) (active-bin-tolerance (optional (tuple (expected-bin-id int) (max-deviation uint))))))",
+    "function_args": [
+      {
+        "hex": "0x0b0000004a0c00000006146163746976652d62696e2d69642d6f666673657400\u2026",
+        "repr": "(list (tuple (active-bin-id-offset -38) (max-x-liquidity-fee u0) (max-y-liquidity-fee u0) (min-dlp u44607721) (x-amount u0) (y-amount u40805814)) (tuple (active-bin-id-offset -37) (max-x-liquidity-fee u0) (max-y-liquidity-fee u0) (min-dlp u44481347) (x-amount u0) (y-amount u40805814)) (tuple (active-bin-id-offset -36) (max-x-liquidity-fee u0) (max-y-liquidity-fee u0) (min-dlp u44605541) (x-amount u0) (y-amount u40805814)) (tuple (active-bin-id-offset -35) (max-x-liquidity-fee u0) (max-y-liquidity-fee u0) (min-dlp u44901675) (x-amount u0) (y-amount u40805814)) (tuple (active-bin-id-offset -34) (max-x-liquidity-fee u0) (max-y-liquidity-fee u0) (min-dlp u44252839) (x-amount u0) (y-amount u40805814)) (tuple (active-bin-id-offset -33) (max-x-liquidity-fee u0) (max-y-liquidity-fee u0) (min-dlp u43928033) (x-amount u0) (y-amount u40805814)) (tuple (active-bin-id-offset -32) (max-x-liquidity-fee u0) (max-y-liquidity-fee u0) (min-dlp u43427453) (x-amount u0) (y-amount u40805814)) (tuple (active-bin-id-offset -31) (max-x-liquidity-fee u0) (max-y-liquidity-fee u0) (min-dlp u43857386) (x-amount u0) (y-amount u40805814)) (tuple (active-bin-id-offset -30) (max-x-liquidity-fee u0) (max-y-liquidity-fee u0) (min-dlp u44271451) (x-amount u0) (y-amount u40805814)) (tuple (active-bin-id-offset -29) (max-x-liquidity-fee u0) (max-y-liquidity-fee u0) (min-dlp u43964717) (x-amount u0) (y-amount u40805814)) (tuple (active-bin-id-offset -28) (max-x-liquidity-fee u0) (max-y-liquidity-fee u0) (min-dlp u44327149) (x-amount u0) (y-amount u40805814)) (tuple (active-bin-id-offset -27) (max-x-liquidity-fee u0) (max-y-liquidity-fee u0) (min-dlp u44567095) (x-amount u0) (y-amount u40805814)) (tuple (active-bin-id-offset -26) (max-x-liquidity-fee u0) (max-y-liquidity-fee u0) (min-dlp u44773832) (x-amount u0) (y-amount u40805814)) (tuple (active-bin-id-offset -25) (max-x-liquidity-fee u0) (max-y-liquidity-fee u0) (min-dlp u44187769) (x-amount u0) (y-amount u40805814)) (tuple (active-bin-id-offset -24) (max-x-liquidity-fee u0) (max-y-liquidity-fee u0) (min-dlp u43505186) (x-amount u0) (y-amount u40805814)) (tuple (active-bin-id-offset -23) (max-x-liquidity-fee u0) (max-y-liquidity-fee u0) (min-dlp u43618431) (x-amount u0) (y-amount u40805814)) (tuple (active-bin-id-offset -22) (max-x-liquidity-fee u0) (max-y-liquidity-fee u0) (min-dlp u44310813) (x-amount u0) (y-amount u40805814)) (tuple (active-bin-id-offset -21) (max-x-liquidity-fee u0) (max-y-liquidity-fee u0) (min-dlp u43652874) (x-amount u0) (y-amount u40805814)) (tuple (active-bin-id-offset -20) (max-x-liquidity-fee u0) (max-y-liquidity-fee u0) (min-dlp u40898138) (x-amount u0) (y-amount u40805814)) (tuple (active-bin-id-offset -19) (max-x-liquidity-fee u0) (max-y-liquidity-fee u0) (min-dlp u37881737) (x-amount u0) (y-amount u40805814)) (tuple (active-bin-id-offset -18) (max-x-liquidity-fee u0) (max-y-liquidity-fee u0) (min-dlp u37008620) (x-amount u0) (y-amount u40805814)) (tuple (active-bin-id-offset -17) (max-x-liquidity-fee u0) (max-y-liquidity-fee u0) (min-dlp u36898510) (x-amount u0) (y-amount u40805814)) (tuple (active-bin-id-offset -16) (max-x-liquidity-fee u0) (max-y-liquidity-fee u0) (min-dlp u36165043) (x-amount u0) (y-amount u40805814)) (tuple (active-bin-id-offset -15) (max-x-liquidity-fee u0) (max-y-liquidity-fee u0) (min-dlp u36534221) (x-amount u0) (y-amount u40805814)) (tuple (active-bin-id-offset -14) (max-x-liquidity-fee u0) (max-y-liquidity-fee u0) (min-dlp u36607870) (x-amount u0) (y-amount u40805814)) (tuple (active-bin-id-offset -13) (max-x-liquidity-fee u0) (max-y-liquidity-fee u0) (min-dlp u36289736) (x-amount u0) (y-amount u40805814)) (tuple (active-bin-id-offset -12) (max-x-liquidity-fee u0) (max-y-liquidity-fee u0) (min-dlp u36273531) (x-amount u0) (y-amount u40805814)) (tuple (active-bin-id-offset -11) (max-x-liquidity-fee u0) (max-y-liquidity-fee u0) (min-dlp u36202515) (x-amount u0) (y-amount u40805814)) (tuple (active-bin-id-offset -10) (max-x-liquidity-fee u0) (max-y-liquidity-fee u0) (min-dlp u35619564) (x-amount u0) (y-amount u40805814)) (tuple (active-bin-id-offset -\u2026",
+        "name": "positions",
+        "type": "(list 288 (tuple (active-bin-id-offset int) (max-x-liquidity-fee uint) (max-y-liquidity-fee uint) (min-dlp uint) (x-amount uint) (y-amount uint)))"
+      },
+      {
+        "hex": "0x06145f3ec2bf9733ae379dbfe5579d65d6cbf58865961f646c6d6d2d706f6f6c2d736274632d75736463782d762d312d6270732d3130",
+        "repr": "'SM1FKXGNZJWSTWDWXQZJNF7B5TV5ZB235JTCXYXKD.dlmm-pool-sbtc-usdcx-v-1-bps-10",
+        "name": "pool-trait",
+        "type": "trait_reference"
+      },
+      {
+        "hex": "0x0614f6decc7cfff2a413bd7cd4f53c25ad7fd1899acc0a736274632d746f6b656e",
+        "repr": "'SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token",
+        "name": "x-token-trait",
+        "type": "trait_reference"
+      },
+      {
+        "hex": "0x0616440caf0bbc800a33993ea85c2392aeb53696608b057573646378",
+        "repr": "'SP120SBRBQJ00MCWS7TM5R8WJNTTKD5K0HFRC2CNE.usdcx",
+        "name": "y-token-trait",
+        "type": "trait_reference"
+      },
+      {
+        "hex": "0x0a0c000000020f65787065637465642d62696e2d696400000000000000000000000000000000aa0d6d61782d646576696174696f6e0100000000000000000000000000000005",
+        "repr": "(some (tuple (expected-bin-id 170) (max-deviation u5)))",
+        "name": "active-bin-tolerance",
+        "type": "(optional (tuple (expected-bin-id int) (max-deviation uint)))"
+      }
+    ]
+  }
+}

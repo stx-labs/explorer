@@ -1,0 +1,123 @@
+{
+  "tx_id": "0x437283f81fea5f07f9a408a1f51d92513884526c85264b505e178aa9e9fb94b4",
+  "nonce": 501,
+  "fee_rate": "106680",
+  "sender_address": "SP305GR6VFTVJDXW94XFZGB9B3TPXBTK3XEFF3019",
+  "sponsored": false,
+  "post_condition_mode": "deny",
+  "post_conditions": [
+    {
+      "principal": {
+        "type_id": "principal_standard",
+        "address": "SP305GR6VFTVJDXW94XFZGB9B3TPXBTK3XEFF3019"
+      },
+      "condition_code": "sent_equal_to",
+      "amount": "103000",
+      "type": "stx"
+    }
+  ],
+  "anchor_mode": "any",
+  "block_hash": "0x9ee31a884ffbc683bad121a4363e7a5b0b9c77ba2fa0af494056d177f8195b8d",
+  "block_height": 8831098,
+  "block_time": 1787564565,
+  "block_time_iso": "2026-08-24T09:42:45.000Z",
+  "burn_block_time": 1787564027,
+  "burn_block_height": 963841,
+  "burn_block_time_iso": "2026-08-24T09:33:47.000Z",
+  "parent_burn_block_time": 1787564027,
+  "parent_burn_block_time_iso": "2026-08-24T09:33:47.000Z",
+  "canonical": true,
+  "tx_index": 1,
+  "tx_status": "abort_by_post_condition",
+  "tx_result": {
+    "hex": "0x0801000000000000000000000000000003ea",
+    "repr": "(err u1002)"
+  },
+  "event_count": 0,
+  "parent_block_hash": "0x6e1f5d5534cb3d707e879dc5aa97e09e92aebb53bbef2b05a0c860c363f267c2",
+  "is_unanchored": false,
+  "microblock_hash": "0x",
+  "microblock_sequence": 2147483647,
+  "microblock_canonical": true,
+  "execution_cost_read_count": 14,
+  "execution_cost_read_length": 14519,
+  "execution_cost_runtime": 24546,
+  "execution_cost_write_count": 0,
+  "execution_cost_write_length": 0,
+  "vm_error": "Post-condition check failure on STX owned by SP305GR6VFTVJDXW94XFZGB9B3TPXBTK3XEFF3019: 103000 SentEq 0",
+  "events": [],
+  "tx_type": "contract_call",
+  "contract_call": {
+    "contract_id": "SP337NP61BD34ES77QK4XZP6R9AXV235GV6W1YMNT.boostx-v2",
+    "function_name": "boostx-message",
+    "function_signature": "(define-public (boostx-message (content-author principal) (amount-or-id uint) (via-id (string-utf8 256)) (is-stx bool) (is-nft bool) (ft-contract-id (optional trait_reference)) (nft-contract-id (optional trait_reference)) (memo (optional (buff 34))) (message (optional (string-utf8 256))) (options-contract trait_reference) (bns-contract trait_reference)))",
+    "function_args": [
+      {
+        "hex": "0x0516f15025e7384e6a5fbec73b9515e031872bbc89bb",
+        "repr": "'SP3RN09F77176MQXYRWXSA5F0663JQF49QFVB3WZS",
+        "name": "content-author",
+        "type": "principal"
+      },
+      {
+        "hex": "0x0100000000000000000000000000019258",
+        "repr": "u103000",
+        "name": "amount-or-id",
+        "type": "uint"
+      },
+      {
+        "hex": "0x0e0000003c68747470733a2f2f6465636173742e696f2f3f636c69703d66396334333533342d386339632d343632642d616364382d643163663766653331666236",
+        "repr": "u\"https://decast.io/?clip=f9c43534-8c9c-462d-acd8-d1cf7fe31fb6\"",
+        "name": "via-id",
+        "type": "(string-utf8 256)"
+      },
+      {
+        "hex": "0x03",
+        "repr": "true",
+        "name": "is-stx",
+        "type": "bool"
+      },
+      {
+        "hex": "0x04",
+        "repr": "false",
+        "name": "is-nft",
+        "type": "bool"
+      },
+      {
+        "hex": "0x09",
+        "repr": "none",
+        "name": "ft-contract-id",
+        "type": "(optional trait_reference)"
+      },
+      {
+        "hex": "0x09",
+        "repr": "none",
+        "name": "nft-contract-id",
+        "type": "(optional trait_reference)"
+      },
+      {
+        "hex": "0x09",
+        "repr": "none",
+        "name": "memo",
+        "type": "(optional (buff 34))"
+      },
+      {
+        "hex": "0x0a0e0000000c4c6f76652069742073697220",
+        "repr": "(some u\"Love it sir \")",
+        "name": "message",
+        "type": "(optional (string-utf8 256))"
+      },
+      {
+        "hex": "0x0616c67ad8c15b464764e7bcc9dfd8d84abbb10cb0d90e626f6f7374782d6f7074696f6e73",
+        "repr": "'SP337NP61BD34ES77QK4XZP6R9AXV235GV6W1YMNT.boostx-options",
+        "name": "options-contract",
+        "type": "trait_reference"
+      },
+      {
+        "hex": "0x0616aeef80ca848789cacbd8499f07655adf5570636a06424e532d5632",
+        "repr": "'SP2QEZ06AGJ3RKJPBV14SY1V5BBFNAW33D96YPGZF.BNS-V2",
+        "name": "bns-contract",
+        "type": "trait_reference"
+      }
+    ]
+  }
+}

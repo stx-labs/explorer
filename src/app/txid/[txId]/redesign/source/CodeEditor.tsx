@@ -23,64 +23,85 @@ const BUTTONS_HEIGHT = 8;
 
 type CodeEditorProps = {
   code: string;
+  /** 1-based line to scroll to and highlight once the editor mounts. */
+  revealLine?: number;
 } & Partial<EditorProps>;
 
-const CodeEditorBase = forwardRef<any, CodeEditorProps>(({ code, ...editorProps }, ref) => {
-  const handleEditorBeforeMount: BeforeMount = useCallback(async (monaco: Monaco) => {
-    configLanguage(monaco);
-    hover(monaco);
-    autocomplete(monaco);
-    defineTheme(monaco);
-    if (claritySyntax) await liftOff(monaco, claritySyntax);
-  }, []);
-  const handleEditorOnMount: OnMount = useCallback(
-    editor => {
-      if (ref && 'current' in ref) {
-        ref.current = editor;
-      }
-      editor.updateOptions({
-        wordSeparators: '`~!@#$%^&*()=+[{]}\\|;:\'",.<>/?',
-      });
-    },
-    [ref]
-  );
-  const colorMode = useColorMode();
+const HIGHLIGHT_LINE_CLASS = 'code-editor-highlight-line';
 
-  return (
-    <Stack
-      css={{ '& .monaco-editor, & .overflow-guard': { borderRadius: 'redesign.xl' } }}
-      w="full"
-      flexGrow={1}
-      minHeight={DEFAULT_EDITOR_HEIGHT}
-    >
-      <Editor
-        width="full"
-        beforeMount={handleEditorBeforeMount}
-        onMount={handleEditorOnMount}
-        defaultLanguage="clarity"
-        theme={colorMode.colorMode === 'light' ? 'vs-light' : 'vs-dark'}
-        value={code.replace(/^\s+|\s+$/g, '')}
-        keepCurrentModel
-        options={{
-          fontLigatures: true,
-          fontSize: 14,
-          minimap: {
-            enabled: false,
-          },
-          readOnly: true,
-          folding: true,
-          tabFocusMode: true,
-          automaticLayout: true,
-          scrollBeyondLastLine: false,
-          scrollbar: {
-            alwaysConsumeMouseWheel: false,
+const CodeEditorBase = forwardRef<any, CodeEditorProps>(
+  ({ code, revealLine, ...editorProps }, ref) => {
+    const handleEditorBeforeMount: BeforeMount = useCallback(async (monaco: Monaco) => {
+      configLanguage(monaco);
+      hover(monaco);
+      autocomplete(monaco);
+      defineTheme(monaco);
+      if (claritySyntax) await liftOff(monaco, claritySyntax);
+    }, []);
+    const handleEditorOnMount: OnMount = useCallback(
+      (editor, monaco) => {
+        if (ref && 'current' in ref) {
+          ref.current = editor;
+        }
+        editor.updateOptions({
+          wordSeparators: '`~!@#$%^&*()=+[{]}\\|;:\'",.<>/?',
+        });
+        if (revealLine) {
+          editor.createDecorationsCollection([
+            {
+              range: new monaco.Range(revealLine, 1, revealLine, 1),
+              options: { isWholeLine: true, className: HIGHLIGHT_LINE_CLASS },
+            },
+          ]);
+          editor.revealLineInCenter(revealLine);
+        }
+      },
+      [ref, revealLine]
+    );
+    const colorMode = useColorMode();
+
+    return (
+      <Stack
+        css={{
+          '& .monaco-editor, & .overflow-guard': { borderRadius: 'redesign.xl' },
+          [`& .${HIGHLIGHT_LINE_CLASS}`]: {
+            bg: 'feedback.red-150',
+            _dark: { bg: 'transactionStatus.failed' },
           },
         }}
-        {...editorProps}
-      />
-    </Stack>
-  );
-});
+        w="full"
+        flexGrow={1}
+        minHeight={DEFAULT_EDITOR_HEIGHT}
+      >
+        <Editor
+          width="full"
+          beforeMount={handleEditorBeforeMount}
+          onMount={handleEditorOnMount}
+          defaultLanguage="clarity"
+          theme={colorMode.colorMode === 'light' ? 'vs-light' : 'vs-dark'}
+          value={code.replace(/^\s+|\s+$/g, '')}
+          keepCurrentModel
+          options={{
+            fontLigatures: true,
+            fontSize: 14,
+            minimap: {
+              enabled: false,
+            },
+            readOnly: true,
+            folding: true,
+            tabFocusMode: true,
+            automaticLayout: true,
+            scrollBeyondLastLine: false,
+            scrollbar: {
+              alwaysConsumeMouseWheel: false,
+            },
+          }}
+          {...editorProps}
+        />
+      </Stack>
+    );
+  }
+);
 
 export const CodeEditor = memo(CodeEditorBase);
 

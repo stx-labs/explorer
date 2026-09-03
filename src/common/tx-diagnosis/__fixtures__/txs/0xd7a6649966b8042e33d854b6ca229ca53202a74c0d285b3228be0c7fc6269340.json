@@ -1,0 +1,78 @@
+{
+  "tx_id": "0xd7a6649966b8042e33d854b6ca229ca53202a74c0d285b3228be0c7fc6269340",
+  "nonce": 1,
+  "fee_rate": "500000",
+  "sender_address": "SP436T11WB4TY35S5MNP7W81X1F0H2YN22GK41T4",
+  "sponsored": false,
+  "post_condition_mode": "deny",
+  "post_conditions": [
+    {
+      "principal": {
+        "type_id": "principal_standard",
+        "address": "SP436T11WB4TY35S5MNP7W81X1F0H2YN22GK41T4"
+      },
+      "condition_code": "sent_less_than_or_equal_to",
+      "amount": "361734442",
+      "type": "stx"
+    },
+    {
+      "principal": {
+        "type_id": "principal_contract",
+        "address": "SM1FKXGNZJWSTWDWXQZJNF7B5TV5ZB235JTCXYXKD",
+        "contract_name": "dlmm-pool-stx-usdcx-v-1-bps-10"
+      },
+      "condition_code": "sent_greater_than_or_equal_to",
+      "amount": "82740107",
+      "type": "fungible",
+      "asset": {
+        "asset_name": "usdcx-token",
+        "contract_address": "SP120SBRBQJ00MCWS7TM5R8WJNTTKD5K0HFRC2CNE",
+        "contract_name": "usdcx"
+      }
+    }
+  ],
+  "anchor_mode": "any",
+  "block_hash": "0x5a891a4ddfcc6bc8459f78abe812e52f325a06b016a3cdc50a41e2269bc6c103",
+  "block_height": 8831251,
+  "block_time": 1787566944,
+  "block_time_iso": "2026-08-24T10:22:24.000Z",
+  "burn_block_time": 1787566551,
+  "burn_block_height": 963846,
+  "burn_block_time_iso": "2026-08-24T10:15:51.000Z",
+  "parent_burn_block_time": 1787566551,
+  "parent_burn_block_time_iso": "2026-08-24T10:15:51.000Z",
+  "canonical": true,
+  "tx_index": 2,
+  "tx_status": "abort_by_post_condition",
+  "tx_result": {
+    "hex": "0x080100000000000000000000000000000001",
+    "repr": "(err u1)"
+  },
+  "event_count": 0,
+  "parent_block_hash": "0xcb966a896926aac6755a94587058a4f04444317cbbaa21df36bdafcee8ea9936",
+  "is_unanchored": false,
+  "microblock_hash": "0x",
+  "microblock_sequence": 2147483647,
+  "microblock_canonical": true,
+  "execution_cost_read_count": 31,
+  "execution_cost_read_length": 200378,
+  "execution_cost_runtime": 364754,
+  "execution_cost_write_count": 1,
+  "execution_cost_write_length": 1,
+  "vm_error": "Post-condition check failure on fungible asset SP120SBRBQJ00MCWS7TM5R8WJNTTKD5K0HFRC2CNE.usdcx::usdcx-token owned by SM1FKXGNZJWSTWDWXQZJNF7B5TV5ZB235JTCXYXKD.dlmm-pool-stx-usdcx-v-1-bps-10: 82740107 SentGe 0",
+  "events": [],
+  "tx_type": "contract_call",
+  "contract_call": {
+    "contract_id": "SM1FKXGNZJWSTWDWXQZJNF7B5TV5ZB235JTCXYXKD.dlmm-swap-router-v-1-1",
+    "function_name": "swap-simple-multi",
+    "function_signature": "(define-public (swap-simple-multi (swaps (list 5 (tuple (amount uint) (max-steps uint) (min-received uint) (pool-trait trait_reference) (x-for-y bool) (x-token-trait trait_reference) (y-token-trait trait_reference))))))",
+    "function_args": [
+      {
+        "hex": "0x0b000000010c0000000706616d6f756e7401000000000000000000000000158fa12a096d61782d737465707301000000000000000000000000000000010c6d696e2d72656365697665640100000000000000000000000004ee838b0a706f6f6c2d747261697406145f3ec2bf9733ae379dbfe5579d65d6cbf58865961e646c6d6d2d706f6f6c2d7374782d75736463782d762d312d6270732d313007782d666f722d79030d782d746f6b656e2d747261697406144e91b0982dbe4ae49bb9394b1f339fb7144beee60f746f6b656e2d7374782d762d312d320d792d746f6b656e2d74726169740616440caf0bbc800a33993ea85c2392aeb53696608b057573646378",
+        "repr": "(list (tuple (amount u361734442) (max-steps u1) (min-received u82740107) (pool-trait 'SM1FKXGNZJWSTWDWXQZJNF7B5TV5ZB235JTCXYXKD.dlmm-pool-stx-usdcx-v-1-bps-10) (x-for-y true) (x-token-trait 'SM1793C4R5PZ4NS4VQ4WMP7SKKYVH8JZEWSZ9HCCR.token-stx-v-1-2) (y-token-trait 'SP120SBRBQJ00MCWS7TM5R8WJNTTKD5K0HFRC2CNE.usdcx)))",
+        "name": "swaps",
+        "type": "(list 5 (tuple (amount uint) (max-steps uint) (min-received uint) (pool-trait trait_reference) (x-for-y bool) (x-token-trait trait_reference) (y-token-trait trait_reference)))"
+      }
+    ]
+  }
+}

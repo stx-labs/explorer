@@ -1,0 +1,111 @@
+{
+  "tx_id": "0xfdf10ed73bf61ad9aeb00d374265af686bbc47ee1bebf1b5f5670addd22ad3e6",
+  "nonce": 474,
+  "fee_rate": "10000",
+  "sender_address": "SP1W8C25TZCXDQTAR7MZQPSNF8C73274DCNT2NWJZ",
+  "sponsored": false,
+  "post_condition_mode": "deny",
+  "post_conditions": [
+    {
+      "principal": {
+        "type_id": "principal_contract",
+        "address": "SP1Z92MPDQEWZXW36VX71Q25HKF5K2EPCJ304F275",
+        "contract_name": "liquidity-token-stx-stsw"
+      },
+      "condition_code": "sent_greater_than_or_equal_to",
+      "amount": "635299642",
+      "type": "stx"
+    },
+    {
+      "principal": {
+        "type_id": "principal_contract",
+        "address": "SP1Z92MPDQEWZXW36VX71Q25HKF5K2EPCJ304F275",
+        "contract_name": "liquidity-token-stx-stsw"
+      },
+      "condition_code": "sent_greater_than_or_equal_to",
+      "amount": "729319044354",
+      "type": "fungible",
+      "asset": {
+        "asset_name": "stsw",
+        "contract_address": "SP1Z92MPDQEWZXW36VX71Q25HKF5K2EPCJ304F275",
+        "contract_name": "stsw-token-v4a"
+      }
+    },
+    {
+      "principal": {
+        "type_id": "principal_standard",
+        "address": "SP1W8C25TZCXDQTAR7MZQPSNF8C73274DCNT2NWJZ"
+      },
+      "condition_code": "sent_less_than_or_equal_to",
+      "amount": "19514968670",
+      "type": "fungible",
+      "asset": {
+        "asset_name": "liquidity-token",
+        "contract_address": "SP1Z92MPDQEWZXW36VX71Q25HKF5K2EPCJ304F275",
+        "contract_name": "liquidity-token-stx-stsw"
+      }
+    }
+  ],
+  "anchor_mode": "any",
+  "block_hash": "0xac5817c5e21cece9216c5cbe43d8fa2c33d796277535706096321beb18b3c386",
+  "block_height": 8893758,
+  "block_time": 1788273575,
+  "block_time_iso": "2026-09-01T14:39:35.000Z",
+  "burn_block_time": 1788273304,
+  "burn_block_height": 965048,
+  "burn_block_time_iso": "2026-09-01T14:35:04.000Z",
+  "parent_burn_block_time": 1788273304,
+  "parent_burn_block_time_iso": "2026-09-01T14:35:04.000Z",
+  "canonical": true,
+  "tx_index": 1,
+  "tx_status": "abort_by_post_condition",
+  "tx_result": {
+    "hex": "0x070b000000020100000000000000000000000049ceee950100000000000000000000006c9c761e16",
+    "repr": "(ok (list u1238298261 u466481454614))"
+  },
+  "event_count": 0,
+  "parent_block_hash": "0xdf8addb9fe1d703055ed39ef4c94aeb57f1eb2ec65d6bf422e891488bb76aa9f",
+  "is_unanchored": false,
+  "microblock_hash": "0x",
+  "microblock_sequence": 2147483647,
+  "microblock_canonical": true,
+  "execution_cost_read_count": 108,
+  "execution_cost_read_length": 109538,
+  "execution_cost_runtime": 267484,
+  "execution_cost_write_count": 11,
+  "execution_cost_write_length": 116,
+  "vm_error": "Post-condition check failure on fungible asset SP1Z92MPDQEWZXW36VX71Q25HKF5K2EPCJ304F275.stsw-token-v4a::stsw owned by SP1Z92MPDQEWZXW36VX71Q25HKF5K2EPCJ304F275.liquidity-token-stx-stsw: 729319044354 SentGe 466481454614",
+  "events": [],
+  "tx_type": "contract_call",
+  "contract_call": {
+    "contract_id": "SP1Z92MPDQEWZXW36VX71Q25HKF5K2EPCJ304F275.stackswap-swap-v5k",
+    "function_name": "reduce-position",
+    "function_signature": "(define-public (reduce-position (token-x-trait trait_reference) (token-y-trait trait_reference) (token-liquidity-trait trait_reference) (percent uint)))",
+    "function_args": [
+      {
+        "hex": "0x06167e9152cdbbb9fef066df4e1b88b19bcb313acc900e777374782d746f6b656e2d763461",
+        "repr": "'SP1Z92MPDQEWZXW36VX71Q25HKF5K2EPCJ304F275.wstx-token-v4a",
+        "name": "token-x-trait",
+        "type": "trait_reference"
+      },
+      {
+        "hex": "0x06167e9152cdbbb9fef066df4e1b88b19bcb313acc900e737473772d746f6b656e2d763461",
+        "repr": "'SP1Z92MPDQEWZXW36VX71Q25HKF5K2EPCJ304F275.stsw-token-v4a",
+        "name": "token-y-trait",
+        "type": "trait_reference"
+      },
+      {
+        "hex": "0x06167e9152cdbbb9fef066df4e1b88b19bcb313acc90186c69717569646974792d746f6b656e2d7374782d73747377",
+        "repr": "'SP1Z92MPDQEWZXW36VX71Q25HKF5K2EPCJ304F275.liquidity-token-stx-stsw",
+        "name": "token-liquidity-trait",
+        "type": "trait_reference"
+      },
+      {
+        "hex": "0x0100000000000000000000000000000064",
+        "repr": "u100",
+        "name": "percent",
+        "type": "uint"
+      }
+    ]
+  }
+}

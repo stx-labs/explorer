@@ -1,0 +1,233 @@
+{
+  "tx_id": "0xe3a1cb43db3d4e5e42e87836ab3da8e5bfd441a5f9bff1900d64efeb034e03f0",
+  "nonce": 0,
+  "fee_rate": "2999",
+  "sender_address": "SP324WDCZDR0PR3P0K08BWDE2E7SJ7QGZ4SYDBXF7",
+  "sponsored": false,
+  "post_condition_mode": "deny",
+  "post_conditions": [
+    {
+      "principal": {
+        "type_id": "principal_standard",
+        "address": "SP324WDCZDR0PR3P0K08BWDE2E7SJ7QGZ4SYDBXF7"
+      },
+      "condition_code": "sent_equal_to",
+      "amount": "1000000",
+      "type": "fungible",
+      "asset": {
+        "asset_name": "usdcx-token",
+        "contract_address": "SP120SBRBQJ00MCWS7TM5R8WJNTTKD5K0HFRC2CNE",
+        "contract_name": "usdcx"
+      }
+    },
+    {
+      "principal": {
+        "type_id": "principal_contract",
+        "address": "SM1793C4R5PZ4NS4VQ4WMP7SKKYVH8JZEWSZ9HCCR",
+        "contract_name": "stableswap-pool-aeusdc-usdcx-v-1-1"
+      },
+      "condition_code": "sent_greater_than_or_equal_to",
+      "amount": "0",
+      "type": "fungible",
+      "asset": {
+        "asset_name": "aeUSDC",
+        "contract_address": "SP3Y2ZSH8P7D50B0VBTSX11S7XSG24M1VB9YFQA4K",
+        "contract_name": "token-aeusdc"
+      }
+    },
+    {
+      "principal": {
+        "type_id": "principal_standard",
+        "address": "SP324WDCZDR0PR3P0K08BWDE2E7SJ7QGZ4SYDBXF7"
+      },
+      "condition_code": "sent_greater_than_or_equal_to",
+      "amount": "0",
+      "type": "fungible",
+      "asset": {
+        "asset_name": "aeUSDC",
+        "contract_address": "SP3Y2ZSH8P7D50B0VBTSX11S7XSG24M1VB9YFQA4K",
+        "contract_name": "token-aeusdc"
+      }
+    },
+    {
+      "principal": {
+        "type_id": "principal_contract",
+        "address": "SP1Y5YSTAHZ88XYK1VPDH24GY0HPX5J4JECTMY4A1",
+        "contract_name": "univ2-core"
+      },
+      "condition_code": "sent_greater_than_or_equal_to",
+      "amount": "0",
+      "type": "fungible",
+      "asset": {
+        "asset_name": "aeUSDC",
+        "contract_address": "SP3Y2ZSH8P7D50B0VBTSX11S7XSG24M1VB9YFQA4K",
+        "contract_name": "token-aeusdc"
+      }
+    },
+    {
+      "principal": {
+        "type_id": "principal_contract",
+        "address": "SP1Y5YSTAHZ88XYK1VPDH24GY0HPX5J4JECTMY4A1",
+        "contract_name": "univ2-core"
+      },
+      "condition_code": "sent_greater_than_or_equal_to",
+      "amount": "0",
+      "type": "fungible",
+      "asset": {
+        "asset_name": "velar",
+        "contract_address": "SP1Y5YSTAHZ88XYK1VPDH24GY0HPX5J4JECTMY4A1",
+        "contract_name": "velar-token"
+      }
+    },
+    {
+      "principal": {
+        "type_id": "principal_contract",
+        "address": "SP1Y5YSTAHZ88XYK1VPDH24GY0HPX5J4JECTMY4A1",
+        "contract_name": "univ2-core"
+      },
+      "condition_code": "sent_greater_than_or_equal_to",
+      "amount": "0",
+      "type": "fungible",
+      "asset": {
+        "asset_name": "velar",
+        "contract_address": "SP1Y5YSTAHZ88XYK1VPDH24GY0HPX5J4JECTMY4A1",
+        "contract_name": "velar-token"
+      }
+    },
+    {
+      "principal": {
+        "type_id": "principal_standard",
+        "address": "SP324WDCZDR0PR3P0K08BWDE2E7SJ7QGZ4SYDBXF7"
+      },
+      "condition_code": "sent_greater_than_or_equal_to",
+      "amount": "0",
+      "type": "fungible",
+      "asset": {
+        "asset_name": "velar",
+        "contract_address": "SP1Y5YSTAHZ88XYK1VPDH24GY0HPX5J4JECTMY4A1",
+        "contract_name": "velar-token"
+      }
+    },
+    {
+      "principal": {
+        "type_id": "principal_contract",
+        "address": "SP1Y5YSTAHZ88XYK1VPDH24GY0HPX5J4JECTMY4A1",
+        "contract_name": "univ2-core"
+      },
+      "condition_code": "sent_greater_than_or_equal_to",
+      "amount": "0",
+      "type": "fungible",
+      "asset": {
+        "asset_name": "velar",
+        "contract_address": "SP1Y5YSTAHZ88XYK1VPDH24GY0HPX5J4JECTMY4A1",
+        "contract_name": "velar-token"
+      }
+    },
+    {
+      "principal": {
+        "type_id": "principal_contract",
+        "address": "SP1Y5YSTAHZ88XYK1VPDH24GY0HPX5J4JECTMY4A1",
+        "contract_name": "univ2-core"
+      },
+      "condition_code": "sent_greater_than_or_equal_to",
+      "amount": "3793225",
+      "type": "stx"
+    },
+    {
+      "principal": {
+        "type_id": "principal_contract",
+        "address": "SP1Y5YSTAHZ88XYK1VPDH24GY0HPX5J4JECTMY4A1",
+        "contract_name": "univ2-core"
+      },
+      "condition_code": "sent_greater_than_or_equal_to",
+      "amount": "0",
+      "type": "stx"
+    }
+  ],
+  "anchor_mode": "any",
+  "block_hash": "0xf16b04dc4e054cbf4bcd0234a1de665f34891f8c92e680bc4c942789f058d731",
+  "block_height": 8858609,
+  "block_time": 1787906188,
+  "block_time_iso": "2026-08-28T08:36:28.000Z",
+  "burn_block_time": 1787905507,
+  "burn_block_height": 964405,
+  "burn_block_time_iso": "2026-08-28T08:25:07.000Z",
+  "parent_burn_block_time": 1787905507,
+  "parent_burn_block_time_iso": "2026-08-28T08:25:07.000Z",
+  "canonical": true,
+  "tx_index": 3,
+  "tx_status": "abort_by_post_condition",
+  "tx_result": {
+    "hex": "0x080100000000000000000000000000001779",
+    "repr": "(err u6009)"
+  },
+  "event_count": 0,
+  "parent_block_hash": "0xc576451c45fae546f864adc06be1138113cc8827997efdd559166365268f5c57",
+  "is_unanchored": false,
+  "microblock_hash": "0x",
+  "microblock_sequence": 2147483647,
+  "microblock_canonical": true,
+  "execution_cost_read_count": 260,
+  "execution_cost_read_length": 538450,
+  "execution_cost_runtime": 7501016,
+  "execution_cost_write_count": 26,
+  "execution_cost_write_length": 1123,
+  "vm_error": "Post-condition check failure on fungible asset SP120SBRBQJ00MCWS7TM5R8WJNTTKD5K0HFRC2CNE.usdcx::usdcx-token owned by SP324WDCZDR0PR3P0K08BWDE2E7SJ7QGZ4SYDBXF7: 1000000 SentEq 0",
+  "events": [],
+  "tx_type": "contract_call",
+  "contract_call": {
+    "contract_id": "SM1793C4R5PZ4NS4VQ4WMP7SKKYVH8JZEWSZ9HCCR.router-stableswap-velar-v-1-5",
+    "function_name": "swap-helper-b",
+    "function_signature": "(define-public (swap-helper-b (amount uint) (min-received uint) (provider (optional principal)) (swaps-reversed bool) (stableswap-tokens (tuple (a trait_reference) (b trait_reference))) (stableswap-pools (tuple (a trait_reference))) (velar-tokens (tuple (a trait_reference) (b trait_reference) (c trait_reference))) (velar-share-fee-to trait_reference)))",
+    "function_args": [
+      {
+        "hex": "0x01000000000000000000000000000f4240",
+        "repr": "u1000000",
+        "name": "amount",
+        "type": "uint"
+      },
+      {
+        "hex": "0x010000000000000000000000000039e149",
+        "repr": "u3793225",
+        "name": "min-received",
+        "type": "uint"
+      },
+      {
+        "hex": "0x09",
+        "repr": "none",
+        "name": "provider",
+        "type": "(optional principal)"
+      },
+      {
+        "hex": "0x04",
+        "repr": "false",
+        "name": "swaps-reversed",
+        "type": "bool"
+      },
+      {
+        "hex": "0x0c0000000201610616440caf0bbc800a33993ea85c2392aeb53696608b05757364637801620616fc2fe628b1da502c1b5eb3d08727ee6022503b5a0c746f6b656e2d616575736463",
+        "repr": "(tuple (a 'SP120SBRBQJ00MCWS7TM5R8WJNTTKD5K0HFRC2CNE.usdcx) (b 'SP3Y2ZSH8P7D50B0VBTSX11S7XSG24M1VB9YFQA4K.token-aeusdc))",
+        "name": "stableswap-tokens",
+        "type": "(tuple (a trait_reference) (b trait_reference))"
+      },
+      {
+        "hex": "0x0c00000001016106144e91b0982dbe4ae49bb9394b1f339fb7144beee622737461626c65737761702d706f6f6c2d6165757364632d75736463782d762d312d31",
+        "repr": "(tuple (a 'SM1793C4R5PZ4NS4VQ4WMP7SKKYVH8JZEWSZ9HCCR.stableswap-pool-aeusdc-usdcx-v-1-1))",
+        "name": "stableswap-pools",
+        "type": "(tuple (a trait_reference))"
+      },
+      {
+        "hex": "0x0c0000000301610616fc2fe628b1da502c1b5eb3d08727ee6022503b5a0c746f6b656e2d616575736463016206167c5f674a8fd08efa61dd9b11121e046dd2c892730b76656c61722d746f6b656e016306167c5f674a8fd08efa61dd9b11121e046dd2c892730477737478",
+        "repr": "(tuple (a 'SP3Y2ZSH8P7D50B0VBTSX11S7XSG24M1VB9YFQA4K.token-aeusdc) (b 'SP1Y5YSTAHZ88XYK1VPDH24GY0HPX5J4JECTMY4A1.velar-token) (c 'SP1Y5YSTAHZ88XYK1VPDH24GY0HPX5J4JECTMY4A1.wstx))",
+        "name": "velar-tokens",
+        "type": "(tuple (a trait_reference) (b trait_reference) (c trait_reference))"
+      },
+      {
+        "hex": "0x06167c5f674a8fd08efa61dd9b11121e046dd2c8927312756e6976322d73686172652d6665652d746f",
+        "repr": "'SP1Y5YSTAHZ88XYK1VPDH24GY0HPX5J4JECTMY4A1.univ2-share-fee-to",
+        "name": "velar-share-fee-to",
+        "type": "trait_reference"
+      }
+    ]
+  }
+}

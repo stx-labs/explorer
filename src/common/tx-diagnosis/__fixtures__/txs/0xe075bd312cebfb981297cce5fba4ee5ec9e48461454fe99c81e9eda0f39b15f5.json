@@ -1,0 +1,59 @@
+{
+  "tx_id": "0xe075bd312cebfb981297cce5fba4ee5ec9e48461454fe99c81e9eda0f39b15f5",
+  "nonce": 26401,
+  "fee_rate": "2000000",
+  "sender_address": "SP1BXRXA0Z67MB6G31FP1R52ZX5GQTZ5008KZG77A",
+  "sponsored": false,
+  "post_condition_mode": "allow",
+  "post_conditions": [],
+  "anchor_mode": "any",
+  "block_hash": "0xd8785bc50276e66dabe192ef9dbc0007355484b2610548ed3fa0798f73213716",
+  "block_height": 8909721,
+  "block_time": 1788445911,
+  "block_time_iso": "2026-09-03T14:31:51.000Z",
+  "burn_block_time": 1788445193,
+  "burn_block_height": 965329,
+  "burn_block_time_iso": "2026-09-03T14:19:53.000Z",
+  "parent_burn_block_time": 1788445193,
+  "parent_burn_block_time_iso": "2026-09-03T14:19:53.000Z",
+  "canonical": true,
+  "tx_index": 0,
+  "tx_status": "abort_by_response",
+  "tx_result": {
+    "hex": "0x0809",
+    "repr": "(err none)"
+  },
+  "event_count": 0,
+  "parent_block_hash": "0xcdfcd4ab8d61e490b4ac4d6f166e73180447c229e904072ac390c812a8b9a179",
+  "is_unanchored": false,
+  "microblock_hash": "0x",
+  "microblock_sequence": 2147483647,
+  "microblock_canonical": true,
+  "execution_cost_read_count": 102,
+  "execution_cost_read_length": 595483,
+  "execution_cost_runtime": 1768442,
+  "execution_cost_write_count": 20,
+  "execution_cost_write_length": 576,
+  "vm_error": "ArithmeticUnderflow",
+  "events": [],
+  "tx_type": "contract_call",
+  "contract_call": {
+    "contract_id": "SM1FKXGNZJWSTWDWXQZJNF7B5TV5ZB235JTCXYXKD.dlmm-liquidity-router-v-1-2",
+    "function_name": "withdraw-liquidity-multi",
+    "function_signature": "(define-public (withdraw-liquidity-multi (positions (list 326 (tuple (amount uint) (bin-id int) (min-x-amount uint) (min-y-amount uint) (pool-trait trait_reference) (x-token-trait trait_reference) (y-token-trait trait_reference)))) (deadline-time (optional uint))))",
+    "function_args": [
+      {
+        "hex": "0x0b000000e70c0000000706616d6f756e74010000000000000000000000002078\u2026",
+        "repr": "(list (tuple (amount u544784211) (bin-id 52) (min-x-amount u0) (min-y-amount u1071658136) (pool-trait 'SM1FKXGNZJWSTWDWXQZJNF7B5TV5ZB235JTCXYXKD.dlmm-pool-sbtc-usdcx-v-1-bps-10) (x-token-trait 'SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token) (y-token-trait 'SP120SBRBQJ00MCWS7TM5R8WJNTTKD5K0HFRC2CNE.usdcx)) (tuple (amount u465440655) (bin-id 53) (min-x-amount u0) (min-y-amount u1063561165) (pool-trait 'SM1FKXGNZJWSTWDWXQZJNF7B5TV5ZB235JTCXYXKD.dlmm-pool-sbtc-usdcx-v-1-bps-10) (x-token-trait 'SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token) (y-token-trait 'SP120SBRBQJ00MCWS7TM5R8WJNTTKD5K0HFRC2CNE.usdcx)) (tuple (amount u549000388) (bin-id 54) (min-x-amount u0) (min-y-amount u1055447147) (pool-trait 'SM1FKXGNZJWSTWDWXQZJNF7B5TV5ZB235JTCXYXKD.dlmm-pool-sbtc-usdcx-v-1-bps-10) (x-token-trait 'SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token) (y-token-trait 'SP120SBRBQJ00MCWS7TM5R8WJNTTKD5K0HFRC2CNE.usdcx)) (tuple (amount u503129482) (bin-id 55) (min-x-amount u0) (min-y-amount u1047315401) (pool-trait 'SM1FKXGNZJWSTWDWXQZJNF7B5TV5ZB235JTCXYXKD.dlmm-pool-sbtc-usdcx-v-1-bps-10) (x-token-trait 'SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token) (y-token-trait 'SP120SBRBQJ00MCWS7TM5R8WJNTTKD5K0HFRC2CNE.usdcx)) (tuple (amount u1110979494) (bin-id 56) (min-x-amount u0) (min-y-amount u1039166548) (pool-trait 'SM1FKXGNZJWSTWDWXQZJNF7B5TV5ZB235JTCXYXKD.dlmm-pool-sbtc-usdcx-v-1-bps-10) (x-token-trait 'SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token) (y-token-trait 'SP120SBRBQJ00MCWS7TM5R8WJNTTKD5K0HFRC2CNE.usdcx)) (tuple (amount u1158811165) (bin-id 57) (min-x-amount u0) (min-y-amount u1031000356) (pool-trait 'SM1FKXGNZJWSTWDWXQZJNF7B5TV5ZB235JTCXYXKD.dlmm-pool-sbtc-usdcx-v-1-bps-10) (x-token-trait 'SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token) (y-token-trait 'SP120SBRBQJ00MCWS7TM5R8WJNTTKD5K0HFRC2CNE.usdcx)) (tuple (amount u1173580853) (bin-id 58) (min-x-amount u0) (min-y-amount u1022816786) (pool-trait 'SM1FKXGNZJWSTWDWXQZJNF7B5TV5ZB235JTCXYXKD.dlmm-pool-sbtc-usdcx-v-1-bps-10) (x-token-trait 'SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token) (y-token-trait 'SP120SBRBQJ00MCWS7TM5R8WJNTTKD5K0HFRC2CNE.usdcx)) (tuple (amount u1194091292) (bin-id 59) (min-x-amount u0) (min-y-amount u1033063388) (pool-trait 'SM1FKXGNZJWSTWDWXQZJNF7B5TV5ZB235JTCXYXKD.dlmm-pool-sbtc-usdcx-v-1-bps-10) (x-token-trait 'SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token) (y-token-trait 'SP120SBRBQJ00MCWS7TM5R8WJNTTKD5K0HFRC2CNE.usdcx)) (tuple (amount u1151609202) (bin-id 61) (min-x-amount u0) (min-y-amount u1007403838) (pool-trait 'SM1FKXGNZJWSTWDWXQZJNF7B5TV5ZB235JTCXYXKD.dlmm-pool-sbtc-usdcx-v-1-bps-10) (x-token-trait 'SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token) (y-token-trait 'SP120SBRBQJ00MCWS7TM5R8WJNTTKD5K0HFRC2CNE.usdcx)) (tuple (amount u1137201928) (bin-id 62) (min-x-amount u0) (min-y-amount u999159756) (pool-trait 'SM1FKXGNZJWSTWDWXQZJNF7B5TV5ZB235JTCXYXKD.dlmm-pool-sbtc-usdcx-v-1-bps-10) (x-token-trait 'SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token) (y-token-trait 'SP120SBRBQJ00MCWS7TM5R8WJNTTKD5K0HFRC2CNE.usdcx)) (tuple (amount u1139592443) (bin-id 63) (min-x-amount u0) (min-y-amount u990898234) (pool-trait 'SM1FKXGNZJWSTWDWXQZJNF7B5TV5ZB235JTCXYXKD.dlmm-pool-sbtc-usdcx-v-1-bps-10) (x-token-trait 'SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token) (y-token-trait 'SP120SBRBQJ00MCWS7TM5R8WJNTTKD5K0HFRC2CNE.usdcx)) (tuple (amount u1136047525) (bin-id 64) (min-x-amount u0) (min-y-amount u982619099) (pool-trait 'SM1FKXGNZJWSTWDWXQZJNF7B5TV5ZB235JTCXYXKD.dlmm-pool-sbtc-usdcx-v-1-bps-10) (x-token-trait 'SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token) (y-token-trait 'SP120SBRBQJ00MCWS7TM5R8WJNTTKD5K0HFRC2CNE.usdcx)) (tuple (amount u1119925481) (bin-id 65) (min-x-amount u0) (min-y-amount u974322459) (pool-trait 'SM1FKXGNZJWSTWDWXQZJNF7B5TV5ZB235JTCXYXKD.dlmm-pool-sbtc-usdcx-v-1-bps-10) (x-token-trait 'SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token) (y-token-trait 'SP120SBRBQJ00MCWS7TM5R8WJNTTKD5K0HFRC2CNE.usdcx)) (tuple (amount u1108032032) (bin-id 66) (min-x-amount u0) (min-y-amount u96600823\u2026",
+        "name": "positions",
+        "type": "(list 326 (tuple (amount uint) (bin-id int) (min-x-amount uint) (min-y-amount uint) (pool-trait trait_reference) (x-token-trait trait_reference) (y-token-trait trait_reference)))"
+      },
+      {
+        "hex": "0x0a010000000000000000000000006a99897b",
+        "repr": "(some u1788447099)",
+        "name": "deadline-time",
+        "type": "(optional uint)"
+      }
+    ]
+  }
+}

@@ -1,0 +1,509 @@
+{
+  "tx_id": "0x2cae883895dd7b5f68443342dc013daf22de57992374f72c735ec53c0ecfc70d",
+  "nonce": 245,
+  "fee_rate": "10000",
+  "sender_address": "SP10GK6MG2GM7BCVYV7XBHK1JVJDHFDMNBENNBRC3",
+  "sponsored": false,
+  "post_condition_mode": "deny",
+  "post_conditions": [
+    {
+      "principal": {
+        "type_id": "principal_standard",
+        "address": "SP10GK6MG2GM7BCVYV7XBHK1JVJDHFDMNBENNBRC3"
+      },
+      "condition_code": "sent_equal_to",
+      "amount": "25000000",
+      "type": "fungible",
+      "asset": {
+        "asset_name": "usdcx-token",
+        "contract_address": "SP120SBRBQJ00MCWS7TM5R8WJNTTKD5K0HFRC2CNE",
+        "contract_name": "usdcx"
+      }
+    },
+    {
+      "principal": {
+        "type_id": "principal_contract",
+        "address": "SP3EWCDA3V8HCP64CSETSNYXZ25WC4AJ95EC0ZEST",
+        "contract_name": "zr-dx-0"
+      },
+      "condition_code": "sent_greater_than_or_equal_to",
+      "amount": "25183725357",
+      "type": "fungible",
+      "asset": {
+        "asset_name": "NOT",
+        "contract_address": "SP32AEEF6WW5Y0NMJ1S8SBSZDAY8R5J32NBZFPKKZ",
+        "contract_name": "nope"
+      }
+    },
+    {
+      "principal": {
+        "type_id": "principal_contract",
+        "address": "SP3EWCDA3V8HCP64CSETSNYXZ25WC4AJ95EC0ZEST",
+        "contract_name": "zr-dx-0"
+      },
+      "condition_code": "sent_greater_than_or_equal_to",
+      "amount": "0",
+      "type": "fungible",
+      "asset": {
+        "asset_name": "usdcx-token",
+        "contract_address": "SP120SBRBQJ00MCWS7TM5R8WJNTTKD5K0HFRC2CNE",
+        "contract_name": "usdcx"
+      }
+    },
+    {
+      "principal": {
+        "type_id": "principal_contract",
+        "address": "SP3EWCDA3V8HCP64CSETSNYXZ25WC4AJ95EC0ZEST",
+        "contract_name": "dlmm-adapter"
+      },
+      "condition_code": "sent_greater_than_or_equal_to",
+      "amount": "0",
+      "type": "fungible",
+      "asset": {
+        "asset_name": "usdcx-token",
+        "contract_address": "SP120SBRBQJ00MCWS7TM5R8WJNTTKD5K0HFRC2CNE",
+        "contract_name": "usdcx"
+      }
+    },
+    {
+      "principal": {
+        "type_id": "principal_contract",
+        "address": "SM1FKXGNZJWSTWDWXQZJNF7B5TV5ZB235JTCXYXKD",
+        "contract_name": "dlmm-pool-sbtc-usdcx-v-1-bps-10"
+      },
+      "condition_code": "sent_greater_than_or_equal_to",
+      "amount": "0",
+      "type": "fungible",
+      "asset": {
+        "asset_name": "usdcx-token",
+        "contract_address": "SP120SBRBQJ00MCWS7TM5R8WJNTTKD5K0HFRC2CNE",
+        "contract_name": "usdcx"
+      }
+    },
+    {
+      "principal": {
+        "type_id": "principal_contract",
+        "address": "SP1PFR4V08H1RAZXREBGFFQ59WB739XM8VVGTFSEA",
+        "contract_name": "dlmm-swap-router-v-1-1"
+      },
+      "condition_code": "sent_greater_than_or_equal_to",
+      "amount": "0",
+      "type": "fungible",
+      "asset": {
+        "asset_name": "usdcx-token",
+        "contract_address": "SP120SBRBQJ00MCWS7TM5R8WJNTTKD5K0HFRC2CNE",
+        "contract_name": "usdcx"
+      }
+    },
+    {
+      "principal": {
+        "type_id": "principal_contract",
+        "address": "SP3EWCDA3V8HCP64CSETSNYXZ25WC4AJ95EC0ZEST",
+        "contract_name": "zr-dx-0"
+      },
+      "condition_code": "sent_greater_than_or_equal_to",
+      "amount": "0",
+      "type": "fungible",
+      "asset": {
+        "asset_name": "sbtc-token",
+        "contract_address": "SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4",
+        "contract_name": "sbtc-token"
+      }
+    },
+    {
+      "principal": {
+        "type_id": "principal_contract",
+        "address": "SP3EWCDA3V8HCP64CSETSNYXZ25WC4AJ95EC0ZEST",
+        "contract_name": "dlmm-adapter"
+      },
+      "condition_code": "sent_greater_than_or_equal_to",
+      "amount": "0",
+      "type": "fungible",
+      "asset": {
+        "asset_name": "sbtc-token",
+        "contract_address": "SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4",
+        "contract_name": "sbtc-token"
+      }
+    },
+    {
+      "principal": {
+        "type_id": "principal_contract",
+        "address": "SM1FKXGNZJWSTWDWXQZJNF7B5TV5ZB235JTCXYXKD",
+        "contract_name": "dlmm-pool-sbtc-usdcx-v-1-bps-10"
+      },
+      "condition_code": "sent_greater_than_or_equal_to",
+      "amount": "0",
+      "type": "fungible",
+      "asset": {
+        "asset_name": "sbtc-token",
+        "contract_address": "SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4",
+        "contract_name": "sbtc-token"
+      }
+    },
+    {
+      "principal": {
+        "type_id": "principal_contract",
+        "address": "SP1PFR4V08H1RAZXREBGFFQ59WB739XM8VVGTFSEA",
+        "contract_name": "dlmm-swap-router-v-1-1"
+      },
+      "condition_code": "sent_greater_than_or_equal_to",
+      "amount": "0",
+      "type": "fungible",
+      "asset": {
+        "asset_name": "sbtc-token",
+        "contract_address": "SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4",
+        "contract_name": "sbtc-token"
+      }
+    },
+    {
+      "principal": {
+        "type_id": "principal_contract",
+        "address": "SP3EWCDA3V8HCP64CSETSNYXZ25WC4AJ95EC0ZEST",
+        "contract_name": "bitflow-adapter"
+      },
+      "condition_code": "sent_greater_than_or_equal_to",
+      "amount": "0",
+      "type": "fungible",
+      "asset": {
+        "asset_name": "sbtc-token",
+        "contract_address": "SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4",
+        "contract_name": "sbtc-token"
+      }
+    },
+    {
+      "principal": {
+        "type_id": "principal_contract",
+        "address": "SM1793C4R5PZ4NS4VQ4WMP7SKKYVH8JZEWSZ9HCCR",
+        "contract_name": "xyk-pool-sbtc-stx-v-1-1"
+      },
+      "condition_code": "sent_greater_than_or_equal_to",
+      "amount": "0",
+      "type": "fungible",
+      "asset": {
+        "asset_name": "sbtc-token",
+        "contract_address": "SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4",
+        "contract_name": "sbtc-token"
+      }
+    },
+    {
+      "principal": {
+        "type_id": "principal_contract",
+        "address": "SM1793C4R5PZ4NS4VQ4WMP7SKKYVH8JZEWSZ9HCCR",
+        "contract_name": "xyk-core-v-1-2"
+      },
+      "condition_code": "sent_greater_than_or_equal_to",
+      "amount": "0",
+      "type": "fungible",
+      "asset": {
+        "asset_name": "sbtc-token",
+        "contract_address": "SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4",
+        "contract_name": "sbtc-token"
+      }
+    },
+    {
+      "principal": {
+        "type_id": "principal_contract",
+        "address": "SP3EWCDA3V8HCP64CSETSNYXZ25WC4AJ95EC0ZEST",
+        "contract_name": "zr-dx-0"
+      },
+      "condition_code": "sent_greater_than_or_equal_to",
+      "amount": "0",
+      "type": "stx"
+    },
+    {
+      "principal": {
+        "type_id": "principal_contract",
+        "address": "SP3EWCDA3V8HCP64CSETSNYXZ25WC4AJ95EC0ZEST",
+        "contract_name": "bitflow-adapter"
+      },
+      "condition_code": "sent_greater_than_or_equal_to",
+      "amount": "0",
+      "type": "stx"
+    },
+    {
+      "principal": {
+        "type_id": "principal_contract",
+        "address": "SM1793C4R5PZ4NS4VQ4WMP7SKKYVH8JZEWSZ9HCCR",
+        "contract_name": "xyk-pool-sbtc-stx-v-1-1"
+      },
+      "condition_code": "sent_greater_than_or_equal_to",
+      "amount": "0",
+      "type": "stx"
+    },
+    {
+      "principal": {
+        "type_id": "principal_contract",
+        "address": "SM1793C4R5PZ4NS4VQ4WMP7SKKYVH8JZEWSZ9HCCR",
+        "contract_name": "xyk-core-v-1-2"
+      },
+      "condition_code": "sent_greater_than_or_equal_to",
+      "amount": "0",
+      "type": "stx"
+    },
+    {
+      "principal": {
+        "type_id": "principal_contract",
+        "address": "SM1793C4R5PZ4NS4VQ4WMP7SKKYVH8JZEWSZ9HCCR",
+        "contract_name": "token-stx-v-1-2"
+      },
+      "condition_code": "sent_greater_than_or_equal_to",
+      "amount": "0",
+      "type": "stx"
+    },
+    {
+      "principal": {
+        "type_id": "principal_contract",
+        "address": "SM1793C4R5PZ4NS4VQ4WMP7SKKYVH8JZEWSZ9HCCR",
+        "contract_name": "xyk-pool-not-stx-v-1-1"
+      },
+      "condition_code": "sent_greater_than_or_equal_to",
+      "amount": "0",
+      "type": "stx"
+    },
+    {
+      "principal": {
+        "type_id": "principal_contract",
+        "address": "SP3EWCDA3V8HCP64CSETSNYXZ25WC4AJ95EC0ZEST",
+        "contract_name": "bitflow-adapter"
+      },
+      "condition_code": "sent_greater_than_or_equal_to",
+      "amount": "0",
+      "type": "fungible",
+      "asset": {
+        "asset_name": "NOT",
+        "contract_address": "SP32AEEF6WW5Y0NMJ1S8SBSZDAY8R5J32NBZFPKKZ",
+        "contract_name": "nope"
+      }
+    },
+    {
+      "principal": {
+        "type_id": "principal_contract",
+        "address": "SM1793C4R5PZ4NS4VQ4WMP7SKKYVH8JZEWSZ9HCCR",
+        "contract_name": "xyk-pool-not-stx-v-1-1"
+      },
+      "condition_code": "sent_greater_than_or_equal_to",
+      "amount": "0",
+      "type": "fungible",
+      "asset": {
+        "asset_name": "NOT",
+        "contract_address": "SP32AEEF6WW5Y0NMJ1S8SBSZDAY8R5J32NBZFPKKZ",
+        "contract_name": "nope"
+      }
+    },
+    {
+      "principal": {
+        "type_id": "principal_contract",
+        "address": "SM1793C4R5PZ4NS4VQ4WMP7SKKYVH8JZEWSZ9HCCR",
+        "contract_name": "xyk-core-v-1-2"
+      },
+      "condition_code": "sent_greater_than_or_equal_to",
+      "amount": "0",
+      "type": "fungible",
+      "asset": {
+        "asset_name": "NOT",
+        "contract_address": "SP32AEEF6WW5Y0NMJ1S8SBSZDAY8R5J32NBZFPKKZ",
+        "contract_name": "nope"
+      }
+    }
+  ],
+  "anchor_mode": "any",
+  "block_hash": "0x4072d7cc187657a762b6e2ef09d8005563c2dfeec291e044641d77d2c450337b",
+  "block_height": 8836331,
+  "block_time": 1787638665,
+  "block_time_iso": "2026-08-25T06:17:45.000Z",
+  "burn_block_time": 1787637620,
+  "burn_block_height": 963959,
+  "burn_block_time_iso": "2026-08-25T06:00:20.000Z",
+  "parent_burn_block_time": 1787637620,
+  "parent_burn_block_time_iso": "2026-08-25T06:00:20.000Z",
+  "canonical": true,
+  "tx_index": 2,
+  "tx_status": "abort_by_post_condition",
+  "tx_result": {
+    "hex": "0x0801000000000000000000000000000003fc",
+    "repr": "(err u1020)"
+  },
+  "event_count": 0,
+  "parent_block_hash": "0x54b45df66cca1d60da0790691d93cd45165220492f7b24b12107a1f9f13d1530",
+  "is_unanchored": false,
+  "microblock_hash": "0x",
+  "microblock_sequence": 2147483647,
+  "microblock_canonical": true,
+  "execution_cost_read_count": 243,
+  "execution_cost_read_length": 730702,
+  "execution_cost_runtime": 6770812,
+  "execution_cost_write_count": 22,
+  "execution_cost_write_length": 396,
+  "vm_error": "Post-condition check failure on fungible asset SP120SBRBQJ00MCWS7TM5R8WJNTTKD5K0HFRC2CNE.usdcx::usdcx-token owned by SP10GK6MG2GM7BCVYV7XBHK1JVJDHFDMNBENNBRC3: 25000000 SentEq 0",
+  "events": [],
+  "tx_type": "contract_call",
+  "contract_call": {
+    "contract_id": "SP3EWCDA3V8HCP64CSETSNYXZ25WC4AJ95EC0ZEST.zr-dx-0",
+    "function_name": "r-dxx",
+    "function_signature": "(define-public (r-dxx (a0 trait_reference) (p0 trait_reference) (a1 trait_reference) (p1 trait_reference) (a2 trait_reference) (p2 trait_reference) (xy0 bool) (xy1 bool) (xy2 bool) (is-stx-in bool) (is-stx-mid1 bool) (is-stx-mid2 bool) (is-stx-out bool) (t-in trait_reference) (t-mid1-out trait_reference) (t-mid1-in trait_reference) (t-mid2-out trait_reference) (t-mid2-in trait_reference) (t-out trait_reference) (amount-in uint) (min-mid-1 uint) (min-mid-2 uint) (min-out uint) (deadline uint) (skim-amount uint) (max-skim uint) (recipient principal)))",
+    "function_args": [
+      {
+        "hex": "0x0616ddc63543da22cb188ccbb59afbbf1178c22a492b0c646c6d6d2d61646170746572",
+        "repr": "'SP3EWCDA3V8HCP64CSETSNYXZ25WC4AJ95EC0ZEST.dlmm-adapter",
+        "name": "a0",
+        "type": "trait_reference"
+      },
+      {
+        "hex": "0x06145f3ec2bf9733ae379dbfe5579d65d6cbf58865961f646c6d6d2d706f6f6c2d736274632d75736463782d762d312d6270732d3130",
+        "repr": "'SM1FKXGNZJWSTWDWXQZJNF7B5TV5ZB235JTCXYXKD.dlmm-pool-sbtc-usdcx-v-1-bps-10",
+        "name": "p0",
+        "type": "trait_reference"
+      },
+      {
+        "hex": "0x0616ddc63543da22cb188ccbb59afbbf1178c22a492b0f626974666c6f772d61646170746572",
+        "repr": "'SP3EWCDA3V8HCP64CSETSNYXZ25WC4AJ95EC0ZEST.bitflow-adapter",
+        "name": "a1",
+        "type": "trait_reference"
+      },
+      {
+        "hex": "0x06144e91b0982dbe4ae49bb9394b1f339fb7144beee61778796b2d706f6f6c2d736274632d7374782d762d312d31",
+        "repr": "'SM1793C4R5PZ4NS4VQ4WMP7SKKYVH8JZEWSZ9HCCR.xyk-pool-sbtc-stx-v-1-1",
+        "name": "p1",
+        "type": "trait_reference"
+      },
+      {
+        "hex": "0x0616ddc63543da22cb188ccbb59afbbf1178c22a492b0f626974666c6f772d61646170746572",
+        "repr": "'SP3EWCDA3V8HCP64CSETSNYXZ25WC4AJ95EC0ZEST.bitflow-adapter",
+        "name": "a2",
+        "type": "trait_reference"
+      },
+      {
+        "hex": "0x06144e91b0982dbe4ae49bb9394b1f339fb7144beee61678796b2d706f6f6c2d6e6f742d7374782d762d312d31",
+        "repr": "'SM1793C4R5PZ4NS4VQ4WMP7SKKYVH8JZEWSZ9HCCR.xyk-pool-not-stx-v-1-1",
+        "name": "p2",
+        "type": "trait_reference"
+      },
+      {
+        "hex": "0x04",
+        "repr": "false",
+        "name": "xy0",
+        "type": "bool"
+      },
+      {
+        "hex": "0x03",
+        "repr": "true",
+        "name": "xy1",
+        "type": "bool"
+      },
+      {
+        "hex": "0x04",
+        "repr": "false",
+        "name": "xy2",
+        "type": "bool"
+      },
+      {
+        "hex": "0x04",
+        "repr": "false",
+        "name": "is-stx-in",
+        "type": "bool"
+      },
+      {
+        "hex": "0x04",
+        "repr": "false",
+        "name": "is-stx-mid1",
+        "type": "bool"
+      },
+      {
+        "hex": "0x03",
+        "repr": "true",
+        "name": "is-stx-mid2",
+        "type": "bool"
+      },
+      {
+        "hex": "0x04",
+        "repr": "false",
+        "name": "is-stx-out",
+        "type": "bool"
+      },
+      {
+        "hex": "0x0616440caf0bbc800a33993ea85c2392aeb53696608b057573646378",
+        "repr": "'SP120SBRBQJ00MCWS7TM5R8WJNTTKD5K0HFRC2CNE.usdcx",
+        "name": "t-in",
+        "type": "trait_reference"
+      },
+      {
+        "hex": "0x0614f6decc7cfff2a413bd7cd4f53c25ad7fd1899acc0a736274632d746f6b656e",
+        "repr": "'SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token",
+        "name": "t-mid1-out",
+        "type": "trait_reference"
+      },
+      {
+        "hex": "0x0614f6decc7cfff2a413bd7cd4f53c25ad7fd1899acc0a736274632d746f6b656e",
+        "repr": "'SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token",
+        "name": "t-mid1-in",
+        "type": "trait_reference"
+      },
+      {
+        "hex": "0x06144e91b0982dbe4ae49bb9394b1f339fb7144beee60f746f6b656e2d7374782d762d312d32",
+        "repr": "'SM1793C4R5PZ4NS4VQ4WMP7SKKYVH8JZEWSZ9HCCR.token-stx-v-1-2",
+        "name": "t-mid2-out",
+        "type": "trait_reference"
+      },
+      {
+        "hex": "0x06144e91b0982dbe4ae49bb9394b1f339fb7144beee60f746f6b656e2d7374782d762d312d32",
+        "repr": "'SM1793C4R5PZ4NS4VQ4WMP7SKKYVH8JZEWSZ9HCCR.token-stx-v-1-2",
+        "name": "t-mid2-in",
+        "type": "trait_reference"
+      },
+      {
+        "hex": "0x0616c4a739e6e70be056920e5195e7ed579182c862aa046e6f7065",
+        "repr": "'SP32AEEF6WW5Y0NMJ1S8SBSZDAY8R5J32NBZFPKKZ.nope",
+        "name": "t-out",
+        "type": "trait_reference"
+      },
+      {
+        "hex": "0x01000000000000000000000000017d7840",
+        "repr": "u25000000",
+        "name": "amount-in",
+        "type": "uint"
+      },
+      {
+        "hex": "0x010000000000000000000000000000781e",
+        "repr": "u30750",
+        "name": "min-mid-1",
+        "type": "uint"
+      },
+      {
+        "hex": "0x01000000000000000000000000057959db",
+        "repr": "u91838939",
+        "name": "min-mid-2",
+        "type": "uint"
+      },
+      {
+        "hex": "0x01000000000000000000000005dd11272d",
+        "repr": "u25183725357",
+        "name": "min-out",
+        "type": "uint"
+      },
+      {
+        "hex": "0x010000000000000000000000000086d509",
+        "repr": "u8836361",
+        "name": "deadline",
+        "type": "uint"
+      },
+      {
+        "hex": "0x0100000000000000000000000000000000",
+        "repr": "u0",
+        "name": "skim-amount",
+        "type": "uint"
+      },
+      {
+        "hex": "0x0100000000000000000000000000000000",
+        "repr": "u0",
+        "name": "max-skim",
+        "type": "uint"
+      },
+      {
+        "hex": "0x051641099a90142875b37ed9fab8cc32dc9b17b6955b",
+        "repr": "'SP10GK6MG2GM7BCVYV7XBHK1JVJDHFDMNBENNBRC3",
+        "name": "recipient",
+        "type": "principal"
+      }
+    ]
+  }
+}

@@ -1,0 +1,59 @@
+{
+  "tx_id": "0x75bfe6a4b0acc340fcf0ad404759dc389758ccabd68b84abb85749770aa6a0bc",
+  "nonce": 498,
+  "fee_rate": "40000",
+  "sender_address": "SP2D2R1KXCP2RRRNZQWKK2EJXPJBBKHD0K3JJVAB5",
+  "sponsored": false,
+  "post_condition_mode": "allow",
+  "post_conditions": [],
+  "anchor_mode": "any",
+  "block_hash": "0x75efe5f83498b3cedf9e1acf88985712d029419b4ed9673bd85728227b49541f",
+  "block_height": 8866259,
+  "block_time": 1787991189,
+  "block_time_iso": "2026-08-29T08:13:09.000Z",
+  "burn_block_time": 1787989912,
+  "burn_block_height": 964542,
+  "burn_block_time_iso": "2026-08-29T07:51:52.000Z",
+  "parent_burn_block_time": 1787989912,
+  "parent_burn_block_time_iso": "2026-08-29T07:51:52.000Z",
+  "canonical": true,
+  "tx_index": 0,
+  "tx_status": "abort_by_response",
+  "tx_result": {
+    "hex": "0x080100000000000000000000000000009c48",
+    "repr": "(err u40008)"
+  },
+  "event_count": 0,
+  "parent_block_hash": "0x813baa2b4224aa6928359985024710a3778943111403045a9f18b7b6371bacb8",
+  "is_unanchored": false,
+  "microblock_hash": "0x",
+  "microblock_sequence": 2147483647,
+  "microblock_canonical": true,
+  "execution_cost_read_count": 19,
+  "execution_cost_read_length": 15601,
+  "execution_cost_runtime": 19503,
+  "execution_cost_write_count": 0,
+  "execution_cost_write_length": 0,
+  "vm_error": null,
+  "events": [],
+  "tx_type": "contract_call",
+  "contract_call": {
+    "contract_id": "SP4SZE494VC2YC5JYG7AYFQ44F5Q4PYV7DVMDPBG.ststxbtc-pot-rebalancer-v1",
+    "function_name": "sweep",
+    "function_signature": "(define-public (sweep (claimed-withheld uint) (span-consumed uint)))",
+    "function_args": [
+      {
+        "hex": "0x0100000000000000000000000000000191",
+        "repr": "u401",
+        "name": "claimed-withheld",
+        "type": "uint"
+      },
+      {
+        "hex": "0x0100000000000000000000000000000046",
+        "repr": "u70",
+        "name": "span-consumed",
+        "type": "uint"
+      }
+    ]
+  }
+}

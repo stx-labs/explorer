@@ -1,0 +1,245 @@
+{
+  "tx_id": "0xcaf2b1b0d76d07701b6fe02fe2eb2ad40993b7a471c94e73aa98c1ca4a6ff150",
+  "nonce": 730,
+  "fee_rate": "10000",
+  "sender_address": "SPCE87V29VDPEAS925YMV2VG3CMBHY0BXKB08NA4",
+  "sponsored": false,
+  "post_condition_mode": "deny",
+  "post_conditions": [
+    {
+      "principal": {
+        "type_id": "principal_standard",
+        "address": "SPCE87V29VDPEAS925YMV2VG3CMBHY0BXKB08NA4"
+      },
+      "condition_code": "sent_equal_to",
+      "amount": "10000000000",
+      "type": "stx"
+    },
+    {
+      "principal": {
+        "type_id": "principal_contract",
+        "address": "SP3EWCDA3V8HCP64CSETSNYXZ25WC4AJ95EC0ZEST",
+        "contract_name": "zr-d-0"
+      },
+      "condition_code": "sent_greater_than_or_equal_to",
+      "amount": "3122965",
+      "type": "fungible",
+      "asset": {
+        "asset_name": "sbtc-token",
+        "contract_address": "SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4",
+        "contract_name": "sbtc-token"
+      }
+    },
+    {
+      "principal": {
+        "type_id": "principal_contract",
+        "address": "SP3EWCDA3V8HCP64CSETSNYXZ25WC4AJ95EC0ZEST",
+        "contract_name": "zr-d-0"
+      },
+      "condition_code": "sent_greater_than_or_equal_to",
+      "amount": "0",
+      "type": "stx"
+    },
+    {
+      "principal": {
+        "type_id": "principal_contract",
+        "address": "SP3EWCDA3V8HCP64CSETSNYXZ25WC4AJ95EC0ZEST",
+        "contract_name": "dlmm-adapter"
+      },
+      "condition_code": "sent_greater_than_or_equal_to",
+      "amount": "0",
+      "type": "stx"
+    },
+    {
+      "principal": {
+        "type_id": "principal_contract",
+        "address": "SM1FKXGNZJWSTWDWXQZJNF7B5TV5ZB235JTCXYXKD",
+        "contract_name": "dlmm-pool-stx-sbtc-v-1-bps-15"
+      },
+      "condition_code": "sent_greater_than_or_equal_to",
+      "amount": "0",
+      "type": "stx"
+    },
+    {
+      "principal": {
+        "type_id": "principal_contract",
+        "address": "SP1PFR4V08H1RAZXREBGFFQ59WB739XM8VVGTFSEA",
+        "contract_name": "dlmm-swap-router-v-1-1"
+      },
+      "condition_code": "sent_greater_than_or_equal_to",
+      "amount": "0",
+      "type": "stx"
+    },
+    {
+      "principal": {
+        "type_id": "principal_contract",
+        "address": "SP3EWCDA3V8HCP64CSETSNYXZ25WC4AJ95EC0ZEST",
+        "contract_name": "dlmm-adapter"
+      },
+      "condition_code": "sent_greater_than_or_equal_to",
+      "amount": "0",
+      "type": "fungible",
+      "asset": {
+        "asset_name": "sbtc-token",
+        "contract_address": "SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4",
+        "contract_name": "sbtc-token"
+      }
+    },
+    {
+      "principal": {
+        "type_id": "principal_contract",
+        "address": "SM1FKXGNZJWSTWDWXQZJNF7B5TV5ZB235JTCXYXKD",
+        "contract_name": "dlmm-pool-stx-sbtc-v-1-bps-15"
+      },
+      "condition_code": "sent_greater_than_or_equal_to",
+      "amount": "0",
+      "type": "fungible",
+      "asset": {
+        "asset_name": "sbtc-token",
+        "contract_address": "SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4",
+        "contract_name": "sbtc-token"
+      }
+    },
+    {
+      "principal": {
+        "type_id": "principal_contract",
+        "address": "SP1PFR4V08H1RAZXREBGFFQ59WB739XM8VVGTFSEA",
+        "contract_name": "dlmm-swap-router-v-1-1"
+      },
+      "condition_code": "sent_greater_than_or_equal_to",
+      "amount": "0",
+      "type": "fungible",
+      "asset": {
+        "asset_name": "sbtc-token",
+        "contract_address": "SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4",
+        "contract_name": "sbtc-token"
+      }
+    },
+    {
+      "principal": {
+        "type_id": "principal_contract",
+        "address": "SM1793C4R5PZ4NS4VQ4WMP7SKKYVH8JZEWSZ9HCCR",
+        "contract_name": "token-stx-v-1-2"
+      },
+      "condition_code": "sent_greater_than_or_equal_to",
+      "amount": "0",
+      "type": "stx"
+    }
+  ],
+  "anchor_mode": "any",
+  "block_hash": "0x8078d105ac89bd5d93bdbcef6aca0bbdd7cc68b7417b03ccd2249d001969d17d",
+  "block_height": 8884904,
+  "block_time": 1788181225,
+  "block_time_iso": "2026-08-31T13:00:25.000Z",
+  "burn_block_time": 1788179942,
+  "burn_block_height": 964877,
+  "burn_block_time_iso": "2026-08-31T12:39:02.000Z",
+  "parent_burn_block_time": 1788179942,
+  "parent_burn_block_time_iso": "2026-08-31T12:39:02.000Z",
+  "canonical": true,
+  "tx_index": 2,
+  "tx_status": "abort_by_post_condition",
+  "tx_result": {
+    "hex": "0x0801000000000000000000000000000001f8",
+    "repr": "(err u504)"
+  },
+  "event_count": 0,
+  "parent_block_hash": "0x0a6e611b60dece5a19f28b26a831621ba06e0673ecc3454c4e7720ebd48115c3",
+  "is_unanchored": false,
+  "microblock_hash": "0x",
+  "microblock_sequence": 2147483647,
+  "microblock_canonical": true,
+  "execution_cost_read_count": 17198,
+  "execution_cost_read_length": 86948881,
+  "execution_cost_runtime": 144927307,
+  "execution_cost_write_count": 2268,
+  "execution_cost_write_length": 69302,
+  "vm_error": "Post-condition check failure on STX owned by SPCE87V29VDPEAS925YMV2VG3CMBHY0BXKB08NA4: 10000000000 SentEq 0",
+  "events": [],
+  "tx_type": "contract_call",
+  "contract_call": {
+    "contract_id": "SP3EWCDA3V8HCP64CSETSNYXZ25WC4AJ95EC0ZEST.zr-d-0",
+    "function_name": "r-d",
+    "function_signature": "(define-public (r-d (a0 trait_reference) (p0 trait_reference) (xy0 bool) (is-stx-in bool) (is-stx-out bool) (t-in trait_reference) (t-out trait_reference) (amount-in uint) (min-out uint) (deadline uint) (skim-amount uint) (max-skim uint) (recipient principal)))",
+    "function_args": [
+      {
+        "hex": "0x0616ddc63543da22cb188ccbb59afbbf1178c22a492b0c646c6d6d2d61646170746572",
+        "repr": "'SP3EWCDA3V8HCP64CSETSNYXZ25WC4AJ95EC0ZEST.dlmm-adapter",
+        "name": "a0",
+        "type": "trait_reference"
+      },
+      {
+        "hex": "0x06145f3ec2bf9733ae379dbfe5579d65d6cbf58865961d646c6d6d2d706f6f6c2d7374782d736274632d762d312d6270732d3135",
+        "repr": "'SM1FKXGNZJWSTWDWXQZJNF7B5TV5ZB235JTCXYXKD.dlmm-pool-stx-sbtc-v-1-bps-15",
+        "name": "p0",
+        "type": "trait_reference"
+      },
+      {
+        "hex": "0x03",
+        "repr": "true",
+        "name": "xy0",
+        "type": "bool"
+      },
+      {
+        "hex": "0x03",
+        "repr": "true",
+        "name": "is-stx-in",
+        "type": "bool"
+      },
+      {
+        "hex": "0x04",
+        "repr": "false",
+        "name": "is-stx-out",
+        "type": "bool"
+      },
+      {
+        "hex": "0x06144e91b0982dbe4ae49bb9394b1f339fb7144beee60f746f6b656e2d7374782d762d312d32",
+        "repr": "'SM1793C4R5PZ4NS4VQ4WMP7SKKYVH8JZEWSZ9HCCR.token-stx-v-1-2",
+        "name": "t-in",
+        "type": "trait_reference"
+      },
+      {
+        "hex": "0x0614f6decc7cfff2a413bd7cd4f53c25ad7fd1899acc0a736274632d746f6b656e",
+        "repr": "'SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token",
+        "name": "t-out",
+        "type": "trait_reference"
+      },
+      {
+        "hex": "0x01000000000000000000000002540be400",
+        "repr": "u10000000000",
+        "name": "amount-in",
+        "type": "uint"
+      },
+      {
+        "hex": "0x01000000000000000000000000002fa715",
+        "repr": "u3122965",
+        "name": "min-out",
+        "type": "uint"
+      },
+      {
+        "hex": "0x01000000000000000000000000008792c9",
+        "repr": "u8884937",
+        "name": "deadline",
+        "type": "uint"
+      },
+      {
+        "hex": "0x0100000000000000000000000000000000",
+        "repr": "u0",
+        "name": "skim-amount",
+        "type": "uint"
+      },
+      {
+        "hex": "0x0100000000000000000000000000000000",
+        "repr": "u0",
+        "name": "max-skim",
+        "type": "uint"
+      },
+      {
+        "hex": "0x051618e41f624edb672b29117d4d8b701b28b8f80bec",
+        "repr": "'SPCE87V29VDPEAS925YMV2VG3CMBHY0BXKB08NA4",
+        "name": "recipient",
+        "type": "principal"
+      }
+    ]
+  }
+}

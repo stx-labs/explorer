@@ -1,5 +1,6 @@
 import { MempoolTransaction, Transaction } from '@stacks/stacks-blockchain-api-types';
 
+import { diagnoseSync, isFailedContractCall } from '../../tx-diagnosis';
 import {
   getContractName,
   getFunctionName,
@@ -9,6 +10,9 @@ import {
 } from '../../utils/utils';
 
 export const getTxErrorMessage = (tx: Transaction | MempoolTransaction): string | undefined => {
+  // Failed contract calls get the deterministic headline; the generic strings below are wrong for
+  // post-condition failures whose result is `(err …)`.
+  if (isFailedContractCall(tx)) return diagnoseSync(tx, null).headline;
   switch (tx.tx_status) {
     case 'abort_by_post_condition':
       return 'This transaction would have succeeded, but was rolled back by a supplied post-condition.';

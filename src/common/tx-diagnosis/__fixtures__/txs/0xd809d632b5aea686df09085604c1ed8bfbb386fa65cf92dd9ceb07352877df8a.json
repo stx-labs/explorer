@@ -1,0 +1,96 @@
+{
+  "tx_id": "0xd809d632b5aea686df09085604c1ed8bfbb386fa65cf92dd9ceb07352877df8a",
+  "nonce": 22,
+  "fee_rate": "10000",
+  "sender_address": "SP1F9CYDK1AN3EWMBGMM7VJDS4BH2K9FA95JNATS2",
+  "sponsored": false,
+  "post_condition_mode": "deny",
+  "post_conditions": [
+    {
+      "principal": {
+        "type_id": "principal_standard",
+        "address": "SP1F9CYDK1AN3EWMBGMM7VJDS4BH2K9FA95JNATS2"
+      },
+      "condition_code": "sent_less_than_or_equal_to",
+      "amount": "2000000",
+      "type": "stx"
+    },
+    {
+      "principal": {
+        "type_id": "principal_contract",
+        "address": "SP1A27KFY4XERQCCRCARCYD1CC5N7M6688BSYADJ7",
+        "contract_name": "v0-vault-usdc"
+      },
+      "condition_code": "sent_greater_than_or_equal_to",
+      "amount": "190000",
+      "type": "fungible",
+      "asset": {
+        "asset_name": "usdcx-token",
+        "contract_address": "SP120SBRBQJ00MCWS7TM5R8WJNTTKD5K0HFRC2CNE",
+        "contract_name": "usdcx"
+      }
+    }
+  ],
+  "anchor_mode": "any",
+  "block_hash": "0xde6522649718ba21f3231a3aa9f7a9928232774463cc1d265a608a64ecce3230",
+  "block_height": 8826514,
+  "block_time": 1787496386,
+  "block_time_iso": "2026-08-23T14:46:26.000Z",
+  "burn_block_time": 1787496098,
+  "burn_block_height": 963739,
+  "burn_block_time_iso": "2026-08-23T14:41:38.000Z",
+  "parent_burn_block_time": 1787496098,
+  "parent_burn_block_time_iso": "2026-08-23T14:41:38.000Z",
+  "canonical": true,
+  "tx_index": 9,
+  "tx_status": "abort_by_post_condition",
+  "tx_result": {
+    "hex": "0x080100000000000000000000000000061a96",
+    "repr": "(err u400022)"
+  },
+  "event_count": 0,
+  "parent_block_hash": "0x8a4ac5745072b9e7f44a9b3a6f6ccc3edb39fe0716789a2f3d7031e22ac61496",
+  "is_unanchored": false,
+  "microblock_hash": "0x",
+  "microblock_sequence": 2147483647,
+  "microblock_canonical": true,
+  "execution_cost_read_count": 20,
+  "execution_cost_read_length": 112069,
+  "execution_cost_runtime": 214407,
+  "execution_cost_write_count": 0,
+  "execution_cost_write_length": 0,
+  "vm_error": "Post-condition check failure on fungible asset SP120SBRBQJ00MCWS7TM5R8WJNTTKD5K0HFRC2CNE.usdcx::usdcx-token owned by SP1A27KFY4XERQCCRCARCYD1CC5N7M6688BSYADJ7.v0-vault-usdc: 190000 SentGe 0",
+  "events": [],
+  "tx_type": "contract_call",
+  "contract_call": {
+    "contract_id": "SP1A27KFY4XERQCCRCARCYD1CC5N7M6688BSYADJ7.v0-7-market",
+    "function_name": "borrow",
+    "function_signature": "(define-public (borrow (ft trait_reference) (amount uint) (receiver (optional principal)) (price-feeds (optional (list 3 (buff 8192))))))",
+    "function_args": [
+      {
+        "hex": "0x0616440caf0bbc800a33993ea85c2392aeb53696608b057573646378",
+        "repr": "'SP120SBRBQJ00MCWS7TM5R8WJNTTKD5K0HFRC2CNE.usdcx",
+        "name": "ft",
+        "type": "trait_reference"
+      },
+      {
+        "hex": "0x010000000000000000000000000002e630",
+        "repr": "u190000",
+        "name": "amount",
+        "type": "uint"
+      },
+      {
+        "hex": "0x09",
+        "repr": "none",
+        "name": "receiver",
+        "type": "(optional principal)"
+      },
+      {
+        "hex": "0x0a0b00000001020000067b504e41550100000003b801000000070d0118acab6e\u2026",
+        "repr": "(some (list 0x504e41550100000003b801000000070d0118acab6ef2851f8f93e7c746b4f07dd30dd60e0213b937c55aadc49240dd2ad079bb21d7becf0240f6b1b32be563439452c2dafc3aeafa6377025b07178145bc000286e9e3b6e45e35a28fab2dbb5589da41878076751d39281d62053b46f311f67d763e086018bcadad1c273c4017922f6a332a0b16e9e639b8f3fc8fe2cc00032c01042bb2437625c296d83b4a179a0c76870c3aa5de9144b60c410f5c3c19ca8214d25ad9be01841f54a1b78d3b692395722ee8e4a8d6556690aff427cba2486e4bd70005f2428078c7d1dcb40afe93d6b559c915b65303045273a2bd8de154794e89c7e06ab192423d7ac9a5167fc9a826f878561bc8af4e10518bbfdc3238afb2d28f110106f7f77aa6b75d7158121f143417d8356cb7d78a545c0a56d668f36fcf9712788864bf48d537ad416c5e717545ff78e918cdec590c1c64872bb5b08c5903bf72880107f6572cbaed0dca721814863950761b1586d58b535d8a26394467904d4061b59141034f857e1cb0751ef8c578587588b8f437a42cb650944145576d21c18dfe3201084176f431562a13421a87c03a9fff1f714ade03ebd383f1a41bdaa33a9a1a303b3f5bef1c0c96a402aaf0cff67362f531ff497f6c8e14ed00d661c1029a66a2dd010af498a8186e6ce2d8f30c23e73ec8384a02906f24d49f2d423c17d486d23ca86b679598156371b7585ae3fd26a9f292dee9d7a7d4773a2835163463ddb9094438000b25f6b49a6310ecf90b0bdb5ca893ab7742868c7e5ad0e1ea6aa64249dc4cabc75362b939c8226899d036eee032dd8de2b97272fbbee84e461514bf9991da86cd000d258bc6410067be49b100ed9155600260cede3969b6cd281e0879d8a9882dfc4962790d2c38a4e185c5aee1bd3972766e3f95104a5f8bea8a06db3b233948e9cb0110d72c3f010a4b1493e5adf7eb7ece17387c779ca07c0b61db2b0273bf55e8659830675945691b81096793337159294d78bae1472d0338cc1dcf5f92899b0587640011b1f496db0c2a702fd620240fcd8a56efb3bdb95a09334be5657cc6667bfadda251e0543aada7ddff8b333cc8bf9564f0b9d1b3970ca7ad3fe0a66b00bac80c6701121b32f05dc245432bf346fb91b6dada2f1ca9634d8829bb8405d4ccb4d97603497b92a2b558c3d50776a06e7a8af6ec37b2a8518b490838553137a31e45209e1a006a8b06db00000000001ae101faedac5851e32b9b23b5f9411a8c2bac4aae3ed4dd7b811dd1a72ea4aa71000000000d6eb56401415557560000000000127c975400002710f7162a5aee5600af5c9b82b753bcb4d06b7307ca02005500e62df6c8b4a85fe1a67db44dc12de5db330f7ac66b72dc658afedf0f4a415b43000007034a506a6400000002153089acfffffff8000000006a8b06db000000006a8b06da000007092c90fec000000000815e340a0d3fd8af044861da28169e9bd46426f70a76d1d0f72dca1b9c34a189aee77a1b60d9f90ca8b4852525a259ec80822584ec0dd480cd5897aff037c8f7bfa34ce3610864ada08a5e3a0b9173cbdcc9107aa012254c517770d09aca2f23732be3b50ba1bd861affa95cba113d1658fec71aaad4c587b5ec39c630c888d4b458ca2284a5d95adea842236c2cb47b76e861e30e793a55c5a6b69fe315bbb47b5ee6bc71bf13f43aab79ad013a10d44a43972d1d0bac13d04f96876f393c3cc8afa7cc84fa5876f574e37d63a59d08d046003fdcf8cd67023c7f96a4215c14f521686f192a26b157e030c9e23b5be957510c0d43639c6c88413b7043c4986b041af20373c6cabdb6005500eaa020c61cc479712813461ce153894a96a6c00b21ed0cfc2798d1f9a9e9c94a0000000005f5cea3000000000000ac8bfffffff8000000006a8b06db000000006a8b06da0000000005f5d0ee0000000000009c0f0d6f75b2d8e47ca11538ebd7616bc2a78a75dda50b9a3192946832cf23ccd15d27a2acc9a662ec5c49b5fd776ad56327faf4b04775d118e6385af8541d3b123e4bad22b4b2f17677f4bc87ba21678fe0e515eec560d3d447d7ee8a77dcbc25a3c95f243b0fb43370cb12c1726c618c4a36ab1e1cbf0988f920c888d4b458ca2284a5d95adea842236c2cb47b76e861e30e793a55c5a6b69fe315bbb47b5ee6bc71bf13f43aab79ad013a10d44a43972d1d0bac13d04f96876f393c3cc8afa7cc84fa5876f574e37d63a59d08d046003fdcf8cd67023c7f96a4215c14f521686f192a26b157e030c9e23b5be957510c0d43639c6c88413b7043c4986b041af20373c6cabdb6))",
+        "name": "price-feeds",
+        "type": "(optional (list 3 (buff 8192)))"
+      }
+    ]
+  }
+}

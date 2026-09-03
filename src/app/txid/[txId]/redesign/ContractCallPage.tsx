@@ -1,4 +1,5 @@
 import { SectionTabsContentContainer, SectionTabsTrigger } from '@/common/components/SectionTabs';
+import { isFailedContractCall } from '@/common/tx-diagnosis';
 import { isConfirmedTx } from '@/common/utils/transactions';
 import { TabsContent } from '@/ui/Tabs';
 import { Grid, Stack } from '@chakra-ui/react';
@@ -19,13 +20,14 @@ import { FunctionCalled } from './function-called/FunctionCalled';
 import { PostConditions } from './post-conditions/PostConditions';
 import { Source } from './source/Source';
 import { TxSummary } from './tx-summary/TxSummary';
+import { WhyItFailed } from './why-failed/WhyItFailed';
 
 export const ContractCallPage = ({ tx }: { tx: Transaction | MempoolTransaction }) => {
   return (
     <>
       <Stack gap={3}>
         <TxHeader tx={tx} />
-        {getTxAlert(tx)}
+        {isFailedContractCall(tx) ? <WhyItFailed tx={tx} /> : getTxAlert(tx)}
       </Stack>
       <TxTabs tx={tx} />
     </>

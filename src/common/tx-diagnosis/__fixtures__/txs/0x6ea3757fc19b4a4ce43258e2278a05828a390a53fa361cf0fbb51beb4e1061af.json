@@ -1,0 +1,59 @@
+{
+  "tx_id": "0x6ea3757fc19b4a4ce43258e2278a05828a390a53fa361cf0fbb51beb4e1061af",
+  "nonce": 705,
+  "fee_rate": "80000",
+  "sender_address": "SP36QFQET18QP57MBSX0X4D3ASCSM2WZH31CT78DP",
+  "sponsored": false,
+  "post_condition_mode": "allow",
+  "post_conditions": [],
+  "anchor_mode": "any",
+  "block_hash": "0xefdc2c4f4e82796f79954aa8dc117c507a9186af6ce313143d16deb44a72ed3f",
+  "block_height": 8866511,
+  "block_time": 1787993392,
+  "block_time_iso": "2026-08-29T08:49:52.000Z",
+  "burn_block_time": 1787991879,
+  "burn_block_height": 964545,
+  "burn_block_time_iso": "2026-08-29T08:24:39.000Z",
+  "parent_burn_block_time": 1787991879,
+  "parent_burn_block_time_iso": "2026-08-29T08:24:39.000Z",
+  "canonical": true,
+  "tx_index": 1,
+  "tx_status": "abort_by_response",
+  "tx_result": {
+    "hex": "0x08010000000000000000000000000000013e",
+    "repr": "(err u318)"
+  },
+  "event_count": 0,
+  "parent_block_hash": "0xb95c3b55ce98310bb1e50728198229e79e4bde5893ee1fd09f9cbaef9464e4cb",
+  "is_unanchored": false,
+  "microblock_hash": "0x",
+  "microblock_sequence": 2147483647,
+  "microblock_canonical": true,
+  "execution_cost_read_count": 32,
+  "execution_cost_read_length": 47272,
+  "execution_cost_runtime": 964432,
+  "execution_cost_write_count": 0,
+  "execution_cost_write_length": 0,
+  "vm_error": null,
+  "events": [],
+  "tx_type": "contract_call",
+  "contract_call": {
+    "contract_id": "SP39MJDK00ADE84NKW7959VEVVX72FGV8H1RZTVVH.bitflow-exec-1",
+    "function_name": "p23",
+    "function_signature": "(define-public (p23 (dex trait_reference) (data (buff 160))))",
+    "function_args": [
+      {
+        "hex": "0x0616d3493660029ae412b3e1d254eddbdf4e27c368881078796b2d636f72652d61646170746572",
+        "repr": "'SP39MJDK00ADE84NKW7959VEVVX72FGV8H1RZTVVH.xyk-core-adapter",
+        "name": "dex",
+        "type": "trait_reference"
+      },
+      {
+        "hex": "0x02000000a000000000000000000000000005f5e1000000000000000000000000000000004200000000000000000000000000000000000000000000000000000000773594000000000000000000000000000179de1d000000000000000000000000000000040000000000000000000000000179a7b00000000000000000000000000000005e000000000000000000000012a05f200000000000000000000000000005f5e100",
+        "repr": "0x00000000000000000000000005f5e1000000000000000000000000000000004200000000000000000000000000000000000000000000000000000000773594000000000000000000000000000179de1d000000000000000000000000000000040000000000000000000000000179a7b00000000000000000000000000000005e000000000000000000000012a05f200000000000000000000000000005f5e100",
+        "name": "data",
+        "type": "(buff 160)"
+      }
+    ]
+  }
+}

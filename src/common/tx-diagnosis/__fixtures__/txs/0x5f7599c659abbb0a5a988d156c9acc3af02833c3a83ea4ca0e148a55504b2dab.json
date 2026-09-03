@@ -1,0 +1,123 @@
+{
+  "tx_id": "0x5f7599c659abbb0a5a988d156c9acc3af02833c3a83ea4ca0e148a55504b2dab",
+  "nonce": 388,
+  "fee_rate": "10000",
+  "sender_address": "SP2YJYXP3FPQK0J4J8GNFVJH75HAEGFX4MJKSSYRJ",
+  "sponsored": false,
+  "post_condition_mode": "deny",
+  "post_conditions": [
+    {
+      "principal": {
+        "type_id": "principal_standard",
+        "address": "SP2YJYXP3FPQK0J4J8GNFVJH75HAEGFX4MJKSSYRJ"
+      },
+      "condition_code": "sent_equal_to",
+      "amount": "527883923",
+      "type": "fungible",
+      "asset": {
+        "asset_name": "pool-token",
+        "contract_address": "SM1793C4R5PZ4NS4VQ4WMP7SKKYVH8JZEWSZ9HCCR",
+        "contract_name": "stableswap-pool-stx-ststx-v-1-4"
+      }
+    },
+    {
+      "principal": {
+        "type_id": "principal_contract",
+        "address": "SM1793C4R5PZ4NS4VQ4WMP7SKKYVH8JZEWSZ9HCCR",
+        "contract_name": "stableswap-pool-stx-ststx-v-1-4"
+      },
+      "condition_code": "sent_greater_than_or_equal_to",
+      "amount": "275056933",
+      "type": "stx"
+    },
+    {
+      "principal": {
+        "type_id": "principal_contract",
+        "address": "SM1793C4R5PZ4NS4VQ4WMP7SKKYVH8JZEWSZ9HCCR",
+        "contract_name": "stableswap-pool-stx-ststx-v-1-4"
+      },
+      "condition_code": "sent_greater_than_or_equal_to",
+      "amount": "272351577",
+      "type": "fungible",
+      "asset": {
+        "asset_name": "ststx",
+        "contract_address": "SP4SZE494VC2YC5JYG7AYFQ44F5Q4PYV7DVMDPBG",
+        "contract_name": "ststx-token"
+      }
+    }
+  ],
+  "anchor_mode": "any",
+  "block_hash": "0xd4c9a77f1c6721bd8c427a9a078c341762e59002ef711ffc508af6c6ca315642",
+  "block_height": 8826465,
+  "block_time": 1787495627,
+  "block_time_iso": "2026-08-23T14:33:47.000Z",
+  "burn_block_time": 1787495264,
+  "burn_block_height": 963737,
+  "burn_block_time_iso": "2026-08-23T14:27:44.000Z",
+  "parent_burn_block_time": 1787495264,
+  "parent_burn_block_time_iso": "2026-08-23T14:27:44.000Z",
+  "canonical": true,
+  "tx_index": 1,
+  "tx_status": "abort_by_post_condition",
+  "tx_result": {
+    "hex": "0x0801000000000000000000000000000003fb",
+    "repr": "(err u1019)"
+  },
+  "event_count": 0,
+  "parent_block_hash": "0x7c011c50ff90bf405ca6ab93a6ddf0046c064a7b535913f5ac8cef5ec1d49805",
+  "is_unanchored": false,
+  "microblock_hash": "0x",
+  "microblock_sequence": 2147483647,
+  "microblock_canonical": true,
+  "execution_cost_read_count": 43,
+  "execution_cost_read_length": 127014,
+  "execution_cost_runtime": 2448478,
+  "execution_cost_write_count": 0,
+  "execution_cost_write_length": 0,
+  "vm_error": "Post-condition check failure on fungible asset SM1793C4R5PZ4NS4VQ4WMP7SKKYVH8JZEWSZ9HCCR.stableswap-pool-stx-ststx-v-1-4::pool-token owned by SP2YJYXP3FPQK0J4J8GNFVJH75HAEGFX4MJKSSYRJ: 527883923 SentEq 0",
+  "events": [],
+  "tx_type": "contract_call",
+  "contract_call": {
+    "contract_id": "SM1793C4R5PZ4NS4VQ4WMP7SKKYVH8JZEWSZ9HCCR.stableswap-core-v-1-4",
+    "function_name": "withdraw-proportional-liquidity",
+    "function_signature": "(define-public (withdraw-proportional-liquidity (pool-trait trait_reference) (x-token-trait trait_reference) (y-token-trait trait_reference) (amount uint) (min-x-amount uint) (min-y-amount uint)))",
+    "function_args": [
+      {
+        "hex": "0x06144e91b0982dbe4ae49bb9394b1f339fb7144beee61f737461626c65737761702d706f6f6c2d7374782d73747374782d762d312d34",
+        "repr": "'SM1793C4R5PZ4NS4VQ4WMP7SKKYVH8JZEWSZ9HCCR.stableswap-pool-stx-ststx-v-1-4",
+        "name": "pool-trait",
+        "type": "trait_reference"
+      },
+      {
+        "hex": "0x06144e91b0982dbe4ae49bb9394b1f339fb7144beee60f746f6b656e2d7374782d762d312d32",
+        "repr": "'SM1793C4R5PZ4NS4VQ4WMP7SKKYVH8JZEWSZ9HCCR.token-stx-v-1-2",
+        "name": "x-token-trait",
+        "type": "trait_reference"
+      },
+      {
+        "hex": "0x0616099fb88926d82f30b2f40eaf3ee423cb725bdb3b0b73747374782d746f6b656e",
+        "repr": "'SP4SZE494VC2YC5JYG7AYFQ44F5Q4PYV7DVMDPBG.ststx-token",
+        "name": "y-token-trait",
+        "type": "trait_reference"
+      },
+      {
+        "hex": "0x010000000000000000000000001f76de93",
+        "repr": "u527883923",
+        "name": "amount",
+        "type": "uint"
+      },
+      {
+        "hex": "0x0100000000000000000000000010650925",
+        "repr": "u275056933",
+        "name": "min-x-amount",
+        "type": "uint"
+      },
+      {
+        "hex": "0x01000000000000000000000000103bc159",
+        "repr": "u272351577",
+        "name": "min-y-amount",
+        "type": "uint"
+      }
+    ]
+  }
+}

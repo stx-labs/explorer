@@ -11,7 +11,7 @@ import { DefaultTableColumnHeader } from '@/common/components/table/TableCompone
 import { useBulkFtMetadata } from '@/common/queries/useBulkTokenMetadata';
 import { validateStacksContractId } from '@/common/utils/utils';
 import { Text } from '@/ui/Text';
-import { Flex } from '@chakra-ui/react';
+import { Box, Flex } from '@chakra-ui/react';
 import { ColumnDef, Header } from '@tanstack/react-table';
 import { useMemo } from 'react';
 
@@ -99,7 +99,14 @@ type TxWithPostConditions =
   | SmartContractTransaction
   | MempoolSmartContractTransaction;
 
-export function PostConditionsTable({ tx }: { tx: TxWithPostConditions }) {
+export function PostConditionsTable({
+  tx,
+  highlightIndex,
+}: {
+  tx: TxWithPostConditions;
+  /** Row to emphasise (0-based), e.g. the post-condition implicated in a failure. */
+  highlightIndex?: number;
+}) {
   const postConditions: ExtendedPostCondition[] = tx.post_conditions;
   const senderAddress = tx.sender_address;
   const isContract = validateStacksContractId(senderAddress);
@@ -154,18 +161,31 @@ export function PostConditionsTable({ tx }: { tx: TxWithPostConditions }) {
     });
   }, [postConditions, senderAddress, isContract, metadataMap]);
 
+  // The shared Table renders a spacer row first, so data row `i` is the (i + 2)th body row.
+  const highlightCss =
+    highlightIndex !== undefined && highlightIndex >= 0 && highlightIndex < postConditions.length
+      ? {
+          [`& tbody tr:nth-of-type(${highlightIndex + 2}) td`]: {
+            bg: 'feedback.red-150',
+            _dark: { bg: 'transactionStatus.failed' },
+          },
+        }
+      : undefined;
+
   return (
-    <Table
-      columns={columnDefinitions}
-      data={rowData}
-      emptyTableUi={
-        <Flex alignItems="center" justifyContent="center">
-          <Text textStyle="text-regular-sm" color="textTertiary">
-            No post-conditions to show
-          </Text>
-        </Flex>
-      }
-      scrollIndicatorWrapper={table => <ScrollIndicator>{table}</ScrollIndicator>}
-    />
+    <Box css={highlightCss} data-highlighted-row={highlightIndex}>
+      <Table
+        columns={columnDefinitions}
+        data={rowData}
+        emptyTableUi={
+          <Flex alignItems="center" justifyContent="center">
+            <Text textStyle="text-regular-sm" color="textTertiary">
+              No post-conditions to show
+            </Text>
+          </Flex>
+        }
+        scrollIndicatorWrapper={table => <ScrollIndicator>{table}</ScrollIndicator>}
+      />
+    </Box>
   );
 }
