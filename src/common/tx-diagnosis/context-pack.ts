@@ -185,7 +185,7 @@ export function renderContextPackMarkdown(input: ContextPackInput): string {
   );
   if (d.postCondition?.principal && d.postCondition.principal !== tx.sender_address) {
     lines.push(
-      `- Post-condition principal's transactions: ${apiUrl}/extended/v1/address/${d.postCondition.principal}/transactions?limit=20`
+      `- Post-condition principal's transactions: ${apiUrl}/extended/v2/addresses/${d.postCondition.principal}/transactions?limit=20`
     );
   }
   lines.push('');

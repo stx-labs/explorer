@@ -43,7 +43,11 @@ export async function handleContextPack(
 
   const etag = `W/"${txId}-v${ENGINE_VERSION}-${format}"`;
   if (request.headers.get('if-none-match') === etag) {
-    return new Response(null, { status: 304, headers: { ...common, ETag: etag } });
+    // A 304 must repeat the caching headers of the 200 it stands in for (RFC 9110 §15.4.5).
+    return new Response(null, {
+      status: 304,
+      headers: { ...common, ETag: etag, 'Cache-Control': CACHE_CONTROL },
+    });
   }
 
   if (format === 'json') {

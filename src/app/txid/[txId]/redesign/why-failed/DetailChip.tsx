@@ -4,13 +4,14 @@ import { ExplorerLink } from '@/common/components/ExplorerLinks';
 import type { DetailRef, RichPart } from '@/common/tx-diagnosis';
 import { Text } from '@/ui/Text';
 import { Tooltip } from '@/ui/Tooltip';
-import { Flex, Icon, useClipboard } from '@chakra-ui/react';
+import { Flex, Icon, chakra, useClipboard } from '@chakra-ui/react';
 import { ArrowSquareOut } from '@phosphor-icons/react';
 import { Fragment } from 'react';
 
 /**
  * Copyable identifier chip — the TxHeader badge pattern at inline size.
- * Click copies the full value; the ↗ opens the identifier's page when it has one.
+ * The label is a real button that copies the full value; the ↗ is a sibling link to the
+ * identifier's page, so no interactive element is nested inside another.
  */
 export function DetailChip({ detail, emphasis }: { detail: DetailRef; emphasis?: 'error' }) {
   const { copied, copy } = useClipboard({ value: detail.value, timeout: 900 });
@@ -20,38 +21,41 @@ export function DetailChip({ detail, emphasis }: { detail: DetailRef; emphasis?:
         as="span"
         display="inline-flex"
         alignItems="center"
-        gap={1}
-        px={1.5}
-        py={0.5}
+        gap={0.5}
         mx={0.5}
         bg="surfacePrimary"
         _hover={{ bg: 'surfaceFifth' }}
         borderRadius="redesign.sm"
-        cursor="pointer"
         verticalAlign="middle"
-        onClick={() => copy()}
-        role="button"
-        tabIndex={0}
-        onKeyDown={e => {
-          if (e.key === 'Enter' || e.key === ' ') copy();
-        }}
-        aria-label={`Copy ${detail.value}`}
         data-test="why-failed-detail"
       >
-        <Text
-          as="span"
-          display="inline"
-          textStyle="text-mono-xs"
-          color={emphasis === 'error' ? 'error' : 'textPrimary'}
-          whiteSpace="nowrap"
+        <chakra.button
+          type="button"
+          onClick={() => copy()}
+          aria-label={`Copy ${detail.value}`}
+          bg="transparent"
+          border="none"
+          px={1.5}
+          py={0.5}
+          cursor="pointer"
+          borderRadius="redesign.sm"
+          _focusVisible={{ outline: '2px solid', outlineColor: 'redesignBorderPrimary' }}
         >
-          {detail.label}
-        </Text>
+          <Text
+            as="span"
+            display="inline"
+            textStyle="text-mono-xs"
+            color={emphasis === 'error' ? 'error' : 'textPrimary'}
+            whiteSpace="nowrap"
+          >
+            {detail.label}
+          </Text>
+        </chakra.button>
         {detail.href && (
           <ExplorerLink
             href={detail.href}
             display="inline-flex"
-            onClick={e => e.stopPropagation()}
+            pr={1.5}
             aria-label={`Open ${detail.label}`}
             _hover={{ textDecoration: 'none' }}
           >
