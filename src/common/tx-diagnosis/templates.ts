@@ -151,7 +151,7 @@ function tagCopy(tag: SemanticTag | undefined, name: string | undefined): TagCop
         headline:
           'The trade would have returned less than the minimum you set, so it was cancelled.',
         sender:
-          'Prices moved between quote and execution. Retry with a higher slippage tolerance or a smaller amount.',
+          'This usually means prices moved between quote and execution. Retry with a higher slippage tolerance or a smaller amount.',
         developer:
           'Quote closer to submission or widen the minimum; consider a deadline so stale quotes fail fast.',
       };
@@ -259,13 +259,22 @@ function callFacts(tx: FailedContractCallTx): { fn: DetailRef; contract: DetailR
   };
 }
 
-function sourceLink(res: Resolution | undefined, line?: number): Fact['link'] | undefined {
+/**
+ * Link to a source line: the page's own Source tab for the called contract, or the callee's page
+ * when the constant lives in another contract (the Source tab only ever shows the called one).
+ */
+function sourceLink(
+  res: Resolution | undefined,
+  calledContractId: string,
+  line?: number
+): Fact['link'] | undefined {
   const n = line ?? res?.source?.failingLine ?? res?.info.definitionLine;
   if (!res?.source || !n) return undefined;
-  return {
-    label: `Line ${n} in ${contractName(res.source.contractId)}`,
-    href: `?tab=sourceCode&line=${n}`,
-  };
+  const target = res.source.contractId;
+  const label = `Line ${n} in ${contractName(target)}`;
+  return target === calledContractId
+    ? { label, href: `?tab=sourceCode&line=${n}` }
+    : { label, href: `/txid/${target}?tab=sourceCode&line=${n}` };
 }
 
 export function buildContractError(
@@ -280,6 +289,9 @@ export function buildContractError(
   const registry = res?.registry;
   const native = res?.info.nativeFunction ? res.info : undefined;
   const foldMask = res?.info.foldMask;
+  const ambiguous = res?.info.candidateNames;
+  // Defined once, but not thrown anywhere the call reaches: likely, not certain.
+  const unreachable = !!name && res?.info.reachable === false;
   const tag = res?.tag;
   const copy = tagCopy(tag, name);
   const batch = batchArg(tx);
@@ -289,7 +301,13 @@ export function buildContractError(
   let senderAction: string;
   let developer: string | undefined;
 
-  if (foldMask) {
+  if (ambiguous?.length) {
+    // Several constants share the code; the network does not record which check fired.
+    headline = `The contract rejected this call with error ${code}, which it defines under ${ambiguous.length} names — the network doesn't record which check failed.`;
+    senderAction =
+      'The app can tell you which condition failed; the candidate checks are listed below.';
+    confidence = 'low';
+  } else if (foldMask) {
     // The code is a placeholder written by the fold helper; the real error is not on chain.
     const items = batch ? `one of the ${formatInt(batch.count)} items` : 'one of the items';
     headline =
@@ -322,6 +340,7 @@ export function buildContractError(
       : "The app can tell you what this code means; the contract's source is linked below.";
     confidence = name ? 'medium' : 'low';
   }
+  if (unreachable && confidence === 'high') confidence = 'medium';
 
   const facts: Fact[] = [];
   const line = res?.source?.failingLine;
@@ -352,13 +371,18 @@ export function buildContractError(
         ref.value(`(err ${code})`),
         '. Which item failed, and why, is not recorded on chain.',
       ],
-      link: sourceLink(res, foldMask.line),
+      link: sourceLink(res, tx.contract_call.contract_id, foldMask.line),
     });
   } else {
     facts.push({
       parts: [fn, ' on ', contract, ' ran and stopped at a check that failed.'],
     });
-    if (name) {
+    if (ambiguous?.length) {
+      facts.push({
+        parts: ['It returned ', ref.value(`(err ${code})`), ' — one of:'],
+        chips: ambiguous.map(ref.constant),
+      });
+    } else if (name) {
       facts.push({
         parts: [
           line ? `The check at line ${line} returned ` : 'It returned ',
@@ -366,9 +390,11 @@ export function buildContractError(
           ' — ',
           ref.constant(name),
           ...where,
-          '.',
+          unreachable
+            ? ` — defined at line ${res?.info.definitionLine}, but not thrown in any code this call reaches directly, so this attribution is likely rather than certain.`
+            : '.',
         ],
-        link: sourceLink(res),
+        link: sourceLink(res, tx.contract_call.contract_id),
       });
       if (sites.length > 1) {
         facts.push({
@@ -405,8 +431,12 @@ export function buildContractError(
     }
   }
   if (res?.info.comments?.length) {
+    // Third-party text from the contract source: attributed, never presented as a conclusion.
     facts.push({
-      parts: [`The contract's own note on this error: “${res.info.comments.join(' ')}”`],
+      parts: [
+        `Comment next to this constant in the contract source (on-chain text, unverified): “${res.info.comments.join(' ')}”`,
+      ],
+      onChain: true,
     });
   }
   if (masked) {
@@ -422,6 +452,12 @@ export function buildContractError(
     evidence.push({ id: 'constant', label: name, value: line ? `${name} · line ${line}` : name });
   if (foldMask)
     evidence.push({ id: 'masked', label: 'masked', value: `masked by ${foldMask.helper}` });
+  if (ambiguous?.length)
+    evidence.push({
+      id: 'ambiguous',
+      label: 'candidates',
+      value: `${ambiguous.length} candidate constants`,
+    });
   if (tag) evidence.push({ id: 'tag', label: 'tag', value: tag });
   if (native)
     evidence.push({ id: 'native', label: native.nativeFunction!, value: native.nativeMeaning! });
@@ -631,11 +667,32 @@ export function buildPostCondition(tx: FailedContractCallTx, cls: Classification
 
   switch (pc.problem) {
     case 'principal_mismatch': {
+      const others = pc.principals ?? (pc.principal ? [pc.principal] : []);
       evidence.push({
         id: 'pc',
         label: 'post-condition',
-        value: `pc[${pc.index}].principal ≠ sender`,
+        value:
+          pc.index !== undefined
+            ? `pc[${pc.index}].principal ≠ sender`
+            : `${others.length} post-conditions name other principals`,
       });
+      const allowFact: Fact =
+        others.length === 1
+          ? {
+              parts: [
+                'The post-condition allows that movement only from ',
+                ref.address(others[0]),
+                ' — not the sender. In deny mode, any movement that is not covered fails the transaction.',
+              ],
+              link: pcLink,
+            }
+          : {
+              parts: [
+                `The ${others.length} post-conditions on ${assetLabel} allow that movement only from other accounts — not the sender. In deny mode, any movement that is not covered fails the transaction.`,
+              ],
+              chips: others.map(ref.address),
+              link: pcLink,
+            };
       return {
         headline: `The post-condition names a different account than the one that signed, so the ${assetLabel} transfer was rolled back.`,
         senderAction:
@@ -654,14 +711,7 @@ export function buildPostCondition(tx: FailedContractCallTx, cls: Classification
               '.',
             ],
           },
-          {
-            parts: [
-              'The post-condition allows that movement only from ',
-              ref.address(pc.principal!),
-              ' — not the sender. In deny mode, any movement that is not covered fails the transaction.',
-            ],
-            link: pcLink,
-          },
+          allowFact,
         ],
         developerNote: [
           'Build post-conditions with ',
@@ -782,6 +832,41 @@ export function buildPostCondition(tx: FailedContractCallTx, cls: Classification
         evidence,
         confidence: 'high',
       };
+    case 'stacking': {
+      // SIP-040 stacking / PoX-action conditions.
+      const who = pc.principal === sender ? 'your account' : truncateMiddle(pc.principal ?? '');
+      evidence.push({
+        id: 'pc',
+        label: 'post-condition',
+        value: pc.conditionCode
+          ? `stacking condition ${pc.conditionCode}`
+          : 'stacking action not covered',
+      });
+      const detail =
+        pc.expected !== undefined && pc.actual !== undefined
+          ? `The condition required ${describeConditionCode(pc.conditionCode ?? '')} ${formatInt(pc.expected)} STX to be stacked by ${who}; ${formatInt(pc.actual)} would have been.`
+          : pc.conditionCode
+            ? `The condition on the PoX action by ${who} (${pc.conditionCode}) did not hold${pc.actual ? ` (performed=${pc.actual})` : ''}.`
+            : pc.actual
+              ? `${who} would have stacked ${formatInt(pc.actual)} STX, and no post-condition covers stacking.`
+              : `${who} performed a PoX action that no post-condition covers.`;
+      return {
+        headline:
+          "A stacking post-condition set by the app didn't hold, so the transaction was rolled back.",
+        senderAction:
+          'Retry from an updated version of the app; the stacking amount or action it declared did not match what the contract did.',
+        invariant: invariantFor(tx),
+        whatHappened: [
+          { parts: [fn, ' on ', contract, ' returned ', ref.value(okRepr), '.'] },
+          { parts: [detail], link: pcLink },
+        ],
+        developerNote: [
+          'Check the SIP-040 stacking post-condition the app attaches (amount condition or PoX action) against what the contract actually does.',
+        ],
+        evidence,
+        confidence: 'high',
+      };
+    }
     default:
       return {
         headline:
@@ -803,6 +888,38 @@ export function buildPostCondition(tx: FailedContractCallTx, cls: Classification
         confidence: 'medium',
       };
   }
+}
+
+/** A `vm_error` the parser does not recognise (or none at all): report, never guess. */
+export function buildUnknownVmError(tx: FailedContractCallTx, cls: Classification): Built {
+  const { fn, contract } = callFacts(tx);
+  const message = tx.vm_error ?? null;
+  const facts: Fact[] = [{ parts: [fn, ' on ', contract, ' was cancelled by the network.'] }];
+  facts.push(
+    message
+      ? {
+          parts: [
+            'The network reported: ',
+            ref.value(message.length > 160 ? `${message.slice(0, 157)}…` : message),
+          ],
+        }
+      : { parts: ['The network recorded no error text for this call.'] }
+  );
+  const evidence: Evidence[] = [{ id: 'tx_result', label: 'tx_result', value: cls.resultRepr }];
+  if (message) evidence.push({ id: 'vm_error', label: 'vm_error', value: message });
+  return {
+    headline: message
+      ? "The network reported an error this explorer doesn't recognise, so the call was cancelled."
+      : 'The call was cancelled, and the network recorded no error text.',
+    senderAction: 'Retry once; if it fails the same way, contact the app with this transaction id.',
+    invariant: invariantFor(tx),
+    whatHappened: facts,
+    developerNote: [
+      `Reproduce in Clarinet simnet with mainnet data at block ${formatInt(tx.block_height - 1)}; the raw vm_error is below.`,
+    ],
+    evidence,
+    confidence: 'low',
+  };
 }
 
 /** Summary of a post-condition for the masked-error note, e.g. `pool sends at least 960,464 sbtc-token`. */
@@ -827,7 +944,7 @@ export function correlationFacts(
     facts.push({
       parts: [
         ref.address(cls.postCondition.principal),
-        ` is an active account (${formatInt(related.pcPrincipalTxCount)} transactions) — most likely another account in your wallet.`,
+        ` is an active account (${formatInt(related.pcPrincipalTxCount)} transactions). Check whether it is another account in your wallet.`,
       ],
     });
   }

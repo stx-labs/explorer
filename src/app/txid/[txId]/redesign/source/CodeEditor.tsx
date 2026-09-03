@@ -12,9 +12,10 @@ import { Flex, Icon, Stack } from '@chakra-ui/react';
 import Editor, { BeforeMount, EditorProps, Monaco, OnMount } from '@monaco-editor/react';
 import { ArrowsOutSimple } from '@phosphor-icons/react';
 import Prism from 'prismjs';
-import { forwardRef, memo, useCallback, useRef, useState } from 'react';
+import { forwardRef, memo, useCallback, useEffect, useRef, useState } from 'react';
 
 import { clarity } from './clarity';
+import { editorLineFor, trimForEditor, trimmedLeadingLines } from './editor-lines';
 
 clarity(Prism);
 
@@ -23,7 +24,7 @@ const BUTTONS_HEIGHT = 8;
 
 type CodeEditorProps = {
   code: string;
-  /** 1-based line to scroll to and highlight once the editor mounts. */
+  /** 1-based line of the original (untrimmed) source to scroll to and highlight. */
   revealLine?: number;
 } & Partial<EditorProps>;
 
@@ -31,6 +32,40 @@ const HIGHLIGHT_LINE_CLASS = 'code-editor-highlight-line';
 
 const CodeEditorBase = forwardRef<any, CodeEditorProps>(
   ({ code, revealLine, ...editorProps }, ref) => {
+    // The editor shows the source without its leading/trailing whitespace; line numbers quoted
+    // elsewhere (the "Why it failed" card, the API) refer to the original text, so shift them by the
+    // blank lines removed at the top.
+    const trimmed = trimForEditor(code);
+    const leadingLines = trimmedLeadingLines(code);
+    const targetLine = revealLine ? editorLineFor(code, revealLine) : undefined;
+    // The gutter shows original line numbers, matching the card, the API and the context pack.
+    const lineNumbers = useCallback((n: number) => String(n + leadingLines), [leadingLines]);
+
+    const editorRef = useRef<any>(null);
+    const monacoRef = useRef<Monaco | null>(null);
+    const decorationsRef = useRef<any>(null);
+
+    const applyHighlight = useCallback(() => {
+      const editor = editorRef.current;
+      const monaco = monacoRef.current;
+      if (!editor || !monaco) return;
+      decorationsRef.current?.clear();
+      decorationsRef.current = null;
+      if (!targetLine) return;
+      decorationsRef.current = editor.createDecorationsCollection([
+        {
+          range: new monaco.Range(targetLine, 1, targetLine, 1),
+          options: { isWholeLine: true, className: HIGHLIGHT_LINE_CLASS },
+        },
+      ]);
+      editor.revealLineInCenter(targetLine);
+    }, [targetLine]);
+
+    // Re-apply when the requested line changes after mount (same-page navigation).
+    useEffect(() => {
+      applyHighlight();
+    }, [applyHighlight]);
+
     const handleEditorBeforeMount: BeforeMount = useCallback(async (monaco: Monaco) => {
       configLanguage(monaco);
       hover(monaco);
@@ -43,20 +78,14 @@ const CodeEditorBase = forwardRef<any, CodeEditorProps>(
         if (ref && 'current' in ref) {
           ref.current = editor;
         }
+        editorRef.current = editor;
+        monacoRef.current = monaco;
         editor.updateOptions({
           wordSeparators: '`~!@#$%^&*()=+[{]}\\|;:\'",.<>/?',
         });
-        if (revealLine) {
-          editor.createDecorationsCollection([
-            {
-              range: new monaco.Range(revealLine, 1, revealLine, 1),
-              options: { isWholeLine: true, className: HIGHLIGHT_LINE_CLASS },
-            },
-          ]);
-          editor.revealLineInCenter(revealLine);
-        }
+        applyHighlight();
       },
-      [ref, revealLine]
+      [ref, applyHighlight]
     );
     const colorMode = useColorMode();
 
@@ -79,7 +108,7 @@ const CodeEditorBase = forwardRef<any, CodeEditorProps>(
           onMount={handleEditorOnMount}
           defaultLanguage="clarity"
           theme={colorMode.colorMode === 'light' ? 'vs-light' : 'vs-dark'}
-          value={code.replace(/^\s+|\s+$/g, '')}
+          value={trimmed}
           keepCurrentModel
           options={{
             fontLigatures: true,
@@ -88,6 +117,7 @@ const CodeEditorBase = forwardRef<any, CodeEditorProps>(
               enabled: false,
             },
             readOnly: true,
+            lineNumbers,
             folding: true,
             tabFocusMode: true,
             automaticLayout: true,

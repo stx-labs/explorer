@@ -53,6 +53,7 @@ export async function correlate(
     );
   }
 
+  // Only when exactly one other principal is implicated; with several, none is "the" account.
   const pc = diagnosis.postCondition;
   if (history.addressTxCount && pc?.problem === 'principal_mismatch' && pc.principal) {
     tasks.push(
@@ -65,10 +66,10 @@ export async function correlate(
     );
   }
 
-  const wantsBalance =
-    diagnosis.errorCode?.nativeFunction ||
-    diagnosis.evidence.some(e => e.id === 'tag' && e.value === 'insufficient');
-  if (history.ftBalanceAt && wantsBalance && tx.block_height > 0) {
+  // The balance is only informative when the failing built-in moved STX; an `insufficient` tag on
+  // its own does not say which asset ran short.
+  const stxNative = diagnosis.errorCode?.nativeFunction?.startsWith('stx-');
+  if (history.ftBalanceAt && stxNative && tx.block_height > 0) {
     tasks.push(
       history
         .ftBalanceAt(tx.sender_address, 'STX', tx.block_height - 1)

@@ -2,6 +2,7 @@
 
 import { callApiWithErrorHandling } from '@/api/callApiWithErrorHandling';
 import { useApiClient } from '@/api/useApiClient';
+import { useGlobalContext } from '@/common/context/useGlobalContext';
 import { useContractById } from '@/common/queries/useContractById';
 import {
   ContractInfo,
@@ -31,16 +32,29 @@ interface AddressTxItem {
   };
 }
 
+/** The base diagnosis could still improve by looking at callee contracts. */
+function needsCalleeLookup(d: Diagnosis): boolean {
+  const code = d.errorCode;
+  return !!code && !code.definedIn && !code.candidateNames;
+}
+
 /**
  * Tier 0 is computed synchronously from the transaction and the called contract (which the page
- * already fetches via `useContractById`, seeded from SSR when available). Tier 1 enrichment —
- * bounded callee lookups and correlations — runs in a separate query and never blocks first paint.
+ * already fetches via `useContractById`, seeded from SSR when available), so the first paint costs
+ * no extra browser request. Enrichment runs in two stages, each a separate query that never blocks
+ * paint: callee lookups start once the contract query has settled and only when the error code is
+ * still unresolved; correlations (sender history, balances) start when the card is expanded, since
+ * they only render there.
  */
-export function useTxDiagnosis(tx: FailedContractCallTx): {
+export function useTxDiagnosis(
+  tx: FailedContractCallTx,
+  { expanded = false }: { expanded?: boolean } = {}
+): {
   diagnosis: Diagnosis;
   isEnriching: boolean;
 } {
   const { initialContractData } = useTxIdPageData();
+  const apiUrl = useGlobalContext().activeNetwork.url;
   const contractId = tx.contract_call.contract_id;
   const seeded =
     initialContractData && initialContractData.contract_id === contractId
@@ -49,7 +63,10 @@ export function useTxDiagnosis(tx: FailedContractCallTx): {
           abi: initialContractData.abi ? JSON.parse(initialContractData.abi) : undefined,
         }
       : undefined;
-  const { data: contract } = useContractById(contractId, seeded ? { initialData: seeded } : {});
+  const { data: contract, isPending: contractPending } = useContractById(
+    contractId,
+    seeded ? { initialData: seeded } : {}
+  );
   const called: ContractInfo | null = useMemo(
     () =>
       contract?.source_code
@@ -77,7 +94,7 @@ export function useTxDiagnosis(tx: FailedContractCallTx): {
           },
           staleTime: Infinity,
         });
-        return c?.source_code ? { contract_id: id, source_code: c.source_code } : null;
+        return c?.source_code ? { contract_id: id, source_code: c.source_code, abi: c.abi } : null;
       },
       history: {
         senderTransactions: async (sender, limit) => {
@@ -122,11 +139,25 @@ export function useTxDiagnosis(tx: FailedContractCallTx): {
     [apiClient, queryClient]
   );
 
-  const { data: enriched, isFetching } = useQuery({
-    queryKey: ['txDiagnosis', tx.tx_id, called ? 'with-contract' : 'no-contract'],
-    queryFn: () => enrich(tx, called, loaders),
+  // Keys carry the API URL: the same transaction id means different data on another network.
+  const contractState = contractPending ? 'pending' : called ? 'with-contract' : 'no-contract';
+
+  const callees = useQuery({
+    queryKey: ['txDiagnosis', apiUrl, tx.tx_id, contractState, 'callees'],
+    queryFn: () => enrich(tx, called, { contracts: loaders.contracts }),
+    enabled: !contractPending && needsCalleeLookup(base),
     staleTime: ENRICHMENT_STALE_TIME,
   });
 
-  return { diagnosis: enriched ?? base, isEnriching: isFetching && !enriched };
+  const correlations = useQuery({
+    queryKey: ['txDiagnosis', apiUrl, tx.tx_id, contractState, 'correlations'],
+    queryFn: () => enrich(tx, called, loaders),
+    enabled: expanded && !contractPending,
+    staleTime: ENRICHMENT_STALE_TIME,
+  });
+
+  return {
+    diagnosis: correlations.data ?? callees.data ?? base,
+    isEnriching: expanded && correlations.isFetching && !correlations.data,
+  };
 }

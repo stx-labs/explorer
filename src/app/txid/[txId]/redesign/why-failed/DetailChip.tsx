@@ -11,7 +11,8 @@ import { Fragment } from 'react';
 /**
  * Copyable identifier chip — the TxHeader badge pattern at inline size.
  * The label is a real button that copies the full value; the ↗ is a sibling link to the
- * identifier's page, so no interactive element is nested inside another.
+ * identifier's page, so no interactive element is nested inside another. Long labels (tuples,
+ * trait principals) are clipped with an ellipsis; the copied value is always complete.
  */
 export function DetailChip({ detail, emphasis }: { detail: DetailRef; emphasis?: 'error' }) {
   const { copied, copy } = useClipboard({ value: detail.value, timeout: 900 });
@@ -23,6 +24,8 @@ export function DetailChip({ detail, emphasis }: { detail: DetailRef; emphasis?:
         alignItems="center"
         gap={0.5}
         mx={0.5}
+        maxW="100%"
+        minW={0}
         bg="surfacePrimary"
         _hover={{ bg: 'surfaceFifth' }}
         borderRadius="redesign.sm"
@@ -33,20 +36,26 @@ export function DetailChip({ detail, emphasis }: { detail: DetailRef; emphasis?:
           type="button"
           onClick={() => copy()}
           aria-label={`Copy ${detail.value}`}
+          title={detail.value}
           bg="transparent"
           border="none"
           px={1.5}
           py={0.5}
+          minW={0}
+          maxW="100%"
           cursor="pointer"
           borderRadius="redesign.sm"
           _focusVisible={{ outline: '2px solid', outlineColor: 'redesignBorderPrimary' }}
         >
           <Text
             as="span"
-            display="inline"
+            display="block"
             textStyle="text-mono-xs"
             color={emphasis === 'error' ? 'error' : 'textPrimary'}
             whiteSpace="nowrap"
+            overflow="hidden"
+            textOverflow="ellipsis"
+            maxW="100%"
           >
             {detail.label}
           </Text>
@@ -55,6 +64,7 @@ export function DetailChip({ detail, emphasis }: { detail: DetailRef; emphasis?:
           <ExplorerLink
             href={detail.href}
             display="inline-flex"
+            flexShrink={0}
             pr={1.5}
             aria-label={`Open ${detail.label}`}
             _hover={{ textDecoration: 'none' }}

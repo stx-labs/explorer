@@ -26,7 +26,14 @@ export interface FunctionBody {
   text: string;
 }
 
+/** A `contract-call?` site; `target` is null when the callee is a trait variable (chosen at runtime). */
+export interface CallSite {
+  target: string | null;
+  fn: string;
+}
+
 const NAME = '[A-Za-z0-9_\\-!?+<>=*/]+';
+const PRINCIPAL = '(?:SP|SM|ST|SN)[0-9A-Z]{20,41}\\.[a-z0-9\\-]+';
 
 function escapeRe(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -58,31 +65,43 @@ function commentsAbove(lines: string[], lineNo: number): string[] {
 }
 
 /**
- * Find the constant that defines an error code. `code` is the Clarity literal as printed in the
- * result, e.g. `u2003`, `"not-allowed"`, `true`. Pattern B (bare value) is only accepted when the
- * constant is actually used as `(err NAME)` somewhere — otherwise plain numeric constants such as
- * `MIN_STEPS u1` would "explain" `(err u1)`.
+ * Every constant that defines an error code, in source order. `code` is the Clarity literal as
+ * printed in the result, e.g. `u2003`, `"not-allowed"`, `true`. Pattern B (bare value) is only
+ * accepted when the constant is actually used as `(err NAME)` somewhere — otherwise plain numeric
+ * constants such as `MIN_STEPS u1` would "explain" `(err u1)`.
+ *
+ * Contracts routinely define one code under several names; callers must decide which (if any) the
+ * failed call could have reached rather than taking the first.
  */
-export function findErrorConstant(source: string, code: string): ConstantMatch | null {
+export function findErrorConstants(source: string, code: string): ConstantMatch[] {
   const lines = source.split('\n');
   const c = escapeRe(code);
-  const a = new RegExp(`\\(define-constant\\s+(${NAME})\\s+\\(err\\s+${c}\\s*\\)\\s*\\)`);
-  const ma = source.match(a);
-  if (ma && ma.index !== undefined) {
-    const line = lineOf(source, ma.index);
-    return { name: ma[1], line, pattern: 'A', comments: commentsAbove(lines, line) };
+  const out: ConstantMatch[] = [];
+  const seen = new Set<string>();
+  const a = new RegExp(`\\(define-constant\\s+(${NAME})\\s+\\(err\\s+${c}\\s*\\)\\s*\\)`, 'g');
+  let m: RegExpExecArray | null;
+  while ((m = a.exec(source))) {
+    if (seen.has(m[1])) continue;
+    seen.add(m[1]);
+    const line = lineOf(source, m.index);
+    out.push({ name: m[1], line, pattern: 'A', comments: commentsAbove(lines, line) });
   }
   const b = new RegExp(`\\(define-constant\\s+(${NAME})\\s+${c}\\s*\\)`, 'g');
-  let mb: RegExpExecArray | null;
-  while ((mb = b.exec(source))) {
-    const name = mb[1];
-    const used = new RegExp(`\\(err\\s+${escapeRe(name)}\\s*\\)`).test(source);
-    if (used) {
-      const line = lineOf(source, mb.index);
-      return { name, line, pattern: 'B', comments: commentsAbove(lines, line) };
+  while ((m = b.exec(source))) {
+    const name = m[1];
+    if (seen.has(name)) continue;
+    if (new RegExp(`\\(err\\s+${escapeRe(name)}\\s*\\)`).test(source)) {
+      seen.add(name);
+      const line = lineOf(source, m.index);
+      out.push({ name, line, pattern: 'B', comments: commentsAbove(lines, line) });
     }
   }
-  return null;
+  return out.sort((x, y) => x.line - y.line);
+}
+
+/** First constant defining `code`, or null. Prefer `findErrorConstants` when attributing a failure. */
+export function findErrorConstant(source: string, code: string): ConstantMatch | null {
+  return findErrorConstants(source, code)[0] ?? null;
 }
 
 /** All `define-*` function definitions with their kinds and offsets. */
@@ -168,6 +187,13 @@ export function reachableFunctions(source: string, entry: string): FunctionBody[
   return Array.from(seen.values());
 }
 
+/** Union of the functions reachable from each of `entries`, deduplicated. */
+export function reachableFromAny(source: string, entries: string[]): FunctionBody[] {
+  const seen = new Map<string, FunctionBody>();
+  for (const e of entries) for (const b of reachableFunctions(source, e)) seen.set(b.name, b);
+  return Array.from(seen.values());
+}
+
 /** Every function defined in the contract. */
 export function allFunctionBodies(source: string): FunctionBody[] {
   const out: FunctionBody[] = [];
@@ -178,24 +204,47 @@ export function allFunctionBodies(source: string): FunctionBody[] {
   return out;
 }
 
-/** Parameter names of a function, in order: `(define-private (f (a uint) (b (response …))))` → [a, b]. */
-export function functionParams(body: FunctionBody): string[] {
+/** Parameters of a function with their raw type text, in order. */
+export function functionParamTypes(body: FunctionBody): { name: string; type: string }[] {
   const headerStart = body.text.indexOf('(', 1);
   if (headerStart < 0) return [];
   const header = body.text.slice(headerStart, sexprEnd(body.text, headerStart));
-  const params: string[] = [];
+  const out: { name: string; type: string }[] = [];
   let depth = 0;
   for (let i = 0; i < header.length; i++) {
     const ch = header[i];
     if (ch === '(') {
       depth++;
       if (depth === 2) {
-        const m = header.slice(i + 1).match(new RegExp(`^\\s*(${NAME})`));
-        if (m) params.push(m[1]);
+        const end = sexprEnd(header, i);
+        const inner = header.slice(i + 1, end - 1).trim();
+        const m = inner.match(new RegExp(`^(${NAME})\\s+([\\s\\S]*)$`));
+        if (m) out.push({ name: m[1], type: m[2].trim() });
+        i = end - 1;
+        depth--;
       }
     } else if (ch === ')') depth--;
   }
-  return params;
+  return out;
+}
+
+/** Parameter names of a function, in order: `(define-private (f (a uint) (b (response …))))` → [a, b]. */
+export function functionParams(body: FunctionBody): string[] {
+  return functionParamTypes(body).map(p => p.name);
+}
+
+/**
+ * Contract principals passed for trait-typed parameters, by position — the callees a
+ * dynamic-dispatch function actually reached, as opposed to any principal that appears in the data.
+ */
+export function traitArgPrincipals(body: FunctionBody, argReprs: string[]): string[] {
+  const out: string[] = [];
+  functionParamTypes(body).forEach((p, i) => {
+    if (!/^<[^>]+>$/.test(p.type) || !argReprs[i]) return;
+    const m = argReprs[i].trim().match(new RegExp(`^'?(${PRINCIPAL})$`));
+    if (m) out.push(m[1]);
+  });
+  return Array.from(new Set(out));
 }
 
 /** Callback names passed to `fold` in the given bodies. */
@@ -263,22 +312,40 @@ export function firstAssertLine(source: string, body: FunctionBody): number | nu
   return idx >= 0 ? lineOf(source, body.start + idx) : null;
 }
 
-/** Statically referenced `contract-call?` targets, `.name` resolved against `deployer`. */
-export function contractCallTargets(text: string, deployer: string): string[] {
-  const out: string[] = [];
-  const re = /\(contract-call\?\s+('?(?:SP|SM|ST|SN)[0-9A-Z]{20,41}\.[a-z0-9\-]+|\.[a-z0-9\-]+)/g;
+/**
+ * `contract-call?` sites in `text`: literal targets (`.name` resolved against `deployer`) and trait
+ * variables (`target: null`), with the function called on each.
+ */
+export function contractCallSites(text: string, deployer: string): CallSite[] {
+  const out: CallSite[] = [];
+  const re = new RegExp(
+    `\\(contract-call\\?\\s+('${PRINCIPAL}|\\.[a-z0-9\\-]+|${NAME})\\s+(${NAME})`,
+    'g'
+  );
   let m: RegExpExecArray | null;
   while ((m = re.exec(text))) {
     const ref = m[1];
-    out.push(ref.startsWith('.') ? `${deployer}${ref}` : ref.replace(/^'/, ''));
+    const target = ref.startsWith("'")
+      ? ref.slice(1)
+      : ref.startsWith('.')
+        ? `${deployer}${ref}`
+        : null;
+    out.push({ target, fn: m[2] });
   }
+  return out;
+}
+
+/** Statically referenced `contract-call?` targets, `.name` resolved against `deployer`. */
+export function contractCallTargets(text: string, deployer: string): string[] {
+  const out: string[] = [];
+  for (const site of contractCallSites(text, deployer)) if (site.target) out.push(site.target);
   return Array.from(new Set(out));
 }
 
 /** Contract principals appearing anywhere in argument reprs (trait args, lists of tuples, …). */
 export function contractPrincipalsIn(reprs: string[]): string[] {
   const out = new Set<string>();
-  const re = /'?((?:SP|SM|ST|SN)[0-9A-Z]{20,41}\.[a-z0-9\-]+)/g;
+  const re = new RegExp(`'?(${PRINCIPAL})`, 'g');
   for (const r of reprs) {
     let m: RegExpExecArray | null;
     while ((m = re.exec(r))) out.add(m[1]);
@@ -288,8 +355,7 @@ export function contractPrincipalsIn(reprs: string[]): string[] {
 
 /** Does the function signature declare trait-typed parameters (`<trait>`)? */
 export function hasTraitParams(body: FunctionBody): boolean {
-  const header = body.text.slice(0, sexprEnd(body.text, body.text.indexOf('(', 1)));
-  return /<[A-Za-z0-9_\-]+>/.test(header);
+  return functionParamTypes(body).some(p => /^<[^>]+>$/.test(p.type));
 }
 
 /** 1-based lines inside `body` where `name` is used as an error operand or `(err name)`. */
@@ -354,13 +420,16 @@ export function functionSourceLines(
   return { lines: out, truncated };
 }
 
-/** Native built-in transfer/mint/burn calls wrapped in an error-propagating form inside `body`. */
-export function nativeAssetCalls(body: FunctionBody): string[] {
+/** Native built-in transfer/mint/burn calls wrapped in an error-propagating form inside `bodies`. */
+export function nativeAssetCalls(bodies: FunctionBody | FunctionBody[]): string[] {
+  const list = Array.isArray(bodies) ? bodies : [bodies];
   const re =
     /\((?:try!|unwrap!|unwrap-panic|unwrap-err!)\s+\((stx-transfer\?|stx-transfer-memo\?|stx-burn\?|ft-transfer\?|ft-mint\?|ft-burn\?|nft-transfer\?|nft-mint\?|nft-burn\?)/g;
   const out = new Set<string>();
-  let m: RegExpExecArray | null;
-  while ((m = re.exec(body.text))) out.add(m[1]);
+  for (const body of list) {
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(body.text))) out.add(m[1]);
+  }
   return Array.from(out);
 }
 

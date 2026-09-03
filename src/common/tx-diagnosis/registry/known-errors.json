@@ -1,5 +1,5 @@
 {
-  "$comment": "Curated explanations for protocol-specific error codes. `id` matches exactly; `namePattern` is a regex on the contract name (deployer-agnostic). `sender` / `developer` may be null. Copy must describe every path that raises the code, not just the most common one.",
+  "$comment": "Curated explanations for protocol-specific error codes. `id` matches exactly; `namePattern` is a regex on the contract name (deployer-agnostic). `sender` / `developer` may be null. Copy must describe every path that raises the code, not just the most common one; `name` must match the constant in the contract source — the resolver drops an entry whose name disagrees with the source, and the registry test checks every entry against the committed fixtures. Slippage-style causes are phrased as likelihoods, not facts.",
   "contracts": [
     {
       "match": { "namePattern": "^dlmm-(swap|liquidity)-router-v-" },
@@ -15,14 +15,7 @@
           "name": "ERR_MINIMUM_RECEIVED",
           "tag": "slippage",
           "summary": "The swap would have returned less than the minimum you set, so it was cancelled.",
-          "sender": "Prices moved between quote and execution. Retry with a higher slippage tolerance or a smaller amount.",
-          "developer": null
-        },
-        "u2004": {
-          "name": "ERR_DEADLINE_PASSED",
-          "tag": "expired",
-          "summary": "The transaction was mined after the deadline the app set for it.",
-          "sender": "Retry — the new transaction gets a fresh deadline.",
+          "sender": "This usually means prices moved between quote and execution. Retry with a higher slippage tolerance or a smaller amount.",
           "developer": null
         },
         "u5001": {
@@ -41,14 +34,14 @@
           "name": "ERR_MINIMUM_X_AMOUNT",
           "tag": "slippage",
           "summary": "You would have received less of one token than the minimum you set.",
-          "sender": "Retry with a higher slippage tolerance.",
+          "sender": "This usually means prices moved between quote and execution. Retry with a higher slippage tolerance.",
           "developer": null
         },
         "u1023": {
-          "name": "ERR_MINIMUM_Y_AMOUNT",
+          "name": "ERR_MINIMUM_D_VALUE",
           "tag": "slippage",
-          "summary": "You would have received less of one token than the minimum you set.",
-          "sender": "Retry with a higher slippage tolerance.",
+          "summary": "The liquidity change would have left the pool's invariant below the minimum you set (a slippage guard), so it was cancelled.",
+          "sender": "This usually means the pool moved between quote and execution. Retry with a higher slippage tolerance.",
           "developer": null
         }
       }
@@ -60,7 +53,7 @@
           "name": "ERR_MINIMUM_RECEIVED",
           "tag": "slippage",
           "summary": "The swap would have returned less than the minimum you set.",
-          "sender": "Retry with a higher slippage tolerance or a smaller amount.",
+          "sender": "This usually means prices moved between quote and execution. Retry with a higher slippage tolerance or a smaller amount.",
           "developer": null
         }
       }
@@ -71,8 +64,8 @@
         "u2005": {
           "name": "ERR-EXCEEDS-MAX-SLIPPAGE",
           "tag": "slippage",
-          "summary": "The price moved more than the slippage you allowed.",
-          "sender": "Retry with a higher slippage tolerance or a smaller amount.",
+          "summary": "The outcome was outside the slippage you allowed, so the pool refused it.",
+          "sender": "This usually means the price moved between quote and execution. Retry with a higher slippage tolerance or a smaller amount.",
           "developer": null
         }
       }
@@ -126,8 +119,8 @@
         "u365": {
           "name": "e07",
           "tag": "limit",
-          "summary": "After applying the plan's caps there was nothing left to trade.",
-          "sender": "Check the amount and direction, then retry.",
+          "summary": "The plan had nothing left to trade: the amount was zero, it was zero after the plan's caps, or the trade wouldn't have been profitable under the plan's checks.",
+          "sender": "Check the amount and direction. If the trade depended on a price opportunity, it may have closed — refresh the quote before retrying.",
           "developer": null
         }
       }
@@ -155,9 +148,9 @@
           "developer": null
         },
         "u30": {
-          "name": "ERR_DISTRIBUTION_ALREADY_COMPLETE",
+          "name": "ERR_DISTRIBUTION_ALREADY_COMPUTED",
           "tag": "already",
-          "summary": "Rewards for this cycle were already calculated.",
+          "summary": "Rewards for this cycle were already computed.",
           "sender": "Nothing to do.",
           "developer": null
         }

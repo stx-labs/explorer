@@ -48,29 +48,40 @@ function pcMatchesAsset(pc: PostCondition, asset: string): boolean {
   return pc.type !== 'stx' && postConditionAssetId(pc) === asset;
 }
 
+interface Row {
+  pc: PostCondition;
+  index: number;
+}
+
+/** One implicated row when exactly one matches; otherwise the candidate list and no index. */
+function pickRow(rows: Row[]): { index?: number; candidates?: number[] } {
+  if (rows.length === 1) return { index: rows[0].index };
+  if (rows.length > 1) return { candidates: rows.map(r => r.index) };
+  return {};
+}
+
 export function findPostCondition(
   tx: FailedContractCallTx,
   parsed: ParsedVmError
 ): PostConditionFinding {
   const sender = tx.sender_address;
-  const pcs = tx.post_conditions ?? [];
+  const rows: Row[] = (tx.post_conditions ?? []).map((pc, index) => ({ pc, index }));
+  const principalOf = (pc: PostCondition) => resolvePostConditionPrincipal(pc.principal, sender);
 
   switch (parsed.kind) {
     case 'pc_ft_unchecked': {
       const movedBy = parsed.principal;
-      const onAsset = pcs
-        .map((pc, index) => ({ pc, index }))
-        .filter(({ pc }) => pcMatchesAsset(pc, parsed.asset));
-      const other = onAsset.find(
-        ({ pc }) => resolvePostConditionPrincipal(pc.principal, sender) !== movedBy
-      );
-      if (movedBy === sender && onAsset.length > 0 && other) {
+      const onAsset = rows.filter(({ pc }) => pcMatchesAsset(pc, parsed.asset));
+      const others = onAsset.filter(({ pc }) => principalOf(pc) !== movedBy);
+      if (movedBy === sender && others.length > 0) {
+        const principals = Array.from(new Set(others.map(({ pc }) => principalOf(pc))));
         return {
           problem: 'principal_mismatch',
-          index: other.index,
+          ...pickRow(others),
           asset: parsed.asset,
           movedBy,
-          principal: resolvePostConditionPrincipal(other.pc.principal, sender),
+          principal: principals.length === 1 ? principals[0] : undefined,
+          principals,
         };
       }
       if (onAsset.length === 0) {
@@ -80,15 +91,19 @@ export function findPostCondition(
     }
     case 'pc_amount': {
       const code = apiConditionCodeFor(parsed.code);
-      const idx = pcs.findIndex(
-        pc =>
+      const base = rows.filter(
+        ({ pc }) =>
           pcMatchesAsset(pc, parsed.asset) &&
-          resolvePostConditionPrincipal(pc.principal, sender) === parsed.principal &&
+          principalOf(pc) === parsed.principal &&
           pc.condition_code === code
+      );
+      // The vm_error's "expected" is the condition's own amount: use it to tell twin rows apart.
+      const exact = base.filter(
+        ({ pc }) => pc.type !== 'non_fungible' && String(pc.amount) === parsed.expected
       );
       return {
         problem: 'amount_not_met',
-        index: idx >= 0 ? idx : undefined,
+        ...pickRow(exact.length ? exact : base),
         asset: parsed.asset,
         principal: parsed.principal,
         expected: parsed.expected,
@@ -101,6 +116,25 @@ export function findPostCondition(
     case 'pc_nft_unchecked':
     case 'pc_nft_no_checks':
       return { problem: 'nft', asset: parsed.asset, principal: parsed.principal };
+    case 'pc_stx_staked_amount':
+      return {
+        problem: 'stacking',
+        principal: parsed.principal,
+        expected: parsed.expected,
+        actual: parsed.actual,
+        conditionCode: parsed.code,
+      };
+    case 'pc_pox_action':
+      return {
+        problem: 'stacking',
+        principal: parsed.principal,
+        conditionCode: parsed.code,
+        actual: parsed.performed,
+      };
+    case 'pc_stx_staked_unchecked':
+      return { problem: 'stacking', principal: parsed.principal, actual: parsed.amount };
+    case 'pc_pox_action_unchecked':
+      return { problem: 'stacking', principal: parsed.principal };
     default:
       return { problem: 'unknown' };
   }
@@ -115,77 +149,45 @@ export function classifyFailure(tx: FailedContractCallTx): Classification {
   const err = errCode(resultRepr, !!vmError);
   const resultIsErr = resultRepr.startsWith('(err');
   const resultIsOk = resultRepr.startsWith('(ok');
+  const common = { errorCodeIsUint: false, resultRepr, resultIsErr, resultIsOk, vmError };
 
   if (tx.tx_status === 'abort_by_post_condition') {
     const finding = vmError ? findPostCondition(tx, vmError) : { problem: 'unknown' as const };
     if (err) {
       // The call itself failed; the post-condition only failed because nothing moved.
       return {
+        ...common,
         class: 'post_condition_masked_error',
-        subkind: err!.isUint ? 'uint_code' : 'non_uint',
-        errorCode: err!.code,
-        errorCodeIsUint: err!.isUint,
-        resultRepr,
-        resultIsErr,
-        resultIsOk,
-        vmError,
+        subkind: err.isUint ? 'uint_code' : 'non_uint',
+        errorCode: err.code,
+        errorCodeIsUint: err.isUint,
         postCondition: finding,
       };
     }
-    return {
-      class: 'post_condition',
-      subkind: finding.problem,
-      errorCodeIsUint: false,
-      resultRepr,
-      resultIsErr,
-      resultIsOk,
-      vmError,
-      postCondition: finding,
-    };
+    return { ...common, class: 'post_condition', subkind: finding.problem, postCondition: finding };
   }
 
   // abort_by_response
   if (err) {
     return {
+      ...common,
       class: 'contract_error',
       subkind: err.isUint ? 'uint_code' : 'non_uint',
       errorCode: err.code,
       errorCodeIsUint: err.isUint,
-      resultRepr,
-      resultIsErr,
-      resultIsOk,
-      vmError,
     };
   }
   if (vmError?.kind === 'runtime') {
-    return {
-      class: 'runtime_panic',
-      subkind: vmError.variant,
-      errorCodeIsUint: false,
-      resultRepr,
-      resultIsErr,
-      resultIsOk,
-      vmError,
-    };
+    return { ...common, class: 'runtime_panic', subkind: vmError.variant };
   }
-  if (vmError) {
-    return {
-      class: 'analysis_error',
-      subkind: vmError.kind === 'analysis' ? vmError.message.split('(')[0].trim() : 'unknown',
-      errorCodeIsUint: false,
-      resultRepr,
-      resultIsErr,
-      resultIsOk,
-      vmError,
-    };
+  if (vmError?.kind === 'analysis') {
+    return { ...common, class: 'analysis_error', subkind: vmError.message.split('(')[0].trim() };
   }
+  // Anything else (an unrecognised string, or no vm_error at all) is reported as unknown, never
+  // dressed up as an app bug or a type error.
   return {
-    class: 'runtime_panic',
-    subkind: 'unknown',
-    errorCodeIsUint: false,
-    resultRepr,
-    resultIsErr,
-    resultIsOk,
-    vmError: null,
+    ...common,
+    class: 'unknown_vm_error',
+    subkind: vmError ? 'unrecognised' : 'no_vm_error',
   };
 }

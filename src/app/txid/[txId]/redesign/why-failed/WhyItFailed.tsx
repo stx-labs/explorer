@@ -1,6 +1,7 @@
 'use client';
 
 import { RowCopyButton } from '@/app/txid/[txId]/redesign/tx-summary/SummaryItem';
+import { ExplorerLink } from '@/common/components/ExplorerLinks';
 import { useGlobalContext } from '@/common/context/useGlobalContext';
 import {
   Diagnosis,
@@ -10,7 +11,6 @@ import {
 } from '@/common/tx-diagnosis';
 import { contractName } from '@/common/tx-diagnosis/clarity-source';
 import { assetName, formatInt, truncateMiddle } from '@/common/tx-diagnosis/templates';
-import { SimpleTag } from '@/ui/Badge';
 import { Button } from '@/ui/Button';
 import { Link } from '@/ui/Link';
 import { Text } from '@/ui/Text';
@@ -47,25 +47,40 @@ function SectionLabel({ children }: { children: string }) {
   );
 }
 
-/** Same-page link that merges `?tab=…&line=…` into the current query string. */
+/**
+ * Link to a detail: a same-page `?tab=…&line=…` link merged into the current query string, or an
+ * absolute explorer path (another contract's source) that keeps the network parameters.
+ */
 function TabLink({ label, href }: { label: string; href: string }) {
   const sp = useSearchParams();
+  const isAbsolute = href.startsWith('/');
   const merged = new URLSearchParams(sp.toString());
-  new URLSearchParams(href.replace(/^\?/, '')).forEach((v, k) => merged.set(k, v));
-  return (
-    <Link
-      href={`?${merged.toString()}`}
-      variant="tableLink"
-      textStyle="text-regular-xs"
-      whiteSpace="nowrap"
-      display="inline-flex"
-      alignItems="center"
-      gap={1}
-    >
+  if (!isAbsolute) {
+    new URLSearchParams(href.replace(/^\?/, '')).forEach((v, k) => merged.set(k, v));
+  }
+  const content = (
+    <>
       {label}
       <Icon h={3} w={3}>
         <ArrowSquareOut />
       </Icon>
+    </>
+  );
+  const styleProps = {
+    variant: 'tableLink' as const,
+    textStyle: 'text-regular-xs',
+    whiteSpace: 'nowrap' as const,
+    display: 'inline-flex' as const,
+    alignItems: 'center',
+    gap: 1,
+  };
+  return isAbsolute ? (
+    <ExplorerLink href={href} {...styleProps}>
+      {content}
+    </ExplorerLink>
+  ) : (
+    <Link href={`?${merged.toString()}`} {...styleProps}>
+      {content}
     </Link>
   );
 }
@@ -90,9 +105,21 @@ function CopyPromptButton({ contextUrl }: { contextUrl: string }) {
   );
 }
 
-function SourceExcerpt({ source }: { source: NonNullable<Diagnosis['source']> }) {
+function SourceExcerpt({
+  source,
+  calledContractId,
+}: {
+  source: NonNullable<Diagnosis['source']>;
+  calledContractId: string;
+}) {
   const code = source.lines.map(l => l.code).join('\n');
   const line = source.failingLine;
+  // The Source tab only shows the called contract; a callee's line opens that contract's page.
+  const lineQuery = `tab=sourceCode${line ? `&line=${line}` : ''}`;
+  const openHref =
+    source.contractId === calledContractId
+      ? `?${lineQuery}`
+      : `/txid/${source.contractId}?${lineQuery}`;
   return (
     <Stack gap={2}>
       <Flex gap={2} alignItems="center" flexWrap="wrap" justifyContent="space-between">
@@ -126,10 +153,7 @@ function SourceExcerpt({ source }: { source: NonNullable<Diagnosis['source']> })
             </Text>
           )}
         </Flex>
-        <TabLink
-          label="Open in Source code"
-          href={`?tab=sourceCode${line ? `&line=${line}` : ''}`}
-        />
+        <TabLink label="Open in Source code" href={openHref} />
       </Flex>
       <Flex alignItems="flex-start" gap={2} w="full" minW={0}>
         <Box
@@ -364,8 +388,8 @@ function useContextPackUrl(txId: string): string {
 // ---------------------------------------------------------------------------------------------
 
 export function WhyItFailed({ tx }: { tx: FailedContractCallTx }) {
-  const { diagnosis, isEnriching } = useTxDiagnosis(tx);
   const [expanded, setExpanded] = useState(false);
+  const { diagnosis, isEnriching } = useTxDiagnosis(tx, { expanded });
   const contextUrl = useContextPackUrl(tx.tx_id);
   const d = diagnosis;
 
@@ -424,7 +448,7 @@ export function WhyItFailed({ tx }: { tx: FailedContractCallTx }) {
 
       {expanded && (
         <>
-          {/* Tier 1 — short, linked */}
+          {/* Tier 1 — short, linked, plus the agent hand-off */}
           <Stack gap={5} px={5} py={5} bg="surfaceSecondary" data-test="why-failed-details">
             <Stack gap={2}>
               <SectionLabel>What happened</SectionLabel>
@@ -435,7 +459,10 @@ export function WhyItFailed({ tx }: { tx: FailedContractCallTx }) {
                       {i + 1}
                     </Text>
                     <Stack gap={1} flex={1} minW={0}>
-                      <RichText parts={fact.parts} />
+                      <RichText
+                        parts={fact.parts}
+                        color={fact.onChain ? 'textSecondary' : 'textPrimary'}
+                      />
                       {fact.chips && (
                         <Flex gap={1} flexWrap="wrap">
                           {fact.chips.map(c => (
@@ -462,29 +489,13 @@ export function WhyItFailed({ tx }: { tx: FailedContractCallTx }) {
               </Stack>
             )}
 
-            <Stack gap={1.5}>
-              <SectionLabel>Evidence</SectionLabel>
-              <Flex gap={1.5} flexWrap="wrap">
-                {d.evidence.map(e => (
-                  <SimpleTag key={e.id + e.value} label={e.value} />
-                ))}
+            <Stack gap={1.5} data-test="why-failed-agent">
+              <Flex gap={3} alignItems="center" flexWrap="wrap">
+                <Text textStyle="text-regular-sm" color="textPrimary">
+                  Give your agent context to explore more:
+                </Text>
+                <CopyPromptButton contextUrl={contextUrl} />
               </Flex>
-            </Stack>
-          </Stack>
-
-          {/* Tier 2 — agent context + rendered details + raw */}
-          <Stack
-            gap={5}
-            px={5}
-            py={5}
-            bg="surfaceTertiary"
-            borderTop="1px solid"
-            borderColor="redesignBorderSecondary"
-          >
-            <Flex gap={3} alignItems="center" flexWrap="wrap">
-              <Text textStyle="text-regular-sm" color="textPrimary">
-                Give your agent context to explore more:
-              </Text>
               <Link
                 href={contextUrl}
                 variant="underline"
@@ -497,11 +508,22 @@ export function WhyItFailed({ tx }: { tx: FailedContractCallTx }) {
               >
                 {contextUrl.replace(/^https?:\/\//, '')}
               </Link>
-              <CopyPromptButton contextUrl={contextUrl} />
-            </Flex>
+            </Stack>
+          </Stack>
 
+          {/* Tier 2 — rendered details + raw */}
+          <Stack
+            gap={5}
+            px={5}
+            py={5}
+            bg="surfaceTertiary"
+            borderTop="1px solid"
+            borderColor="redesignBorderSecondary"
+          >
             {d.postCondition && <PostConditionRow tx={tx} finding={d.postCondition} />}
-            {d.source && <SourceExcerpt source={d.source} />}
+            {d.source && (
+              <SourceExcerpt source={d.source} calledContractId={tx.contract_call.contract_id} />
+            )}
             <ArgsList args={d.args} />
 
             <Stack gap={1.5}>

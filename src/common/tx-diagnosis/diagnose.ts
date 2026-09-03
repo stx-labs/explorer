@@ -22,6 +22,7 @@ import {
   buildContractError,
   buildPostCondition,
   buildRuntimePanic,
+  buildUnknownVmError,
   correlationFacts,
   summarizePostCondition,
 } from './templates';
@@ -195,6 +196,9 @@ function build(
       break;
     case 'analysis_error':
       built = buildAnalysisError(tx, cls);
+      break;
+    case 'unknown_vm_error':
+      built = buildUnknownVmError(tx, cls);
       break;
     default:
       built = buildPostCondition(tx, cls);

@@ -10,12 +10,14 @@ export const ENGINE_VERSION = '2';
 
 /**
  * `dropped` and `deploy_failure` are reserved: the engine never emits them yet, but consumers should
- * treat any unknown class as "render nothing and keep today's alert".
+ * treat any unknown class as "render nothing and keep today's alert". `unknown_vm_error` is a
+ * `vm_error` the parser does not recognise; its copy never claims a cause.
  */
 export type FailureClass =
   | 'contract_error'
   | 'runtime_panic'
   | 'analysis_error'
+  | 'unknown_vm_error'
   | 'post_condition'
   | 'post_condition_masked_error'
   | 'dropped'
@@ -44,8 +46,11 @@ export type RichPart = string | DetailRef;
 
 export interface Fact {
   parts: RichPart[];
+  /** Same-page `?tab=…` link, or an absolute explorer path when the target is another contract. */
   link?: { label: string; href: string };
   chips?: DetailRef[];
+  /** The fact quotes third-party on-chain text (e.g. a source comment), not an engine conclusion. */
+  onChain?: boolean;
 }
 
 export interface Evidence {
@@ -78,10 +83,17 @@ export interface ErrorCodeInfo {
   /** As written in the result, e.g. `u2003`, or the full repr for non-uint errors. */
   code: string;
   name?: string;
+  /**
+   * Set instead of `name` when the contract defines the code under several constants and none (or
+   * more than one) is used in code the call can reach: which condition failed is not recorded.
+   */
+  candidateNames?: string[];
   definedIn?: string;
   definitionLine?: number;
   usageLines?: number[];
   comments?: string[];
+  /** False when the constant is defined but not used in any function the call can reach. */
+  reachable?: boolean;
   /** Set when the code matches a Clarity built-in (stx-transfer?, ft-transfer?, …). */
   nativeFunction?: string;
   nativeMeaning?: string;
@@ -98,15 +110,20 @@ export type PostConditionProblem =
   | 'asset_unchecked'
   | 'amount_not_met'
   | 'nft'
+  | 'stacking'
   | 'unknown';
 
 export interface PostConditionFinding {
   problem: PostConditionProblem;
-  /** Index into `tx.post_conditions` when a specific condition is implicated. */
+  /** Index into `tx.post_conditions` when exactly one condition is implicated. */
   index?: number;
+  /** Indices of every condition that could be the one, when more than one matches. */
+  candidates?: number[];
   asset?: string;
   /** Principal named by the post-condition (resolved to an address / contract id). */
   principal?: string;
+  /** Every principal named by the candidate conditions, when they differ. */
+  principals?: string[];
   /** Principal that actually moved the asset (from vm_error). */
   movedBy?: string;
   expected?: string;
