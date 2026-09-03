@@ -419,7 +419,7 @@ export async function fetchCycleRewards(
 export type ActivityGroup = 'distributions' | 'enrollments' | 'unlocks' | 'bonds';
 
 /** Which contract functions belong to each of the page's filters. */
-export const ACTIVITY_GROUP_FUNCTIONS: Record<ActivityGroup, string[]> = {
+const ACTIVITY_GROUP_FUNCTIONS: Record<ActivityGroup, string[]> = {
   distributions: ['calculate-rewards'],
   enrollments: ['register-for-bond', 'update-bond-registration', 'stake', 'stake-update'],
   unlocks: ['unstake', 'unstake-sbtc'],

@@ -19,7 +19,6 @@ import { Info } from '@phosphor-icons/react';
 import { useCallback, useMemo } from 'react';
 
 import {
-  DISTRIBUTIONS_PER_CYCLE,
   MAINNET_HISTORIC_CYCLES,
   PREVIOUS_CYCLES_LIMIT,
   RESERVE_RATIO_PERCENT,
@@ -32,7 +31,6 @@ import {
   burnHeightToApproximateTimestamp,
   formatTermDuration,
   getCycleStackerRewardsSatsBigInt,
-  getDistributionCadence,
   getStackingYieldForCompletedCycle,
 } from './projections';
 import { formatBtc, formatDateWithYear, formatUsd } from './utils';
@@ -117,15 +115,6 @@ export function StackingOverview({
   // The running cycle's rewards to date, read from the contract like any other.
   const currentCycleRewards =
     currentCycleId !== undefined ? cycleRewards[currentCycleId] : undefined;
-  // A cycle spans two distributions, one at its midpoint and one at its end.
-  const cadence = getDistributionCadence(rewardCycleLength);
-  const currentDistributionsSettled =
-    cadence > 0
-      ? Math.min(
-          Math.max(Math.floor((currentBurnHeight - currentStart) / cadence), 0),
-          DISTRIBUTIONS_PER_CYCLE
-        )
-      : 0;
   // Stackers take what is left once the reserve has its share.
   //
   // The waterfall pays bonds first, so the correct figure is
@@ -283,8 +272,7 @@ export function StackingOverview({
                     {accruedToStackersSats !== undefined
                       ? `~${formatBtc(accruedToStackersSats, 2)} rewarded so far`
                       : `${formatBtc(currentCycleSats, 2)} rewarded`}{' '}
-                    · {currentDistributionsSettled} of {DISTRIBUTIONS_PER_CYCLE} distributions
-                    settled
+                    · APY will be calculated at the end of the cycle
                   </Text>
                   <Tooltip
                     variant="redesignPrimary"
@@ -380,39 +368,40 @@ export function StackingOverview({
             </Stack>
 
             {/*
-            The rewards figure is a contract read; the rate is derived from it.
-            Naming the method beats hedging, so a reader can tell whether the
-            number answers their question.
-          */}
+              The settled cycle, in the same shape as the one ahead: the cycle
+              itself, then what it returned. The rewards figure is a contract
+              read and the rate is derived from it, so the caption names the
+              method rather than hedging about it.
+            */}
             {lastSettled && lastSettledSats !== undefined && (
               <Stack
-                gap={1.5}
+                gap={2}
                 bg="surfacePrimary"
                 borderRadius="redesign.xl"
                 p={[4, 5]}
                 flex={{ base: '0 0 auto', lg: '1 1 0' }}
                 minH={0}
-                justify="center"
+                justify={{ base: 'flex-start', lg: 'space-between' }}
               >
-                {/* The rule sits inside the padding rather than on the card edge. */}
-                <Flex gap={4} align="stretch">
-                  <Box w="3px" bg="accent.stacks-500" borderRadius="redesign.xs" flexShrink={0} />
-                  <Stack gap={1.5}>
-                    <Text textStyle="text-medium-sm">
-                      {lastSettledYield?.apyPercent !== undefined
-                        ? `${lastSettledYield.apyPercent.toFixed(2)}% APY · `
-                        : ''}
-                      {formatBtc(lastSettledSats)} paid last cycle
-                    </Text>
-                    <Text textStyle="text-regular-sm" color="textSecondary">
-                      {`Cycle ${lastSettled.cycle_number} rewards are verified from on-chain contract reads.`}
-                      {lastSettledYield?.apyPercent !== undefined &&
-                        (lastSettledPricedAtEnd
-                          ? ' APY is calculated from end-of-cycle BTC and STX prices.'
-                          : ' APY is calculated from current BTC and STX prices.')}
-                    </Text>
-                  </Stack>
+                <Text textStyle="text-regular-sm" color="textSecondary">
+                  Previous cycle
+                </Text>
+                <Flex gap={2} align="baseline" flexWrap="wrap">
+                  <Text textStyle="heading-md">{lastSettled.cycle_number}</Text>
+                  <Text textStyle="text-regular-sm" color="textSecondary" whiteSpace="nowrap">
+                    {lastSettledYield?.apyPercent !== undefined
+                      ? `${lastSettledYield.apyPercent.toFixed(2)}% APY · `
+                      : ''}
+                    {formatBtc(lastSettledSats)} paid
+                  </Text>
                 </Flex>
+                <Text textStyle="text-regular-sm" color="textSecondary">
+                  Verified from on-chain contract reads
+                  {lastSettledYield?.apyPercent !== undefined &&
+                    (lastSettledPricedAtEnd
+                      ? ' · APY at end-of-cycle prices'
+                      : ' · APY at current prices')}
+                </Text>
               </Stack>
             )}
           </Grid>

@@ -21,7 +21,7 @@ export interface CyclePrices {
 const REVALIDATE_SECONDS = 60 * 60;
 
 /** The bucket a timestamp belongs to, in UTC, matching the API's day buckets. */
-export function priceDayKey(timestampMs: number): string {
+function priceDayKey(timestampMs: number): string {
   return new Date(timestampMs).toISOString().slice(0, 10);
 }
 
@@ -78,7 +78,7 @@ export async function fetchDailyPrices(startMs: number, endMs: number): Promise<
  * Cycle end dates are projected from block heights, so a lookup can land a day
  * or two off a real bucket. Walking back a few days beats reporting nothing.
  */
-export function priceOn(prices: Map<string, number>, timestampMs: number): number | undefined {
+function priceOn(prices: Map<string, number>, timestampMs: number): number | undefined {
   const MAX_LOOKBACK_DAYS = 4;
   for (let back = 0; back <= MAX_LOOKBACK_DAYS; back++) {
     const price = prices.get(priceDayKey(timestampMs - back * 24 * 60 * 60 * 1000));

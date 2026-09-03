@@ -52,12 +52,6 @@ export const BOND_GAP_CYCLES = 2;
 export const DISTRIBUTIONS_PER_BOND = 24;
 
 /**
- * Distributions in one reward cycle: they land every half cycle, so a cycle
- * settles rewards twice, at its midpoint and at its end.
- */
-export const DISTRIBUTIONS_PER_CYCLE = 2;
-
-/**
  * Share of a distribution held back into the protocol reserve, taken after
  * active bonds are paid rather than off the cycle's gross rewards. Verified
  * against the contract: reserve-deposit is exactly 15% of

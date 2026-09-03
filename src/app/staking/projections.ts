@@ -37,7 +37,7 @@ import {
  * Exposed so the UI can disclose the method, mirroring the `projection_method`
  * field the numbers-service proposal specifies.
  */
-export const PROJECTION_METHOD = '10min_per_block' as const;
+const PROJECTION_METHOD = '10min_per_block' as const;
 
 /** Projects a wall-clock timestamp (ms) for a burn height we have not reached yet. */
 export function burnHeightToApproximateTimestamp(
@@ -211,7 +211,7 @@ export function bpsToPercent(bps: number): number {
  */
 
 /** The contract multiplies its per-token figure by this to avoid rounding to zero. */
-export const REWARDS_PRECISION = BigInt('1000000000000000000'); // 1e18
+const REWARDS_PRECISION = BigInt('1000000000000000000'); // 1e18
 
 const MICRO_STX_IN_STX = 1_000_000;
 const MINUTES_IN_YEAR = 365 * 24 * 60;
@@ -416,7 +416,7 @@ export type TimelineGranularity = 'day' | 'month';
 /** Beyond this many days, per-day labels stop being readable. */
 const MAX_DAYS_FOR_DAY_AXIS = 21;
 
-export function getTimelineGranularity(spanMs: number): TimelineGranularity {
+function getTimelineGranularity(spanMs: number): TimelineGranularity {
   const days = spanMs / (24 * 60 * 60 * 1000);
   return days <= MAX_DAYS_FOR_DAY_AXIS ? 'day' : 'month';
 }

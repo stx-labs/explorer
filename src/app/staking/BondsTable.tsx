@@ -140,7 +140,7 @@ function PendingOr({ isPending, children }: { isPending: boolean; children: Reac
   return <>{children}</>;
 }
 
-export const bondColumns: ColumnDef<BondRow>[] = [
+const bondColumns: ColumnDef<BondRow>[] = [
   {
     id: 'name',
     header: 'Bond',
