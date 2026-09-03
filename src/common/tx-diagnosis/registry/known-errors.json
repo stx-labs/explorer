@@ -76,8 +76,8 @@
         "u931": {
           "name": "ERR_EMISSION_INTERVAL",
           "tag": "too_early",
-          "summary": "Emissions can be minted at most once per block, and this block's emission was already minted.",
-          "sender": "Wait for the next block and try again.",
+          "summary": "Emissions can be minted at most once per Bitcoin burn block, and this burn block's emission was already minted.",
+          "sender": "Wait for the next Bitcoin block and try again.",
           "developer": null
         }
       }
@@ -118,7 +118,7 @@
         },
         "u365": {
           "name": "e07",
-          "tag": "limit",
+          "tag": "unknown",
           "summary": "The plan had nothing left to trade: the amount was zero, it was zero after the plan's caps, or the trade wouldn't have been profitable under the plan's checks.",
           "sender": "Check the amount and direction. If the trade depended on a price opportunity, it may have closed — refresh the quote before retrying.",
           "developer": null

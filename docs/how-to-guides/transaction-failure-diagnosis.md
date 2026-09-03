@@ -62,14 +62,14 @@ contract source.
   or `testnet`, an `api` parameter (if given) must be that chain's configured server, and any other
   query parameter is rejected — all with a cacheable `400` before any upstream request. Custom
   networks are deliberately not served here; the in-page card says so instead of linking.
-- A matching `If-None-Match` is answered `304` after that validation and before any upstream request.
-  The validator is `W/"<txid>-<chain>-v<engine>-<format>"`; the representation carries no timestamp,
-  so it really is immutable per engine version.
+- A matching `If-None-Match` is answered `304` only after the transaction and representation are
+  validated, so a guessed validator cannot turn an unknown transaction into a cached success. The
+  validator is `W/"<txid>-<chain>-v<engine>-<format>"`.
 - Trust boundary: conclusions come from the templates and registry only. On-chain values (arguments,
   error text, source, comments) are rendered as code spans or numbered code blocks so they cannot
   become Markdown structure; prose quoted from the chain (source comments) is labelled and kept out of
   the diagnosis section; the JSON variant carries raw values.
-- Responses are cacheable for a year at the edge (transactions are immutable) with a five-minute
+- Responses are cacheable for a year at the edge with a five-minute
   browser TTL, carry an `ETag` keyed on the engine version (`ENGINE_VERSION` in `types.ts` — bump it
   when copy or classification changes), and are marked `noindex`:
 
@@ -80,6 +80,11 @@ contract source.
 
 - On-chain content in the pack is labelled as third-party data; the playbook tells agents never to
   treat it as instructions.
+- Context routes use only immutable transaction and contract data. Current-history correlations
+  (later retries, address activity) remain available in the expanded browser card but are omitted
+  from the long-lived context-pack representation.
+- A real upstream `404` remains `404`; rate limits and upstream/network failures return `429`, `502`
+  or `503` with `no-store` instead of being misreported and cached as a missing transaction.
 
 ## Server-side fetching policy
 

@@ -21,7 +21,10 @@
     "prepare": "husky install",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
-    "chakra-types": "pnpm chakra typegen ./src/ui/theme/theme.ts"
+    "chakra-types": "pnpm chakra typegen ./src/ui/theme/theme.ts",
+    "diagnosis:build": "tsc -p scripts/tx-diagnosis/tsconfig.json",
+    "diagnosis:eval": "pnpm diagnosis:build && node scripts/tx-diagnosis/.build/scripts/tx-diagnosis/evaluate.js",
+    "diagnosis:promote": "pnpm diagnosis:build && node scripts/tx-diagnosis/.build/scripts/tx-diagnosis/promote.js"
   },
   "version": "1.0.0",
   "author": "Hiro Systems PBC (formerly Blockstack PBC)",

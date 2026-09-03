@@ -1,5 +1,4 @@
 import {
-  contractCallTargets,
   contractDeployer,
   contractPrincipalsIn,
   excerpt,
@@ -7,8 +6,8 @@ import {
   functionSourceLines,
   listItemCount,
   reachableFunctions,
+  resolvedContractCalls,
   siteLines,
-  traitArgPrincipals,
 } from './clarity-source';
 import { Classification, classifyFailure } from './classify';
 import { correlate } from './correlate';
@@ -89,9 +88,15 @@ function runtimeFinding(
   if (called) {
     const deployer = contractDeployer(contractId);
     const entry = findFunctionBody(called.source_code, tx.contract_call.function_name);
-    if (entry) confirmed.push(...traitArgPrincipals(entry, argReprs));
     const bodies = reachableFunctions(called.source_code, tx.contract_call.function_name);
-    confirmed.push(...bodies.flatMap(b => contractCallTargets(b.text, deployer)));
+    confirmed.push(
+      ...resolvedContractCalls(
+        called.source_code,
+        tx.contract_call.function_name,
+        argReprs,
+        deployer
+      ).map(c => c.contractId)
+    );
     const pattern = SITE_PATTERNS[variant];
     if (pattern) {
       candidateLines = bodies.flatMap(b => siteLines(called.source_code, b, pattern));

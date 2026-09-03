@@ -1,6 +1,23 @@
 import { Column, ColumnDef } from '@tanstack/react-table';
+import { screen } from '@testing-library/react';
 
-import { getColumnPinningState, getCommonPinningStyles } from './Table';
+import { renderWithChakraProviders } from '../../utils/test-utils/render-utils';
+import { Table, getColumnPinningState, getCommonPinningStyles } from './Table';
+
+describe('Table', () => {
+  it('applies row props by data-row index, independently of structural rows', () => {
+    renderWithChakraProviders(
+      <Table
+        columns={[{ accessorKey: 'name', header: 'Name' }]}
+        data={[{ name: 'first' }, { name: 'second' }]}
+        getRowProps={(_row, rowIndex) => (rowIndex === 1 ? { 'data-highlighted': 'true' } : {})}
+      />
+    );
+
+    expect(screen.getByText('first').closest('tr')).not.toHaveAttribute('data-highlighted');
+    expect(screen.getByText('second').closest('tr')).toHaveAttribute('data-highlighted', 'true');
+  });
+});
 
 describe('getCommonPinningStyles', () => {
   const createMockColumn = (isPinned: 'left' | 'right' | false, isLastColumn: boolean = false) => {

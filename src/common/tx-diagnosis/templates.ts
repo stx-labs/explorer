@@ -66,14 +66,22 @@ export function assetName(assetId: string): string {
 }
 
 export function formatStx(microStx: string | number): string {
-  const n = Number(microStx) / 1e6;
-  if (!isFinite(n)) return String(microStx);
-  return n.toLocaleString('en-US', { maximumFractionDigits: 6 });
+  const raw = String(microStx);
+  if (!/^-?\d+$/.test(raw)) return raw;
+  const negative = raw.startsWith('-');
+  const value = BigInt(raw);
+  const zero = BigInt(0);
+  const microPerStx = BigInt(1_000_000);
+  const absolute = value < zero ? -value : value;
+  const whole = absolute / microPerStx;
+  const fraction = (absolute % microPerStx).toString().padStart(6, '0').replace(/0+$/, '');
+  return `${negative ? '-' : ''}${whole.toLocaleString('en-US')}${fraction ? `.${fraction}` : ''}`;
 }
 
 export function formatInt(v: string | number): string {
-  const n = typeof v === 'string' ? Number(v.replace(/^u/, '')) : v;
-  return isFinite(n) ? n.toLocaleString('en-US') : String(v);
+  const raw = String(v).replace(/^u/, '');
+  if (/^-?\d+$/.test(raw)) return BigInt(raw).toLocaleString('en-US');
+  return String(v);
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -303,8 +311,8 @@ export function buildContractError(
   let developer: string | undefined;
 
   if (ambiguous?.length) {
-    // Several constants share the code; the network does not record which check fired.
-    headline = `The contract rejected this call with error ${code}, which it defines under ${ambiguous.length} names — the network doesn't record which check failed.`;
+    // Several reachable definitions share the code; they may live in one contract or in callees.
+    headline = `This call returned error ${code}, which has ${ambiguous.length} reachable definitions — the network doesn't record which check failed.`;
     senderAction =
       'The app can tell you which condition failed; the candidate checks are listed below.';
     confidence = 'low';
@@ -333,7 +341,8 @@ export function buildContractError(
     confidence = 'low';
   } else if (native) {
     headline = `This call failed because ${native.nativeMeaning}.`;
-    senderAction = 'Check the balance or details the app used and retry.';
+    senderAction =
+      native.nativeSender ?? 'Check the balance or details the app used before trying again.';
   } else if (copy && tag !== 'unknown') {
     headline = copy.headline;
     senderAction = copy.sender;
@@ -473,7 +482,7 @@ export function buildContractError(
     evidence.push({
       id: 'ambiguous',
       label: 'candidates',
-      value: `${ambiguous.length} candidate constants`,
+      value: `${ambiguous.length} candidate definitions`,
     });
   if (tag) evidence.push({ id: 'tag', label: 'tag', value: tag });
   if (native)

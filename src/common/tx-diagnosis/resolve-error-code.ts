@@ -3,9 +3,7 @@ import {
   FunctionBody,
   allFunctionBodies,
   contractCallSites,
-  contractCallTargets,
   contractDeployer,
-  contractPrincipalsIn,
   excerpt,
   findErrorConstants,
   findFunctionBody,
@@ -16,8 +14,7 @@ import {
   nativeAssetCallSites,
   reachableFromAny,
   reachableFunctions,
-  traitArgPrincipals,
-  traitBindings,
+  resolvedContractCalls,
   usageLines,
 } from './clarity-source';
 import { nativeErrorFor } from './native-errors';
@@ -143,7 +140,7 @@ function sourceRefFor(
  */
 function ambiguousResolution(base: ErrorCodeInfo, definedIn: string, names: string[]): Resolution {
   return {
-    info: { ...base, name: undefined, candidateNames: names, definedIn },
+    info: { ...base, name: undefined, candidateNames: names, definedIn: definedIn || undefined },
     registry: undefined,
     tag: undefined,
     complete: true,
@@ -153,6 +150,8 @@ function ambiguousResolution(base: ErrorCodeInfo, definedIn: string, names: stri
 interface NativeAssessment {
   fn: string;
   meaning: string;
+  sender: string;
+  tag: SemanticTag;
   siteCount: number;
   literalSites: number[];
   /** Reachable `contract-call?` sites that could have returned the code first. */
@@ -178,6 +177,8 @@ function assessNative(
   return {
     fn: kinds[0],
     meaning: native.meaning,
+    sender: native.sender,
+    tag: native.tag,
     siteCount: sites.length,
     literalSites: literalErrSites(source, reachable, code),
     calleeSites: reachable.flatMap(b => contractCallSites(b.text, deployer)).length,
@@ -267,12 +268,13 @@ export function resolveErrorCodeSync(
           ...base,
           nativeFunction: native.fn,
           nativeMeaning: native.meaning,
+          nativeSender: native.sender,
           nativeTentative: !certain,
           nativeSiteCount: native.siteCount,
           literalSites: native.literalSites,
         },
         registry,
-        tag: registry?.tag ?? 'insufficient',
+        tag: registry?.tag ?? native.tag,
         complete: certain,
       };
     }
@@ -282,36 +284,26 @@ export function resolveErrorCodeSync(
 }
 
 /**
- * Candidate callee contracts, most likely first: contracts passed for the function's trait
- * parameters, then `contract-call?` targets in code the call reaches, then any other principal in
- * the arguments (route lists, tuples — data, not proven calls), then targets referenced elsewhere
- * in the contract.
+ * Callee contracts reached by a literal `contract-call?` or by a trait variable whose binding can
+ * be carried from the entry point through ordinary helper calls. Principals merely present in
+ * argument data are deliberately excluded: naming a contract is not evidence that it was called.
  */
 export function calleeCandidates(tx: FailedContractCallTx, called: ContractInfo | null): string[] {
+  if (!called) return [];
   const contractId = tx.contract_call.contract_id;
-  const deployer = contractDeployer(contractId);
   const argReprs = (tx.contract_call.function_args ?? []).map(a => a.repr ?? '');
-  let traitTargets: string[] = [];
-  let reachableTargets: string[] = [];
-  let anywhere: string[] = [];
-  if (called) {
-    const body = findFunctionBody(called.source_code, tx.contract_call.function_name);
-    if (body) traitTargets = traitArgPrincipals(body, argReprs);
-    const bodies = reachableFunctions(called.source_code, tx.contract_call.function_name);
-    reachableTargets = bodies.flatMap(b => contractCallTargets(b.text, deployer));
-    anywhere = contractCallTargets(called.source_code, deployer);
-  }
-  const fromArgs = contractPrincipalsIn(argReprs);
-  return Array.from(new Set(traitTargets.concat(reachableTargets, fromArgs, anywhere))).filter(
-    c => c !== contractId
-  );
+  return resolvedContractCalls(
+    called.source_code,
+    tx.contract_call.function_name,
+    argReprs,
+    contractDeployer(contractId)
+  )
+    .map(c => c.contractId)
+    .filter(c => c !== contractId);
 }
 
 /**
- * Functions of `calleeId` the failed call can enter: literal `contract-call?` sites naming it, plus
- * sites through the trait variables the transaction bound to it. Trait variables bound to *another*
- * contract are excluded; variables that cannot be mapped (e.g. drawn from a list) are kept as
- * possible entries when nothing more specific exists.
+ * Functions of `calleeId` the failed call can enter through resolved literal or trait call sites.
  */
 export function calleeEntryFunctions(
   tx: FailedContractCallTx,
@@ -319,22 +311,16 @@ export function calleeEntryFunctions(
   calleeId: string
 ): string[] {
   if (!called) return [];
-  const deployer = contractDeployer(tx.contract_call.contract_id);
   const fnName = tx.contract_call.function_name;
   const argReprs = (tx.contract_call.function_args ?? []).map(a => a.repr ?? '');
-  const entry = findFunctionBody(called.source_code, fnName);
-  const bindings = entry ? traitBindings(entry, argReprs) : [];
-  const boundHere = new Set(bindings.filter(b => b.principal === calleeId).map(b => b.param));
-  const boundElsewhere = new Set(bindings.filter(b => b.principal !== calleeId).map(b => b.param));
-  const sites = reachableFunctions(called.source_code, fnName).flatMap(b =>
-    contractCallSites(b.text, deployer)
+  return (
+    resolvedContractCalls(
+      called.source_code,
+      fnName,
+      argReprs,
+      contractDeployer(tx.contract_call.contract_id)
+    ).find(c => c.contractId === calleeId)?.functions ?? []
   );
-  const direct = sites.filter(
-    s => s.target === calleeId || (s.variable !== undefined && boundHere.has(s.variable))
-  );
-  if (direct.length) return Array.from(new Set(direct.map(s => s.fn)));
-  const unmapped = sites.filter(s => s.variable !== undefined && !boundElsewhere.has(s.variable));
-  return Array.from(new Set(unmapped.map(s => s.fn)));
 }
 
 /**
@@ -365,6 +351,16 @@ export async function resolveErrorCode(
     })
   );
 
+  const resolved: {
+    contractId: string;
+    match: ConstantMatch;
+    usage: Usage;
+    reachable: boolean;
+    registry?: RegistryEntry;
+    source: SourceRef;
+  }[] = [];
+  const ambiguous: string[] = [];
+
   for (let i = 0; i < candidates.length; i++) {
     const callee = fetched[i];
     if (!callee) continue;
@@ -372,56 +368,66 @@ export async function resolveErrorCode(
     if (!matches.length) continue;
 
     const entries = calleeEntryFunctions(tx, called, candidates[i]);
-    let bodies = entries.length ? reachableFromAny(callee.source_code, entries) : [];
-    // With the entry functions known, the constant must be thrown in code they reach; a
-    // definition used only elsewhere in the callee is not evidence that this callee failed.
-    const restricted = bodies.length > 0;
-    if (!bodies.length) bodies = allFunctionBodies(callee.source_code);
-    const tried = candidates.slice(0, i + 1);
-    const registry = sync.registry ?? lookupRegistry(candidates[i], code);
-    const { pick, ambiguous, reachableCount } = pickConstant(
-      callee.source_code,
-      matches,
-      bodies,
-      null
-    );
-    if (restricted && reachableCount === 0) continue;
-    if (!pick) {
-      const res = ambiguousResolution(sync.info, candidates[i], ambiguous);
-      return { ...res, info: { ...res.info, candidatesTried: tried } };
+    if (!entries.length) continue;
+    const bodies = reachableFromAny(callee.source_code, entries);
+    const registry = lookupRegistry(candidates[i], code);
+    const picked = pickConstant(callee.source_code, matches, bodies, null);
+    if (picked.reachableCount === 0) continue;
+    if (!picked.pick) {
+      ambiguous.push(...picked.ambiguous.map(name => `${name} in ${candidates[i]}`));
+      continue;
     }
-    const { match, usage } = pick;
-    const reg = guardRegistry(registry, match.name);
+    const { match, usage } = picked.pick;
+    resolved.push({
+      contractId: candidates[i],
+      match,
+      usage,
+      reachable: picked.pick.reachable,
+      registry: guardRegistry(registry, match.name),
+      source: sourceRefFor(candidates[i], callee.source_code, match, usage),
+    });
+  }
+
+  if (resolved.length === 1 && ambiguous.length === 0) {
+    const only = resolved[0];
     const info: ErrorCodeInfo = {
       ...sync.info,
-      name: match.name,
-      definedIn: candidates[i],
-      definitionLine: match.line,
-      usageLines: usage.lines,
-      comments: match.comments,
-      reachable: pick.reachable,
-      candidatesTried: tried,
+      name: only.match.name,
+      definedIn: only.contractId,
+      definitionLine: only.match.line,
+      usageLines: only.usage.lines,
+      comments: only.match.comments,
+      reachable: only.reachable,
+      candidatesTried: candidates,
       // The code came from a callee constant, not from the built-in.
       nativeFunction: undefined,
       nativeMeaning: undefined,
+      nativeSender: undefined,
       nativeTentative: undefined,
     };
     return {
       info,
-      registry: reg,
-      tag: reg?.tag ?? tagForName(match.name),
-      source: sourceRefFor(candidates[i], callee.source_code, match, usage),
+      registry: only.registry,
+      tag: only.registry?.tag ?? tagForName(only.match.name),
+      source: only.source,
       complete: true,
     };
   }
 
-  // No callee defines the code. A native candidate stays tentative only if a callee could not be
-  // checked, or the contract itself has another way to return the code.
-  const unchecked = all.length - candidates.length + fetched.filter(f => !f).length;
+  if (resolved.length > 1 || ambiguous.length) {
+    const labels = [...resolved.map(r => `${r.match.name} in ${r.contractId}`), ...ambiguous];
+    const res = ambiguousResolution(sync.info, '', labels);
+    return { ...res, info: { ...res.info, candidatesTried: candidates } };
+  }
+
+  // With no execution trace, the absence of a named constant in a callee does not prove the
+  // caller-side built-in returned the code: the callee may return it literally, propagate its own
+  // built-in, or obtain it from another contract. Keep the attribution hedged whenever a callee was
+  // reachable, even if every fetched source was available.
   const info: ErrorCodeInfo = { ...sync.info, candidatesTried: candidates };
   if (info.nativeFunction) {
     info.nativeTentative =
-      unchecked > 0 || (info.nativeSiteCount ?? 1) > 1 || (info.literalSites?.length ?? 0) > 0;
+      all.length > 0 || (info.nativeSiteCount ?? 1) > 1 || (info.literalSites?.length ?? 0) > 0;
   }
   return { ...sync, info, complete: true };
 }

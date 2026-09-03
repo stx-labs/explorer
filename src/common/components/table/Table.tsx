@@ -116,6 +116,10 @@ function SortIcon({ isSortable, sortDirection, onSort }: SortIconProps) {
   );
 }
 
+type DataRowProps = React.ComponentProps<typeof ChakraTable.Row> & {
+  [attribute: `data-${string}`]: string | number | boolean | undefined;
+};
+
 export type TableProps<T> = {
   data: T[];
   columns: ColumnDef<T>[];
@@ -144,6 +148,8 @@ export type TableProps<T> = {
   emptyFilteredTableUi?: React.ReactElement;
   errorTableUi?: React.ReactElement;
   renderSubComponent?: (props: { row: Row<T> }) => ReactNode;
+  /** Extra props for a rendered data row, indexed independently of spacer/banner rows. */
+  getRowProps?: (row: Row<T>, rowIndex: number) => DataRowProps;
   getRowCanExpand?: (row: Row<T>) => boolean;
   expandAllRowsByDefault?: boolean;
   meta?: Record<string, unknown>;
@@ -249,6 +255,7 @@ export function Table<T>({
   errorTableUi,
   expandAllRowsByDefault,
   renderSubComponent,
+  getRowProps,
   meta,
   manualSorting,
   initialSorting,
@@ -445,11 +452,13 @@ export function Table<T>({
           const firstCell = row.getVisibleCells()[0];
           const isSpanRow = firstCell?.column.columnDef.meta?.isSpanRow?.(row.original) ?? false;
           const subComponent = renderSubComponent?.({ row });
+          const rowProps = getRowProps?.(row, rowIndex) ?? {};
           return (
             <Fragment key={row.id}>
               <ChakraTable.Row
+                {...rowProps}
                 // key={row.id}
-                bg="transparent"
+                bg={rowProps.bg ?? 'transparent'}
                 css={{
                   '& > td:first-of-type': {
                     borderTopLeftRadius: 'redesign.md',
@@ -459,6 +468,7 @@ export function Table<T>({
                     borderTopRightRadius: 'redesign.md',
                     borderBottomRightRadius: 'redesign.md',
                   },
+                  ...(rowProps.css as Record<string, unknown>),
                 }}
                 className="group"
                 minH={13}

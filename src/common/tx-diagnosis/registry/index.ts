@@ -17,13 +17,22 @@ interface RegistryContract {
 
 const contracts = (data as unknown as { contracts: RegistryContract[] }).contracts;
 
+function matchesPattern(pattern: string, name: string): boolean {
+  try {
+    return new RegExp(pattern).test(name);
+  } catch {
+    // A malformed curated entry must disable only that entry, not transaction diagnosis globally.
+    return false;
+  }
+}
+
 /** Exact contract id wins over a name pattern. */
 export function lookupRegistry(contractId: string, code: string): RegistryEntry | undefined {
   const exact = contracts.find(c => c.match.id === contractId);
   if (exact?.codes[code]) return exact.codes[code];
   const name = contractName(contractId);
   for (const c of contracts) {
-    if (c.match.namePattern && new RegExp(c.match.namePattern).test(name) && c.codes[code]) {
+    if (c.match.namePattern && matchesPattern(c.match.namePattern, name) && c.codes[code]) {
       return c.codes[code];
     }
   }

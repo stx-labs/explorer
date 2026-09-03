@@ -15,9 +15,8 @@ test.describe('/txid page — why it failed', () => {
       );
       await page.locator('[data-test=why-failed-toggle]').click();
       await expect(page.locator('[data-test=why-failed-details]')).toBeVisible();
-      await expect(page.locator('[data-test=why-failed-context-link]')).toHaveAttribute(
-        'href',
-        new RegExp(`/txid/${txid}/context\\.md`)
+      await expect(page.locator('[data-test=why-failed-copy-prompt]')).toContainText(
+        'Copy Prompt for Agent to Explore'
       );
     });
   });

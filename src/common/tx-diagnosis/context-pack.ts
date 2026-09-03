@@ -190,7 +190,7 @@ export function renderContextPackMarkdown(input: ContextPackInput): string {
     const ec = d.errorCode;
     if (ec.candidateNames?.length) {
       lines.push(
-        `- Code: ${mdCode(ec.code)} · Defined under ${ec.candidateNames.length} names in ${mdCode(ec.definedIn ?? contractId)}: ${ec.candidateNames.map(mdCode).join(', ')} — the network does not record which check fired.`
+        `- Code: ${mdCode(ec.code)} · ${ec.candidateNames.length} reachable candidate definitions: ${ec.candidateNames.map(mdCode).join(', ')} — the network does not record which check fired.`
       );
     } else {
       lines.push(

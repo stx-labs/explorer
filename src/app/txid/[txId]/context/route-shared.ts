@@ -66,18 +66,7 @@ export async function handleContextPack(
     );
   }
 
-  // The pack for a transaction on a chain never changes within an engine version, so a matching
-  // validator is answered before any upstream request. (A client can only hold a validator for a
-  // representation it received, so a forged one for an unknown transaction gains nothing.)
   const etag = `W/"${txId.toLowerCase()}-${chain}-v${ENGINE_VERSION}-${format}"`;
-  if (request.headers.get('if-none-match') === etag) {
-    // A 304 must repeat the caching headers of the 200 it stands in for (RFC 9110 §15.4.5).
-    return new Response(null, {
-      status: 304,
-      headers: { ...common, ETag: etag, 'Cache-Control': CACHE_CONTROL },
-    });
-  }
-
   const result = await buildContextPack({
     txId: txId.toLowerCase(),
     apiUrl,
@@ -87,12 +76,23 @@ export async function handleContextPack(
 
   if (result.status !== 200) {
     return new Response(result.reason, {
-      status: 404,
+      status: result.status,
       headers: {
         ...common,
         'Content-Type': 'text/plain; charset=utf-8',
-        'Cache-Control': 'public, max-age=60',
+        'Cache-Control': result.status === 404 ? 'public, max-age=60' : 'private, no-store',
+        ...(result.retryAfter ? { 'Retry-After': result.retryAfter } : {}),
       },
+    });
+  }
+
+  // Validate that the representation exists before accepting a conditional request. The pack uses
+  // immutable transaction and contract data, so it is stable within an engine version after that.
+  if (request.headers.get('if-none-match') === etag) {
+    // A 304 must repeat the caching headers of the 200 it stands in for (RFC 9110 §15.4.5).
+    return new Response(null, {
+      status: 304,
+      headers: { ...common, ETag: etag, 'Cache-Control': CACHE_CONTROL },
     });
   }
 

@@ -2,6 +2,7 @@ import { fetchContractInfo, fetchTx } from '@/api/data-fetchers';
 import { getTokenPrice } from '@/app/getTokenPriceInfo';
 import { CommonSearchParams } from '@/app/transactions/page';
 import { isFailedContractCall } from '@/common/tx-diagnosis';
+import { parseContractAbi } from '@/common/tx-diagnosis/abi';
 import { NetworkModes } from '@/common/types/network';
 import { logError } from '@/common/utils/error-utils';
 import { canServerFetch, getApiUrl } from '@/common/utils/network-utils';
@@ -62,9 +63,7 @@ export default async function Page(props: {
       tokenPrice = await getTokenPrice();
       if (isContractId) {
         const contractData = await fetchContractInfo(apiUrl, txId); // fetch contract data for tx_id
-        const abi: ContractInterfaceResponse | null = contractData?.abi
-          ? JSON.parse(contractData.abi)
-          : null;
+        const abi = parseContractAbi(contractData?.abi) as ContractInterfaceResponse | undefined;
         numFunctions = abi?.functions?.length;
         initialTxData = await fetchTx(apiUrl, contractData.tx_id);
       } else {

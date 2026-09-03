@@ -43,6 +43,12 @@ export interface TraitBinding {
   principal: string;
 }
 
+/** A contract and the public functions reached through literal or resolved trait calls. */
+export interface ResolvedContractCall {
+  contractId: string;
+  functions: string[];
+}
+
 const NAME = '[A-Za-z0-9_\\-!?+<>=*/]+';
 const PRINCIPAL = '(?:SP|SM|ST|SN)[0-9A-Z]{20,41}\\.[a-z0-9\\-]+';
 
@@ -261,6 +267,151 @@ export function traitBindings(body: FunctionBody, argReprs: string[]): TraitBind
 /** Contract principals bound to trait parameters, in parameter order. */
 export function traitArgPrincipals(body: FunctionBody, argReprs: string[]): string[] {
   return Array.from(new Set(traitBindings(body, argReprs).map(b => b.principal)));
+}
+
+interface LocalFunctionCall {
+  fn: string;
+  args: string[];
+}
+
+/** Split the arguments of one s-expression without interpreting their values. */
+function expressionArgs(expression: string): string[] {
+  let i = 1;
+  while (i < expression.length && /\s/.test(expression[i])) i++;
+  while (i < expression.length && !/[\s()]/.test(expression[i])) i++;
+  const args: string[] = [];
+  while (i < expression.length - 1) {
+    while (i < expression.length - 1 && /\s/.test(expression[i])) i++;
+    if (expression[i] === ';' && expression[i + 1] === ';') {
+      while (i < expression.length && expression[i] !== '\n') i++;
+      continue;
+    }
+    if (i >= expression.length - 1 || expression[i] === ')') break;
+    const start = i;
+    if (expression[i] === '(') {
+      i = sexprEnd(expression, i);
+    } else if (expression[i] === '"') {
+      i++;
+      while (i < expression.length && expression[i] !== '"') {
+        if (expression[i] === '\\') i++;
+        i++;
+      }
+      i++;
+    } else {
+      while (i < expression.length - 1 && !/[\s()]/.test(expression[i])) i++;
+    }
+    args.push(expression.slice(start, i).trim());
+  }
+  return args;
+}
+
+/** Calls to functions defined in this contract, excluding the function-definition header. */
+function localFunctionCalls(
+  body: FunctionBody,
+  definitions: Map<string, { kind: FunctionBody['kind']; start: number }>
+): LocalFunctionCall[] {
+  const out: LocalFunctionCall[] = [];
+  const headerStart = body.text.indexOf('(', 1);
+  const scanFrom = headerStart >= 0 ? sexprEnd(body.text, headerStart) : 0;
+  for (let i = scanFrom; i < body.text.length; i++) {
+    if (body.text[i] === ';' && body.text[i + 1] === ';') {
+      while (i < body.text.length && body.text[i] !== '\n') i++;
+      continue;
+    }
+    if (body.text[i] === '"') {
+      i++;
+      while (i < body.text.length && body.text[i] !== '"') {
+        if (body.text[i] === '\\') i++;
+        i++;
+      }
+      continue;
+    }
+    if (body.text[i] !== '(') continue;
+    const head = body.text.slice(i + 1).match(new RegExp(`^\\s*(${NAME})(?=\\s|\\))`))?.[1];
+    if (!head || !definitions.has(head)) continue;
+    const end = sexprEnd(body.text, i);
+    out.push({ fn: head, args: expressionArgs(body.text.slice(i, end)) });
+  }
+  return out;
+}
+
+function principalExpression(value: string, bindings: Map<string, string>): string | undefined {
+  const direct = bindings.get(value.trim());
+  if (direct) return direct;
+  return value.trim().match(new RegExp(`^'?(${PRINCIPAL})$`))?.[1];
+}
+
+/**
+ * Resolve contract calls from an entry point while carrying trait bindings through ordinary helper
+ * calls. An argument merely naming a contract is not enough: a target is returned only when a
+ * reachable `contract-call?` site names it literally or uses a variable bound to it.
+ */
+export function resolvedContractCalls(
+  source: string,
+  entry: string,
+  entryArgReprs: string[],
+  deployer: string
+): ResolvedContractCall[] {
+  const definitions = functionDefinitions(source);
+  const entryBody = findFunctionBody(source, entry);
+  if (!entryBody) return [];
+
+  const initial = new Map(traitBindings(entryBody, entryArgReprs).map(b => [b.param, b.principal]));
+  const queue: { fn: string; bindings: Map<string, string> }[] = [{ fn: entry, bindings: initial }];
+  const seenStates = new Set<string>();
+  const visitedFunctions = new Set<string>();
+  const targets = new Map<string, Set<string>>();
+
+  const record = (contractId: string, fn: string) => {
+    const functions = targets.get(contractId) ?? new Set<string>();
+    functions.add(fn);
+    targets.set(contractId, functions);
+  };
+
+  while (queue.length) {
+    const state = queue.shift()!;
+    const stateKey = `${state.fn}:${Array.from(state.bindings.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([k, v]) => `${k}=${v}`)
+      .join(',')}`;
+    if (seenStates.has(stateKey)) continue;
+    seenStates.add(stateKey);
+    visitedFunctions.add(state.fn);
+    const body = findFunctionBody(source, state.fn);
+    if (!body) continue;
+
+    for (const site of contractCallSites(body.text, deployer)) {
+      const contractId = site.target ?? (site.variable ? state.bindings.get(site.variable) : null);
+      if (contractId) record(contractId, site.fn);
+    }
+
+    for (const call of localFunctionCalls(body, definitions)) {
+      const child = findFunctionBody(source, call.fn);
+      if (!child) continue;
+      const bindings = new Map<string, string>();
+      functionParams(child).forEach((param, i) => {
+        const principal = call.args[i]
+          ? principalExpression(call.args[i], state.bindings)
+          : undefined;
+        if (principal) bindings.set(param, principal);
+      });
+      queue.push({ fn: call.fn, bindings });
+    }
+  }
+
+  // Bare fold/map callbacks cannot carry a statically knowable trait binding, but their literal
+  // contract calls are still reachable and safe to report.
+  for (const body of reachableFunctions(source, entry)) {
+    if (visitedFunctions.has(body.name)) continue;
+    for (const site of contractCallSites(body.text, deployer)) {
+      if (site.target) record(site.target, site.fn);
+    }
+  }
+
+  return Array.from(targets, ([contractId, functions]) => ({
+    contractId,
+    functions: Array.from(functions),
+  }));
 }
 
 /** Callback names passed to `fold` in the given bodies. */

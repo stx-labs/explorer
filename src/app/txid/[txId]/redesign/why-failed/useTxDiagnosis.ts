@@ -12,6 +12,7 @@ import {
   diagnoseSync,
   enrich,
 } from '@/common/tx-diagnosis';
+import { parseContractAbi } from '@/common/tx-diagnosis/abi';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemo } from 'react';
 
@@ -60,7 +61,7 @@ export function useTxDiagnosis(
     initialContractData && initialContractData.contract_id === contractId
       ? {
           ...initialContractData,
-          abi: initialContractData.abi ? JSON.parse(initialContractData.abi) : undefined,
+          abi: parseContractAbi(initialContractData.abi),
         }
       : undefined;
   const { data: contract, isPending: contractPending } = useContractById(
@@ -90,7 +91,7 @@ export function useTxDiagnosis(
               '/extended/v1/contract/{contract_id}',
               { params: { path: { contract_id: id } } }
             );
-            return { ...raw, abi: raw.abi ? JSON.parse(raw.abi) : undefined };
+            return { ...raw, abi: parseContractAbi(raw.abi) };
           },
           staleTime: Infinity,
         });

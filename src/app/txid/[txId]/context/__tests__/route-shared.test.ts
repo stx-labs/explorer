@@ -75,7 +75,8 @@ describe('context pack route handler', () => {
     expect(res.headers.get('cache-control')).toContain('s-maxage=31536000');
   });
 
-  it('answers a matching validator before doing any upstream work', async () => {
+  it('validates the representation before answering a matching validator', async () => {
+    buildContextPack.mockResolvedValue({ status: 200, markdown: '# md', json: {} } as never);
     const res = await handleContextPack(
       request(`/txid/${TX}/context.json?chain=mainnet`, {
         'if-none-match': `W/"${TX}-mainnet-v${ENGINE_VERSION}-json"`,
@@ -84,7 +85,20 @@ describe('context pack route handler', () => {
       'json'
     );
     expect(res.status).toBe(304);
-    expect(buildContextPack).not.toHaveBeenCalled();
+    expect(buildContextPack).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not let a forged validator turn an unknown transaction into a 304', async () => {
+    buildContextPack.mockResolvedValue({ status: 404, reason: 'Transaction not found.' });
+    const res = await handleContextPack(
+      request(`/txid/${TX}/context.json?chain=mainnet`, {
+        'if-none-match': `W/"${TX}-mainnet-v${ENGINE_VERSION}-json"`,
+      }),
+      Promise.resolve({ txId: TX }),
+      'json'
+    );
+    expect(res.status).toBe(404);
+    expect(buildContextPack).toHaveBeenCalledTimes(1);
   });
 
   it('never fetches from a host that is not a configured public API', async () => {
@@ -144,6 +158,22 @@ describe('context pack route handler', () => {
     expect(res.headers.get('cache-control')).toBe('public, max-age=60');
     expect(res.headers.get('x-robots-tag')).toBe('noindex');
     expect(await res.text()).toBe('not a failed contract call');
+  });
+
+  it('does not cache transient upstream failures as missing transactions', async () => {
+    buildContextPack.mockResolvedValue({
+      status: 429,
+      reason: 'rate limited',
+      retryAfter: '30',
+    });
+    const res = await handleContextPack(
+      request(`/txid/${TX}/context.md`),
+      Promise.resolve({ txId: TX }),
+      'markdown'
+    );
+    expect(res.status).toBe(429);
+    expect(res.headers.get('cache-control')).toBe('private, no-store');
+    expect(res.headers.get('retry-after')).toBe('30');
   });
 });
 

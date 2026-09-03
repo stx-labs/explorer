@@ -6,6 +6,7 @@
 import fs from 'fs';
 import path from 'path';
 
+import { parseContractAbi } from '../abi';
 import {
   contractCallSites,
   contractPrincipalsIn,
@@ -19,6 +20,7 @@ import { mdCode, renderContextPackMarkdown } from '../context-pack';
 import { diagnoseSync, enrich } from '../diagnose';
 import registry from '../registry/known-errors.json';
 import { calleeCandidates, calleeEntryFunctions } from '../resolve-error-code';
+import { formatInt, formatStx } from '../templates';
 import type { FailedContractCallTx } from '../types';
 import { parseVmError } from '../vm-error';
 
@@ -53,6 +55,24 @@ function makeTx(overrides: Record<string, unknown> = {}): FailedContractCallTx {
 }
 
 const called = (source_code: string) => ({ contract_id: CONTRACT, source_code });
+
+describe('defensive contract ABI parsing', () => {
+  it('accepts strings and already-parsed values and degrades on malformed JSON', () => {
+    expect(parseContractAbi('{"functions":[]}')).toEqual({ functions: [] });
+    expect(parseContractAbi({ functions: [] })).toEqual({ functions: [] });
+    expect(parseContractAbi('{broken')).toBeUndefined();
+  });
+});
+
+describe('lossless Clarity integer formatting', () => {
+  it('does not round uints above JavaScript safe-integer range', () => {
+    expect(formatInt('u9007199254740993')).toBe('9,007,199,254,740,993');
+  });
+
+  it('formats micro-STX without floating-point conversion', () => {
+    expect(formatStx('9007199254740993')).toBe('9,007,199,254.740993');
+  });
+});
 
 function stxPc(amount: string, code = 'sent_greater_than_or_equal_to') {
   return { type: 'stx', condition_code: code, amount, principal: { type_id: 'principal_origin' } };
@@ -108,7 +128,7 @@ describe('duplicate constants resolve by reachability, or not at all', () => {
     expect(d.errorCode?.name).toBeUndefined();
     expect(d.errorCode?.candidateNames).toEqual(['ERR-UNRELATED', 'ERR-REAL']);
     expect(d.confidence).toBe('low');
-    expect(d.headline).toMatch(/defines under 2 names/);
+    expect(d.headline).toMatch(/2 reachable definitions/);
     expect(d.headline).not.toMatch(/ERR-UNRELATED|ERR-REAL/);
     expect(
       d.whatHappened.some(f => f.chips?.map(c => c.value).join() === 'ERR-UNRELATED,ERR-REAL')
@@ -241,13 +261,8 @@ describe('callee candidates follow the code, not the data', () => {
     ]);
   });
 
-  it('orders trait arguments and reachable targets before the rest of the contract', () => {
-    expect(calleeCandidates(tx, called(SRC))).toEqual([
-      A,
-      B,
-      `${DEPLOYER}.pool`,
-      `${THIRD}.elsewhere`,
-    ]);
+  it('returns only targets used by reachable call sites', () => {
+    expect(calleeCandidates(tx, called(SRC))).toEqual([A, `${DEPLOYER}.pool`]);
   });
 });
 
@@ -443,7 +458,7 @@ describe('re-review: ambiguity never borrows registry data', () => {
     );
     expect(d.errorCode?.candidateNames).toEqual(['ERR-A', 'ERR-B']);
     expect(d.errorCode?.name).toBeUndefined();
-    expect(d.headline).toMatch(/defines under 2 names/);
+    expect(d.headline).toMatch(/2 reachable definitions/);
     expect(d.headline).not.toMatch(/already stacked/);
     expect(d.evidence.map(e => e.id)).not.toContain('tag');
   });
@@ -469,7 +484,7 @@ describe('re-review: ambiguity never borrows registry data', () => {
     );
     expect(d.errorCode?.name).toBeUndefined();
     expect(d.errorCode?.candidateNames).toEqual(['ERR_DISTRIBUTION_ALREADY_COMPUTED', 'ERR_OTHER']);
-    expect(d.headline).toMatch(/defines under 2 names/);
+    expect(d.headline).toMatch(/2 reachable definitions/);
     expect(d.headline).not.toMatch(/already computed/);
   });
 });
@@ -525,6 +540,53 @@ describe('re-review: dynamic dispatch follows each trait variable to its own con
     expect(d.errorCode?.name).toBe('ERR-SPECIAL');
     expect(d.source?.contractId).toBe(B);
   });
+
+  it('does not treat an unused trait argument as a callee', () => {
+    const source = `
+(define-public (route (unused <ft-trait>) (used <ft-trait>))
+  (contract-call? used go))
+`;
+    const routeTx = {
+      ...tx,
+      contract_call: { ...tx.contract_call, function_name: 'route' },
+    };
+    expect(calleeCandidates(routeTx, called(source))).toEqual([B]);
+    expect(calleeEntryFunctions(routeTx, called(source), A)).toEqual([]);
+    expect(calleeEntryFunctions(routeTx, called(source), B)).toEqual(['go']);
+  });
+
+  it('carries a trait binding through an in-contract helper parameter', () => {
+    const source = `
+(define-private (forward (target <ft-trait>)) (contract-call? target go))
+(define-public (swap (token-a <ft-trait>) (token-b <ft-trait>))
+  (forward token-a))
+`;
+    expect(calleeCandidates(tx, called(source))).toEqual([A]);
+    expect(calleeEntryFunctions(tx, called(source), A)).toEqual(['go']);
+    expect(calleeEntryFunctions(tx, called(source), B)).toEqual([]);
+  });
+
+  it('keeps the result ambiguous when multiple reachable callees can return the code', async () => {
+    const source = `
+(define-public (swap (token-a <ft-trait>) (token-b <ft-trait>))
+  (begin (try! (contract-call? token-a go)) (try! (contract-call? token-b go))))
+`;
+    const aSource = `
+(define-constant ERR-A (err u7))
+(define-public (go) (asserts! false ERR-A))
+`;
+    const bSource = `
+(define-constant ERR-B (err u7))
+(define-public (go) (asserts! false ERR-B))
+`;
+    const d = await enrich(tx, called(source), {
+      contracts: async id => ({ contract_id: id, source_code: id === A ? aSource : bSource }),
+    });
+    expect(d.errorCode?.definedIn).toBeUndefined();
+    expect(d.errorCode?.name).toBeUndefined();
+    expect(d.errorCode?.candidateNames).toEqual([`ERR-A in ${A}`, `ERR-B in ${B}`]);
+    expect(d.confidence).toBe('low');
+  });
 });
 
 describe('re-review: native built-ins are candidates until callees are ruled out', () => {
@@ -562,16 +624,27 @@ describe('re-review: native built-ins are candidates until callees are ruled out
     expect(d.headline).not.toMatch(/^This call failed because/);
   });
 
-  it('commits once the callees are checked and none defines the code', async () => {
+  it('stays hedged after a callee is checked because failed calls have no execution trace', async () => {
     const d = await enrich(tx, called(WITH_CALLEE), {
       contracts: async id => ({
         contract_id: id,
         source_code: '(define-public (check-active) (ok true))',
       }),
     });
-    expect(d.errorCode?.nativeTentative).toBe(false);
-    expect(d.confidence).toBe('medium');
-    expect(d.headline).toMatch(/^This call failed because/);
+    expect(d.errorCode?.nativeTentative).toBe(true);
+    expect(d.confidence).toBe('low');
+    expect(d.headline).toMatch(/possibly because/);
+  });
+
+  it('stays hedged when the callee can return the code literally', async () => {
+    const d = await enrich(tx, called(WITH_CALLEE), {
+      contracts: async id => ({
+        contract_id: id,
+        source_code: '(define-public (check-active) (err u1))',
+      }),
+    });
+    expect(d.errorCode?.nativeTentative).toBe(true);
+    expect(d.headline).toMatch(/possibly because/);
   });
 
   it('stays hedged when a callee could not be fetched', async () => {
@@ -639,5 +712,30 @@ describe('re-review: principals inside data are not callees', () => {
     const text = d.whatHappened.map(f => f.parts.join('')).join('\n');
     expect(text).toMatch(/called 1 other contract\./);
     expect(text).toMatch(/also name 2 other contracts that may have been reached/);
+  });
+
+  it('does not claim that an unused trait argument was called during a runtime failure', () => {
+    const source = `
+(define-public (route (used <pool-trait>) (unused <pool-trait>))
+  (contract-call? used swap u1))
+`;
+    const tx = makeTx({
+      tx_result: { hex: '0x', repr: '(err none)' },
+      vm_error: 'ArithmeticUnderflow',
+      contract_call: {
+        contract_id: CONTRACT,
+        function_name: 'route',
+        function_args: [
+          { name: 'used', type: 'trait_reference', repr: `'${OTHER}.pool`, hex: '0x' },
+          { name: 'unused', type: 'trait_reference', repr: `'${THIRD}.pool`, hex: '0x' },
+        ],
+      },
+    });
+    const d = diagnoseSync(tx, called(source));
+    expect(d.runtime?.calleeCandidates).toEqual([`${OTHER}.pool`]);
+    expect(d.runtime?.argumentPrincipals).toEqual([`${THIRD}.pool`]);
+    expect(d.whatHappened.map(f => f.parts.join('')).join('\n')).toMatch(
+      /called 1 other contract\./
+    );
   });
 });

@@ -161,22 +161,22 @@ export function PostConditionsTable({
     });
   }, [postConditions, senderAddress, isContract, metadataMap]);
 
-  // The shared Table renders a spacer row first, so data row `i` is the (i + 2)th body row.
-  const highlightCss =
-    highlightIndex !== undefined && highlightIndex >= 0 && highlightIndex < postConditions.length
-      ? {
-          [`& tbody tr:nth-of-type(${highlightIndex + 2}) td`]: {
-            bg: 'feedback.red-150',
-            _dark: { bg: 'transactionStatus.failed' },
-          },
-        }
-      : undefined;
+  const validHighlight =
+    highlightIndex !== undefined && highlightIndex >= 0 && highlightIndex < postConditions.length;
 
   return (
-    <Box css={highlightCss} data-highlighted-row={highlightIndex}>
+    <Box data-highlighted-row={validHighlight ? highlightIndex : undefined}>
       <Table
         columns={columnDefinitions}
         data={rowData}
+        getRowProps={(_row, rowIndex) =>
+          validHighlight && rowIndex === highlightIndex
+            ? {
+                bg: { base: 'feedback.red-150', _dark: 'transactionStatus.failed' },
+                'data-highlighted': 'true',
+              }
+            : {}
+        }
         emptyTableUi={
           <Flex alignItems="center" justifyContent="center">
             <Text textStyle="text-regular-sm" color="textTertiary">

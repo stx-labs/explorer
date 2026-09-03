@@ -6,7 +6,7 @@ import type {
 } from '@stacks/stacks-blockchain-api-types';
 
 /** Bump when copy or classification changes so cached context packs are invalidated. */
-export const ENGINE_VERSION = '2';
+export const ENGINE_VERSION = '3';
 
 /**
  * `dropped` and `deploy_failure` are reserved: the engine never emits them yet, but consumers should
@@ -97,6 +97,8 @@ export interface ErrorCodeInfo {
   /** Set when the code matches a Clarity built-in (stx-transfer?, ft-transfer?, …). */
   nativeFunction?: string;
   nativeMeaning?: string;
+  /** Sender action associated with a certain native error. */
+  nativeSender?: string;
   /**
    * The built-in is one candidate, not an established cause: another reachable path (a callee not
    * yet ruled out, a second call site, a literal `(err uN)`) can return the same code.

@@ -34,7 +34,7 @@ import {
 } from '@phosphor-icons/react';
 import { ColumnDef } from '@tanstack/react-table';
 import { useSearchParams } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { SummaryItem as StackedSummaryItem } from '../DetailsCard';
 import {
@@ -104,14 +104,16 @@ function CopyPromptButton({ contextUrl }: { contextUrl: string }) {
       variant="redesignTertiary"
       size="small"
       onClick={() => copy()}
-      aria-label="Copy prompt with link"
+      aria-label="Copy Prompt for Agent to Explore"
       data-test="why-failed-copy-prompt"
     >
       <Flex gap={1.5} alignItems="center">
         <Icon h={3.5} w={3.5}>
           {copied ? <Check weight="bold" /> : <CopySimple weight="bold" />}
         </Icon>
-        <Text textStyle="text-medium-xs">{copied ? 'Copied' : 'Copy prompt'}</Text>
+        <Text textStyle="text-medium-xs">
+          {copied ? 'Copied' : 'Copy Prompt for Agent to Explore'}
+        </Text>
       </Flex>
     </Button>
   );
@@ -528,6 +530,21 @@ function TechnicalDetails({ tx, d }: { tx: FailedContractCallTx; d: Diagnosis })
   });
 
   const defaultOpen = rows[0].id;
+  const rowIds = rows.map(row => row.id);
+  const rowIdsKey = rowIds.join(',');
+  const [openRows, setOpenRows] = useState<string[]>([defaultOpen]);
+  const userChangedOpenRows = useRef(false);
+
+  useEffect(() => {
+    setOpenRows(current => {
+      const valid = current.filter(id => rowIds.includes(id));
+      if (!userChangedOpenRows.current && !valid.includes(defaultOpen)) return [defaultOpen];
+      return valid;
+    });
+    // rowIdsKey is the stable identity of the available rows; depending on the array would run on
+    // every diagnosis render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [defaultOpen, rowIdsKey]);
 
   return (
     <Box
@@ -538,12 +555,14 @@ function TechnicalDetails({ tx, d }: { tx: FailedContractCallTx; d: Diagnosis })
       borderColor="redesignBorderSecondary"
       data-test="why-failed-technical"
     >
-      {/* Keyed on the default row so a later-resolved source excerpt opens when it arrives. */}
       <AccordionRoot
-        key={defaultOpen}
         multiple
         lazyMount
-        defaultValue={[defaultOpen]}
+        value={openRows}
+        onValueChange={({ value }) => {
+          userChangedOpenRows.current = true;
+          setOpenRows(value);
+        }}
         variant="plain"
       >
         {rows.map((row, i) => (
@@ -687,32 +706,7 @@ export function WhyItFailed({ tx }: { tx: FailedContractCallTx }) {
               </Stack>
             )}
 
-            <Stack gap={1.5} data-test="why-failed-agent">
-              <Flex gap={3} alignItems="center" flexWrap="wrap">
-                <Text textStyle="text-regular-sm" color="textPrimary">
-                  Give your agent context to explore more:
-                </Text>
-                {!isCustomNetwork && <CopyPromptButton contextUrl={contextUrl} />}
-              </Flex>
-              {isCustomNetwork ? (
-                <Text textStyle="text-regular-xs" color="textSecondary">
-                  Context packs are available on mainnet and testnet only.
-                </Text>
-              ) : (
-                <Link
-                  href={contextUrl}
-                  variant="underline"
-                  textStyle="text-mono-xs"
-                  color="textPrimary"
-                  wordBreak="break-all"
-                  target="_blank"
-                  rel="noreferrer"
-                  data-test="why-failed-context-link"
-                >
-                  {contextUrl.replace(/^https?:\/\//, '')}
-                </Link>
-              )}
-            </Stack>
+            {!isCustomNetwork && <CopyPromptButton contextUrl={contextUrl} />}
           </Stack>
 
           {/* Tier 2 — technical details as collapsible rows */}
