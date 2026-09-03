@@ -84,9 +84,12 @@ Engine
       correlation queries
 - [x] `WhyItFailed` — Tier 0 (headline, sender action, fee invariant, "See details"), Tier 1 (facts
       with links, "For developers", agent hand-off: label + Copy prompt on one line, context link
-      beneath), Tier 2 (failing source line, post-condition row, arguments, raw); identifiers as
-      copyable chips. Evidence chips were dropped from the card on 2026-09-03 as duplicative of the
-      facts; the context pack still carries them for agents
+      beneath), Tier 2 (technical details as accordion rows — failing code, post-condition,
+      arguments as the Function-called table, raw details as `DetailsCard` rows — each header with a
+      one-line summary, the most relevant row open by default; chosen in the second mini design
+      sprint on 2026-09-03 over a grid-plus-side-card and an inner-tabs variant); identifiers as
+      copyable chips. Evidence chips were dropped from the card as duplicative of the facts; the
+      context pack still carries them for agents
 - [x] `ContractCallPage` integration; other tx types / statuses untouched
 - [x] Post-conditions row highlight; Source tab `line` reveal + decoration; `?tab=` / `line` deep links
 - [x] SSR: `page.tsx` fetches the contract for failed contract calls; `layout.tsx` metadata uses the headline

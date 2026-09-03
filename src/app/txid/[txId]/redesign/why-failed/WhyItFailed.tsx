@@ -2,6 +2,8 @@
 
 import { RowCopyButton } from '@/app/txid/[txId]/redesign/tx-summary/SummaryItem';
 import { ExplorerLink } from '@/common/components/ExplorerLinks';
+import { ScrollIndicator } from '@/common/components/ScrollIndicator';
+import { Table } from '@/common/components/table/Table';
 import { useGlobalContext } from '@/common/context/useGlobalContext';
 import {
   Diagnosis,
@@ -11,6 +13,13 @@ import {
 } from '@/common/tx-diagnosis';
 import { contractName } from '@/common/tx-diagnosis/clarity-source';
 import { assetName, formatInt, truncateMiddle } from '@/common/tx-diagnosis/templates';
+import {
+  AccordionItem,
+  AccordionItemContent,
+  AccordionItemTrigger,
+  AccordionRoot,
+} from '@/components/ui/accordion';
+import { SimpleTag } from '@/ui/Badge';
 import { Button } from '@/ui/Button';
 import { Link } from '@/ui/Link';
 import { Text } from '@/ui/Text';
@@ -23,9 +32,16 @@ import {
   CopySimple,
   XCircle,
 } from '@phosphor-icons/react';
+import { ColumnDef } from '@tanstack/react-table';
 import { useSearchParams } from 'next/navigation';
-import { Fragment, useState } from 'react';
+import { useState } from 'react';
 
+import { SummaryItem as StackedSummaryItem } from '../DetailsCard';
+import {
+  NameCellRenderer,
+  TypeCellRenderer,
+  ValueCellRenderer,
+} from '../function-called/FunctionCalledTableCellRenderers';
 import { getPostConditionCellText } from '../post-conditions/post-condition-table-utils';
 import { DetailChip, RichText } from './DetailChip';
 import { useTxDiagnosis } from './useTxDiagnosis';
@@ -34,14 +50,10 @@ import { useTxDiagnosis } from './useTxDiagnosis';
 // Small pieces
 // ---------------------------------------------------------------------------------------------
 
+/** The label style the rest of the transaction page uses for detail sections. */
 function SectionLabel({ children }: { children: string }) {
   return (
-    <Text
-      textStyle="text-medium-xs"
-      color="textSecondary"
-      textTransform="uppercase"
-      letterSpacing="wider"
-    >
+    <Text textStyle="text-medium-sm" color="textSecondary">
       {children}
     </Text>
   );
@@ -105,6 +117,10 @@ function CopyPromptButton({ contextUrl }: { contextUrl: string }) {
   );
 }
 
+// ---------------------------------------------------------------------------------------------
+// Technical details (accordion rows)
+// ---------------------------------------------------------------------------------------------
+
 function SourceExcerpt({
   source,
   calledContractId,
@@ -122,39 +138,6 @@ function SourceExcerpt({
       : `/txid/${source.contractId}?${lineQuery}`;
   return (
     <Stack gap={2}>
-      <Flex gap={2} alignItems="center" flexWrap="wrap" justifyContent="space-between">
-        <Flex gap={1} alignItems="center" flexWrap="wrap">
-          <SectionLabel>{line ? 'Failing check' : 'Entry point'}</SectionLabel>
-          <DetailChip
-            detail={{
-              kind: 'contract',
-              label: contractName(source.contractId),
-              value: source.contractId,
-              href: `/txid/${source.contractId}`,
-            }}
-          />
-          {source.functionName && (
-            <>
-              <Text textStyle="text-regular-xs" color="textTertiary">
-                ·
-              </Text>
-              <DetailChip
-                detail={{
-                  kind: 'function',
-                  label: source.functionName,
-                  value: source.functionName,
-                }}
-              />
-            </>
-          )}
-          {line && (
-            <Text textStyle="text-regular-xs" color="textSecondary">
-              line {line}
-            </Text>
-          )}
-        </Flex>
-        <TabLink label="Open in Source code" href={openHref} />
-      </Flex>
       <Flex alignItems="flex-start" gap={2} w="full" minW={0}>
         <Box
           as="pre"
@@ -210,52 +193,43 @@ function SourceExcerpt({
         </Box>
         <RowCopyButton value={code} ariaLabel="Copy excerpt" />
       </Flex>
-      {source.note && (
+      <Flex gap={3} alignItems="center" justifyContent="space-between" flexWrap="wrap">
         <Text textStyle="text-regular-xs" color="textSecondary">
-          {source.note}
+          {source.note ?? ''}
         </Text>
-      )}
+        <TabLink label="Open in Source code" href={openHref} />
+      </Flex>
     </Stack>
   );
 }
 
-function PostConditionRow({
+function PostConditionFields({
   tx,
   finding,
 }: {
   tx: FailedContractCallTx;
-  finding: NonNullable<Diagnosis['postCondition']>;
+  finding: NonNullable<Diagnosis['postCondition']> & { index: number };
 }) {
-  if (finding.index === undefined) return null;
   const pc = tx.post_conditions[finding.index];
   if (!pc) return null;
   const principal = resolvePostConditionPrincipal(pc.principal, tx.sender_address);
   const amount = pc.type === 'non_fungible' ? pc.asset_value.repr : formatInt(pc.amount);
   const asset = pc.type === 'stx' ? 'STX' : pc.asset.asset_name;
   const problemText: Record<string, string> = {
-    principal_mismatch: 'Principal does not match the signer',
+    principal_mismatch: 'Does not match the signer',
     amount_not_met: `Actual ${finding.actual ? formatInt(finding.actual) : ''} did not satisfy the condition`,
     asset_unchecked: 'No condition covers the asset that moved',
     nft: 'NFT not covered',
+    stacking: 'Stacking condition did not hold',
     unknown: '',
   };
   return (
-    <Stack gap={2}>
-      <Flex gap={2} alignItems="center" justifyContent="space-between" flexWrap="wrap">
-        <SectionLabel>{`Post-condition #${finding.index + 1}`}</SectionLabel>
-        <TabLink
-          label="Open Post-conditions"
-          href={`?tab=postConditions&highlight=${finding.index}`}
-        />
-      </Flex>
+    <Stack gap={3}>
       <Grid
         templateColumns={{ base: '1fr', md: 'auto 1fr' }}
         gap={2}
         columnGap={4}
         alignItems="center"
-        bg="surfaceHighlight"
-        borderRadius="md"
-        p={3}
         data-test="why-failed-post-condition"
       >
         <Text textStyle="text-regular-xs" color="textSecondary">
@@ -308,67 +282,293 @@ function PostConditionRow({
           />
         </Flex>
       </Grid>
+      <Flex justifyContent="flex-end">
+        <TabLink
+          label="Open Post-conditions"
+          href={`?tab=postConditions&highlight=${finding.index}`}
+        />
+      </Flex>
     </Stack>
   );
 }
 
-function ArgsList({ args }: { args: Diagnosis['args'] }) {
-  if (!args.length) return null;
+interface ArgRow {
+  name: string;
+  value: string;
+  type: string;
+}
+
+/** The same Name / Value / Type columns the Function called tab renders. */
+const ARG_COLUMNS: ColumnDef<ArgRow>[] = [
+  {
+    id: 'name',
+    header: 'Name',
+    accessorKey: 'name',
+    cell: info => NameCellRenderer(info.getValue() as string),
+    enableSorting: false,
+  },
+  {
+    id: 'value',
+    header: 'Value',
+    accessorKey: 'value',
+    cell: info => ValueCellRenderer(info.getValue() as string),
+    enableSorting: false,
+    minSize: 150,
+    maxSize: 150,
+  },
+  {
+    id: 'type',
+    header: 'Type',
+    accessorKey: 'type',
+    cell: info => TypeCellRenderer(info.getValue() as string),
+    enableSorting: false,
+  },
+];
+
+function ArgsTable({ args }: { args: Diagnosis['args'] }) {
   return (
-    <Stack gap={2}>
-      <SectionLabel>Arguments</SectionLabel>
-      <Grid
-        templateColumns={{ base: '1fr', md: 'auto 1fr auto' }}
-        gap={1.5}
-        columnGap={4}
-        alignItems="center"
-        bg="surfaceHighlight"
-        borderRadius="md"
-        p={3}
-      >
-        {args.map(a => {
-          const label = a.value.length > 96 ? `${a.value.slice(0, 93)}…` : a.value;
-          return (
-            <Fragment key={a.name}>
-              <Text textStyle="text-mono-xs" color="textSecondary">
-                {a.name}
-              </Text>
-              <Flex minW={0}>
-                <DetailChip detail={{ kind: 'value', label, value: a.value }} />
-              </Flex>
-              <Text textStyle="text-regular-xs" color="textTertiary" hideBelow="md">
-                {a.type}
-              </Text>
-            </Fragment>
-          );
-        })}
-      </Grid>
+    <Stack gap={3} data-test="why-failed-arguments">
+      <Table
+        columns={ARG_COLUMNS}
+        data={args}
+        scrollIndicatorWrapper={table => <ScrollIndicator>{table}</ScrollIndicator>}
+      />
+      <Flex justifyContent="flex-end">
+        <TabLink label="Open Function called" href="?tab=functionCall" />
+      </Flex>
     </Stack>
   );
 }
 
-function RawRow({ label, value }: { label: string; value: string }) {
+function postConditionSummary(tx: FailedContractCallTx, d: Diagnosis): string {
+  const n = tx.post_conditions?.length ?? 0;
+  if (d.postCondition?.index !== undefined)
+    return `#${d.postCondition.index + 1} of ${n} · ${d.postCondition.problem.replace(/_/g, ' ')}`;
+  if (d.postCondition?.candidates?.length)
+    return `one of #${d.postCondition.candidates.map(i => i + 1).join(', #')} · ${d.postCondition.problem.replace(/_/g, ' ')}`;
+  if (n) return `${n} in ${tx.post_condition_mode} mode · not reached`;
+  return `${tx.post_condition_mode} mode · none set`;
+}
+
+const VM_ERROR_PREVIEW = 120;
+
+/** Raw values as the stacked label/value rows of the page's details card. */
+function DetailRows({ tx, d }: { tx: FailedContractCallTx; d: Diagnosis }) {
+  const ec = d.errorCode;
+  const mono = (value: string) => (
+    <Text textStyle="text-mono-xs" color="textPrimary" wordBreak="break-all">
+      {value}
+    </Text>
+  );
+  const vmError = d.raw.vmError;
   return (
-    <Flex gap={3} alignItems="flex-start">
-      <Text textStyle="text-mono-xs" color="textTertiary" minW={20} pt={0.5}>
-        {label}
+    <Grid templateColumns={{ base: '1fr', md: '1fr 1fr' }} gap={4} data-test="why-failed-raw">
+      <StackedSummaryItem
+        label="Result"
+        value={d.raw.txResult?.repr ?? 'n/a'}
+        valueRenderer={value => <SimpleTag label={<Text textStyle="text-mono-xs">{value}</Text>} />}
+        showCopyButton={!!d.raw.txResult}
+      />
+      {ec?.name && (
+        <StackedSummaryItem
+          label="Error constant"
+          value={ec.name}
+          valueRenderer={mono}
+          showCopyButton
+        />
+      )}
+      {ec?.candidateNames?.length ? (
+        <StackedSummaryItem
+          label="Candidate constants"
+          value={ec.candidateNames.join(', ')}
+          valueRenderer={mono}
+          showCopyButton
+        />
+      ) : null}
+      {ec?.definedIn && (
+        <StackedSummaryItem
+          label="Defined in"
+          value={ec.definedIn}
+          valueRenderer={value => (
+            <DetailChip
+              detail={{
+                kind: 'contract',
+                label: `${contractName(value)}${ec.definitionLine ? ` · line ${ec.definitionLine}` : ''}`,
+                value,
+                href: `/txid/${value}`,
+              }}
+            />
+          )}
+        />
+      )}
+      {ec?.usageLines?.length ? (
+        <StackedSummaryItem
+          label={ec.usageLines.length > 1 ? 'Raised at lines' : 'Raised at line'}
+          value={ec.usageLines.join(', ')}
+          showCopyButton
+        />
+      ) : null}
+      {ec?.nativeFunction && (
+        <StackedSummaryItem
+          label="Built-in"
+          value={ec.nativeFunction}
+          valueRenderer={mono}
+          showCopyButton
+        />
+      )}
+      {d.runtime && (
+        <StackedSummaryItem
+          label="Runtime error"
+          value={d.runtime.variant}
+          valueRenderer={mono}
+          showCopyButton
+        />
+      )}
+      <StackedSummaryItem label="Post-conditions" value={postConditionSummary(tx, d)} />
+      <StackedSummaryItem
+        label="vm_error"
+        value={vmError ?? 'null'}
+        valueRenderer={value =>
+          mono(value.length > VM_ERROR_PREVIEW ? `${value.slice(0, VM_ERROR_PREVIEW - 1)}…` : value)
+        }
+        showCopyButton={!!vmError}
+      />
+      {d.raw.txResult && (
+        <StackedSummaryItem
+          label="tx_result (hex)"
+          value={d.raw.txResult.hex}
+          valueRenderer={value => mono(truncateMiddle(value, 10, 6))}
+          showCopyButton
+        />
+      )}
+    </Grid>
+  );
+}
+
+function RowHeader({ title, summary }: { title: string; summary?: string }) {
+  return (
+    <Flex justifyContent="space-between" alignItems="center" w="full" gap={3} py={1} minW={0}>
+      <Text textStyle="text-medium-sm" color="textPrimary" whiteSpace="nowrap">
+        {title}
       </Text>
-      <Box
-        as="pre"
-        flex={1}
-        minW={0}
-        m={0}
-        textStyle="text-mono-xs"
-        color="textSecondary"
-        whiteSpace="pre-wrap"
-        overflowWrap="anywhere"
-      >
-        {value}
-      </Box>
-      <RowCopyButton value={value} ariaLabel={`Copy ${label}`} />
+      {summary && (
+        <Text
+          textStyle="text-mono-xs"
+          color="textSecondary"
+          textAlign="right"
+          minW={0}
+          overflow="hidden"
+          textOverflow="ellipsis"
+          whiteSpace="nowrap"
+          title={summary}
+        >
+          {summary}
+        </Text>
+      )}
     </Flex>
   );
 }
+
+interface TechnicalRow {
+  id: string;
+  title: string;
+  summary?: string;
+  content: React.ReactNode;
+}
+
+function sourceSummary(source: NonNullable<Diagnosis['source']>, calledContractId: string) {
+  const parts: string[] = [];
+  if (source.contractId !== calledContractId) parts.push(contractName(source.contractId));
+  if (source.functionName) parts.push(source.functionName);
+  if (source.failingLine) parts.push(`line ${source.failingLine}`);
+  return parts.join(' · ');
+}
+
+/**
+ * Tier 2: the technical material as collapsible rows, each header carrying a one-line summary so
+ * the closed state already tells the story. The row most likely to be wanted opens by default.
+ */
+function TechnicalDetails({ tx, d }: { tx: FailedContractCallTx; d: Diagnosis }) {
+  const calledContractId = tx.contract_call.contract_id;
+  const pcFinding =
+    d.postCondition && d.postCondition.index !== undefined
+      ? (d.postCondition as NonNullable<Diagnosis['postCondition']> & { index: number })
+      : undefined;
+
+  const rows: TechnicalRow[] = [];
+  if (d.source) {
+    rows.push({
+      id: 'code',
+      title: d.source.failingLine ? 'Failing code' : 'Entry point',
+      summary: sourceSummary(d.source, calledContractId),
+      content: <SourceExcerpt source={d.source} calledContractId={calledContractId} />,
+    });
+  }
+  if (pcFinding) {
+    rows.push({
+      id: 'post-condition',
+      title: `Post-condition #${pcFinding.index + 1}`,
+      summary: pcFinding.problem.replace(/_/g, ' '),
+      content: <PostConditionFields tx={tx} finding={pcFinding} />,
+    });
+  }
+  if (d.args.length) {
+    rows.push({
+      id: 'arguments',
+      title: `Arguments (${d.args.length})`,
+      summary: d.args.map(a => a.name).join(', '),
+      content: <ArgsTable args={d.args} />,
+    });
+  }
+  rows.push({
+    id: 'details',
+    title: 'Raw details',
+    summary: d.raw.txResult?.repr,
+    content: <DetailRows tx={tx} d={d} />,
+  });
+
+  const defaultOpen = rows[0].id;
+
+  return (
+    <Box
+      px={5}
+      py={2}
+      bg="surfaceTertiary"
+      borderTop="1px solid"
+      borderColor="redesignBorderSecondary"
+      data-test="why-failed-technical"
+    >
+      {/* Keyed on the default row so a later-resolved source excerpt opens when it arrives. */}
+      <AccordionRoot
+        key={defaultOpen}
+        multiple
+        lazyMount
+        defaultValue={[defaultOpen]}
+        variant="plain"
+      >
+        {rows.map((row, i) => (
+          <AccordionItem
+            key={row.id}
+            value={row.id}
+            borderBottom={i < rows.length - 1 ? '1px solid' : 'none'}
+            borderColor="redesignBorderSecondary"
+          >
+            <AccordionItemTrigger indicatorPlacement="end" px={0} cursor="pointer">
+              <RowHeader title={row.title} summary={row.summary} />
+            </AccordionItemTrigger>
+            <AccordionItemContent px={0} pb={4}>
+              {row.content}
+            </AccordionItemContent>
+          </AccordionItem>
+        ))}
+      </AccordionRoot>
+    </Box>
+  );
+}
+
+// ---------------------------------------------------------------------------------------------
+// Card
+// ---------------------------------------------------------------------------------------------
 
 function useContextPackUrl(txId: string): string {
   const network = useGlobalContext().activeNetwork;
@@ -382,10 +582,6 @@ function useContextPackUrl(txId: string): string {
   const qs = params.toString();
   return `${origin}/txid/${txId}/context.md${qs ? `?${qs}` : ''}`;
 }
-
-// ---------------------------------------------------------------------------------------------
-// Card
-// ---------------------------------------------------------------------------------------------
 
 export function WhyItFailed({ tx }: { tx: FailedContractCallTx }) {
   const [expanded, setExpanded] = useState(false);
@@ -511,30 +707,8 @@ export function WhyItFailed({ tx }: { tx: FailedContractCallTx }) {
             </Stack>
           </Stack>
 
-          {/* Tier 2 — rendered details + raw */}
-          <Stack
-            gap={5}
-            px={5}
-            py={5}
-            bg="surfaceTertiary"
-            borderTop="1px solid"
-            borderColor="redesignBorderSecondary"
-          >
-            {d.postCondition && <PostConditionRow tx={tx} finding={d.postCondition} />}
-            {d.source && (
-              <SourceExcerpt source={d.source} calledContractId={tx.contract_call.contract_id} />
-            )}
-            <ArgsList args={d.args} />
-
-            <Stack gap={1.5}>
-              <SectionLabel>Raw</SectionLabel>
-              <RawRow label="vm_error" value={d.raw.vmError ?? 'null'} />
-              <RawRow
-                label="tx_result"
-                value={d.raw.txResult ? `${d.raw.txResult.hex}  →  ${d.raw.txResult.repr}` : 'n/a'}
-              />
-            </Stack>
-          </Stack>
+          {/* Tier 2 — technical details as collapsible rows */}
+          <TechnicalDetails tx={tx} d={d} />
         </>
       )}
     </Stack>
