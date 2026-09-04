@@ -1,0 +1,291 @@
+import type {
+  ContractCallTransaction,
+  MempoolTransaction,
+  PostCondition,
+  Transaction,
+} from '@stacks/stacks-blockchain-api-types';
+
+/** Bump when copy or classification changes so cached context packs are invalidated. */
+export const ENGINE_VERSION = '4';
+
+/**
+ * `dropped` and `deploy_failure` are reserved: the engine never emits them yet, but consumers should
+ * treat any unknown class as "render nothing and keep today's alert". `unknown_vm_error` is a
+ * `vm_error` the parser does not recognise; its copy never claims a cause.
+ */
+export type FailureClass =
+  | 'contract_error'
+  | 'runtime_panic'
+  | 'analysis_error'
+  | 'unknown_vm_error'
+  | 'post_condition'
+  | 'post_condition_masked_error'
+  | 'dropped'
+  | 'deploy_failure';
+
+export type Confidence = 'high' | 'medium' | 'low';
+
+export type DetailKind =
+  | 'address'
+  | 'contract'
+  | 'function'
+  | 'tx'
+  | 'constant'
+  | 'value'
+  | 'asset';
+
+/** A technical identifier rendered as a copyable chip: shown as `label`, copied as `value`. */
+export interface DetailRef {
+  kind: DetailKind;
+  label: string;
+  value: string;
+  href?: string;
+}
+
+export type RichPart = string | DetailRef;
+
+export interface Fact {
+  parts: RichPart[];
+  /** Same-page `?tab=…` link, or an absolute explorer path when the target is another contract. */
+  link?: { label: string; href: string };
+  chips?: DetailRef[];
+  /** The fact quotes third-party on-chain text (e.g. a source comment), not an engine conclusion. */
+  onChain?: boolean;
+}
+
+export interface Evidence {
+  id: string;
+  label: string;
+  value: string;
+  href?: string;
+}
+
+export interface SourceRef {
+  contractId: string;
+  functionName?: string;
+  lines: { n: number; code: string }[];
+  failingLine?: number;
+  note?: string;
+}
+
+/**
+ * A `fold` callback that unwraps its accumulator with a fixed error constant. When an earlier item
+ * fails, the next iteration replaces the real error with this constant, so the code in the result
+ * is a placeholder — the underlying cause is not recorded on chain.
+ */
+export interface FoldMask {
+  helper: string;
+  accumulatorParam: string;
+  line: number;
+}
+
+export interface ErrorCodeInfo {
+  /** As written in the result, e.g. `u2003`, or the full repr for non-uint errors. */
+  code: string;
+  name?: string;
+  /**
+   * Set instead of `name` when the contract defines the code under several constants and none (or
+   * more than one) is used in code the call can reach: which condition failed is not recorded.
+   */
+  candidateNames?: string[];
+  definedIn?: string;
+  definitionLine?: number;
+  usageLines?: number[];
+  comments?: string[];
+  /** False when the constant is defined but not used in any function the call can reach. */
+  reachable?: boolean;
+  /** Set when the code matches a Clarity built-in (stx-transfer?, ft-transfer?, …). */
+  nativeFunction?: string;
+  nativeMeaning?: string;
+  /** Sender action associated with a certain native error. */
+  nativeSender?: string;
+  /**
+   * The built-in is one candidate, not an established cause: another reachable path (a callee not
+   * yet ruled out, a second call site, a literal `(err uN)`) can return the same code.
+   */
+  nativeTentative?: boolean;
+  /** Number of reachable sites calling the matched built-in. */
+  nativeSiteCount?: number;
+  /**
+   * Every built-in that can produce the code on a reachable path, when more than one can (several
+   * kinds in the called contract, or a built-in inside a callee the call enters). `nativeFunction`
+   * and `nativeMeaning` describe the first of them; the attribution is always tentative.
+   */
+  nativeCandidates?: NativeCandidate[];
+  /** Lines in reachable code returning the code literally, e.g. `(err u1)`. */
+  literalSites?: number[];
+  /** True when the called function takes trait arguments (callee chosen at runtime). */
+  dynamicDispatch: boolean;
+  candidatesTried: string[];
+  foldMask?: FoldMask;
+  /** The failing site runs before every `asserts!` of the called function (e.g. in its `let`). */
+  siteBeforeOtherChecks?: boolean;
+}
+
+export interface NativeCandidate {
+  fn: string;
+  meaning: string;
+  /** The contract whose code calls the built-in; absent for the called contract itself. */
+  contractId?: string;
+  /** Functions of that callee the failed call enters (callee candidates only). */
+  functions?: string[];
+}
+
+export type PostConditionProblem =
+  | 'principal_mismatch'
+  | 'asset_unchecked'
+  | 'amount_not_met'
+  | 'nft'
+  | 'stacking'
+  | 'unknown';
+
+export interface PostConditionFinding {
+  problem: PostConditionProblem;
+  /** Index into `tx.post_conditions` when exactly one condition is implicated. */
+  index?: number;
+  /** Indices of every condition that could be the one, when more than one matches. */
+  candidates?: number[];
+  asset?: string;
+  /** Principal named by the post-condition (resolved to an address / contract id). */
+  principal?: string;
+  /** Every principal named by the candidate conditions, when they differ. */
+  principals?: string[];
+  /** Principal that actually moved the asset (from vm_error). */
+  movedBy?: string;
+  expected?: string;
+  actual?: string;
+  conditionCode?: string;
+}
+
+export interface RuntimeFinding {
+  variant: string;
+  detail?: string;
+  /**
+   * Contracts the failing function calls: literal `contract-call?` targets in code it reaches and
+   * contracts bound to its trait parameters.
+   */
+  calleeCandidates: string[];
+  /** Other contract principals named in the argument data; possibly reached, not proven to be. */
+  argumentPrincipals?: string[];
+  /** Line numbers of candidate sites in the called contract, when exactly one kind of site exists. */
+  candidateLines: number[];
+}
+
+export interface Correlations {
+  retriedSuccessfullyIn?: string;
+  /** Whether the later successful call used exactly the same arguments (undefined = unknown). */
+  retryUsedSameArgs?: boolean;
+  pcPrincipalTxCount?: number;
+  balanceAtParent?: { asset: string; balance: string };
+}
+
+/** The first list-typed argument, when the call is a batch over items. */
+export interface BatchInfo {
+  argName: string;
+  itemCount: number;
+}
+
+/** Full text of the called function and the in-contract helpers it reaches, for agents. */
+export interface FunctionSource {
+  contractId: string;
+  functionName: string;
+  helpers: string[];
+  lines: { n: number; code: string }[];
+  truncated: boolean;
+}
+
+export interface ReadOnlyFunction {
+  name: string;
+  args: string[];
+}
+
+export interface Diagnosis {
+  engineVersion: string;
+  txId: string;
+  class: FailureClass;
+  subkind: string;
+  confidence: Confidence;
+  headline: string;
+  senderAction: string;
+  invariant: string;
+  whatHappened: Fact[];
+  developerNote?: RichPart[];
+  evidence: Evidence[];
+  errorCode?: ErrorCodeInfo;
+  postCondition?: PostConditionFinding;
+  runtime?: RuntimeFinding;
+  source?: SourceRef;
+  args: { name: string; value: string; type: string }[];
+  batch?: BatchInfo;
+  functionSource?: FunctionSource;
+  readOnlyFunctions?: ReadOnlyFunction[];
+  related: Correlations;
+  raw: { vmError: string | null; txResult: { repr: string; hex: string } | null };
+}
+
+/** Minimal contract shape the engine needs (subset of the API's SmartContract). */
+export interface ContractInfo {
+  contract_id: string;
+  source_code: string;
+  /** Parsed ABI (`ContractInterfaceResponse`) when available. */
+  abi?: unknown;
+}
+
+export type ContractLoader = (contractId: string) => Promise<ContractInfo | null>;
+
+export interface AddressTxSummary {
+  tx_id: string;
+  tx_status: string;
+  block_height?: number;
+  contract_id?: string;
+  function_name?: string;
+  /** `repr` of each argument, for same-inputs comparison. */
+  function_args_repr?: string[];
+}
+
+export interface HistoryLoader {
+  senderTransactions?: (sender: string, limit: number) => Promise<AddressTxSummary[]>;
+  addressTxCount?: (address: string) => Promise<number>;
+  ftBalanceAt?: (address: string, assetId: string, blockHeight: number) => Promise<string | null>;
+}
+
+/** The API returns `vm_error` on failed txs but the published types omit it. */
+export type FailedContractCallTx = ContractCallTransaction & {
+  tx_status: 'abort_by_response' | 'abort_by_post_condition';
+  vm_error?: string | null;
+};
+
+export function isFailedContractCall(
+  tx: Transaction | MempoolTransaction | undefined | null
+): tx is FailedContractCallTx {
+  return (
+    !!tx &&
+    tx.tx_type === 'contract_call' &&
+    (tx.tx_status === 'abort_by_response' || tx.tx_status === 'abort_by_post_condition')
+  );
+}
+
+export type AnyPostCondition = PostCondition;
+
+/** Resolve a post-condition principal to an address or contract id. */
+export function resolvePostConditionPrincipal(
+  principal: PostCondition['principal'],
+  sender: string
+): string {
+  switch (principal.type_id) {
+    case 'principal_origin':
+      return sender;
+    case 'principal_standard':
+      return principal.address;
+    case 'principal_contract':
+      return `${principal.address}.${principal.contract_name}`;
+    default:
+      return sender;
+  }
+}
+
+/** Asset identifier as stacks-core prints it: `<address>.<contract>::<asset>`; STX has no contract. */
+export function postConditionAssetId(pc: PostCondition): string {
+  if (pc.type === 'stx') return 'STX';
+  return `${pc.asset.contract_address}.${pc.asset.contract_name}::${pc.asset.asset_name}`;
+}

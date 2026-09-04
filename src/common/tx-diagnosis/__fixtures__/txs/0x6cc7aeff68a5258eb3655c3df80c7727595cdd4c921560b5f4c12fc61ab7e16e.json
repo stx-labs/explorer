@@ -1,0 +1,119 @@
+{
+  "tx_id": "0x6cc7aeff68a5258eb3655c3df80c7727595cdd4c921560b5f4c12fc61ab7e16e",
+  "nonce": 18,
+  "fee_rate": "500000",
+  "sender_address": "SP01R9J9S0R3TRQ9EWW88TEE43N0KPBKFYTFH5D9",
+  "sponsored": false,
+  "post_condition_mode": "deny",
+  "post_conditions": [
+    {
+      "principal": {
+        "type_id": "principal_standard",
+        "address": "SP01R9J9S0R3TRQ9EWW88TEE43N0KPBKFYTFH5D9"
+      },
+      "condition_code": "sent_equal_to",
+      "amount": "100000000",
+      "type": "fungible",
+      "asset": {
+        "asset_name": "sbtc-token",
+        "contract_address": "SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4",
+        "contract_name": "sbtc-token"
+      }
+    },
+    {
+      "principal": {
+        "type_id": "principal_contract",
+        "address": "SP1A27KFY4XERQCCRCARCYD1CC5N7M6688BSYADJ7",
+        "contract_name": "zv-state-stbtc-0"
+      },
+      "condition_code": "sent_less_than_or_equal_to",
+      "amount": "100000000",
+      "type": "fungible",
+      "asset": {
+        "asset_name": "sbtc-token",
+        "contract_address": "SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4",
+        "contract_name": "sbtc-token"
+      }
+    },
+    {
+      "principal": {
+        "type_id": "principal_contract",
+        "address": "SP1A27KFY4XERQCCRCARCYD1CC5N7M6688BSYADJ7",
+        "contract_name": "zv-ops-stbtc-0"
+      },
+      "condition_code": "sent_less_than_or_equal_to",
+      "amount": "100000000",
+      "type": "fungible",
+      "asset": {
+        "asset_name": "sbtc-token",
+        "contract_address": "SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4",
+        "contract_name": "sbtc-token"
+      }
+    },
+    {
+      "principal": {
+        "type_id": "principal_contract",
+        "address": "SP1A27KFY4XERQCCRCARCYD1CC5N7M6688BSYADJ7",
+        "contract_name": "zv-ops-stbtc-0"
+      },
+      "condition_code": "sent_less_than_or_equal_to",
+      "amount": "200000000",
+      "type": "fungible",
+      "asset": {
+        "asset_name": "stbtc",
+        "contract_address": "SP4SZE494VC2YC5JYG7AYFQ44F5Q4PYV7DVMDPBG",
+        "contract_name": "stbtc-token"
+      }
+    }
+  ],
+  "anchor_mode": "any",
+  "block_hash": "0x53243d31e69b7cf7a4e2419594032f834e127d1c4b631326afdf0c0a8ee31761",
+  "block_height": 8902199,
+  "block_time": 1788360297,
+  "block_time_iso": "2026-09-02T14:44:57.000Z",
+  "burn_block_time": 1788359969,
+  "burn_block_height": 965182,
+  "burn_block_time_iso": "2026-09-02T14:39:29.000Z",
+  "parent_burn_block_time": 1788359969,
+  "parent_burn_block_time_iso": "2026-09-02T14:39:29.000Z",
+  "canonical": true,
+  "tx_index": 0,
+  "tx_status": "abort_by_post_condition",
+  "tx_result": {
+    "hex": "0x070100000000000000000000000005f41737",
+    "repr": "(ok u99882807)"
+  },
+  "event_count": 0,
+  "parent_block_hash": "0x99363e1b039e402a6485ac86ebef01e823677053a5df397b4693d1176ea91e8f",
+  "is_unanchored": false,
+  "microblock_hash": "0x",
+  "microblock_sequence": 2147483647,
+  "microblock_canonical": true,
+  "execution_cost_read_count": 307,
+  "execution_cost_read_length": 611831,
+  "execution_cost_runtime": 775067,
+  "execution_cost_write_count": 23,
+  "execution_cost_write_length": 99,
+  "vm_error": "Post-condition check failure: Fungible asset SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token::sbtc-token was moved by SP4SZE494VC2YC5JYG7AYFQ44F5Q4PYV7DVMDPBG.rewards-pox5-v1 but not checked",
+  "events": [],
+  "tx_type": "contract_call",
+  "contract_call": {
+    "contract_id": "SP1A27KFY4XERQCCRCARCYD1CC5N7M6688BSYADJ7.zv-engine-stbtc-0",
+    "function_name": "deposit-sbtc",
+    "function_signature": "(define-public (deposit-sbtc (amount uint) (min-shares-out uint)))",
+    "function_args": [
+      {
+        "hex": "0x0100000000000000000000000005f5e100",
+        "repr": "u100000000",
+        "name": "amount",
+        "type": "uint"
+      },
+      {
+        "hex": "0x0100000000000000000000000005f2910d",
+        "repr": "u99782925",
+        "name": "min-shares-out",
+        "type": "uint"
+      }
+    ]
+  }
+}

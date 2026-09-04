@@ -1,6 +1,37 @@
 import { Column, ColumnDef } from '@tanstack/react-table';
+import { screen } from '@testing-library/react';
 
-import { getColumnPinningState, getCommonPinningStyles } from './Table';
+import { renderWithChakraProviders } from '../../utils/test-utils/render-utils';
+import { Table, getColumnPinningState, getCommonPinningStyles } from './Table';
+
+describe('Table', () => {
+  it('applies row props by data-row index, independently of structural rows', () => {
+    renderWithChakraProviders(
+      <Table
+        columns={[{ accessorKey: 'name', header: 'Name' }]}
+        data={[{ name: 'first' }, { name: 'second' }]}
+        getRowProps={(_row, rowIndex) => (rowIndex === 1 ? { 'data-highlighted': 'true' } : {})}
+      />
+    );
+
+    expect(screen.getByText('first').closest('tr')).not.toHaveAttribute('data-highlighted');
+    expect(screen.getByText('second').closest('tr')).toHaveAttribute('data-highlighted', 'true');
+  });
+
+  it('composes caller row classes and lets callers override the minimum height', () => {
+    renderWithChakraProviders(
+      <Table
+        columns={[{ accessorKey: 'name', header: 'Name' }]}
+        data={[{ name: 'custom' }]}
+        getRowProps={() => ({ className: 'custom-row', minH: '77px' })}
+      />
+    );
+
+    const row = screen.getByText('custom').closest('tr');
+    expect(row).toHaveClass('group', 'custom-row');
+    expect(row).toHaveStyle({ minHeight: '77px' });
+  });
+});
 
 describe('getCommonPinningStyles', () => {
   const createMockColumn = (isPinned: 'left' | 'right' | false, isLastColumn: boolean = false) => {

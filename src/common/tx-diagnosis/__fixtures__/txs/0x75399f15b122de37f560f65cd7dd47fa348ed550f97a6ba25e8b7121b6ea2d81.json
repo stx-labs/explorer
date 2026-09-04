@@ -1,0 +1,53 @@
+{
+  "tx_id": "0x75399f15b122de37f560f65cd7dd47fa348ed550f97a6ba25e8b7121b6ea2d81",
+  "nonce": 2377,
+  "fee_rate": "2121000",
+  "sender_address": "SP3A7MGAH0SKC1ACS854PHXHVWE031FYQCBA8M51D",
+  "sponsored": false,
+  "post_condition_mode": "allow",
+  "post_conditions": [],
+  "anchor_mode": "any",
+  "block_hash": "0xf119accde1af20853ce3d02ae344547940517f5ff2c8580cfb97826936edfec8",
+  "block_height": 8893828,
+  "block_time": 1788274252,
+  "block_time_iso": "2026-09-01T14:50:52.000Z",
+  "burn_block_time": 1788274079,
+  "burn_block_height": 965051,
+  "burn_block_time_iso": "2026-09-01T14:47:59.000Z",
+  "parent_burn_block_time": 1788274079,
+  "parent_burn_block_time_iso": "2026-09-01T14:47:59.000Z",
+  "canonical": true,
+  "tx_index": 1,
+  "tx_status": "abort_by_response",
+  "tx_result": {
+    "hex": "0x0801000000000000000000000000000007d1",
+    "repr": "(err u2001)"
+  },
+  "event_count": 0,
+  "parent_block_hash": "0xd132113984344bffdac8dd62952121b838988c83d133fc7f2864ac54740a11dd",
+  "is_unanchored": false,
+  "microblock_hash": "0x",
+  "microblock_sequence": 2147483647,
+  "microblock_canonical": true,
+  "execution_cost_read_count": 83,
+  "execution_cost_read_length": 462166,
+  "execution_cost_runtime": 789455,
+  "execution_cost_write_count": 9,
+  "execution_cost_write_length": 215,
+  "vm_error": null,
+  "events": [],
+  "tx_type": "contract_call",
+  "contract_call": {
+    "contract_id": "SM1FKXGNZJWSTWDWXQZJNF7B5TV5ZB235JTCXYXKD.dlmm-swap-router-v-1-1",
+    "function_name": "swap-simple-multi",
+    "function_signature": "(define-public (swap-simple-multi (swaps (list 5 (tuple (amount uint) (max-steps uint) (min-received uint) (pool-trait trait_reference) (x-for-y bool) (x-token-trait trait_reference) (y-token-trait trait_reference))))))",
+    "function_args": [
+      {
+        "hex": "0x0b000000010c0000000706616d6f756e740100000000000000000000000165a0bc00096d61782d737465707301000000000000000000000000000000080c6d696e2d72656365697665640100000000000000000000000545439dc80a706f6f6c2d747261697406145f3ec2bf9733ae379dbfe5579d65d6cbf58865961e646c6d6d2d706f6f6c2d7374782d75736463782d762d312d6270732d313007782d666f722d79040d782d746f6b656e2d747261697406144e91b0982dbe4ae49bb9394b1f339fb7144beee60f746f6b656e2d7374782d762d312d320d792d746f6b656e2d74726169740616440caf0bbc800a33993ea85c2392aeb53696608b057573646378",
+        "repr": "(list (tuple (amount u6000000000) (max-steps u8) (min-received u22636895688) (pool-trait 'SM1FKXGNZJWSTWDWXQZJNF7B5TV5ZB235JTCXYXKD.dlmm-pool-stx-usdcx-v-1-bps-10) (x-for-y false) (x-token-trait 'SM1793C4R5PZ4NS4VQ4WMP7SKKYVH8JZEWSZ9HCCR.token-stx-v-1-2) (y-token-trait 'SP120SBRBQJ00MCWS7TM5R8WJNTTKD5K0HFRC2CNE.usdcx)))",
+        "name": "swaps",
+        "type": "(list 5 (tuple (amount uint) (max-steps uint) (min-received uint) (pool-trait trait_reference) (x-for-y bool) (x-token-trait trait_reference) (y-token-trait trait_reference)))"
+      }
+    ]
+  }
+}

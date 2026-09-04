@@ -2,13 +2,19 @@
 
 import { ReactNode, createContext, useContext } from 'react';
 
-import { MempoolTransaction, Transaction } from '@stacks/stacks-blockchain-api-types';
+import {
+  MempoolTransaction,
+  SmartContract,
+  Transaction,
+} from '@stacks/stacks-blockchain-api-types';
 
 import { TxIdPageFilters } from './page';
 
 interface TxIdPageDataContextType {
   stxPrice: number;
   initialTxData?: Transaction | MempoolTransaction;
+  /** Called contract, fetched server-side for failed contract calls so Tier 0 renders on first paint. */
+  initialContractData?: SmartContract;
   txId: string;
   filters: TxIdPageFilters;
   numFunctions?: number;
@@ -33,6 +39,7 @@ interface TxIdPageDataProviderProps {
   children: ReactNode;
   stxPrice?: number;
   initialTxData?: Transaction | MempoolTransaction;
+  initialContractData?: SmartContract;
   txId: string;
   filters: TxIdPageFilters;
   numFunctions?: number;
@@ -42,6 +49,7 @@ export function TxIdPageDataProvider({
   children,
   stxPrice = DEFAULT_TX_ID_PAGE_DATA.stxPrice,
   initialTxData,
+  initialContractData,
   txId,
   filters,
   numFunctions,
@@ -49,6 +57,7 @@ export function TxIdPageDataProvider({
   const contextValue = {
     stxPrice,
     initialTxData,
+    initialContractData,
     txId,
     filters,
     numFunctions,

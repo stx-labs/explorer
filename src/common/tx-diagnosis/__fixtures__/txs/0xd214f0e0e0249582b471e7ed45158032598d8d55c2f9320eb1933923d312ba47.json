@@ -1,0 +1,89 @@
+{
+  "tx_id": "0xd214f0e0e0249582b471e7ed45158032598d8d55c2f9320eb1933923d312ba47",
+  "nonce": 193,
+  "fee_rate": "50000",
+  "sender_address": "SP178SWBKE4YRKPMPBTFP359DMBT025ZC48QEG7HB",
+  "sponsored": false,
+  "post_condition_mode": "allow",
+  "post_conditions": [],
+  "anchor_mode": "any",
+  "block_hash": "0xfb7c87b31d9714e47d5771bf11775a379d360e3346acd734a87e670ef71dd3a0",
+  "block_height": 8875029,
+  "block_time": 1788083325,
+  "block_time_iso": "2026-08-30T09:48:45.000Z",
+  "burn_block_time": 1788081904,
+  "burn_block_height": 964712,
+  "burn_block_time_iso": "2026-08-30T09:25:04.000Z",
+  "parent_burn_block_time": 1788081904,
+  "parent_burn_block_time_iso": "2026-08-30T09:25:04.000Z",
+  "canonical": true,
+  "tx_index": 2,
+  "tx_status": "abort_by_response",
+  "tx_result": {
+    "hex": "0x0801000000000000000000000000000003ff",
+    "repr": "(err u1023)"
+  },
+  "event_count": 0,
+  "parent_block_hash": "0xd8b4dfd4983708e3eed6cc10d0387ca7f200378811e24f63085143ccdbf3858e",
+  "is_unanchored": false,
+  "microblock_hash": "0x",
+  "microblock_sequence": 2147483647,
+  "microblock_canonical": true,
+  "execution_cost_read_count": 13,
+  "execution_cost_read_length": 133534,
+  "execution_cost_runtime": 194713,
+  "execution_cost_write_count": 0,
+  "execution_cost_write_length": 0,
+  "vm_error": null,
+  "events": [],
+  "tx_type": "contract_call",
+  "contract_call": {
+    "contract_id": "SP1PFR4V08H1RAZXREBGFFQ59WB739XM8VVGTFSEA.dlmm-core-v-1-1",
+    "function_name": "withdraw-liquidity",
+    "function_signature": "(define-public (withdraw-liquidity (pool-trait trait_reference) (x-token-trait trait_reference) (y-token-trait trait_reference) (bin-id int) (amount uint) (min-x-amount uint) (min-y-amount uint)))",
+    "function_args": [
+      {
+        "hex": "0x06145f3ec2bf9733ae379dbfe5579d65d6cbf58865961d646c6d6d2d706f6f6c2d7374782d736274632d762d312d6270732d3135",
+        "repr": "'SM1FKXGNZJWSTWDWXQZJNF7B5TV5ZB235JTCXYXKD.dlmm-pool-stx-sbtc-v-1-bps-15",
+        "name": "pool-trait",
+        "type": "trait_reference"
+      },
+      {
+        "hex": "0x06144e91b0982dbe4ae49bb9394b1f339fb7144beee60f746f6b656e2d7374782d762d312d32",
+        "repr": "'SM1793C4R5PZ4NS4VQ4WMP7SKKYVH8JZEWSZ9HCCR.token-stx-v-1-2",
+        "name": "x-token-trait",
+        "type": "trait_reference"
+      },
+      {
+        "hex": "0x0614f6decc7cfff2a413bd7cd4f53c25ad7fd1899acc0a736274632d746f6b656e",
+        "repr": "'SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token",
+        "name": "y-token-trait",
+        "type": "trait_reference"
+      },
+      {
+        "hex": "0x00ffffffffffffffffffffffffffffff40",
+        "repr": "-192",
+        "name": "bin-id",
+        "type": "int"
+      },
+      {
+        "hex": "0x0100000000000000000000000000002853",
+        "repr": "u10323",
+        "name": "amount",
+        "type": "uint"
+      },
+      {
+        "hex": "0x0100000000000000000000000000000000",
+        "repr": "u0",
+        "name": "min-x-amount",
+        "type": "uint"
+      },
+      {
+        "hex": "0x01000000000000000000000000000001bb",
+        "repr": "u443",
+        "name": "min-y-amount",
+        "type": "uint"
+      }
+    ]
+  }
+}

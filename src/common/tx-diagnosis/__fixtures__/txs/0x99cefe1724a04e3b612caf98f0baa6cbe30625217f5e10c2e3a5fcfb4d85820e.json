@@ -1,0 +1,274 @@
+{
+  "tx_id": "0x99cefe1724a04e3b612caf98f0baa6cbe30625217f5e10c2e3a5fcfb4d85820e",
+  "nonce": 319,
+  "fee_rate": "10000",
+  "sender_address": "SPV2APSVZDQSN6WP9SEY877W4JSB8F8XBN74621C",
+  "sponsored": false,
+  "post_condition_mode": "deny",
+  "post_conditions": [
+    {
+      "principal": {
+        "type_id": "principal_standard",
+        "address": "SPV2APSVZDQSN6WP9SEY877W4JSB8F8XBN74621C"
+      },
+      "condition_code": "sent_equal_to",
+      "amount": "1000000000",
+      "type": "stx"
+    },
+    {
+      "principal": {
+        "type_id": "principal_contract",
+        "address": "SP1Y5YSTAHZ88XYK1VPDH24GY0HPX5J4JECTMY4A1",
+        "contract_name": "univ2-pool-v1_0_0-0003"
+      },
+      "condition_code": "sent_less_than_or_equal_to",
+      "amount": "10000000",
+      "type": "stx"
+    },
+    {
+      "principal": {
+        "type_id": "principal_contract",
+        "address": "SP1Y5YSTAHZ88XYK1VPDH24GY0HPX5J4JECTMY4A1",
+        "contract_name": "univ2-pool-v1_0_0-0003"
+      },
+      "condition_code": "sent_greater_than_or_equal_to",
+      "amount": "1675893230318",
+      "type": "fungible",
+      "asset": {
+        "asset_name": "FlatEarth",
+        "contract_address": "SP3W69VDG9VTZNG7NTW1QNCC1W45SNY98W1JSZBJH",
+        "contract_name": "flat-earth-stxcity"
+      }
+    }
+  ],
+  "anchor_mode": "any",
+  "block_hash": "0x31b3445d38c6825917f4eb02c7a4e9f8d147aac37ceb613646de22bd799d1430",
+  "block_height": 8866222,
+  "block_time": 1787990726,
+  "block_time_iso": "2026-08-29T08:05:26.000Z",
+  "burn_block_time": 1787989912,
+  "burn_block_height": 964542,
+  "burn_block_time_iso": "2026-08-29T07:51:52.000Z",
+  "parent_burn_block_time": 1787989912,
+  "parent_burn_block_time_iso": "2026-08-29T07:51:52.000Z",
+  "canonical": true,
+  "tx_index": 0,
+  "tx_status": "abort_by_post_condition",
+  "tx_result": {
+    "hex": "0x070c000000040573776170310c0000000206616d742d696e010000000000000000000000003b9aca0007616d742d6f75740100000000000000000000017faf0bb9370573776170320c0000000206616d742d696e0100000000000000000000017faf0bb93707616d742d6f75740100000000000000000000017faf0bb9370573776170330c0000000206616d742d696e0100000000000000000000017faf0bb93707616d742d6f75740100000000000000000000017faf0bb9370573776170340c0000000206616d742d696e0100000000000000000000017faf0bb93707616d742d6f75740100000000000000000000017faf0bb937",
+    "repr": "(ok (tuple (swap1 (tuple (amt-in u1000000000) (amt-out u1647909255479))) (swap2 (tuple (amt-in u1647909255479) (amt-out u1647909255479))) (swap3 (tuple (amt-in u1647909255479) (amt-out u1647909255479))) (swap4 (tuple (amt-in u1647909255479) (amt-out u1647909255479)))))"
+  },
+  "event_count": 0,
+  "parent_block_hash": "0x385f5581554da21fde48e7a5861b49a63582ec1b8edd4505d5552d931a28edb3",
+  "is_unanchored": false,
+  "microblock_hash": "0x",
+  "microblock_sequence": 2147483647,
+  "microblock_canonical": true,
+  "execution_cost_read_count": 37,
+  "execution_cost_read_length": 40971,
+  "execution_cost_runtime": 240480,
+  "execution_cost_write_count": 6,
+  "execution_cost_write_length": 396,
+  "vm_error": "Post-condition check failure on fungible asset SP3W69VDG9VTZNG7NTW1QNCC1W45SNY98W1JSZBJH.flat-earth-stxcity::FlatEarth owned by SP1Y5YSTAHZ88XYK1VPDH24GY0HPX5J4JECTMY4A1.univ2-pool-v1_0_0-0003: 1675893230318 SentGe 1647909255479",
+  "events": [],
+  "tx_type": "contract_call",
+  "contract_call": {
+    "contract_id": "SP20X3DC5R091J8B6YPQT638J8NR1W83KN6TN5BJY.path-apply_staging",
+    "function_name": "apply",
+    "function_signature": "(define-public (apply (path (list 4 (tuple (a (string-ascii 1)) (b principal) (c uint) (d principal) (e principal) (f bool)))) (amt-in uint) (token1 (optional trait_reference)) (token2 (optional trait_reference)) (token3 (optional trait_reference)) (token4 (optional trait_reference)) (token5 (optional trait_reference)) (share-fee-to (optional trait_reference)) (univ2v2-pool-1 (optional trait_reference)) (univ2v2-pool-2 (optional trait_reference)) (univ2v2-pool-3 (optional trait_reference)) (univ2v2-pool-4 (optional trait_reference)) (univ2v2-fees-1 (optional trait_reference)) (univ2v2-fees-2 (optional trait_reference)) (univ2v2-fees-3 (optional trait_reference)) (univ2v2-fees-4 (optional trait_reference)) (curve-pool-1 (optional trait_reference)) (curve-pool-2 (optional trait_reference)) (curve-pool-3 (optional trait_reference)) (curve-pool-4 (optional trait_reference)) (curve-fees-1 (optional trait_reference)) (curve-fees-2 (optional trait_reference)) (curve-fees-3 (optional trait_reference)) (curve-fees-4 (optional trait_reference)) (ststx-pool-1 (optional trait_reference)) (ststx-pool-2 (optional trait_reference)) (ststx-pool-3 (optional trait_reference)) (ststx-pool-4 (optional trait_reference)) (ststx-proxy-1 (optional trait_reference)) (ststx-proxy-2 (optional trait_reference)) (ststx-proxy-3 (optional trait_reference)) (ststx-proxy-4 (optional trait_reference))))",
+    "function_args": [
+      {
+        "hex": "0x0b000000010c0000000601610d0000000176016206167c5f674a8fd08efa61dd9b11121e046dd2c8927316756e6976322d706f6f6c2d76315f305f302d3030303301630100000000000000000000000001406f43016406167c5f674a8fd08efa61dd9b11121e046dd2c89273047773747801650616f864edb04ef5fac0f5d7037ab181e10b9af928e012666c61742d65617274682d73747863697479016603",
+        "repr": "(list (tuple (a \"v\") (b 'SP1Y5YSTAHZ88XYK1VPDH24GY0HPX5J4JECTMY4A1.univ2-pool-v1_0_0-0003) (c u21000003) (d 'SP1Y5YSTAHZ88XYK1VPDH24GY0HPX5J4JECTMY4A1.wstx) (e 'SP3W69VDG9VTZNG7NTW1QNCC1W45SNY98W1JSZBJH.flat-earth-stxcity) (f true)))",
+        "name": "path",
+        "type": "(list 4 (tuple (a (string-ascii 1)) (b principal) (c uint) (d principal) (e principal) (f bool)))"
+      },
+      {
+        "hex": "0x010000000000000000000000003b9aca00",
+        "repr": "u1000000000",
+        "name": "amt-in",
+        "type": "uint"
+      },
+      {
+        "hex": "0x0a06167c5f674a8fd08efa61dd9b11121e046dd2c892730477737478",
+        "repr": "(some 'SP1Y5YSTAHZ88XYK1VPDH24GY0HPX5J4JECTMY4A1.wstx)",
+        "name": "token1",
+        "type": "(optional trait_reference)"
+      },
+      {
+        "hex": "0x0a0616f864edb04ef5fac0f5d7037ab181e10b9af928e012666c61742d65617274682d73747863697479",
+        "repr": "(some 'SP3W69VDG9VTZNG7NTW1QNCC1W45SNY98W1JSZBJH.flat-earth-stxcity)",
+        "name": "token2",
+        "type": "(optional trait_reference)"
+      },
+      {
+        "hex": "0x09",
+        "repr": "none",
+        "name": "token3",
+        "type": "(optional trait_reference)"
+      },
+      {
+        "hex": "0x09",
+        "repr": "none",
+        "name": "token4",
+        "type": "(optional trait_reference)"
+      },
+      {
+        "hex": "0x09",
+        "repr": "none",
+        "name": "token5",
+        "type": "(optional trait_reference)"
+      },
+      {
+        "hex": "0x0a06167c5f674a8fd08efa61dd9b11121e046dd2c8927312756e6976322d73686172652d6665652d746f",
+        "repr": "(some 'SP1Y5YSTAHZ88XYK1VPDH24GY0HPX5J4JECTMY4A1.univ2-share-fee-to)",
+        "name": "share-fee-to",
+        "type": "(optional trait_reference)"
+      },
+      {
+        "hex": "0x0a06167c5f674a8fd08efa61dd9b11121e046dd2c8927316756e6976322d706f6f6c2d76315f305f302d30303033",
+        "repr": "(some 'SP1Y5YSTAHZ88XYK1VPDH24GY0HPX5J4JECTMY4A1.univ2-pool-v1_0_0-0003)",
+        "name": "univ2v2-pool-1",
+        "type": "(optional trait_reference)"
+      },
+      {
+        "hex": "0x09",
+        "repr": "none",
+        "name": "univ2v2-pool-2",
+        "type": "(optional trait_reference)"
+      },
+      {
+        "hex": "0x09",
+        "repr": "none",
+        "name": "univ2v2-pool-3",
+        "type": "(optional trait_reference)"
+      },
+      {
+        "hex": "0x09",
+        "repr": "none",
+        "name": "univ2v2-pool-4",
+        "type": "(optional trait_reference)"
+      },
+      {
+        "hex": "0x0a06167c5f674a8fd08efa61dd9b11121e046dd2c8927316756e6976322d666565732d76315f305f302d30303033",
+        "repr": "(some 'SP1Y5YSTAHZ88XYK1VPDH24GY0HPX5J4JECTMY4A1.univ2-fees-v1_0_0-0003)",
+        "name": "univ2v2-fees-1",
+        "type": "(optional trait_reference)"
+      },
+      {
+        "hex": "0x09",
+        "repr": "none",
+        "name": "univ2v2-fees-2",
+        "type": "(optional trait_reference)"
+      },
+      {
+        "hex": "0x09",
+        "repr": "none",
+        "name": "univ2v2-fees-3",
+        "type": "(optional trait_reference)"
+      },
+      {
+        "hex": "0x09",
+        "repr": "none",
+        "name": "univ2v2-fees-4",
+        "type": "(optional trait_reference)"
+      },
+      {
+        "hex": "0x09",
+        "repr": "none",
+        "name": "curve-pool-1",
+        "type": "(optional trait_reference)"
+      },
+      {
+        "hex": "0x09",
+        "repr": "none",
+        "name": "curve-pool-2",
+        "type": "(optional trait_reference)"
+      },
+      {
+        "hex": "0x09",
+        "repr": "none",
+        "name": "curve-pool-3",
+        "type": "(optional trait_reference)"
+      },
+      {
+        "hex": "0x09",
+        "repr": "none",
+        "name": "curve-pool-4",
+        "type": "(optional trait_reference)"
+      },
+      {
+        "hex": "0x09",
+        "repr": "none",
+        "name": "curve-fees-1",
+        "type": "(optional trait_reference)"
+      },
+      {
+        "hex": "0x09",
+        "repr": "none",
+        "name": "curve-fees-2",
+        "type": "(optional trait_reference)"
+      },
+      {
+        "hex": "0x09",
+        "repr": "none",
+        "name": "curve-fees-3",
+        "type": "(optional trait_reference)"
+      },
+      {
+        "hex": "0x09",
+        "repr": "none",
+        "name": "curve-fees-4",
+        "type": "(optional trait_reference)"
+      },
+      {
+        "hex": "0x09",
+        "repr": "none",
+        "name": "ststx-pool-1",
+        "type": "(optional trait_reference)"
+      },
+      {
+        "hex": "0x09",
+        "repr": "none",
+        "name": "ststx-pool-2",
+        "type": "(optional trait_reference)"
+      },
+      {
+        "hex": "0x09",
+        "repr": "none",
+        "name": "ststx-pool-3",
+        "type": "(optional trait_reference)"
+      },
+      {
+        "hex": "0x09",
+        "repr": "none",
+        "name": "ststx-pool-4",
+        "type": "(optional trait_reference)"
+      },
+      {
+        "hex": "0x09",
+        "repr": "none",
+        "name": "ststx-proxy-1",
+        "type": "(optional trait_reference)"
+      },
+      {
+        "hex": "0x09",
+        "repr": "none",
+        "name": "ststx-proxy-2",
+        "type": "(optional trait_reference)"
+      },
+      {
+        "hex": "0x09",
+        "repr": "none",
+        "name": "ststx-proxy-3",
+        "type": "(optional trait_reference)"
+      },
+      {
+        "hex": "0x09",
+        "repr": "none",
+        "name": "ststx-proxy-4",
+        "type": "(optional trait_reference)"
+      }
+    ]
+  }
+}

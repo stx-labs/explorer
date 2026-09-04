@@ -1,0 +1,69 @@
+{
+  "tx_id": "0xe5b69ca9a34a0a248486381e186293c9f2fba5182425d9b87603bc5b0691afa2",
+  "nonce": 55,
+  "fee_rate": "50308",
+  "sender_address": "SP3Q142Y2NW015FGFACYX8G3WVSQQ3FMP4TKBRSM7",
+  "sponsored": false,
+  "post_condition_mode": "deny",
+  "post_conditions": [
+    {
+      "principal": {
+        "type_id": "principal_standard",
+        "address": "SP3Q142Y2NW015FGFACYX8G3WVSQQ3FMP4TKBRSM7"
+      },
+      "condition_code": "sent_less_than_or_equal_to",
+      "amount": "23000000",
+      "type": "stx"
+    }
+  ],
+  "anchor_mode": "any",
+  "block_hash": "0xbb26afa1d8658c3ddb15f5a8918370f1852ba237704d80395c085ed9ceac5de9",
+  "block_height": 8826558,
+  "block_time": 1787497082,
+  "block_time_iso": "2026-08-23T14:58:02.000Z",
+  "burn_block_time": 1787496484,
+  "burn_block_height": 963741,
+  "burn_block_time_iso": "2026-08-23T14:48:04.000Z",
+  "parent_burn_block_time": 1787496484,
+  "parent_burn_block_time_iso": "2026-08-23T14:48:04.000Z",
+  "canonical": true,
+  "tx_index": 1,
+  "tx_status": "abort_by_post_condition",
+  "tx_result": {
+    "hex": "0x0701000000000000000000000000015ef3c0",
+    "repr": "(ok u23000000)"
+  },
+  "event_count": 0,
+  "parent_block_hash": "0x003524fd74f28cd9ba80826282d6682c198c3341133adea3b3e3530244971119",
+  "is_unanchored": false,
+  "microblock_hash": "0x",
+  "microblock_sequence": 2147483647,
+  "microblock_canonical": true,
+  "execution_cost_read_count": 136,
+  "execution_cost_read_length": 144459,
+  "execution_cost_runtime": 209030,
+  "execution_cost_write_count": 14,
+  "execution_cost_write_length": 202,
+  "vm_error": "Post-condition check failure: Fungible asset SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token::sbtc-token was moved by SP4SZE494VC2YC5JYG7AYFQ44F5Q4PYV7DVMDPBG.rewards-pox5-v1 but not checked",
+  "events": [],
+  "tx_type": "contract_call",
+  "contract_call": {
+    "contract_id": "SP4SZE494VC2YC5JYG7AYFQ44F5Q4PYV7DVMDPBG.stacking-dao-core-ststxbtc-v2",
+    "function_name": "deposit",
+    "function_signature": "(define-public (deposit (stx-amount uint) (min-shares-out uint)))",
+    "function_args": [
+      {
+        "hex": "0x01000000000000000000000000015ef3c0",
+        "repr": "u23000000",
+        "name": "stx-amount",
+        "type": "uint"
+      },
+      {
+        "hex": "0x01000000000000000000000000015d3288",
+        "repr": "u22885000",
+        "name": "min-shares-out",
+        "type": "uint"
+      }
+    ]
+  }
+}

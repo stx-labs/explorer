@@ -1,0 +1,26 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "target": "es2022",
+    "lib": ["es2022"],
+    "types": ["node"],
+    "outDir": ".build",
+    "rootDir": "../..",
+    "incremental": false,
+    "isolatedModules": false,
+    "declaration": false,
+    "sourceMap": false,
+    "paths": {},
+    "plugins": []
+  },
+  "include": ["./**/*.ts", "../../src/common/tx-diagnosis/**/*.ts"],
+  "exclude": [
+    "./.build",
+    "../../src/common/tx-diagnosis/__tests__",
+    "../../src/common/tx-diagnosis/test-utils",
+    "../../src/common/tx-diagnosis/server.ts"
+  ]
+}

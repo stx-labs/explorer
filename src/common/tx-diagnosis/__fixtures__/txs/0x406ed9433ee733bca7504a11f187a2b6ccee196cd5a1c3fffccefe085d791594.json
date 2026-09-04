@@ -1,0 +1,59 @@
+{
+  "tx_id": "0x406ed9433ee733bca7504a11f187a2b6ccee196cd5a1c3fffccefe085d791594",
+  "nonce": 811,
+  "fee_rate": "96467",
+  "sender_address": "SP2VYN7NTHW8W3GH8DN3T7410DTYB6R6C2FVC0SED",
+  "sponsored": false,
+  "post_condition_mode": "allow",
+  "post_conditions": [],
+  "anchor_mode": "any",
+  "block_hash": "0x1a655b80179e4c3e475c9305fac359d7500b602455754c63df0ca8772a19c8c7",
+  "block_height": 8909603,
+  "block_time": 1788444229,
+  "block_time_iso": "2026-09-03T14:03:49.000Z",
+  "burn_block_time": 1788443619,
+  "burn_block_height": 965323,
+  "burn_block_time_iso": "2026-09-03T13:53:39.000Z",
+  "parent_burn_block_time": 1788443619,
+  "parent_burn_block_time_iso": "2026-09-03T13:53:39.000Z",
+  "canonical": true,
+  "tx_index": 0,
+  "tx_status": "abort_by_response",
+  "tx_result": {
+    "hex": "0x08010000000000000000000000000000016d",
+    "repr": "(err u365)"
+  },
+  "event_count": 0,
+  "parent_block_hash": "0xe6a948bc80a697ad12e083fe139a87be7a4256e5741ad0c1724c438dbdfcc3cb",
+  "is_unanchored": false,
+  "microblock_hash": "0x",
+  "microblock_sequence": 2147483647,
+  "microblock_canonical": true,
+  "execution_cost_read_count": 32,
+  "execution_cost_read_length": 46988,
+  "execution_cost_runtime": 1489932,
+  "execution_cost_write_count": 0,
+  "execution_cost_write_length": 0,
+  "vm_error": null,
+  "events": [],
+  "tx_type": "contract_call",
+  "contract_call": {
+    "contract_id": "SP39MJDK00ADE84NKW7959VEVVX72FGV8H1RZTVVH.bitflow-exec-1",
+    "function_name": "p23",
+    "function_signature": "(define-public (p23 (dex trait_reference) (data (buff 160))))",
+    "function_args": [
+      {
+        "hex": "0x0616d3493660029ae412b3e1d254eddbdf4e27c368881078796b2d636f72652d61646170746572",
+        "repr": "'SP39MJDK00ADE84NKW7959VEVVX72FGV8H1RZTVVH.xyk-core-adapter",
+        "name": "dex",
+        "type": "trait_reference"
+      },
+      {
+        "hex": "0x02000000a0000000000000000000000000018b40c70000000000000000000000000000007a00000000000000000000000000000000000000000000000000000000b2d05e00000000000000000000000729b747f58000000000000000000000000000000015000000000000000000000729b6af5f00ffffffffffffffffffffffffffffffe2000000000000000000000012a05f2000000000000000000000000000018b8200",
+        "repr": "0x000000000000000000000000018b40c70000000000000000000000000000007a00000000000000000000000000000000000000000000000000000000b2d05e00000000000000000000000729b747f58000000000000000000000000000000015000000000000000000000729b6af5f00ffffffffffffffffffffffffffffffe2000000000000000000000012a05f2000000000000000000000000000018b8200",
+        "name": "data",
+        "type": "(buff 160)"
+      }
+    ]
+  }
+}

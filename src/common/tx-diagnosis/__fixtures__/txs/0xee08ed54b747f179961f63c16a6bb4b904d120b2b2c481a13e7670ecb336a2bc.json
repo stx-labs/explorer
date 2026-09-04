@@ -1,0 +1,90 @@
+{
+  "tx_id": "0xee08ed54b747f179961f63c16a6bb4b904d120b2b2c481a13e7670ecb336a2bc",
+  "nonce": 232,
+  "fee_rate": "10000",
+  "sender_address": "SP3RWHMXQBWM1BYH74SGVKTHN6X4SCVQ673WQQXG2",
+  "sponsored": false,
+  "post_condition_mode": "deny",
+  "post_conditions": [
+    {
+      "principal": {
+        "type_id": "principal_origin"
+      },
+      "condition_code": "sent_less_than_or_equal_to",
+      "amount": "100838402",
+      "type": "stx"
+    },
+    {
+      "principal": {
+        "type_id": "principal_contract",
+        "address": "SP3N5CN0PE7YRRP29X7K9XG22BT861BRS5BN8HFFA",
+        "contract_name": "market-factory-v20-bias"
+      },
+      "condition_code": "sent_less_than_or_equal_to",
+      "amount": "100838402",
+      "type": "stx"
+    }
+  ],
+  "anchor_mode": "any",
+  "block_hash": "0x96a53b7b1cc795f8a6540a850421b1689866a98b4d82b281ba4b7f4aa6505e33",
+  "block_height": 8826551,
+  "block_time": 1787496985,
+  "block_time_iso": "2026-08-23T14:56:25.000Z",
+  "burn_block_time": 1787496484,
+  "burn_block_height": 963741,
+  "burn_block_time_iso": "2026-08-23T14:48:04.000Z",
+  "parent_burn_block_time": 1787496484,
+  "parent_burn_block_time_iso": "2026-08-23T14:48:04.000Z",
+  "canonical": true,
+  "tx_index": 0,
+  "tx_status": "abort_by_response",
+  "tx_result": {
+    "hex": "0x08010000000000000000000000000000030f",
+    "repr": "(err u783)"
+  },
+  "event_count": 0,
+  "parent_block_hash": "0xe4fecfcbafb6baf0776529d7106a1d5c665850bba1046e241c991660ad494b28",
+  "is_unanchored": false,
+  "microblock_hash": "0x",
+  "microblock_sequence": 2147483647,
+  "microblock_canonical": true,
+  "execution_cost_read_count": 22,
+  "execution_cost_read_length": 46934,
+  "execution_cost_runtime": 102045,
+  "execution_cost_write_count": 0,
+  "execution_cost_write_length": 0,
+  "vm_error": null,
+  "events": [],
+  "tx_type": "contract_call",
+  "contract_call": {
+    "contract_id": "SP3N5CN0PE7YRRP29X7K9XG22BT861BRS5BN8HFFA.market-factory-v20-bias",
+    "function_name": "buy-yes-auto",
+    "function_signature": "(define-public (buy-yes-auto (m uint) (amount uint) (target-cap uint) (max-cost uint)))",
+    "function_args": [
+      {
+        "hex": "0x0100000000000000000000019fb02cd08e",
+        "repr": "u1785367154830",
+        "name": "m",
+        "type": "uint"
+      },
+      {
+        "hex": "0x0100000000000000000000000000000086",
+        "repr": "u134",
+        "name": "amount",
+        "type": "uint"
+      },
+      {
+        "hex": "0x010000000000000000000000000602ac02",
+        "repr": "u100838402",
+        "name": "target-cap",
+        "type": "uint"
+      },
+      {
+        "hex": "0x010000000000000000000000000602ac02",
+        "repr": "u100838402",
+        "name": "max-cost",
+        "type": "uint"
+      }
+    ]
+  }
+}

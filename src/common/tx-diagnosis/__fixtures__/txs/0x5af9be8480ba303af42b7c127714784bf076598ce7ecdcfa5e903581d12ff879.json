@@ -1,0 +1,96 @@
+{
+  "tx_id": "0x5af9be8480ba303af42b7c127714784bf076598ce7ecdcfa5e903581d12ff879",
+  "nonce": 1556,
+  "fee_rate": "21731",
+  "sender_address": "SP1MZ5N6YCQ5BFHK4N9NFGXG2K4N53BQ0MFXAKAC1",
+  "sponsored": false,
+  "post_condition_mode": "deny",
+  "post_conditions": [
+    {
+      "principal": {
+        "type_id": "principal_standard",
+        "address": "SP1MZ5N6YCQ5BFHK4N9NFGXG2K4N53BQ0MFXAKAC1"
+      },
+      "condition_code": "sent_less_than_or_equal_to",
+      "amount": "3",
+      "type": "stx"
+    },
+    {
+      "principal": {
+        "type_id": "principal_contract",
+        "address": "SP1A27KFY4XERQCCRCARCYD1CC5N7M6688BSYADJ7",
+        "contract_name": "v0-vault-usdc"
+      },
+      "condition_code": "sent_greater_than_or_equal_to",
+      "amount": "4786233361",
+      "type": "fungible",
+      "asset": {
+        "asset_name": "usdcx-token",
+        "contract_address": "SP120SBRBQJ00MCWS7TM5R8WJNTTKD5K0HFRC2CNE",
+        "contract_name": "usdcx"
+      }
+    }
+  ],
+  "anchor_mode": "any",
+  "block_hash": "0xb2feb294e53fa5a5dfe56f1035b03aefbd7ee8f9d8444a8ae48caadd39873ef5",
+  "block_height": 8831165,
+  "block_time": 1787565633,
+  "block_time_iso": "2026-08-24T10:00:33.000Z",
+  "burn_block_time": 1787565048,
+  "burn_block_height": 963843,
+  "burn_block_time_iso": "2026-08-24T09:50:48.000Z",
+  "parent_burn_block_time": 1787565048,
+  "parent_burn_block_time_iso": "2026-08-24T09:50:48.000Z",
+  "canonical": true,
+  "tx_index": 2,
+  "tx_status": "abort_by_post_condition",
+  "tx_result": {
+    "hex": "0x080100000000000000000000000000061a85",
+    "repr": "(err u400005)"
+  },
+  "event_count": 0,
+  "parent_block_hash": "0xc619ab8379b5261e059ce9cca6fcffe105b18517081ef2cea2f4a1530cdcc227",
+  "is_unanchored": false,
+  "microblock_hash": "0x",
+  "microblock_sequence": 2147483647,
+  "microblock_canonical": true,
+  "execution_cost_read_count": 188,
+  "execution_cost_read_length": 315758,
+  "execution_cost_runtime": 3425077,
+  "execution_cost_write_count": 14,
+  "execution_cost_write_length": 480,
+  "vm_error": "Post-condition check failure on fungible asset SP120SBRBQJ00MCWS7TM5R8WJNTTKD5K0HFRC2CNE.usdcx::usdcx-token owned by SP1A27KFY4XERQCCRCARCYD1CC5N7M6688BSYADJ7.v0-vault-usdc: 4786233361 SentGe 0",
+  "events": [],
+  "tx_type": "contract_call",
+  "contract_call": {
+    "contract_id": "SP1A27KFY4XERQCCRCARCYD1CC5N7M6688BSYADJ7.v0-7-market",
+    "function_name": "borrow",
+    "function_signature": "(define-public (borrow (ft trait_reference) (amount uint) (receiver (optional principal)) (price-feeds (optional (list 3 (buff 8192))))))",
+    "function_args": [
+      {
+        "hex": "0x0616440caf0bbc800a33993ea85c2392aeb53696608b057573646378",
+        "repr": "'SP120SBRBQJ00MCWS7TM5R8WJNTTKD5K0HFRC2CNE.usdcx",
+        "name": "ft",
+        "type": "trait_reference"
+      },
+      {
+        "hex": "0x010000000000000000000000011d482011",
+        "repr": "u4786233361",
+        "name": "amount",
+        "type": "uint"
+      },
+      {
+        "hex": "0x09",
+        "repr": "none",
+        "name": "receiver",
+        "type": "(optional principal)"
+      },
+      {
+        "hex": "0x0a0b0000000102000000ca2a22999a282b19adda3abd39f8e99954d49a062ca7f48b4870c2861c9ff0cafe2eed9db80e063af393fee3282c2468fd58a8bf6a86a257017847775c89fedffb70e580a600008393c7d375000659c80d9d2e4004030000000105000000070d287932ae04fff805000000003203fb1d0c01000659c80d9d2e400300190000002d050000000000016cf6f804fff8050000000000001c4c0c01000659c80d9d2e400300100000000705000000000005f5cd7804fff80500000000000027100c01000659c80d9d2e40030013",
+        "repr": "(some (list 0x2a22999a282b19adda3abd39f8e99954d49a062ca7f48b4870c2861c9ff0cafe2eed9db80e063af393fee3282c2468fd58a8bf6a86a257017847775c89fedffb70e580a600008393c7d375000659c80d9d2e4004030000000105000000070d287932ae04fff805000000003203fb1d0c01000659c80d9d2e400300190000002d050000000000016cf6f804fff8050000000000001c4c0c01000659c80d9d2e400300100000000705000000000005f5cd7804fff80500000000000027100c01000659c80d9d2e40030013))",
+        "name": "price-feeds",
+        "type": "(optional (list 3 (buff 8192)))"
+      }
+    ]
+  }
+}

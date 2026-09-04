@@ -1,0 +1,313 @@
+{
+  "tx_id": "0x04b0843214c57562e978beabb1e52de6488d44727a5c5a54150abdeb8e5da9a5",
+  "nonce": 392,
+  "fee_rate": "500000",
+  "sender_address": "SP2MMNB14111VF1323CC52QY19ZBCK6CKV7G6E534",
+  "sponsored": false,
+  "post_condition_mode": "deny",
+  "post_conditions": [
+    {
+      "principal": {
+        "type_id": "principal_standard",
+        "address": "SP2MMNB14111VF1323CC52QY19ZBCK6CKV7G6E534"
+      },
+      "condition_code": "sent_less_than_or_equal_to",
+      "amount": "1000000",
+      "type": "stx"
+    },
+    {
+      "principal": {
+        "type_id": "principal_contract",
+        "address": "SP3B8F1ERXWHQ7FSZB6RSJA1S12DBQZZNYYHTPBFF",
+        "contract_name": "agg-sx-v-1-sh-0"
+      },
+      "condition_code": "sent_greater_than_or_equal_to",
+      "amount": "234691",
+      "type": "fungible",
+      "asset": {
+        "asset_name": "usdcx-token",
+        "contract_address": "SP120SBRBQJ00MCWS7TM5R8WJNTTKD5K0HFRC2CNE",
+        "contract_name": "usdcx"
+      }
+    },
+    {
+      "principal": {
+        "type_id": "principal_contract",
+        "address": "SP3B8F1ERXWHQ7FSZB6RSJA1S12DBQZZNYYHTPBFF",
+        "contract_name": "agg-sx-v-1-sh-0"
+      },
+      "condition_code": "sent_greater_than_or_equal_to",
+      "amount": "0",
+      "type": "stx"
+    },
+    {
+      "principal": {
+        "type_id": "principal_contract",
+        "address": "SP3B8F1ERXWHQ7FSZB6RSJA1S12DBQZZNYYHTPBFF",
+        "contract_name": "agg-xyk-adapter-v-1-1"
+      },
+      "condition_code": "sent_greater_than_or_equal_to",
+      "amount": "0",
+      "type": "stx"
+    },
+    {
+      "principal": {
+        "type_id": "principal_contract",
+        "address": "SM1793C4R5PZ4NS4VQ4WMP7SKKYVH8JZEWSZ9HCCR",
+        "contract_name": "xyk-pool-stx-aeusdc-v-1-2"
+      },
+      "condition_code": "sent_greater_than_or_equal_to",
+      "amount": "0",
+      "type": "fungible",
+      "asset": {
+        "asset_name": "xyk-pool-stx-aeusdc-v-1-2",
+        "contract_address": "SM1793C4R5PZ4NS4VQ4WMP7SKKYVH8JZEWSZ9HCCR",
+        "contract_name": "xyk-pool-stx-aeusdc-v-1-2"
+      }
+    },
+    {
+      "principal": {
+        "type_id": "principal_contract",
+        "address": "SM1793C4R5PZ4NS4VQ4WMP7SKKYVH8JZEWSZ9HCCR",
+        "contract_name": "xyk-core-v-1-2"
+      },
+      "condition_code": "sent_greater_than_or_equal_to",
+      "amount": "0",
+      "type": "fungible",
+      "asset": {
+        "asset_name": "xyk-core-v-1-2",
+        "contract_address": "SM1793C4R5PZ4NS4VQ4WMP7SKKYVH8JZEWSZ9HCCR",
+        "contract_name": "xyk-core-v-1-2"
+      }
+    },
+    {
+      "principal": {
+        "type_id": "principal_contract",
+        "address": "SM1793C4R5PZ4NS4VQ4WMP7SKKYVH8JZEWSZ9HCCR",
+        "contract_name": "token-stx-v-1-2"
+      },
+      "condition_code": "sent_greater_than_or_equal_to",
+      "amount": "0",
+      "type": "stx"
+    },
+    {
+      "principal": {
+        "type_id": "principal_contract",
+        "address": "SP3B8F1ERXWHQ7FSZB6RSJA1S12DBQZZNYYHTPBFF",
+        "contract_name": "agg-stableswap-adapter-v-1-1"
+      },
+      "condition_code": "sent_greater_than_or_equal_to",
+      "amount": "0",
+      "type": "stx"
+    },
+    {
+      "principal": {
+        "type_id": "principal_contract",
+        "address": "SM1793C4R5PZ4NS4VQ4WMP7SKKYVH8JZEWSZ9HCCR",
+        "contract_name": "stableswap-pool-aeusdc-usdcx-v-1-1"
+      },
+      "condition_code": "sent_greater_than_or_equal_to",
+      "amount": "0",
+      "type": "fungible",
+      "asset": {
+        "asset_name": "stableswap-pool-aeusdc-usdcx-v-1-1",
+        "contract_address": "SM1793C4R5PZ4NS4VQ4WMP7SKKYVH8JZEWSZ9HCCR",
+        "contract_name": "stableswap-pool-aeusdc-usdcx-v-1-1"
+      }
+    },
+    {
+      "principal": {
+        "type_id": "principal_contract",
+        "address": "SM1793C4R5PZ4NS4VQ4WMP7SKKYVH8JZEWSZ9HCCR",
+        "contract_name": "stableswap-core-v-1-4"
+      },
+      "condition_code": "sent_greater_than_or_equal_to",
+      "amount": "0",
+      "type": "fungible",
+      "asset": {
+        "asset_name": "stableswap-core-v-1-4",
+        "contract_address": "SM1793C4R5PZ4NS4VQ4WMP7SKKYVH8JZEWSZ9HCCR",
+        "contract_name": "stableswap-core-v-1-4"
+      }
+    },
+    {
+      "principal": {
+        "type_id": "principal_contract",
+        "address": "SP3B8F1ERXWHQ7FSZB6RSJA1S12DBQZZNYYHTPBFF",
+        "contract_name": "agg-treasury-v-1-1"
+      },
+      "condition_code": "sent_greater_than_or_equal_to",
+      "amount": "0",
+      "type": "fungible",
+      "asset": {
+        "asset_name": "usdcx-token",
+        "contract_address": "SP120SBRBQJ00MCWS7TM5R8WJNTTKD5K0HFRC2CNE",
+        "contract_name": "usdcx"
+      }
+    }
+  ],
+  "anchor_mode": "any",
+  "block_hash": "0x283504e927c1434f4035a8f5b07f37edb31148b8ac05123505c1dfbe5d886dba",
+  "block_height": 8831261,
+  "block_time": 1787567092,
+  "block_time_iso": "2026-08-24T10:24:52.000Z",
+  "burn_block_time": 1787567049,
+  "burn_block_height": 963847,
+  "burn_block_time_iso": "2026-08-24T10:24:09.000Z",
+  "parent_burn_block_time": 1787567049,
+  "parent_burn_block_time_iso": "2026-08-24T10:24:09.000Z",
+  "canonical": true,
+  "tx_index": 4,
+  "tx_status": "abort_by_post_condition",
+  "tx_result": {
+    "hex": "0x07010000000000000000000000000003a04b",
+    "repr": "(ok u237643)"
+  },
+  "event_count": 0,
+  "parent_block_hash": "0x5a1aff55503e87ae36c4df400f76d7ce690cb56f0a0dea9041893b79ca355b62",
+  "is_unanchored": false,
+  "microblock_hash": "0x",
+  "microblock_sequence": 2147483647,
+  "microblock_canonical": true,
+  "execution_cost_read_count": 325,
+  "execution_cost_read_length": 547428,
+  "execution_cost_runtime": 7324943,
+  "execution_cost_write_count": 27,
+  "execution_cost_write_length": 103,
+  "vm_error": "Post-condition check failure: Fungible asset SP3Y2ZSH8P7D50B0VBTSX11S7XSG24M1VB9YFQA4K.token-aeusdc::aeUSDC was moved by SM1793C4R5PZ4NS4VQ4WMP7SKKYVH8JZEWSZ9HCCR.xyk-pool-stx-aeusdc-v-1-2 but not checked",
+  "events": [],
+  "tx_type": "contract_call",
+  "contract_call": {
+    "contract_id": "SP3B8F1ERXWHQ7FSZB6RSJA1S12DBQZZNYYHTPBFF.agg-sx-v-1-sh-0",
+    "function_name": "swap-xs",
+    "function_signature": "(define-public (swap-xs (adapter-trait-a trait_reference) (pool-trait-a trait_reference) (adapter-trait-b trait_reference) (pool-trait-b trait_reference) (x-for-y-a bool) (x-for-y-b bool) (is-stx-in bool) (is-stx-mid-a bool) (is-stx-out bool) (token-in-trait trait_reference) (token-mid-a-out-trait trait_reference) (token-mid-a-in-trait trait_reference) (token-out-trait trait_reference) (amount uint) (min-received-mid-a uint) (min-received uint) (deadline uint) (agg-fee-amount uint) (agg-fee-max uint) (recipient principal) (provider (optional principal))))",
+    "function_args": [
+      {
+        "hex": "0x0616d68785d8ef2373bf3f59b1992839089abbfff5f7156167672d78796b2d616461707465722d762d312d31",
+        "repr": "'SP3B8F1ERXWHQ7FSZB6RSJA1S12DBQZZNYYHTPBFF.agg-xyk-adapter-v-1-1",
+        "name": "adapter-trait-a",
+        "type": "trait_reference"
+      },
+      {
+        "hex": "0x06144e91b0982dbe4ae49bb9394b1f339fb7144beee61978796b2d706f6f6c2d7374782d6165757364632d762d312d32",
+        "repr": "'SM1793C4R5PZ4NS4VQ4WMP7SKKYVH8JZEWSZ9HCCR.xyk-pool-stx-aeusdc-v-1-2",
+        "name": "pool-trait-a",
+        "type": "trait_reference"
+      },
+      {
+        "hex": "0x0616d68785d8ef2373bf3f59b1992839089abbfff5f71c6167672d737461626c65737761702d616461707465722d762d312d31",
+        "repr": "'SP3B8F1ERXWHQ7FSZB6RSJA1S12DBQZZNYYHTPBFF.agg-stableswap-adapter-v-1-1",
+        "name": "adapter-trait-b",
+        "type": "trait_reference"
+      },
+      {
+        "hex": "0x06144e91b0982dbe4ae49bb9394b1f339fb7144beee622737461626c65737761702d706f6f6c2d6165757364632d75736463782d762d312d31",
+        "repr": "'SM1793C4R5PZ4NS4VQ4WMP7SKKYVH8JZEWSZ9HCCR.stableswap-pool-aeusdc-usdcx-v-1-1",
+        "name": "pool-trait-b",
+        "type": "trait_reference"
+      },
+      {
+        "hex": "0x03",
+        "repr": "true",
+        "name": "x-for-y-a",
+        "type": "bool"
+      },
+      {
+        "hex": "0x03",
+        "repr": "true",
+        "name": "x-for-y-b",
+        "type": "bool"
+      },
+      {
+        "hex": "0x03",
+        "repr": "true",
+        "name": "is-stx-in",
+        "type": "bool"
+      },
+      {
+        "hex": "0x04",
+        "repr": "false",
+        "name": "is-stx-mid-a",
+        "type": "bool"
+      },
+      {
+        "hex": "0x04",
+        "repr": "false",
+        "name": "is-stx-out",
+        "type": "bool"
+      },
+      {
+        "hex": "0x06144e91b0982dbe4ae49bb9394b1f339fb7144beee60f746f6b656e2d7374782d762d312d32",
+        "repr": "'SM1793C4R5PZ4NS4VQ4WMP7SKKYVH8JZEWSZ9HCCR.token-stx-v-1-2",
+        "name": "token-in-trait",
+        "type": "trait_reference"
+      },
+      {
+        "hex": "0x0616fc2fe628b1da502c1b5eb3d08727ee6022503b5a0c746f6b656e2d616575736463",
+        "repr": "'SP3Y2ZSH8P7D50B0VBTSX11S7XSG24M1VB9YFQA4K.token-aeusdc",
+        "name": "token-mid-a-out-trait",
+        "type": "trait_reference"
+      },
+      {
+        "hex": "0x0616fc2fe628b1da502c1b5eb3d08727ee6022503b5a0c746f6b656e2d616575736463",
+        "repr": "'SP3Y2ZSH8P7D50B0VBTSX11S7XSG24M1VB9YFQA4K.token-aeusdc",
+        "name": "token-mid-a-in-trait",
+        "type": "trait_reference"
+      },
+      {
+        "hex": "0x0616440caf0bbc800a33993ea85c2392aeb53696608b057573646378",
+        "repr": "'SP120SBRBQJ00MCWS7TM5R8WJNTTKD5K0HFRC2CNE.usdcx",
+        "name": "token-out-trait",
+        "type": "trait_reference"
+      },
+      {
+        "hex": "0x01000000000000000000000000000f4240",
+        "repr": "u1000000",
+        "name": "amount",
+        "type": "uint"
+      },
+      {
+        "hex": "0x0100000000000000000000000000000000",
+        "repr": "u0",
+        "name": "min-received-mid-a",
+        "type": "uint"
+      },
+      {
+        "hex": "0x01000000000000000000000000000394c3",
+        "repr": "u234691",
+        "name": "min-received",
+        "type": "uint"
+      },
+      {
+        "hex": "0x010000000000000000000000000086c14c",
+        "repr": "u8831308",
+        "name": "deadline",
+        "type": "uint"
+      },
+      {
+        "hex": "0x01000000000000000000000000000000f4",
+        "repr": "u244",
+        "name": "agg-fee-amount",
+        "type": "uint"
+      },
+      {
+        "hex": "0x01000000000000000000000000000000f4",
+        "repr": "u244",
+        "name": "agg-fee-max",
+        "type": "uint"
+      },
+      {
+        "hex": "0x0516a94aac240843b784621b18515fc14fd6c99993d9",
+        "repr": "'SP2MMNB14111VF1323CC52QY19ZBCK6CKV7G6E534",
+        "name": "recipient",
+        "type": "principal"
+      },
+      {
+        "hex": "0x09",
+        "repr": "none",
+        "name": "provider",
+        "type": "(optional principal)"
+      }
+    ]
+  }
+}

@@ -1,0 +1,69 @@
+{
+  "tx_id": "0x44ca226b07a1313d8c4291707d00256e65bd06b6d8f4ebda83b33de6598d8ce1",
+  "nonce": 15,
+  "fee_rate": "3000",
+  "sender_address": "SP2Z8HPHG0H0VM6GV0A29MJYPVWS14YE0WERBX18E",
+  "sponsored": false,
+  "post_condition_mode": "deny",
+  "post_conditions": [
+    {
+      "principal": {
+        "type_id": "principal_standard",
+        "address": "SP2Z8HPHG0H0VM6GV0A29MJYPVWS14YE0WERBX18E"
+      },
+      "condition_code": "sent_less_than_or_equal_to",
+      "amount": "361782543",
+      "type": "stx"
+    }
+  ],
+  "anchor_mode": "any",
+  "block_hash": "0xbccb088d2de11dbe1adc9ae53183017f09830421de9645e7c1d625df07361a08",
+  "block_height": 8836431,
+  "block_time": 1787639787,
+  "block_time_iso": "2026-08-25T06:36:27.000Z",
+  "burn_block_time": 1787639708,
+  "burn_block_height": 963962,
+  "burn_block_time_iso": "2026-08-25T06:35:08.000Z",
+  "parent_burn_block_time": 1787639708,
+  "parent_burn_block_time_iso": "2026-08-25T06:35:08.000Z",
+  "canonical": true,
+  "tx_index": 2,
+  "tx_status": "abort_by_response",
+  "tx_result": {
+    "hex": "0x080100000000000000000000000000000001",
+    "repr": "(err u1)"
+  },
+  "event_count": 0,
+  "parent_block_hash": "0xc73668f386dc60905d4dcc525a50cf2d473028c02428a48f8e218bcde5f6db07",
+  "is_unanchored": false,
+  "microblock_hash": "0x",
+  "microblock_sequence": 2147483647,
+  "microblock_canonical": true,
+  "execution_cost_read_count": 99,
+  "execution_cost_read_length": 91765,
+  "execution_cost_runtime": 133678,
+  "execution_cost_write_count": 1,
+  "execution_cost_write_length": 1,
+  "vm_error": null,
+  "events": [],
+  "tx_type": "contract_call",
+  "contract_call": {
+    "contract_id": "SP4SZE494VC2YC5JYG7AYFQ44F5Q4PYV7DVMDPBG.stacking-dao-core-stx-v2",
+    "function_name": "deposit",
+    "function_signature": "(define-public (deposit (stx-amount uint) (min-shares-out uint)))",
+    "function_args": [
+      {
+        "hex": "0x0100000000000000000000000015905d0f",
+        "repr": "u361782543",
+        "name": "stx-amount",
+        "type": "uint"
+      },
+      {
+        "hex": "0x01000000000000000000000000121e1f66",
+        "repr": "u303964006",
+        "name": "min-shares-out",
+        "type": "uint"
+      }
+    ]
+  }
+}

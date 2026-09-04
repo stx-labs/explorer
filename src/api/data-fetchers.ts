@@ -1,4 +1,4 @@
-import { stacksAPIFetch, stacksAPIFetchJson } from '@/api/stacksAPIFetch';
+import { StacksApiResponseError, stacksAPIFetch, stacksAPIFetchJson } from '@/api/stacksAPIFetch';
 import { LUNAR_CRUSH_API_KEY } from '@/common/constants/env';
 import { PoxInfo } from '@/common/queries/usePoxInforRaw';
 import { LunarCrushCoinRedesign } from '@/common/types/lunarCrush';
@@ -282,7 +282,12 @@ export async function fetchTx(
     },
   });
   if (!response.ok) {
-    throw new Error(`Failed to fetch transaction: ${response.status} ${response.statusText}`);
+    throw new StacksApiResponseError(
+      'Failed to fetch transaction',
+      response.status,
+      response.statusText,
+      response.headers.get('retry-after') ?? undefined
+    );
   }
   const tx: Transaction | MempoolTransaction = await response.json();
   return tx;

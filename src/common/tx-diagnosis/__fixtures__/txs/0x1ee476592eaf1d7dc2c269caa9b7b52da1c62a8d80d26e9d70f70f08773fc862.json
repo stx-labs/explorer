@@ -1,0 +1,89 @@
+{
+  "tx_id": "0x1ee476592eaf1d7dc2c269caa9b7b52da1c62a8d80d26e9d70f70f08773fc862",
+  "nonce": 26404,
+  "fee_rate": "2000000",
+  "sender_address": "SP1BXRXA0Z67MB6G31FP1R52ZX5GQTZ5008KZG77A",
+  "sponsored": false,
+  "post_condition_mode": "allow",
+  "post_conditions": [],
+  "anchor_mode": "any",
+  "block_hash": "0x600b29df6c03a7318689a160e61e8fa6077dfc84c2c4a9f18f97888fe76f0055",
+  "block_height": 8909736,
+  "block_time": 1788446163,
+  "block_time_iso": "2026-09-03T14:36:03.000Z",
+  "burn_block_time": 1788445193,
+  "burn_block_height": 965329,
+  "burn_block_time_iso": "2026-09-03T14:19:53.000Z",
+  "parent_burn_block_time": 1788445193,
+  "parent_burn_block_time_iso": "2026-09-03T14:19:53.000Z",
+  "canonical": true,
+  "tx_index": 2,
+  "tx_status": "abort_by_response",
+  "tx_result": {
+    "hex": "0x0801000000000000000000000000000007d3",
+    "repr": "(err u2003)"
+  },
+  "event_count": 0,
+  "parent_block_hash": "0xe643b64a066566b846f2c77989e754f9f538f0192cdfb8c01627d2bf3eaf0ace",
+  "is_unanchored": false,
+  "microblock_hash": "0x",
+  "microblock_sequence": 2147483647,
+  "microblock_canonical": true,
+  "execution_cost_read_count": 11964,
+  "execution_cost_read_length": 59497755,
+  "execution_cost_runtime": 96283002,
+  "execution_cost_write_count": 1840,
+  "execution_cost_write_length": 49220,
+  "vm_error": null,
+  "events": [],
+  "tx_type": "contract_call",
+  "contract_call": {
+    "contract_id": "SM1FKXGNZJWSTWDWXQZJNF7B5TV5ZB235JTCXYXKD.dlmm-swap-router-v-1-2",
+    "function_name": "swap-y-for-x-simple-range-multi",
+    "function_signature": "(define-public (swap-y-for-x-simple-range-multi (pool-trait trait_reference) (x-token-trait trait_reference) (y-token-trait trait_reference) (y-amount uint) (min-dx uint) (max-steps uint) (deadline-time (optional uint))))",
+    "function_args": [
+      {
+        "hex": "0x06145f3ec2bf9733ae379dbfe5579d65d6cbf58865961f646c6d6d2d706f6f6c2d736274632d75736463782d762d312d6270732d3130",
+        "repr": "'SM1FKXGNZJWSTWDWXQZJNF7B5TV5ZB235JTCXYXKD.dlmm-pool-sbtc-usdcx-v-1-bps-10",
+        "name": "pool-trait",
+        "type": "trait_reference"
+      },
+      {
+        "hex": "0x0614f6decc7cfff2a413bd7cd4f53c25ad7fd1899acc0a736274632d746f6b656e",
+        "repr": "'SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token",
+        "name": "x-token-trait",
+        "type": "trait_reference"
+      },
+      {
+        "hex": "0x0616440caf0bbc800a33993ea85c2392aeb53696608b057573646378",
+        "repr": "'SP120SBRBQJ00MCWS7TM5R8WJNTTKD5K0HFRC2CNE.usdcx",
+        "name": "y-token-trait",
+        "type": "trait_reference"
+      },
+      {
+        "hex": "0x0100000000000000000000000370d91e47",
+        "repr": "u14778179143",
+        "name": "y-amount",
+        "type": "uint"
+      },
+      {
+        "hex": "0x01000000000000000000000000010ca86c",
+        "repr": "u17606764",
+        "name": "min-dx",
+        "type": "uint"
+      },
+      {
+        "hex": "0x01000000000000000000000000000000e6",
+        "repr": "u230",
+        "name": "max-steps",
+        "type": "uint"
+      },
+      {
+        "hex": "0x0a010000000000000000000000006a998a5c",
+        "repr": "(some u1788447324)",
+        "name": "deadline-time",
+        "type": "(optional uint)"
+      }
+    ]
+  }
+}

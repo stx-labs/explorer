@@ -1,0 +1,55 @@
+{
+  "tx_id": "0x1d95b351132be00fef430eea08e6386c2852094eb5fb22a88e7d0583ef8a22f6",
+  "nonce": 2,
+  "fee_rate": "3000",
+  "sender_address": "SP17M4FR872N0E9B9A71VQXPF8AGQD9TNY6CTFX8B",
+  "sponsored": true,
+  "post_condition_mode": "deny",
+  "post_conditions": [],
+  "anchor_mode": "any",
+  "block_hash": "0x60a724a2b5f0077b63280fb51aee45ddbd144ea83177dd207066e9f9045710d6",
+  "block_height": 8831203,
+  "block_time": 1787566207,
+  "block_time_iso": "2026-08-24T10:10:07.000Z",
+  "burn_block_time": 1787565048,
+  "burn_block_height": 963843,
+  "burn_block_time_iso": "2026-08-24T09:50:48.000Z",
+  "parent_burn_block_time": 1787565048,
+  "parent_burn_block_time_iso": "2026-08-24T09:50:48.000Z",
+  "canonical": true,
+  "tx_index": 1,
+  "tx_status": "abort_by_response",
+  "tx_result": {
+    "hex": "0x0801000000000000000000000000000003ea",
+    "repr": "(err u1002)"
+  },
+  "event_count": 0,
+  "parent_block_hash": "0x6d46f40305a93443caa256b3ba785e1ba7943b4a12b339cbc269dc9cc48567e8",
+  "is_unanchored": false,
+  "microblock_hash": "0x",
+  "microblock_sequence": 2147483647,
+  "microblock_canonical": true,
+  "execution_cost_read_count": 4,
+  "execution_cost_read_length": 10356,
+  "execution_cost_runtime": 10703,
+  "execution_cost_write_count": 0,
+  "execution_cost_write_length": 0,
+  "vm_error": null,
+  "events": [],
+  "tx_type": "contract_call",
+  "contract_call": {
+    "contract_id": "SP2GW18TVQR75W1VT53HYGBRGKFRV5BFYNAF5SS5J.ZADAO-V2-MultiW-Bounty",
+    "function_name": "submit-entry",
+    "function_signature": "(define-public (submit-entry (bounty-id (string-ascii 36))))",
+    "function_args": [
+      {
+        "hex": "0x0d0000002436653565333262342d313966642d346638332d396433362d353833663032383965393733",
+        "repr": "\"6e5e32b4-19fd-4f83-9d36-583f0289e973\"",
+        "name": "bounty-id",
+        "type": "(string-ascii 36)"
+      }
+    ]
+  },
+  "sponsor_nonce": 2,
+  "sponsor_address": "SP1GQDX0Q2ZJ2CK65X16APPPVN3PYTGWQVMCFGDCB"
+}

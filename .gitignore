@@ -25,5 +25,10 @@ coverage
 *.tsbuildinfo
 
 CLAUDE.md
-scripts/
+scripts/*
+!scripts/tx-diagnosis/
 plans/
+
+# Local run artifacts (agent and evaluation harness runs)
+.ai-runs/
+scripts/tx-diagnosis/.build/

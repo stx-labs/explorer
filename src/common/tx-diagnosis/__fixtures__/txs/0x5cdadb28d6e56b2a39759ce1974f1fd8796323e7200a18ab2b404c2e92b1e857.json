@@ -1,0 +1,143 @@
+{
+  "tx_id": "0x5cdadb28d6e56b2a39759ce1974f1fd8796323e7200a18ab2b404c2e92b1e857",
+  "nonce": 472,
+  "fee_rate": "10000",
+  "sender_address": "SP1W8C25TZCXDQTAR7MZQPSNF8C73274DCNT2NWJZ",
+  "sponsored": false,
+  "post_condition_mode": "deny",
+  "post_conditions": [
+    {
+      "principal": {
+        "type_id": "principal_contract",
+        "address": "SP1Z92MPDQEWZXW36VX71Q25HKF5K2EPCJ304F275",
+        "contract_name": "stackswap-stsw-staking-data-v2a"
+      },
+      "condition_code": "sent_equal_to",
+      "amount": "53405256",
+      "type": "fungible",
+      "asset": {
+        "asset_name": "stsw",
+        "contract_address": "SP1Z92MPDQEWZXW36VX71Q25HKF5K2EPCJ304F275",
+        "contract_name": "stsw-token-v4a"
+      }
+    },
+    {
+      "principal": {
+        "type_id": "principal_contract",
+        "address": "SP1Z92MPDQEWZXW36VX71Q25HKF5K2EPCJ304F275",
+        "contract_name": "stackswap-reward-balancer-v1d"
+      },
+      "condition_code": "sent_greater_than_or_equal_to",
+      "amount": "0",
+      "type": "fungible",
+      "asset": {
+        "asset_name": "stsw",
+        "contract_address": "SP1Z92MPDQEWZXW36VX71Q25HKF5K2EPCJ304F275",
+        "contract_name": "stsw-token-v4a"
+      }
+    },
+    {
+      "principal": {
+        "type_id": "principal_contract",
+        "address": "SP1Z92MPDQEWZXW36VX71Q25HKF5K2EPCJ304F275",
+        "contract_name": "stackswap-reward-balancer-v1d"
+      },
+      "condition_code": "sent_greater_than_or_equal_to",
+      "amount": "0",
+      "type": "fungible",
+      "asset": {
+        "asset_name": "lbtc",
+        "contract_address": "SP1Z92MPDQEWZXW36VX71Q25HKF5K2EPCJ304F275",
+        "contract_name": "lbtc-token-v1c"
+      }
+    },
+    {
+      "principal": {
+        "type_id": "principal_contract",
+        "address": "SP1Z92MPDQEWZXW36VX71Q25HKF5K2EPCJ304F275",
+        "contract_name": "liquidity-token-v5krqbd8nh6"
+      },
+      "condition_code": "sent_greater_than_or_equal_to",
+      "amount": "0",
+      "type": "fungible",
+      "asset": {
+        "asset_name": "stsw",
+        "contract_address": "SP1Z92MPDQEWZXW36VX71Q25HKF5K2EPCJ304F275",
+        "contract_name": "stsw-token-v4a"
+      }
+    },
+    {
+      "principal": {
+        "type_id": "principal_contract",
+        "address": "SP1Z92MPDQEWZXW36VX71Q25HKF5K2EPCJ304F275",
+        "contract_name": "liquidity-token-v5krqbd8nh6"
+      },
+      "condition_code": "sent_greater_than_or_equal_to",
+      "amount": "0",
+      "type": "fungible",
+      "asset": {
+        "asset_name": "lbtc",
+        "contract_address": "SP1Z92MPDQEWZXW36VX71Q25HKF5K2EPCJ304F275",
+        "contract_name": "lbtc-token-v1c"
+      }
+    },
+    {
+      "principal": {
+        "type_id": "principal_standard",
+        "address": "SP1W8C25TZCXDQTAR7MZQPSNF8C73274DCNT2NWJZ"
+      },
+      "condition_code": "sent_equal_to",
+      "amount": "53405256",
+      "type": "fungible",
+      "asset": {
+        "asset_name": "stsw",
+        "contract_address": "SP1Z92MPDQEWZXW36VX71Q25HKF5K2EPCJ304F275",
+        "contract_name": "stsw-token-v4a"
+      }
+    }
+  ],
+  "anchor_mode": "any",
+  "block_hash": "0x733fc313ef8974e0775942c89e42f8ae45308f032a01f3340d17a1e50919ba91",
+  "block_height": 8893749,
+  "block_time": 1788273483,
+  "block_time_iso": "2026-09-01T14:38:03.000Z",
+  "burn_block_time": 1788273304,
+  "burn_block_height": 965048,
+  "burn_block_time_iso": "2026-09-01T14:35:04.000Z",
+  "parent_burn_block_time": 1788273304,
+  "parent_burn_block_time_iso": "2026-09-01T14:35:04.000Z",
+  "canonical": true,
+  "tx_index": 2,
+  "tx_status": "abort_by_post_condition",
+  "tx_result": {
+    "hex": "0x0801000000000000000000000000000010ee",
+    "repr": "(err u4334)"
+  },
+  "event_count": 0,
+  "parent_block_hash": "0xf2fdbc6e9366d5c6ab30c78431a6db84a737bbdc892244f4c88e7a88410e840f",
+  "is_unanchored": false,
+  "microblock_hash": "0x",
+  "microblock_sequence": 2147483647,
+  "microblock_canonical": true,
+  "execution_cost_read_count": 62,
+  "execution_cost_read_length": 65044,
+  "execution_cost_runtime": 86108,
+  "execution_cost_write_count": 1,
+  "execution_cost_write_length": 18,
+  "vm_error": "Post-condition check failure on fungible asset SP1Z92MPDQEWZXW36VX71Q25HKF5K2EPCJ304F275.stsw-token-v4a::stsw owned by SP1Z92MPDQEWZXW36VX71Q25HKF5K2EPCJ304F275.stackswap-stsw-staking-data-v2a: 53405256 SentEq 0",
+  "events": [],
+  "tx_type": "contract_call",
+  "contract_call": {
+    "contract_id": "SP1Z92MPDQEWZXW36VX71Q25HKF5K2EPCJ304F275.stackswap-reward-balancer-v1d",
+    "function_name": "CLAIM_FROM_STSW_STAKING",
+    "function_signature": "(define-public (CLAIM_FROM_STSW_STAKING (round uint)))",
+    "function_args": [
+      {
+        "hex": "0x010000000000000000000000000000002b",
+        "repr": "u43",
+        "name": "round",
+        "type": "uint"
+      }
+    ]
+  }
+}

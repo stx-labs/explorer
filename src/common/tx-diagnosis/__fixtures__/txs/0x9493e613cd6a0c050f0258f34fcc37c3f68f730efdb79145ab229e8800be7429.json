@@ -1,0 +1,98 @@
+{
+  "tx_id": "0x9493e613cd6a0c050f0258f34fcc37c3f68f730efdb79145ab229e8800be7429",
+  "nonce": 7,
+  "fee_rate": "4747",
+  "sender_address": "SP10QVP6ENS6T0FVKVGGAQ2XNYTSER639QMTCE92M",
+  "sponsored": false,
+  "post_condition_mode": "deny",
+  "post_conditions": [
+    {
+      "principal": {
+        "type_id": "principal_standard",
+        "address": "SP10QVP6ENS6T0FVKVGGAQ2XNYTSER639QMTCE92M"
+      },
+      "condition_code": "sent_equal_to",
+      "amount": "0",
+      "type": "stx"
+    },
+    {
+      "principal": {
+        "type_id": "principal_standard",
+        "address": "SP10QVP6ENS6T0FVKVGGAQ2XNYTSER639QMTCE92M"
+      },
+      "condition_code": "sent",
+      "type": "non_fungible",
+      "asset_value": {
+        "hex": "0x01000000000000000000000000000021f6",
+        "repr": "u8694"
+      },
+      "asset": {
+        "asset_name": "bitcoin-faces",
+        "contract_address": "SPVD6CE8RW90BGGKJZTKCSMGKS7HP0K8364TFR48",
+        "contract_name": "bitcoin-faces-airdrop"
+      }
+    }
+  ],
+  "anchor_mode": "any",
+  "block_hash": "0xf357c669438084efbbb181581ff043de2e76d0e2c2af7819eac8cea18756a10c",
+  "block_height": 8884899,
+  "block_time": 1788181176,
+  "block_time_iso": "2026-08-31T12:59:36.000Z",
+  "burn_block_time": 1788179942,
+  "burn_block_height": 964877,
+  "burn_block_time_iso": "2026-08-31T12:39:02.000Z",
+  "parent_burn_block_time": 1788179942,
+  "parent_burn_block_time_iso": "2026-08-31T12:39:02.000Z",
+  "canonical": true,
+  "tx_index": 1,
+  "tx_status": "abort_by_post_condition",
+  "tx_result": {
+    "hex": "0x080100000000000000000000000000000003",
+    "repr": "(err u3)"
+  },
+  "event_count": 0,
+  "parent_block_hash": "0x9fc395c18b1cc0a258ab7234378ba0dc927a7569076057bb9161c9c56a278e4d",
+  "is_unanchored": false,
+  "microblock_hash": "0x",
+  "microblock_sequence": 2147483647,
+  "microblock_canonical": true,
+  "execution_cost_read_count": 12,
+  "execution_cost_read_length": 30783,
+  "execution_cost_runtime": 62736,
+  "execution_cost_write_count": 0,
+  "execution_cost_write_length": 0,
+  "vm_error": "Post-condition check failure on non-fungible asset SPVD6CE8RW90BGGKJZTKCSMGKS7HP0K8364TFR48.bitcoin-faces-airdrop::bitcoin-faces owned by SP10QVP6ENS6T0FVKVGGAQ2XNYTSER639QMTCE92M: UInt(8694) Sent []",
+  "events": [],
+  "tx_type": "contract_call",
+  "contract_call": {
+    "contract_id": "SPNWZ5V2TPWGQGVDR6T7B6RQ4XMGZ4PXTEE0VQ0S.marketplace-v4",
+    "function_name": "list-asset",
+    "function_signature": "(define-public (list-asset (tradables trait_reference) (tradable-id uint) (price uint) (commission uint)))",
+    "function_args": [
+      {
+        "hex": "0x061636d331c8c71205c21397f53666909e4f1b02681915626974636f696e2d66616365732d61697264726f70",
+        "repr": "'SPVD6CE8RW90BGGKJZTKCSMGKS7HP0K8364TFR48.bitcoin-faces-airdrop",
+        "name": "tradables",
+        "type": "trait_reference"
+      },
+      {
+        "hex": "0x01000000000000000000000000000021f6",
+        "repr": "u8694",
+        "name": "tradable-id",
+        "type": "uint"
+      },
+      {
+        "hex": "0x01000000000000000000000000000f4240",
+        "repr": "u1000000",
+        "name": "price",
+        "type": "uint"
+      },
+      {
+        "hex": "0x01000000000000000000000000000000c8",
+        "repr": "u200",
+        "name": "commission",
+        "type": "uint"
+      }
+    ]
+  }
+}

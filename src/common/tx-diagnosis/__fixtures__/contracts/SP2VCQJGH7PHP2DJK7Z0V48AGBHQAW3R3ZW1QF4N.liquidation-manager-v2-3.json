@@ -1,0 +1,4 @@
+{
+  "contract_id": "SP2VCQJGH7PHP2DJK7Z0V48AGBHQAW3R3ZW1QF4N.liquidation-manager-v2-3",
+  "source_code": ";; Excerpt for the golden corpus: define-constant lines only. The full contract is on chain;\n;; this fixture exists so the registry test can verify names for codes defined here.\n(define-constant ERR_HEALTH_FACTOR_GT_1 (err u90000))\n(define-constant ERR_NOT_DEPOSITED (err u90001))\n(define-constant ERR_UNAUTHORIZED (err u90002))\n(define-constant ERR_NOT_ENABLED_AS_COLL (err u90003))\n(define-constant ERR_NO_COLLATERAL (err u90004))\n(define-constant ERR_NOT_ENOUGH_COLLATERAL_IN_RESERVE (err u90005))\n(define-constant ERR_NOT_SET (err u90006))\n(define-constant ERR_IN_GRACE_PERIOD (err u90007))\n(define-constant ERR_NO_DEBT (err u90008))\n(define-constant ERR_E_MODE_BONUS_NOT_SET (err u90009))\n(define-constant one-8 (contract-call? .math-v2-0 get-one))\n(define-constant e-mode-disabled-type 0x00)\n"
+}

@@ -1,0 +1,256 @@
+{
+  "$comment": "Curated explanations for protocol-specific error codes. `id` matches exactly; `namePattern` is a regex on the contract name (deployer-agnostic). `sender` / `developer` may be null. Copy must describe every path that raises the code, not just the most common one; `name` must match the constant in the contract source — the resolver drops an entry whose name disagrees with the source, and the registry test checks every entry against the committed fixtures. Slippage-style causes are phrased as likelihoods, not facts. An entry may carry `definedIn`: the contract whose source defines the code when it is not the matched contract (a code raised several calls down the chain); the registry test then checks the names against that contract's committed fixture.",
+  "contracts": [
+    {
+      "match": { "namePattern": "^dlmm-(swap|liquidity)-router-v-" },
+      "codes": {
+        "u2001": {
+          "name": "ERR_NO_RESULT_DATA",
+          "tag": "not_found",
+          "summary": "One step of this multi-step swap failed, but the router only records a generic code in its place, so the step's real error is not on chain.",
+          "sender": "The whole route was cancelled and nothing moved. Retry with a simpler route or a smaller amount; if it repeats, the app can find the failing step by running the steps one at a time.",
+          "developer": "Each fold helper begins with `(unwrap! result ERR_NO_RESULT_DATA)` on the accumulator, which discards the error of the step that failed. Bisect the route or replay steps individually at this block; consider carrying the failing index and code through the accumulator."
+        },
+        "u2003": {
+          "name": "ERR_MINIMUM_RECEIVED",
+          "tag": "slippage",
+          "summary": "The swap would have returned less than the minimum you set, so it was cancelled.",
+          "sender": "This usually means prices moved between quote and execution. Retry with a higher slippage tolerance or a smaller amount.",
+          "developer": null
+        },
+        "u5001": {
+          "name": "ERR_NO_RESULT_DATA",
+          "tag": "not_found",
+          "summary": "One of the positions in this batch failed, but the router only records a generic code in its place, so the position's real error is not on chain.",
+          "sender": "The whole batch was cancelled and nothing moved. Retry with fewer positions; if it repeats, the app can find the failing position by submitting them one at a time.",
+          "developer": "Each fold helper begins with `(unwrap! result ERR_NO_RESULT_DATA)` on the accumulator, which discards the error of the position that failed. Bisect the list or replay positions individually at this block (start with entries whose amounts are zero); consider carrying the failing index and code through the accumulator."
+        }
+      }
+    },
+    {
+      "match": { "namePattern": "^stableswap-core-v-" },
+      "codes": {
+        "u1019": {
+          "name": "ERR_MINIMUM_X_AMOUNT",
+          "tag": "slippage",
+          "summary": "You would have received less of one token than the minimum you set.",
+          "sender": "This usually means prices moved between quote and execution. Retry with a higher slippage tolerance.",
+          "developer": null
+        },
+        "u1023": {
+          "name": "ERR_MINIMUM_D_VALUE",
+          "tag": "slippage",
+          "summary": "The liquidity change would have left the pool's invariant below the minimum you set (a slippage guard), so it was cancelled.",
+          "sender": "This usually means the pool moved between quote and execution. Retry with a higher slippage tolerance.",
+          "developer": null
+        }
+      }
+    },
+    {
+      "match": { "namePattern": "^router-stableswap-velar-v-" },
+      "codes": {
+        "u6009": {
+          "name": "ERR_MINIMUM_RECEIVED",
+          "tag": "slippage",
+          "summary": "The swap would have returned less than the minimum you set.",
+          "sender": "This usually means prices moved between quote and execution. Retry with a higher slippage tolerance or a smaller amount.",
+          "developer": null
+        }
+      }
+    },
+    {
+      "match": { "namePattern": "^amm-pool-v2-" },
+      "codes": {
+        "u2005": {
+          "name": "ERR-EXCEEDS-MAX-SLIPPAGE",
+          "tag": "slippage",
+          "summary": "The outcome was outside the slippage you allowed, so the pool refused it.",
+          "sender": "This usually means the price moved between quote and execution. Retry with a higher slippage tolerance or a smaller amount.",
+          "developer": null
+        }
+      }
+    },
+    {
+      "match": { "namePattern": "^emission-controller" },
+      "codes": {
+        "u931": {
+          "name": "ERR_EMISSION_INTERVAL",
+          "tag": "too_early",
+          "summary": "Emissions can be minted at most once per Bitcoin burn block, and this burn block's emission was already minted.",
+          "sender": "Wait for the next Bitcoin block and try again.",
+          "developer": null
+        }
+      }
+    },
+    {
+      "match": { "namePattern": "^bme\\d+-\\d+-market-" },
+      "codes": {
+        "u10153": {
+          "name": "err-oracle-no-fallback",
+          "tag": "oracle",
+          "summary": "The market couldn't use an oracle price — the read failed its checks or the price moved beyond the allowed band — and no manual fallback was set, so it wasn't resolved.",
+          "sender": "Nothing you can change: the market's governance (DAO or an authorised extension) has to set a manual price before resolution can proceed. Retrying only helps if the oracle problem was transient.",
+          "developer": "Read the market's start price and the current oracle price to see which branch fired (oracle failure vs. move beyond `max-move-bips`). If the price moved out of band, `set-manual-price` (DAO-gated) is the intended remedy; widening `max-move-bips` changes semantics for every market."
+        }
+      }
+    },
+    {
+      "match": { "id": "SP2C2YFP12AJZB4MABJBAJ55XECVS7E4PMMZ89YZR.arkadiko-oracle-v2-3" },
+      "codes": {
+        "u8403": {
+          "name": "ERR-SIGNATURES-NOT-UNIQUE",
+          "tag": "signature",
+          "summary": "The price update included duplicate signer signatures, so it was rejected.",
+          "sender": null,
+          "developer": "Each signature in the batch must come from a distinct signer."
+        }
+      }
+    },
+    {
+      "match": { "namePattern": "^bitflow-exec-" },
+      "codes": {
+        "u318": {
+          "name": "e03",
+          "tag": "slippage",
+          "summary": "The trade's value would have been below the minimum USD amount you set.",
+          "sender": "Retry with a lower minimum or a different amount.",
+          "developer": null
+        },
+        "u365": {
+          "name": "e07",
+          "tag": "unknown",
+          "summary": "The plan had nothing left to trade: the amount was zero, it was zero after the plan's caps, or the trade wouldn't have been profitable under the plan's checks.",
+          "sender": "Check the amount and direction. If the trade depended on a price opportunity, it may have closed — refresh the quote before retrying.",
+          "developer": null
+        }
+      }
+    },
+    {
+      "match": { "namePattern": "^vstsw-token-" },
+      "codes": {
+        "u4278": {
+          "name": "ERR_COOLDOWN_ALREADY_SET",
+          "tag": "already",
+          "summary": "An unstake cooldown is already in progress for this account.",
+          "sender": "Wait for the current cooldown to finish before unstaking again.",
+          "developer": null
+        }
+      }
+    },
+    {
+      "match": { "namePattern": "^pox-\\d$" },
+      "codes": {
+        "u19": {
+          "name": "ERR_ALREADY_STAKED",
+          "tag": "already",
+          "summary": "Your STX are already stacked, so this request was rejected.",
+          "sender": "Nothing to do — the existing stacking stays in place.",
+          "developer": null
+        },
+        "u30": {
+          "name": "ERR_DISTRIBUTION_ALREADY_COMPUTED",
+          "tag": "already",
+          "summary": "Rewards for this cycle were already computed.",
+          "sender": "Nothing to do.",
+          "developer": null
+        }
+      }
+    },
+    {
+      "match": { "id": "SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-withdrawal" },
+      "codes": {
+        "u500": {
+          "name": "ERR_INVALID_ADDR_VERSION",
+          "tag": "not_found",
+          "summary": "The Bitcoin address type isn't supported for withdrawals.",
+          "sender": "Use a supported Bitcoin address type and retry.",
+          "developer": null
+        },
+        "u501": {
+          "name": "ERR_INVALID_ADDR_HASHBYTES",
+          "tag": "not_found",
+          "summary": "The Bitcoin address bytes were malformed.",
+          "sender": "Re-enter the Bitcoin address and retry.",
+          "developer": null
+        },
+        "u502": {
+          "name": "ERR_DUST_LIMIT",
+          "tag": "dust",
+          "summary": "The withdrawal amount is below the minimum (dust limit).",
+          "sender": "Withdraw a larger amount.",
+          "developer": null
+        },
+        "u506": {
+          "name": "ERR_FEE_TOO_HIGH",
+          "tag": "limit",
+          "summary": "The Bitcoin fee exceeded the maximum fee set on the request.",
+          "sender": null,
+          "developer": null
+        }
+      }
+    },
+    {
+      "match": { "namePattern": "^v0-\\d+-market$" },
+      "codes": {
+        "u400005": {
+          "name": "ERR-UNHEALTHY",
+          "tag": "health",
+          "summary": "The borrow would leave your position under-collateralised.",
+          "sender": "Borrow less or add collateral, then retry.",
+          "developer": null
+        },
+        "u400022": {
+          "name": "ERR-PRICE-FEED-UPDATE-FAILED",
+          "tag": "oracle",
+          "summary": "The market couldn't update its price feed before the borrow.",
+          "sender": "Not caused by you. Try again shortly.",
+          "developer": null
+        }
+      }
+    },
+    {
+      "match": { "namePattern": "^dual-stacking-v" },
+      "codes": {
+        "u101": {
+          "name": "ERR_ALREADY_ENROLLED",
+          "tag": "already",
+          "summary": "This account is already enrolled.",
+          "sender": "Nothing to do.",
+          "developer": null
+        }
+      }
+    },
+    {
+      "match": { "id": "SP2QEZ06AGJ3RKJPBV14SY1V5BBFNAW33D96YPGZF.BNS-V2" },
+      "codes": {
+        "u118": {
+          "name": "ERR-NAME-NOT-AVAILABLE",
+          "tag": "taken",
+          "summary": "This name is already registered, so the claim was rejected.",
+          "sender": "Retrying the same claim cannot succeed. Check who holds the name and whether it has lapsed: an active name can only be bought from its owner; a lapsed one (past its grace period) is taken over through renewal, not through a new claim.",
+          "developer": "Check availability with the contract's read-only `get-bns-info` before broadcasting, and branch on the state you find (fresh claim vs. renewal of a lapsed name) instead of sending `name-claim-fast` regardless."
+        },
+        "u125": {
+          "name": "ERR-FAST-MINTED-BEFORE",
+          "tag": "taken",
+          "summary": "Someone registered this name before your preorder, so the register step was rejected.",
+          "sender": "The preorder path only wins when your preorder predates the other registration. The name is taken; buy it from the owner or wait for it to lapse.",
+          "developer": null
+        }
+      }
+    },
+    {
+      "match": { "namePattern": "^borrow-helper-v2-" },
+      "definedIn": "SP2VCQJGH7PHP2DJK7Z0V48AGBHQAW3R3ZW1QF4N.liquidation-manager-v2-3",
+      "codes": {
+        "u90000": {
+          "name": "ERR_HEALTH_FACTOR_GT_1",
+          "tag": "health",
+          "summary": "This position could not be liquidated: its health factor was above 1 at this block, so it was not undercollateralised.",
+          "sender": "Nothing to fix on your side. A liquidation only succeeds while the position's health factor is below 1; check it again before submitting another one.",
+          "developer": "Raised by liquidation-manager's liquidation-call, reached through pool-borrow's liquidation-call, when the borrower's health factor is at or above 1 — three calls below the helper, which is why the resolver cannot see it. Read the position's health factor at the parent block before liquidating."
+        }
+      }
+    }
+  ]
+}
