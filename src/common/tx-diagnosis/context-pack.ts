@@ -213,8 +213,20 @@ export function renderContextPackMarkdown(input: ContextPackInput): string {
       lines.push(
         '- The failing site runs before every `asserts!` in the called function, so those later checks were never evaluated.'
       );
-    if (ec.nativeFunction)
+    if (ec.nativeCandidates?.length) {
+      for (const c of ec.nativeCandidates) {
+        const where = c.contractId
+          ? ` inside ${mdCode(c.contractId)}${c.functions?.length ? ` (entered through ${c.functions.map(mdCode).join(', ')})` : ''}`
+          : '';
+        lines.push(`- Matches Clarity built-in ${mdCode(c.fn)}${where}: ${c.meaning}`);
+      }
+      if (ec.nativeCandidates.length > 1)
+        lines.push(
+          '- Several built-ins on paths this call reaches return this code; the network does not record which step failed.'
+        );
+    } else if (ec.nativeFunction) {
       lines.push(`- Matches Clarity built-in ${mdCode(ec.nativeFunction)}: ${ec.nativeMeaning}`);
+    }
     if (ec.dynamicDispatch)
       lines.push(
         '- The called function takes trait arguments; the actual callee contracts are in the arguments above.'

@@ -414,8 +414,14 @@ function DetailRows({ tx, d }: { tx: FailedContractCallTx; d: Diagnosis }) {
       ) : null}
       {ec?.nativeFunction && (
         <StackedSummaryItem
-          label="Built-in"
-          value={ec.nativeFunction}
+          label={(ec.nativeCandidates?.length ?? 0) > 1 ? 'Built-in candidates' : 'Built-in'}
+          value={
+            ec.nativeCandidates?.length
+              ? ec.nativeCandidates
+                  .map(c => (c.contractId ? `${c.fn} in ${contractName(c.contractId)}` : c.fn))
+                  .join(', ')
+              : ec.nativeFunction
+          }
           valueRenderer={mono}
           showCopyButton
         />

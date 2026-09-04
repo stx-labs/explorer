@@ -1,5 +1,5 @@
 {
-  "$comment": "Curated explanations for protocol-specific error codes. `id` matches exactly; `namePattern` is a regex on the contract name (deployer-agnostic). `sender` / `developer` may be null. Copy must describe every path that raises the code, not just the most common one; `name` must match the constant in the contract source — the resolver drops an entry whose name disagrees with the source, and the registry test checks every entry against the committed fixtures. Slippage-style causes are phrased as likelihoods, not facts.",
+  "$comment": "Curated explanations for protocol-specific error codes. `id` matches exactly; `namePattern` is a regex on the contract name (deployer-agnostic). `sender` / `developer` may be null. Copy must describe every path that raises the code, not just the most common one; `name` must match the constant in the contract source — the resolver drops an entry whose name disagrees with the source, and the registry test checks every entry against the committed fixtures. Slippage-style causes are phrased as likelihoods, not facts. An entry may carry `definedIn`: the contract whose source defines the code when it is not the matched contract (a code raised several calls down the chain); the registry test then checks the names against that contract's committed fixture.",
   "contracts": [
     {
       "match": { "namePattern": "^dlmm-(swap|liquidity)-router-v-" },
@@ -236,6 +236,19 @@
           "summary": "Someone registered this name before your preorder, so the register step was rejected.",
           "sender": "The preorder path only wins when your preorder predates the other registration. The name is taken; buy it from the owner or wait for it to lapse.",
           "developer": null
+        }
+      }
+    },
+    {
+      "match": { "namePattern": "^borrow-helper-v2-" },
+      "definedIn": "SP2VCQJGH7PHP2DJK7Z0V48AGBHQAW3R3ZW1QF4N.liquidation-manager-v2-3",
+      "codes": {
+        "u90000": {
+          "name": "ERR_HEALTH_FACTOR_GT_1",
+          "tag": "health",
+          "summary": "This position could not be liquidated: its health factor was above 1 at this block, so it was not undercollateralised.",
+          "sender": "Nothing to fix on your side. A liquidation only succeeds while the position's health factor is below 1; check it again before submitting another one.",
+          "developer": "Raised by liquidation-manager's liquidation-call, reached through pool-borrow's liquidation-call, when the borrower's health factor is at or above 1 — three calls below the helper, which is why the resolver cannot see it. Read the position's health factor at the parent block before liquidating."
         }
       }
     }

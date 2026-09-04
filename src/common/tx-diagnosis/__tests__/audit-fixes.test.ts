@@ -193,6 +193,7 @@ describe('registry copy is subordinate to the contract source', () => {
       registry as unknown as {
         contracts: {
           match: { id?: string; namePattern?: string };
+          definedIn?: string;
           codes: Record<string, { name?: string }>;
         }[];
       }
@@ -210,6 +211,24 @@ describe('registry copy is subordinate to the contract source', () => {
           if (!names.length) continue; // the code is defined in a callee, not this contract
           expect({ contract: f.id, code, names }).toEqual({
             contract: f.id,
+            code,
+            names: expect.arrayContaining([info.name]),
+          });
+          checked++;
+        }
+      }
+      // An entry for a code defined further down the call chain names that contract, whose
+      // committed source must define every code of the entry under the registered name.
+      if (entry.definedIn) {
+        const f = fixtures.find(x => x.id === entry.definedIn);
+        expect({ definedIn: entry.definedIn, fixture: !!f }).toEqual({
+          definedIn: entry.definedIn,
+          fixture: true,
+        });
+        for (const [code, info] of Object.entries(entry.codes)) {
+          const names = findErrorConstants(f!.source, code).map(m => m.name);
+          expect({ contract: f!.id, code, names }).toEqual({
+            contract: f!.id,
             code,
             names: expect.arrayContaining([info.name]),
           });

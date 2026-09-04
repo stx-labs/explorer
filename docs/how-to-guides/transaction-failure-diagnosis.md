@@ -32,13 +32,19 @@ contract source.
   when its `name` disagrees with the source, and never used while the source is ambiguous. A Clarity
   built-in (`stx-transfer?` …) is named as the cause only when nothing else reachable can return the
   code; whenever the call reaches another contract it stays a hedged, low-confidence candidate, since
-  a failed call leaves no execution trace to rule the callee out. Also detects **masking**: a `fold`
+  a failed call leaves no execution trace to rule the callee out. When several built-ins can return
+  the code — two kinds in the called contract, or one inside a callee function the call enters — each
+  is listed as a candidate (`errorCode.nativeCandidates`) rather than nothing being said. Only
+  `try!`-wrapped and bare built-in calls count: `unwrap!` substitutes its own fallback and
+  `unwrap-panic` aborts, so neither can return the built-in's code. Also detects **masking**: a `fold`
   callback that unwraps its accumulator with a fixed constant (`(unwrap! result ERR_X)`) replaces the
   failing item's real error, so the code is reported as a placeholder at medium confidence
   (`errorCode.foldMask`), and notes when the failing site precedes every `asserts!` of the function
   (`errorCode.siteBeforeOtherChecks`).
 - `registry/known-errors.json` — curated copy for protocol-specific codes. Add an entry with an
-  exact contract `id` or a `namePattern` regex, then `summary`, `sender` and `developer` text. Copy
+  exact contract `id` or a `namePattern` regex, then `summary`, `sender` and `developer` text; add
+  `definedIn` when the code lives in a contract further down the call chain than the resolver
+  searches (one hop), and commit a constants-only fixture of that contract for the test. Copy
   must cover every branch that raises the code, and must not say "retry" for deterministic failures
   (tags in `DETERMINISTIC_TAGS`: `taken`, `already`, `unauthorized`, `dust`, `limit`).
 - `templates.ts` — all user-facing copy.

@@ -6,7 +6,7 @@ import type {
 } from '@stacks/stacks-blockchain-api-types';
 
 /** Bump when copy or classification changes so cached context packs are invalidated. */
-export const ENGINE_VERSION = '3';
+export const ENGINE_VERSION = '4';
 
 /**
  * `dropped` and `deploy_failure` are reserved: the engine never emits them yet, but consumers should
@@ -106,6 +106,12 @@ export interface ErrorCodeInfo {
   nativeTentative?: boolean;
   /** Number of reachable sites calling the matched built-in. */
   nativeSiteCount?: number;
+  /**
+   * Every built-in that can produce the code on a reachable path, when more than one can (several
+   * kinds in the called contract, or a built-in inside a callee the call enters). `nativeFunction`
+   * and `nativeMeaning` describe the first of them; the attribution is always tentative.
+   */
+  nativeCandidates?: NativeCandidate[];
   /** Lines in reachable code returning the code literally, e.g. `(err u1)`. */
   literalSites?: number[];
   /** True when the called function takes trait arguments (callee chosen at runtime). */
@@ -114,6 +120,15 @@ export interface ErrorCodeInfo {
   foldMask?: FoldMask;
   /** The failing site runs before every `asserts!` of the called function (e.g. in its `let`). */
   siteBeforeOtherChecks?: boolean;
+}
+
+export interface NativeCandidate {
+  fn: string;
+  meaning: string;
+  /** The contract whose code calls the built-in; absent for the called contract itself. */
+  contractId?: string;
+  /** Functions of that callee the failed call enters (callee candidates only). */
+  functions?: string[];
 }
 
 export type PostConditionProblem =

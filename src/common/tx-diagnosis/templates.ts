@@ -12,9 +12,11 @@ import type {
   Confidence,
   Correlations,
   DetailRef,
+  ErrorCodeInfo,
   Evidence,
   Fact,
   FailedContractCallTx,
+  NativeCandidate,
   RichPart,
   RuntimeFinding,
 } from './types';
@@ -285,6 +287,29 @@ function sourceLink(
     : { label, href: `/txid/${target}?tab=sourceCode&line=${n}` };
 }
 
+/** Prefer the fuller headline when it fits the 200-character budget the card and the rubric enforce. */
+function fitHeadline(full: string, compact: string): string {
+  return full.length <= 200 ? full : compact;
+}
+
+/** "not enough STX balance or because an NFT with this id already exists (in token)". */
+function describeNativeCandidates(candidates: NativeCandidate[]): string {
+  return candidates
+    .map(c => (c.contractId ? `${c.meaning} (in ${contractName(c.contractId)})` : c.meaning))
+    .join(' or because ');
+}
+
+function nativeEvidence(native: ErrorCodeInfo): Evidence {
+  const candidates = native.nativeCandidates ?? [];
+  let value: string;
+  if (!native.nativeTentative) value = native.nativeMeaning!;
+  else if (candidates.length > 1) value = `${candidates.length} candidate built-ins`;
+  else if (candidates[0]?.contractId)
+    value = `${native.nativeFunction} in ${contractName(candidates[0].contractId)} · one candidate`;
+  else value = `${native.nativeFunction} · one candidate`;
+  return { id: 'native', label: native.nativeFunction!, value };
+}
+
 export function buildContractError(
   tx: FailedContractCallTx,
   cls: Classification,
@@ -335,9 +360,25 @@ export function buildContractError(
     developer = registry.developer ?? copy?.developer ?? undefined;
   } else if (native && native.nativeTentative) {
     // The built-in is one way this code can arise; a callee or another site is not ruled out.
-    headline = `The contract rejected this call with error ${code} — possibly because ${native.nativeMeaning}, though another step in the call can return the same code.`;
-    senderAction =
-      'Check the balance the app used; if it was sufficient, the app can tell you which step failed.';
+    const candidates = native.nativeCandidates ?? [];
+    if (candidates.length > 1) {
+      headline = fitHeadline(
+        `The contract rejected this call with error ${code} — possibly because ${describeNativeCandidates(candidates)}; the network doesn't record which step failed.`,
+        `The contract rejected this call with error ${code} — possibly from any of ${candidates.length} built-in steps it reaches; the network doesn't record which one.`
+      );
+      senderAction =
+        'Each step that can produce this code is listed below; the app can tell you which one failed.';
+    } else {
+      const described = candidates.length
+        ? describeNativeCandidates(candidates)
+        : native.nativeMeaning;
+      headline = fitHeadline(
+        `The contract rejected this call with error ${code} — possibly because ${described}, though another step in the call can return the same code.`,
+        `The contract rejected this call with error ${code} — possibly because ${described}.`
+      );
+      senderAction =
+        'Check the balance the app used; if it was sufficient, the app can tell you which step failed.';
+    }
     confidence = 'low';
   } else if (native) {
     headline = `This call failed because ${native.nativeMeaning}.`;
@@ -427,15 +468,35 @@ export function buildContractError(
         });
       }
     } else if (native && native.nativeTentative) {
-      facts.push({
-        parts: [
-          'The built-in ',
-          ref.fn(native.nativeFunction!),
-          ' returns ',
-          ref.value(`(err ${code})`),
-          ` when ${native.nativeMeaning}. It is one of the steps in this call that can produce this code, and the network doesn't record which step failed.`,
-        ],
-      });
+      const candidates = native.nativeCandidates ?? [];
+      if (candidates.length) {
+        for (const c of candidates) {
+          const parts: RichPart[] = ['The built-in ', ref.fn(c.fn)];
+          if (c.contractId) {
+            parts.push(' inside ', ref.contract(c.contractId));
+            if (c.functions?.length) parts.push(` (entered through ${c.functions.join(', ')})`);
+          }
+          parts.push(' returns ', ref.value(`(err ${code})`), ` when ${c.meaning}.`);
+          facts.push({ parts });
+        }
+        facts.push({
+          parts: [
+            candidates.length > 1
+              ? "Each of these steps can produce this code on a path this call reaches, and the network doesn't record which step failed."
+              : "This step can produce this code on a path this call reaches, and the network doesn't record which step failed.",
+          ],
+        });
+      } else {
+        facts.push({
+          parts: [
+            'The built-in ',
+            ref.fn(native.nativeFunction!),
+            ' returns ',
+            ref.value(`(err ${code})`),
+            ` when ${native.nativeMeaning}. It is one of the steps in this call that can produce this code, and the network doesn't record which step failed.`,
+          ],
+        });
+      }
     } else if (native) {
       facts.push({
         parts: [
@@ -485,14 +546,7 @@ export function buildContractError(
       value: `${ambiguous.length} candidate definitions`,
     });
   if (tag) evidence.push({ id: 'tag', label: 'tag', value: tag });
-  if (native)
-    evidence.push({
-      id: 'native',
-      label: native.nativeFunction!,
-      value: native.nativeTentative
-        ? `${native.nativeFunction} · one candidate`
-        : native.nativeMeaning!,
-    });
+  if (native) evidence.push(nativeEvidence(native));
   if (batch)
     evidence.push({
       id: 'batch',

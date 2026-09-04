@@ -90,6 +90,11 @@ Engine
       ambiguous; native errors remain hedged across untraced callees and retain their specific
       sender remedy; uint formatting is lossless; context packs omit mutable history and validate
       before 304; upstream failures keep their real status class; engine v3
+- [x] Harness-driven fixes from the first live evaluation (53 recent failures, 6 unresolved): several
+      built-ins sharing a code are reported as candidates instead of nothing; built-ins inside the
+      callee functions the call enters are assessed; only `try!`/bare built-in calls count as able to
+      return their code; Zest `u90000` explained through the registry with a `definedIn` fixture;
+      engine v4
 - [x] `diagnose.ts` — `diagnoseSync` (Tier 0, no I/O) and `enrich` (Tier 1)
 - [x] `context-pack.ts` — Markdown + JSON renderers, playbook, on-chain content delimited as data
 

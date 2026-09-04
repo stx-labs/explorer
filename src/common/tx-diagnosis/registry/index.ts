@@ -12,6 +12,8 @@ export interface RegistryEntry {
 
 interface RegistryContract {
   match: { id?: string; namePattern?: string };
+  /** Contract whose source defines the codes when it is not the matched one (deeper in the call chain). */
+  definedIn?: string;
   codes: Record<string, RegistryEntry>;
 }
 

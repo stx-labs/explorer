@@ -11,7 +11,7 @@ import {
   foldAccumulatorUnwrap,
   hasTraitParams,
   literalErrSites,
-  nativeAssetCallSites,
+  propagatingNativeCallSites,
   reachableFromAny,
   reachableFunctions,
   resolvedContractCalls,
@@ -25,6 +25,7 @@ import type {
   ContractLoader,
   ErrorCodeInfo,
   FailedContractCallTx,
+  NativeCandidate,
   SourceRef,
 } from './types';
 
@@ -147,11 +148,16 @@ function ambiguousResolution(base: ErrorCodeInfo, definedIn: string, names: stri
   };
 }
 
-interface NativeAssessment {
+interface NativeKind {
   fn: string;
   meaning: string;
   sender: string;
   tag: SemanticTag;
+}
+
+interface NativeAssessment {
+  /** Distinct built-ins in reachable code that can return the code, in source order. */
+  kinds: NativeKind[];
   siteCount: number;
   literalSites: number[];
   /** Reachable `contract-call?` sites that could have returned the code first. */
@@ -159,9 +165,9 @@ interface NativeAssessment {
 }
 
 /**
- * A Clarity built-in can only be named as the cause when it is the single kind of built-in in
- * reachable code that produces the code; whether it is *certain* also depends on there being no
- * other reachable way to return the same code (callees, second sites, literal responses).
+ * The Clarity built-ins in reachable code whose own error code equals `code`, counting only call
+ * sites that return that code to the caller (`try!` or a bare call). A single kind at a single
+ * site, with no literal response and no callee, is a certain cause; anything more is a candidate.
  */
 function assessNative(
   code: string,
@@ -170,19 +176,24 @@ function assessNative(
   deployer: string
 ): NativeAssessment | null {
   if (!/^u[1-4]$/.test(code)) return null;
-  const sites = nativeAssetCallSites(reachable).filter(s => nativeErrorFor(s.fn, code));
-  const kinds = Array.from(new Set(sites.map(s => s.fn)));
-  if (kinds.length !== 1) return null;
-  const native = nativeErrorFor(kinds[0], code)!;
+  const sites = propagatingNativeCallSites(reachable).filter(s => nativeErrorFor(s.fn, code));
+  if (!sites.length) return null;
+  const kinds = Array.from(new Set(sites.map(s => s.fn))).map(fn => {
+    const native = nativeErrorFor(fn, code)!;
+    return { fn, meaning: native.meaning, sender: native.sender, tag: native.tag };
+  });
   return {
-    fn: kinds[0],
-    meaning: native.meaning,
-    sender: native.sender,
-    tag: native.tag,
+    kinds,
     siteCount: sites.length,
     literalSites: literalErrSites(source, reachable, code),
     calleeSites: reachable.flatMap(b => contractCallSites(b.text, deployer)).length,
   };
+}
+
+/** The tag every candidate built-in agrees on, or none when they point at different causes. */
+function sharedNativeTag(fns: string[], code: string): SemanticTag | undefined {
+  const tags = Array.from(new Set(fns.map(fn => nativeErrorFor(fn, code)?.tag).filter(Boolean)));
+  return tags.length === 1 ? tags[0] : undefined;
 }
 
 function bodyForCall(called: ContractInfo | null, fnName: string): FunctionBody | null {
@@ -255,26 +266,40 @@ export function resolveErrorCodeSync(
     };
   }
 
-  // Native fallback: one kind of built-in in reachable code produces the code. It is the cause only
+  // Native fallback: built-ins in reachable code produce the code. A single one is the cause only
   // when nothing else reachable can return the code; otherwise it is a candidate until callees are
-  // ruled out (and stays one when a literal response or a second site exists).
+  // ruled out (and stays one when a literal response or a second site exists). Several kinds are
+  // always candidates: the network does not record which step failed.
   if (body) {
     const native = assessNative(code, reachable, source, contractDeployer(contractId));
     if (native) {
+      const [first] = native.kinds;
+      const single = native.kinds.length === 1;
       const certain =
-        native.siteCount === 1 && native.literalSites.length === 0 && native.calleeSites === 0;
+        single &&
+        native.siteCount === 1 &&
+        native.literalSites.length === 0 &&
+        native.calleeSites === 0;
       return {
         info: {
           ...base,
-          nativeFunction: native.fn,
-          nativeMeaning: native.meaning,
-          nativeSender: native.sender,
+          nativeFunction: first.fn,
+          nativeMeaning: first.meaning,
+          nativeSender: first.sender,
           nativeTentative: !certain,
           nativeSiteCount: native.siteCount,
           literalSites: native.literalSites,
+          nativeCandidates: single
+            ? undefined
+            : native.kinds.map(k => ({ fn: k.fn, meaning: k.meaning })),
         },
         registry,
-        tag: registry?.tag ?? native.tag,
+        tag:
+          registry?.tag ??
+          sharedNativeTag(
+            native.kinds.map(k => k.fn),
+            code
+          ),
         complete: certain,
       };
     }
@@ -360,32 +385,51 @@ export async function resolveErrorCode(
     source: SourceRef;
   }[] = [];
   const ambiguous: string[] = [];
+  const calleeNatives: NativeCandidate[] = [];
 
   for (let i = 0; i < candidates.length; i++) {
     const callee = fetched[i];
     if (!callee) continue;
-    const matches = findErrorConstants(callee.source_code, code);
-    if (!matches.length) continue;
-
     const entries = calleeEntryFunctions(tx, called, candidates[i]);
     if (!entries.length) continue;
     const bodies = reachableFromAny(callee.source_code, entries);
-    const registry = lookupRegistry(candidates[i], code);
-    const picked = pickConstant(callee.source_code, matches, bodies, null);
-    if (picked.reachableCount === 0) continue;
-    if (!picked.pick) {
-      ambiguous.push(...picked.ambiguous.map(name => `${name} in ${candidates[i]}`));
-      continue;
+
+    const matches = findErrorConstants(callee.source_code, code);
+    if (matches.length) {
+      const registry = lookupRegistry(candidates[i], code);
+      const picked = pickConstant(callee.source_code, matches, bodies, null);
+      if (picked.reachableCount > 0) {
+        if (!picked.pick) {
+          ambiguous.push(...picked.ambiguous.map(name => `${name} in ${candidates[i]}`));
+          continue;
+        }
+        const { match, usage } = picked.pick;
+        resolved.push({
+          contractId: candidates[i],
+          match,
+          usage,
+          reachable: picked.pick.reachable,
+          registry: guardRegistry(registry, match.name),
+          source: sourceRefFor(candidates[i], callee.source_code, match, usage),
+        });
+        continue;
+      }
+      // Defined, but not thrown in the functions this call enters: not evidence for this callee.
     }
-    const { match, usage } = picked.pick;
-    resolved.push({
-      contractId: candidates[i],
-      match,
-      usage,
-      reachable: picked.pick.reachable,
-      registry: guardRegistry(registry, match.name),
-      source: sourceRefFor(candidates[i], callee.source_code, match, usage),
-    });
+
+    // No constant explains the code in this callee; a built-in it calls in the entered functions
+    // can (a token contract's `ft-transfer?`, a mint's `nft-mint?`).
+    const native = assessNative(code, bodies, callee.source_code, contractDeployer(candidates[i]));
+    if (native) {
+      calleeNatives.push(
+        ...native.kinds.map(k => ({
+          fn: k.fn,
+          meaning: k.meaning,
+          contractId: candidates[i],
+          functions: entries,
+        }))
+      );
+    }
   }
 
   if (resolved.length === 1 && ambiguous.length === 0) {
@@ -420,14 +464,39 @@ export async function resolveErrorCode(
     return { ...res, info: { ...res.info, candidatesTried: candidates } };
   }
 
-  // With no execution trace, the absence of a named constant in a callee does not prove the
-  // caller-side built-in returned the code: the callee may return it literally, propagate its own
-  // built-in, or obtain it from another contract. Keep the attribution hedged whenever a callee was
-  // reachable, even if every fetched source was available.
+  // No constant names the code. What remains are built-ins: the called contract's own (from the
+  // synchronous pass) and any inside the callee functions this call enters. With no execution
+  // trace none of them is a certain cause — a callee may return the code literally, propagate its
+  // own built-in, or obtain it from a contract further down — so the attribution stays hedged
+  // whenever a callee was reachable, even if every fetched source was available.
+  const own: NativeCandidate[] = sync.info.nativeFunction
+    ? (sync.info.nativeCandidates ?? [
+        { fn: sync.info.nativeFunction, meaning: sync.info.nativeMeaning ?? '' },
+      ])
+    : [];
+  const natives = [...own, ...calleeNatives];
   const info: ErrorCodeInfo = { ...sync.info, candidatesTried: candidates };
-  if (info.nativeFunction) {
+  let tag = sync.tag;
+  if (natives.length) {
+    const [first] = natives;
+    info.nativeFunction = first.fn;
+    info.nativeMeaning = first.meaning;
     info.nativeTentative =
-      all.length > 0 || (info.nativeSiteCount ?? 1) > 1 || (info.literalSites?.length ?? 0) > 0;
+      natives.length > 1 ||
+      calleeNatives.length > 0 ||
+      all.length > 0 ||
+      (info.nativeSiteCount ?? 1) > 1 ||
+      (info.literalSites?.length ?? 0) > 0;
+    info.nativeCandidates = natives.length > 1 || first.contractId ? natives : undefined;
+    if (calleeNatives.length) {
+      info.nativeSender = undefined;
+      tag =
+        sync.registry?.tag ??
+        sharedNativeTag(
+          natives.map(n => n.fn),
+          code
+        );
+    }
   }
-  return { ...sync, info, complete: true };
+  return { ...sync, info, tag, complete: true };
 }

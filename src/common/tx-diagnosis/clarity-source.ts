@@ -50,7 +50,7 @@ export interface ResolvedContractCall {
 }
 
 const NAME = '[A-Za-z0-9_\\-!?+<>=*/]+';
-const PRINCIPAL = '(?:SP|SM|ST|SN)[0-9A-Z]{20,41}\\.[a-z0-9\\-]+';
+const PRINCIPAL = '(?:SP|SM|ST|SN)[0-9A-Z]{20,41}\\.[A-Za-z0-9_\\-]+';
 
 function escapeRe(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -486,7 +486,7 @@ export function firstAssertLine(source: string, body: FunctionBody): number | nu
 export function contractCallSites(text: string, deployer: string): CallSite[] {
   const out: CallSite[] = [];
   const re = new RegExp(
-    `\\(contract-call\\?\\s+('${PRINCIPAL}|\\.[a-z0-9\\-]+|${NAME})\\s+(${NAME})`,
+    `\\(contract-call\\?\\s+('${PRINCIPAL}|\\.[A-Za-z0-9_\\-]+|${NAME})\\s+(${NAME})`,
     'g'
   );
   let m: RegExpExecArray | null;
@@ -605,20 +605,47 @@ export function functionSourceLines(
 }
 
 const NATIVE_ASSET_CALL =
-  /\((?:try!|unwrap!|unwrap-panic|unwrap-err!)\s+\((stx-transfer\?|stx-transfer-memo\?|stx-burn\?|ft-transfer\?|ft-mint\?|ft-burn\?|nft-transfer\?|nft-mint\?|nft-burn\?)/g;
+  /\((stx-transfer\?|stx-transfer-memo\?|stx-burn\?|ft-transfer\?|ft-mint\?|ft-burn\?|nft-transfer\?|nft-mint\?|nft-burn\?)[\s)]/g;
+/** The form immediately enclosing a call, e.g. `(try! (stx-transfer? …))` → `try!`. */
+const ENCLOSING_FORM =
+  /\((try!|unwrap!|unwrap-panic|unwrap-err!|match|is-ok|is-err|default-to)\s*$/;
 
-/** Every native transfer/mint/burn call wrapped in an error-propagating form, one entry per site. */
-export function nativeAssetCallSites(
-  bodies: FunctionBody | FunctionBody[]
-): { fn: string; index: number }[] {
+export interface NativeCallSite {
+  fn: string;
+  index: number;
+  /** `try!`, `unwrap!`, …, or `bare` when the call's response is returned as it is. */
+  wrapper: string;
+}
+
+/** Every native transfer/mint/burn call in `bodies`, one entry per site, with its enclosing form. */
+export function nativeAssetCallSites(bodies: FunctionBody | FunctionBody[]): NativeCallSite[] {
   const list = Array.isArray(bodies) ? bodies : [bodies];
-  const out: { fn: string; index: number }[] = [];
+  const out: NativeCallSite[] = [];
   for (const body of list) {
     const re = new RegExp(NATIVE_ASSET_CALL.source, 'g');
     let m: RegExpExecArray | null;
-    while ((m = re.exec(body.text))) out.push({ fn: m[1], index: body.start + m.index });
+    while ((m = re.exec(body.text))) {
+      const before = body.text.slice(0, m.index).replace(/\s+$/, '');
+      out.push({
+        fn: m[1],
+        index: body.start + m.index,
+        wrapper: before.match(ENCLOSING_FORM)?.[1] ?? 'bare',
+      });
+    }
   }
   return out;
+}
+
+/**
+ * Native call sites whose own error code can become the function's result: `try!` re-raises it
+ * and a bare call returns it as it is. `unwrap!` substitutes its fallback, `unwrap-panic` aborts,
+ * and `match` / `is-ok` / `default-to` handle the response explicitly, so none of those can
+ * return the built-in's code to the caller.
+ */
+export function propagatingNativeCallSites(
+  bodies: FunctionBody | FunctionBody[]
+): NativeCallSite[] {
+  return nativeAssetCallSites(bodies).filter(s => s.wrapper === 'try!' || s.wrapper === 'bare');
 }
 
 /** Distinct native built-ins called in an error-propagating form inside `bodies`. */
