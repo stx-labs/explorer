@@ -2,8 +2,8 @@
  * @jest-environment node
  */
 import { DEFAULT_MAINNET_SERVER, DEFAULT_TESTNET_SERVER } from '@/common/constants/env';
+import { ENGINE_VERSION } from '@/common/tx-diagnosis';
 import * as server from '@/common/tx-diagnosis/server';
-import { ENGINE_VERSION } from '@/common/tx-diagnosis/types';
 import type { NextRequest } from 'next/server';
 
 import { handleContextPack } from '../route-shared';
@@ -11,6 +11,7 @@ import { handleContextPack } from '../route-shared';
 jest.mock('@/common/tx-diagnosis/server', () => ({
   buildContextPack: jest.fn(),
 }));
+jest.mock('@/common/utils/error-utils', () => ({ logError: jest.fn() }));
 
 const buildContextPack = jest.mocked(server.buildContextPack);
 
@@ -190,9 +191,27 @@ describe('context pack route handler', () => {
     expect(res.headers.get('cache-control')).toBe('private, no-store');
     expect(res.headers.get('retry-after')).toBe('30');
   });
+
+  it.each([
+    ['markdown' as const, 'text/plain', 'Unable to build context pack.'],
+    ['json' as const, 'application/json', '{"error":"Unable to build context pack."}'],
+  ])('returns a controlled 500 for unexpected %s failures', async (format, contentType, body) => {
+    buildContextPack.mockRejectedValue(new Error('secret upstream response'));
+    const res = await handleContextPack(
+      request(`/txid/${TX}/context.${format === 'json' ? 'json' : 'md'}`),
+      Promise.resolve({ txId: TX }),
+      format
+    );
+
+    expect(res.status).toBe(500);
+    expect(res.headers.get('cache-control')).toBe('private, no-store');
+    expect(res.headers.get('content-type')).toContain(contentType);
+    expect(res.headers.get('x-robots-tag')).toBe('noindex');
+    expect(await res.text()).toBe(body);
+  });
 });
 
-describe('context pack route handler — re-review', () => {
+describe('context pack route validation', () => {
   beforeEach(() => jest.resetAllMocks());
 
   it('rejects unexpected query parameters before doing any work', async () => {

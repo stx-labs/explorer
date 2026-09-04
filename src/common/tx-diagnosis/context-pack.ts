@@ -1,3 +1,4 @@
+/** Renders diagnosis data for agents while preserving an explicit untrusted-data boundary. */
 import type { PostCondition } from '@stacks/stacks-blockchain-api-types';
 
 import { contractName } from './clarity-source';

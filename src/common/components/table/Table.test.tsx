@@ -17,6 +17,20 @@ describe('Table', () => {
     expect(screen.getByText('first').closest('tr')).not.toHaveAttribute('data-highlighted');
     expect(screen.getByText('second').closest('tr')).toHaveAttribute('data-highlighted', 'true');
   });
+
+  it('composes caller row classes and lets callers override the minimum height', () => {
+    renderWithChakraProviders(
+      <Table
+        columns={[{ accessorKey: 'name', header: 'Name' }]}
+        data={[{ name: 'custom' }]}
+        getRowProps={() => ({ className: 'custom-row', minH: '77px' })}
+      />
+    );
+
+    const row = screen.getByText('custom').closest('tr');
+    expect(row).toHaveClass('group', 'custom-row');
+    expect(row).toHaveStyle({ minHeight: '77px' });
+  });
 });
 
 describe('getCommonPinningStyles', () => {

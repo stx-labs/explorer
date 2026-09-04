@@ -1,8 +1,4 @@
-/**
- * Built-in error codes: several built-ins sharing a code, built-ins inside callees, the wrapper
- * forms that can return a built-in's code, and a code defined further down the call chain — the
- * shapes the first live evaluation run (53 recent failures, engine v3) left unresolved.
- */
+/** Native and registry error-code resolution across called contracts and reachable callees. */
 import {
   findFunctionBody,
   nativeAssetCallSites,

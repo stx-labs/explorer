@@ -1,6 +1,7 @@
+import { ENGINE_VERSION } from '@/common/tx-diagnosis';
 import { buildContextPack } from '@/common/tx-diagnosis/server';
-import { ENGINE_VERSION } from '@/common/tx-diagnosis/types';
 import { NetworkModes } from '@/common/types/network';
+import { logError } from '@/common/utils/error-utils';
 import { configuredApiUrlFor, normalizeApiOrigin } from '@/common/utils/network-utils';
 import { NextRequest } from 'next/server';
 
@@ -37,6 +38,38 @@ function reject(status: number, reason: string, common: Record<string, string>):
 }
 
 export async function handleContextPack(
+  request: NextRequest,
+  params: Promise<{ txId: string }>,
+  format: 'markdown' | 'json'
+): Promise<Response> {
+  try {
+    return await handleContextPackRequest(request, params, format);
+  } catch (error) {
+    logError(
+      error instanceof Error ? error : new Error('Unknown context-pack route error'),
+      'Transaction context-pack route',
+      { format },
+      'error'
+    );
+    const headers = {
+      'X-Robots-Tag': 'noindex',
+      'X-Diagnosis-Engine': ENGINE_VERSION,
+      'Cache-Control': 'private, no-store',
+    };
+    if (format === 'json') {
+      return new Response(JSON.stringify({ error: 'Unable to build context pack.' }), {
+        status: 500,
+        headers: { ...headers, 'Content-Type': 'application/json; charset=utf-8' },
+      });
+    }
+    return new Response('Unable to build context pack.', {
+      status: 500,
+      headers: { ...headers, 'Content-Type': 'text/plain; charset=utf-8' },
+    });
+  }
+}
+
+async function handleContextPackRequest(
   request: NextRequest,
   params: Promise<{ txId: string }>,
   format: 'markdown' | 'json'

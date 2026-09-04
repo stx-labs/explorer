@@ -100,14 +100,6 @@ export function invariantFor(tx: FailedContractCallTx, movedAsset?: string): str
   return `Only the ${fee} STX fee was spent${payer}. ${tail}`;
 }
 
-function hedge(confidence: Confidence): string {
-  return confidence === 'high'
-    ? 'because'
-    : confidence === 'medium'
-      ? 'most likely because'
-      : 'possibly because';
-}
-
 /** The first list-typed argument and its item count, for batch calls. */
 function batchArg(tx: FailedContractCallTx): { name: string; count: number } | undefined {
   for (const a of tx.contract_call.function_args ?? []) {
@@ -1076,5 +1068,3 @@ export function correlationFacts(
   }
   return facts;
 }
-
-export { hedge };

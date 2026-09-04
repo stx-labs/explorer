@@ -207,7 +207,7 @@ function SmartContractDetailsCardItems({
   const variables = contract?.abi?.variables || [];
   const maps = contract?.abi?.maps || [];
   // @ts-ignore
-  const clarityVersion = contract?.clarity_version || 'Unknown'; // TODO: The types on @stacks/stacks-blockchain-api-types seem to be outdated
+  const clarityVersion = String(contract?.clarity_version ?? 'Unknown');
   return (
     <>
       <SummaryItem

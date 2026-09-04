@@ -20,7 +20,7 @@ enum FunctionArgsTableColumns {
   Type = 'type',
 }
 
-interface FunctionArgsTableData {
+export interface FunctionArgsTableData {
   [FunctionArgsTableColumns.Name]: string;
   [FunctionArgsTableColumns.Value]: string;
   [FunctionArgsTableColumns.Type]: string;
@@ -59,10 +59,15 @@ export function FunctionArgsTable({
 }) {
   const args = getContractCallTxFunctionArgs(tx);
   const formattedArgs = args.map(arg => formatClarityValue(arg));
+  return <FunctionArgsDataTable data={formattedArgs} />;
+}
+
+/** Name/value/type table shared by transaction arguments and diagnosis details. */
+export function FunctionArgsDataTable({ data }: { data: FunctionArgsTableData[] }) {
   return (
     <Table
       columns={columnDefinitions}
-      data={formattedArgs}
+      data={data}
       scrollIndicatorWrapper={table => <ScrollIndicator>{table}</ScrollIndicator>}
     />
   );

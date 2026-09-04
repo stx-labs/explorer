@@ -1,3 +1,4 @@
+/** Coordinates classification, code resolution, correlation and user-facing diagnosis copy. */
 import {
   contractDeployer,
   contractPrincipalsIn,

@@ -1,8 +1,4 @@
-/**
- * Behaviour added after auditing agent output on real failures (2026-09-03): fold-accumulator
- * error masking, argument-aware retry detection, deterministic "taken" failures, evaluation-order
- * notes and the richer context pack.
- */
+/** Batch diagnosis, error masking, evaluation order, retry correlation and deterministic actions. */
 import {
   findFunctionBody,
   firstAssertLine,

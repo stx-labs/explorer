@@ -1,8 +1,7 @@
 import { fetchContractInfo, fetchTx } from '@/api/data-fetchers';
 import { getTokenPrice } from '@/app/getTokenPriceInfo';
 import { CommonSearchParams } from '@/app/transactions/page';
-import { isFailedContractCall } from '@/common/tx-diagnosis';
-import { parseContractAbi } from '@/common/tx-diagnosis/abi';
+import { isFailedContractCall, parseContractAbi } from '@/common/tx-diagnosis';
 import { NetworkModes } from '@/common/types/network';
 import { logError } from '@/common/utils/error-utils';
 import { canServerFetch, getApiUrl } from '@/common/utils/network-utils';
@@ -17,6 +16,7 @@ import {
 
 import TransactionIdPage from './PageClient';
 import { TxIdPageDataProvider } from './TxIdPageContext';
+import { asInitialContractData } from './txid-page-utils';
 
 export interface TxIdPageSearchParams extends CommonSearchParams {
   startTime?: string;
@@ -73,9 +73,8 @@ export default async function Page(props: {
       // its first paint, so fetch it here (one extra request, only on failed contract-call pages).
       if (isFailedContractCall(initialTxData)) {
         try {
-          initialContractData = await fetchContractInfo(
-            apiUrl,
-            initialTxData.contract_call.contract_id
+          initialContractData = asInitialContractData(
+            await fetchContractInfo(apiUrl, initialTxData.contract_call.contract_id)
           );
         } catch (contractError) {
           logError(

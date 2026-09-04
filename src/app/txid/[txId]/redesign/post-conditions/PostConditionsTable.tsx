@@ -172,7 +172,7 @@ export function PostConditionsTable({
         getRowProps={(_row, rowIndex) =>
           validHighlight && rowIndex === highlightIndex
             ? {
-                bg: { base: 'feedback.red-150', _dark: 'transactionStatus.failed' },
+                bg: 'transactionStatus.failed',
                 'data-highlighted': 'true',
               }
             : {}

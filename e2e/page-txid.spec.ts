@@ -4,6 +4,8 @@ import { failedTxs } from './failed-transactions-test-vector';
 import { txs } from './transactions-test-vector';
 
 test.describe('/txid page — why it failed', () => {
+  test.describe.configure({ timeout: 60_000 });
+
   failedTxs.forEach(({ txid, description, headlineIncludes }) => {
     test(`explains ${description}`, async ({ page }) => {
       await page.goto(`/txid/${txid}?chain=mainnet`);

@@ -1,8 +1,4 @@
-/**
- * Adversarial cases from the 2026-09-03 audit of PR #2830: duplicate constants, callee selection,
- * twin post-conditions, unrecognised vm_errors, SIP-040 formats, registry/source agreement and the
- * Markdown trust boundary of the context pack.
- */
+/** Cross-module diagnosis behavior for ambiguous sources, callees, post-conditions and trust data. */
 import fs from 'fs';
 import path from 'path';
 
@@ -459,7 +455,7 @@ describe('context pack trust boundary', () => {
 // Re-review of 2cdde2b4
 // ---------------------------------------------------------------------------------------------
 
-describe('re-review: ambiguity never borrows registry data', () => {
+describe('ambiguity never borrows registry data', () => {
   it('drops a registry entry that names neither candidate', () => {
     // pox-5 u19 is registered as ERR_ALREADY_STAKED; this contract defines u19 twice, both reachable.
     const SRC = `
@@ -508,7 +504,7 @@ describe('re-review: ambiguity never borrows registry data', () => {
   });
 });
 
-describe('re-review: dynamic dispatch follows each trait variable to its own contract', () => {
+describe('dynamic dispatch follows each trait variable to its own contract', () => {
   const A = `${OTHER}.token-a`;
   const B = `${THIRD}.token-b`;
   const CALLER = `
@@ -608,7 +604,7 @@ describe('re-review: dynamic dispatch follows each trait variable to its own con
   });
 });
 
-describe('re-review: native built-ins are candidates until callees are ruled out', () => {
+describe('native built-ins are candidates until callees are ruled out', () => {
   const WITH_CALLEE = `
 (define-public (deposit (amount uint))
   (begin
@@ -686,7 +682,7 @@ describe('re-review: native built-ins are candidates until callees are ruled out
   });
 });
 
-describe('re-review: every reachable site is reported', () => {
+describe('every reachable site is reported', () => {
   const SRC = `
 (define-constant ERR-X (err u9))
 (define-private (helper-a) (begin (asserts! false ERR-X) (ok true)))
@@ -702,7 +698,7 @@ describe('re-review: every reachable site is reported', () => {
   });
 });
 
-describe('re-review: principals inside data are not callees', () => {
+describe('principals inside data are not callees', () => {
   it('ignores contract-looking text inside string literals', () => {
     expect(contractPrincipalsIn([`"see ${OTHER}.token for details"`, `u"${THIRD}.x"`])).toEqual([]);
     expect(contractPrincipalsIn([`'${OTHER}.token`])).toEqual([`${OTHER}.token`]);

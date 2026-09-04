@@ -470,8 +470,8 @@ export function Table<T>({
                   },
                   ...(rowProps.css as Record<string, unknown>),
                 }}
-                className="group"
-                minH={13}
+                className={['group', rowProps.className].filter(Boolean).join(' ')}
+                minH={rowProps.minH ?? 13}
               >
                 {row.getVisibleCells().map((cell, columnIndex) => {
                   if (isSpanRow && columnIndex > 0) {

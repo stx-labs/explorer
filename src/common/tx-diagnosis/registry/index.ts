@@ -1,3 +1,4 @@
+/** Curated protocol copy keyed by exact contract IDs or narrowly scoped contract-name patterns. */
 import { contractName } from '../clarity-source';
 import type { SemanticTag } from '../tags';
 import data from './known-errors.json';

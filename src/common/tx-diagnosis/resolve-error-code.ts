@@ -1,3 +1,4 @@
+/** Resolves response codes in the called source, then in a bounded set of reachable callees. */
 import {
   ConstantMatch,
   FunctionBody,
@@ -53,7 +54,7 @@ interface Usage {
   lines: number[];
 }
 
-interface Pick {
+interface ResolutionPick {
   match: ConstantMatch;
   usage: Usage;
   /** The constant is thrown somewhere in code the failed call could reach. */
@@ -93,8 +94,8 @@ function pickConstant(
   matches: ConstantMatch[],
   bodies: FunctionBody[],
   entry: FunctionBody | null
-): { pick?: Pick; ambiguous: string[]; reachableCount: number } {
-  const picks: Pick[] = matches.map(match => {
+): { pick?: ResolutionPick; ambiguous: string[]; reachableCount: number } {
+  const picks: ResolutionPick[] = matches.map(match => {
     const usage = usageAcross(source, bodies, match.name, entry);
     return { match, usage, reachable: usage.lines.length > 0 };
   });

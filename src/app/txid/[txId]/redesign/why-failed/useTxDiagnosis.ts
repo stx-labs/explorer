@@ -3,7 +3,8 @@
 import { callApiWithErrorHandling } from '@/api/callApiWithErrorHandling';
 import { useApiClient } from '@/api/useApiClient';
 import { useGlobalContext } from '@/common/context/useGlobalContext';
-import { useContractById } from '@/common/queries/useContractById';
+import { FIVE_MINUTES } from '@/common/queries/query-stale-time';
+import { getContractByIdQueryOptions, useContractById } from '@/common/queries/useContractById';
 import {
   ContractInfo,
   DiagnoseLoaders,
@@ -11,27 +12,12 @@ import {
   FailedContractCallTx,
   diagnoseSync,
   enrich,
+  parseContractAbi,
 } from '@/common/tx-diagnosis';
-import { parseContractAbi } from '@/common/tx-diagnosis/abi';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemo } from 'react';
 
 import { useTxIdPageData } from '../../TxIdPageContext';
-
-const ENRICHMENT_STALE_TIME = 5 * 60 * 1000;
-
-interface AddressTxItem {
-  tx: {
-    tx_id: string;
-    tx_status: string;
-    block_height?: number;
-    contract_call?: {
-      contract_id: string;
-      function_name: string;
-      function_args?: { repr: string }[];
-    };
-  };
-}
 
 /** The base diagnosis could still improve by looking at callee contracts. */
 function needsCalleeLookup(d: Diagnosis): boolean {
@@ -83,55 +69,46 @@ export function useTxDiagnosis(
   const loaders = useMemo<DiagnoseLoaders>(
     () => ({
       contracts: async id => {
-        const c = await queryClient.fetchQuery({
-          queryKey: ['contractById', id, apiUrl],
-          queryFn: async () => {
-            const raw = await callApiWithErrorHandling(
-              apiClient,
-              '/extended/v1/contract/{contract_id}',
-              { params: { path: { contract_id: id } } }
-            );
-            return { ...raw, abi: parseContractAbi(raw.abi) };
-          },
-          staleTime: Infinity,
-        });
+        const c = await queryClient.fetchQuery(getContractByIdQueryOptions(apiClient, id, apiUrl));
         return c?.source_code ? { contract_id: id, source_code: c.source_code, abi: c.abi } : null;
       },
       history: {
         senderTransactions: async (sender, limit) => {
-          const res = (await callApiWithErrorHandling(
+          // This endpoint is deprecated in the generated schema. Migrating correlations to the v3
+          // principal endpoint is a separate behavior change because its response shape differs.
+          const res = await callApiWithErrorHandling(
             apiClient,
             '/extended/v2/addresses/{address}/transactions',
             { params: { path: { address: sender }, query: { limit } } }
-          )) as unknown as { results: AddressTxItem[] };
-          return (res.results ?? []).map(r => ({
-            tx_id: r.tx.tx_id,
-            tx_status: r.tx.tx_status,
-            block_height: r.tx.block_height,
-            contract_id: r.tx.contract_call?.contract_id,
-            function_name: r.tx.contract_call?.function_name,
-            function_args_repr: r.tx.contract_call?.function_args?.map(a => a.repr),
-          }));
+          );
+          return (res.results ?? []).map(result => {
+            const contractCall = 'contract_call' in result.tx ? result.tx.contract_call : undefined;
+            return {
+              tx_id: result.tx.tx_id,
+              tx_status: result.tx.tx_status,
+              block_height: result.tx.block_height,
+              contract_id: contractCall?.contract_id,
+              function_name: contractCall?.function_name,
+              function_args_repr: contractCall?.function_args?.map(arg => arg.repr),
+            };
+          });
         },
         addressTxCount: async address => {
-          const res = (await callApiWithErrorHandling(
+          const res = await callApiWithErrorHandling(
             apiClient,
             '/extended/v2/addresses/{address}/transactions',
             { params: { path: { address }, query: { limit: 1 } } }
-          )) as unknown as { total: number };
+          );
           return res.total ?? 0;
         },
         ftBalanceAt: async (address, assetId, blockHeight) => {
-          const res = (await callApiWithErrorHandling(
+          const res = await callApiWithErrorHandling(
             apiClient,
             '/extended/v1/address/{principal}/balances',
             {
               params: { path: { principal: address }, query: { until_block: String(blockHeight) } },
             }
-          )) as unknown as {
-            stx?: { balance: string };
-            fungible_tokens?: Record<string, { balance: string }>;
-          };
+          );
           if (assetId === 'STX') return res.stx?.balance ?? null;
           return res.fungible_tokens?.[assetId]?.balance ?? null;
         },
@@ -147,14 +124,14 @@ export function useTxDiagnosis(
     queryKey: ['txDiagnosis', apiUrl, tx.tx_id, contractState, 'callees'],
     queryFn: () => enrich(tx, called, { contracts: loaders.contracts }),
     enabled: !contractPending && needsCalleeLookup(base),
-    staleTime: ENRICHMENT_STALE_TIME,
+    staleTime: FIVE_MINUTES,
   });
 
   const correlations = useQuery({
     queryKey: ['txDiagnosis', apiUrl, tx.tx_id, contractState, 'correlations'],
     queryFn: () => enrich(tx, called, loaders),
     enabled: expanded && !contractPending,
-    staleTime: ENRICHMENT_STALE_TIME,
+    staleTime: FIVE_MINUTES,
   });
 
   return {

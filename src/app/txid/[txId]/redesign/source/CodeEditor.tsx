@@ -94,10 +94,7 @@ const CodeEditorBase = forwardRef<any, CodeEditorProps>(
         css={{
           '& .monaco-editor, & .overflow-guard': { borderRadius: 'redesign.xl' },
           [`& .${HIGHLIGHT_LINE_CLASS}`]: {
-            backgroundColor: {
-              base: 'feedback.red-150',
-              _dark: 'transactionStatus.failed',
-            },
+            backgroundColor: 'transactionStatus.failed',
           },
         }}
         w="full"

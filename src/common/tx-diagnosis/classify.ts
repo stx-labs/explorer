@@ -1,3 +1,4 @@
+/** Classifies a failed contract call from immutable transaction fields without fetching data. */
 import type { PostCondition } from '@stacks/stacks-blockchain-api-types';
 
 import {

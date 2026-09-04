@@ -2,22 +2,25 @@
  * Semantic tags inferred from an error constant's name. Order matters: the first match wins.
  * Names are matched upper-cased with `_`, `-` and spaces treated alike.
  */
-export type SemanticTag =
-  | 'slippage'
-  | 'oracle'
-  | 'expired'
-  | 'taken'
-  | 'already'
-  | 'too_early'
-  | 'insufficient'
-  | 'health'
-  | 'unauthorized'
-  | 'paused'
-  | 'dust'
-  | 'signature'
-  | 'not_found'
-  | 'limit'
-  | 'unknown';
+export const SEMANTIC_TAGS = [
+  'slippage',
+  'oracle',
+  'expired',
+  'taken',
+  'already',
+  'too_early',
+  'insufficient',
+  'health',
+  'unauthorized',
+  'paused',
+  'dust',
+  'signature',
+  'not_found',
+  'limit',
+  'unknown',
+] as const;
+
+export type SemanticTag = (typeof SEMANTIC_TAGS)[number];
 
 const RULES: [SemanticTag, RegExp][] = [
   [

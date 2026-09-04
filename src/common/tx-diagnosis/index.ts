@@ -1,4 +1,7 @@
+/** Browser-safe public surface; server loaders remain an explicit `tx-diagnosis/server` import. */
 export * from './types';
+export { parseContractAbi } from './abi';
+export { contractName } from './clarity-source';
 export { classifyFailure } from './classify';
 export type { Classification } from './classify';
 export { parseVmError, describeConditionCode } from './vm-error';
@@ -16,3 +19,4 @@ export {
 export { lookupRegistry } from './registry';
 export { tagForName } from './tags';
 export type { SemanticTag } from './tags';
+export { formatInt, truncateMiddle } from './templates';

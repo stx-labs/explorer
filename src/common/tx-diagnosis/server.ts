@@ -1,3 +1,4 @@
+/** Server-only Stacks API loaders and context-pack assembly; never import this from client code. */
 import { fetchContractInfo, fetchTx } from '@/api/data-fetchers';
 import { StacksApiResponseError } from '@/api/stacksAPIFetch';
 import 'server-only';
