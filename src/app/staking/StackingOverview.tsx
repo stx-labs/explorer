@@ -244,7 +244,7 @@ export function StackingOverview({
               {currentRewardText && (
                 <Flex gap={1} align="center">
                   <Text textStyle="text-regular-sm" color="textSecondary">
-                    {currentRewardText} · APY will be calculated at the end of the cycle
+                    {currentRewardText} · yield is calculated at the end of the cycle
                   </Text>
                   <Tooltip
                     variant="redesignPrimary"
@@ -350,7 +350,7 @@ export function StackingOverview({
                   <Text textStyle="heading-md">{lastSettled.cycle_number}</Text>
                   <Text textStyle="text-regular-sm" color="textSecondary" whiteSpace="nowrap">
                     {lastSettledYield?.apyPercent !== undefined
-                      ? `${lastSettledYield.apyPercent.toFixed(2)}% APY · `
+                      ? `${lastSettledYield.apyPercent.toFixed(2)}% yield · `
                       : ''}
                     {formatBtc(lastSettledSats)} paid
                   </Text>
@@ -359,8 +359,8 @@ export function StackingOverview({
                   Verified from on-chain contract reads
                   {lastSettledYield?.apyPercent !== undefined &&
                     (lastSettledPricedAtEnd
-                      ? ' · APY at end-of-cycle prices'
-                      : ' · APY at current prices')}
+                      ? ' · yield at end-of-cycle prices'
+                      : ' · yield at current prices')}
                 </Text>
               </Stack>
             )}
@@ -391,7 +391,7 @@ export function StackingOverview({
           tableProps={{ mt: { base: -3, lg: -4 } }}
         />
         <Text textStyle="text-regular-xs" color="textSecondary">
-          Rewards and APY before pox-5 come from stacking-tracker.com.
+          Rewards and yield before pox-5 come from stacking-tracker.com.
         </Text>
         <ButtonLink
           href={STAKING_LINKS.stackingTracker}

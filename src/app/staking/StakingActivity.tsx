@@ -17,7 +17,13 @@ import { ButtonLink } from '@/ui/ButtonLink';
 import { TabsLabel, TabsList, TabsRoot, TabsTrigger } from '@/ui/Tabs';
 import { Text } from '@/ui/Text';
 import { Flex, Icon, Stack } from '@chakra-ui/react';
-import { Coins, Flag, Link as LinkIcon, LockOpen } from '@phosphor-icons/react';
+import {
+  ClockCounterClockwise,
+  Coins,
+  Flag,
+  Link as LinkIcon,
+  LockOpen,
+} from '@phosphor-icons/react';
 import type { ColumnDef } from '@tanstack/react-table';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -33,7 +39,7 @@ const GROUP_LABELS: { value: ActivityGroup | typeof ALL_GROUPS; label: string }[
   { value: ALL_GROUPS, label: 'All' },
   { value: 'distributions', label: 'Distributions' },
   { value: 'enrollments', label: 'Enrollments' },
-  { value: 'unlocks', label: 'Unlocks' },
+  { value: 'unlocks', label: 'Early exits' },
   { value: 'bonds', label: 'Bonds' },
 ];
 
@@ -212,24 +218,54 @@ function ActionFilter({ selected }: { selected?: ActivityGroup }) {
   );
 }
 
-function NoActivity({ bondIndex, txWindow }: { bondIndex?: number; txWindow?: number }) {
+function groupLabel(group?: ActivityGroup): string {
+  return GROUP_LABELS.find(chip => chip.value === group)?.label.toLowerCase() ?? 'activity';
+}
+
+function NoActivity({
+  bondIndex,
+  txWindow,
+  group,
+}: {
+  bondIndex?: number;
+  txWindow?: number;
+  group?: ActivityGroup;
+}) {
+  // The row icons carry each group's glyph; an empty state shows the same one, muted.
+  const glyph = group ? GROUP_ICONS[group].icon : <ClockCounterClockwise />;
+  const badge = (
+    <Flex
+      w={10}
+      h={10}
+      align="center"
+      justify="center"
+      flexShrink={0}
+      borderRadius="redesign.md"
+      bg="surfaceFifth"
+    >
+      <Icon w={5} h={5} color="iconSecondary">
+        {glyph}
+      </Icon>
+    </Flex>
+  );
   if (bondIndex !== undefined) {
     return (
-      <Stack gap={1} py={8} align="center">
-        <Text textStyle="text-medium-sm">No recent activity for {bondLabel(bondIndex)}</Text>
-        <Text textStyle="text-regular-sm" color="textSecondary" textAlign="center">
-          Its events are not among the {txWindow ?? 'most recent'} newest staking transactions.
-          Older activity is not shown here.
-        </Text>
+      <Stack minH="9rem" gap={3} align="center" justify="center">
+        {badge}
+        <Stack gap={1} align="center">
+          <Text textStyle="text-medium-sm">No recent activity for {bondLabel(bondIndex)}</Text>
+          <Text textStyle="text-regular-sm" color="textSecondary" textAlign="center">
+            Its events are not among the {txWindow ?? 'most recent'} newest staking transactions.
+            Older activity is not shown here.
+          </Text>
+        </Stack>
       </Stack>
     );
   }
   return (
-    <Stack gap={1} py={8} align="center">
-      <Text textStyle="text-medium-sm">No activity yet</Text>
-      <Text textStyle="text-regular-sm" color="textSecondary">
-        Bond distributions, enrollments and unlocks appear here.
-      </Text>
+    <Stack minH="9rem" gap={3} align="center" justify="center">
+      {badge}
+      <Text textStyle="text-medium-sm">No {groupLabel(group)} yet</Text>
     </Stack>
   );
 }
@@ -286,9 +322,18 @@ export function StakingActivity({
       <Table
         data={page}
         columns={activityColumns}
-        emptyTableUi={<NoActivity bondIndex={bondIndex} txWindow={txWindow} />}
+        emptyTableUi={
+          <NoActivity bondIndex={bondIndex} txWindow={txWindow} group={selectedGroup} />
+        }
         tableContainerWrapper={table => (
-          <TableContainer minH={standalone ? '500px' : undefined}>{table}</TableContainer>
+          <TableContainer
+            minH={standalone ? '500px' : undefined}
+            {...(page.length === 0
+              ? { pt: { base: 3, lg: 4 }, justifyContent: 'center' as const }
+              : {})}
+          >
+            {table}
+          </TableContainer>
         )}
         scrollIndicatorWrapper={table => <ScrollIndicator>{table}</ScrollIndicator>}
         pagination={

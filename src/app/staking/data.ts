@@ -243,8 +243,8 @@ export function parseActivityGroup(value?: string): ActivityGroup | undefined {
 
 const ACTIVITY_GROUP_FUNCTIONS: Record<ActivityGroup, string[]> = {
   distributions: ['calculate-rewards'],
-  enrollments: ['register-for-bond', 'update-bond-registration', 'stake', 'stake-update'],
-  unlocks: ['unstake', 'unstake-sbtc'],
+  enrollments: ['register-for-bond', 'update-bond-registration'],
+  unlocks: ['unstake-sbtc', 'announce-l1-early-exit'],
   bonds: ['setup-bond'],
 };
 
@@ -283,8 +283,7 @@ async function fetchTxsByFunction(
     function_name: functionName,
   });
   const response = await stacksAPIFetch(`${apiUrl}/extended/v1/tx?${params}`, {
-    cache: 'default',
-    next: { revalidate: REVALIDATE_SECONDS, tags: [`staking-activity-${functionName}`] },
+    cache: 'no-store',
   });
   if (!response.ok) {
     throw new Error(`Failed to fetch ${functionName} transactions: ${response.status}`);
@@ -302,10 +301,13 @@ export function readTopic(repr: string): string | undefined {
   return /\(topic "([^"]+)"\)/.exec(repr)?.[1];
 }
 
-async function fetchTxEvents(apiUrl: string, txId: string): Promise<string[]> {
+async function fetchTxEvents(apiUrl: string, txId: string, settled = false): Promise<string[]> {
   const response = await stacksAPIFetch(`${apiUrl}/extended/v1/tx/${txId}`, {
     cache: 'default',
-    next: { revalidate: REVALIDATE_SECONDS, tags: [`staking-tx-${txId}`] },
+    next: {
+      revalidate: settled ? SETTLED_REVALIDATE_SECONDS : REVALIDATE_SECONDS,
+      tags: [`staking-tx-${txId}`],
+    },
   });
   if (!response.ok) {
     throw new Error(`Failed to fetch transaction ${txId}: ${response.status}`);
@@ -332,10 +334,6 @@ function optionalBondLabel(index?: number): string | undefined {
 function joinDetail(...parts: (string | undefined)[]): string | undefined {
   const kept = parts.filter(Boolean);
   return kept.length > 0 ? kept.join(' · ') : undefined;
-}
-
-function unlocksCycleDetail(unlockCycle?: bigint): string | undefined {
-  return unlockCycle !== undefined ? `Unlocks cycle ${unlockCycle}` : undefined;
 }
 
 function describeDistribution(bond?: Bond, calculationHeight?: bigint): string | undefined {
@@ -377,34 +375,23 @@ function describeContractCall(
     };
   }
 
-  if (fn === 'stake' || fn === 'stake-update') {
-    const repr = find('stake') ?? find('stake-update');
-    if (!repr) return {};
-    const microStx = readUint(repr, 'amount-ustx');
-    return {
-      text: unlocksCycleDetail(readUint(repr, 'unlock-cycle')),
-      amount: microStx !== undefined ? formatStx(microStx, 0) : undefined,
-    };
-  }
-
-  const repr = find('register-for-bond') ?? find('update-bond-registration') ?? find('unstake');
+  const repr =
+    find('register-for-bond') ?? find('update-bond-registration') ?? find('announce-l1-early-exit');
   const index = repr ? readUint(repr, 'bond-index') : undefined;
   const bondIndex = index !== undefined ? Number(index) : undefined;
-  // A registration reports the BTC it bonds. An unstake reports the STX it releases
-  // and carries no bonded BTC, so the BTC field decides which unit applies.
-  const enrolledSats = repr ? readUint(repr, 'sats-total') : undefined;
-  const releasedMicroStx = repr ? readUint(repr, 'amount-ustx') : undefined;
+  // A registration reports the BTC it bonds. An early exit reports the BTC it frees.
+  const sats = repr
+    ? (readUint(repr, 'sats-total') ?? readUint(repr, 'amount-sats-released'))
+    : undefined;
+  // Only a registration pairs STX with the BTC it bonds.
+  const pairedMicroStx = repr ? readUint(repr, 'amount-ustx') : undefined;
   return {
-    text:
-      optionalBondLabel(bondIndex) ??
-      (repr ? unlocksCycleDetail(readUint(repr, 'unlock-cycle')) : undefined),
+    text: joinDetail(
+      optionalBondLabel(bondIndex),
+      pairedMicroStx !== undefined ? `${formatStx(pairedMicroStx, 0)} paired` : undefined
+    ),
     bondIndex,
-    amount:
-      enrolledSats !== undefined
-        ? formatBtc(enrolledSats)
-        : releasedMicroStx !== undefined
-          ? formatStx(releasedMicroStx, 0)
-          : undefined,
+    amount: sats !== undefined ? formatBtc(sats) : undefined,
   };
 }
 
@@ -488,6 +475,8 @@ export async function fetchCycleAccruedSats(
   return undefined;
 }
 
+const TX_WINDOW_PER_ROW = 3;
+
 export async function fetchStakingActivity(
   poxContractId: string,
   chain: string,
@@ -497,6 +486,7 @@ export async function fetchStakingActivity(
 ): Promise<StakingActivityEvent[]> {
   const apiUrl = getApiUrl(chain, api);
   const groups = group ? [group] : (Object.keys(ACTIVITY_GROUP_FUNCTIONS) as ActivityGroup[]);
+  const txWindow = Math.min(limit * TX_WINDOW_PER_ROW, MAX_PAGE_LIMIT);
 
   const bondsByIndex = new Map<number, Bond>();
   const page = await fetchBondsPage(chain, api).catch(() => undefined);
@@ -507,7 +497,9 @@ export async function fetchStakingActivity(
   const pages = await Promise.all(
     groups.flatMap(activityGroup =>
       ACTIVITY_GROUP_FUNCTIONS[activityGroup].map(async functionName => {
-        const txs = await fetchTxsByFunction(apiUrl, poxContractId, functionName, limit);
+        const txs = await fetchTxsByFunction(apiUrl, poxContractId, functionName, txWindow).catch(
+          () => []
+        );
         return txs.map(tx => ({ tx, activityGroup }));
       })
     )
@@ -517,7 +509,7 @@ export async function fetchStakingActivity(
     .sort(
       (a, b) => b.tx.burn_block_time - a.tx.burn_block_time || b.tx.block_height - a.tx.block_height
     )
-    .slice(0, limit);
+    .slice(0, txWindow);
 
   const rows = await Promise.all(
     txs.map(async ({ tx, activityGroup }): Promise<StakingActivityEvent[]> => {
@@ -529,8 +521,10 @@ export async function fetchStakingActivity(
         group: activityGroup,
       };
 
+      const settled = tx.tx_status === 'success';
+
       if (tx.contract_call?.function_name === 'calculate-rewards') {
-        const reprs = await fetchTxEvents(apiUrl, tx.tx_id);
+        const reprs = await fetchTxEvents(apiUrl, tx.tx_id, settled).catch(() => []);
         const calculationHeight = reprs
           .filter(repr => readTopic(repr) === 'calculate-rewards')
           .map(repr => readUint(repr, 'calculation-height'))
@@ -562,14 +556,12 @@ export async function fetchStakingActivity(
       const labels: Record<string, string> = {
         'register-for-bond': 'Enrolled',
         'update-bond-registration': 'Registration updated',
-        unstake: 'STX unstaked',
         'unstake-sbtc': 'sBTC unstaked',
-        stake: 'STX paired',
-        'stake-update': 'STX paired',
+        'announce-l1-early-exit': 'Bitcoin released early',
         'setup-bond': 'Bond created',
       };
 
-      const reprs = await fetchTxEvents(apiUrl, tx.tx_id);
+      const reprs = await fetchTxEvents(apiUrl, tx.tx_id, settled).catch(() => []);
       const detail = describeContractCall(fn, reprs, bondsByIndex);
       return [
         {
@@ -626,7 +618,7 @@ export async function fetchBondRewards(
 
   const perTx = await Promise.all(
     settled.map(async tx => {
-      const reprs = await fetchTxEvents(apiUrl, tx.tx_id);
+      const reprs = await fetchTxEvents(apiUrl, tx.tx_id, true);
       const summary = reprs.find(repr => readTopic(repr) === 'calculate-rewards');
       if (!summary) return undefined;
       const total = readUint(summary, 'total-bond-rewards');

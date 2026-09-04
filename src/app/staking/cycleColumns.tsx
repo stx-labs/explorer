@@ -114,7 +114,7 @@ export const cycleColumns: ColumnDef<CycleRow>[] = [
   },
   {
     id: 'apyPercent',
-    header: 'Gross APY',
+    header: 'Gross yield',
     accessorKey: 'apyPercent',
     enableSorting: false,
     size: 130,
