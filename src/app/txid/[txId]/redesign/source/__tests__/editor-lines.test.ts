@@ -7,6 +7,15 @@ describe('editor line mapping', () => {
     expect(trimForEditor(source)).toBe(';; header\n(define-public (f) (ok true))');
   });
 
+  it('preserves indentation on the first non-empty line', () => {
+    expect(trimForEditor('\n\n  ;; indented header\n  (ok true)\n')).toBe(
+      '  ;; indented header\n  (ok true)'
+    );
+    expect(trimForEditor('\r\n\t\r\n\t(define-private (f) true)\r\n')).toBe(
+      '\t(define-private (f) true)'
+    );
+  });
+
   it('counts the blank lines removed at the top', () => {
     expect(trimmedLeadingLines(source)).toBe(2);
     expect(trimmedLeadingLines('  ;; indented first line\n(ok true)')).toBe(0);

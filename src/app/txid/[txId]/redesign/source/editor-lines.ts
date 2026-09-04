@@ -6,7 +6,7 @@
  */
 
 export function trimForEditor(code: string): string {
-  return code.replace(/^\s+|\s+$/g, '');
+  return code.replace(/^(?:[^\S\r\n]*\r?\n)+/, '').trimEnd();
 }
 
 /** Blank lines removed from the top of the source by `trimForEditor`. */

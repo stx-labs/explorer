@@ -23,7 +23,7 @@ export function getApiUrl(chain: string, customApiUrl?: string): string {
   return DEFAULT_MAINNET_SERVER;
 }
 
-/** `protocol//host/path` without a trailing slash, or null for anything that is not a URL. */
+/** `protocol://host/path` without a trailing slash, or null for anything that is not a URL. */
 export function normalizeApiOrigin(url: string | undefined | null): string | null {
   if (!url) return null;
   try {
