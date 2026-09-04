@@ -1,7 +1,7 @@
+import { ChartTooltipSurface } from '@/common/components/ChartTooltipSurface';
 import { truncateMiddle } from '@/common/utils/utils';
 import { useColorMode } from '@/components/ui/color-mode';
 import { Text } from '@/ui/Text';
-import { Stack } from '@chakra-ui/react';
 import { TooltipProps } from 'recharts';
 
 export function ChartTooltip({ active, payload, label }: TooltipProps<number, string>) {
@@ -28,19 +28,7 @@ export function ChartTooltip({ active, payload, label }: TooltipProps<number, st
     }
 
     return (
-      <Stack
-        bg={
-          colorMode === 'light'
-            ? 'var(--stacks-colors-alpha-black-alpha-700)'
-            : 'var(--stacks-colors-alpha-sand-alpha-400)'
-        }
-        px={2}
-        pt={1.5}
-        pb={2.5}
-        borderRadius="redesign.sm"
-        borderColor="borderPrimary"
-        gap={2.5}
-      >
+      <ChartTooltipSurface px={2} pt={1.5} pb={2.5} gap={2.5}>
         <Text
           textStyle={'text-medium-xs'}
           color={
@@ -71,7 +59,7 @@ export function ChartTooltip({ active, payload, label }: TooltipProps<number, st
         >
           {`In Bitcoin block ${truncateMiddle(dataPoint?.burnBlockHash, 4, 4)}`}
         </Text>
-      </Stack>
+      </ChartTooltipSurface>
     );
   }
   return null;

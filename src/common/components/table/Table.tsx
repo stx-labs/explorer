@@ -56,7 +56,8 @@ export const getCommonPinningStyles = <T,>(column: Column<T>) => {
   }
 
   return {
-    bg: 'surface',
+    bg: 'surfaceTertiary',
+    _groupHover: { bg: 'surfaceSecondary' },
     left: isPinned === 'left' ? `${column.getStart('left')}px` : undefined,
     right: isPinned === 'right' ? `${column.getAfter('right')}px` : undefined,
     opacity: 1,
@@ -420,8 +421,11 @@ export function Table<T>({
                       flexRender(header.column.columnDef.header, header.getContext())
                     )}
                     {header.column.columnDef.meta?.tooltip && (
-                      <Tooltip content={header.column.columnDef.meta.tooltip}>
-                        <Icon h={4} w={4} color="iconSecondary">
+                      <Tooltip
+                        content={header.column.columnDef.meta.tooltip}
+                        contentProps={{ maxW: '20rem', whiteSpace: 'normal' }}
+                      >
+                        <Icon h={3.5} w={3.5} flexShrink={0} color="iconSecondary">
                           <Info />
                         </Icon>
                       </Tooltip>
