@@ -98,6 +98,12 @@ const themeConfig = {
     semanticTokens: {
       ...SEMANTIC_TOKENS,
     },
+    keyframes: {
+      'lifecycle-pulse': {
+        '0%': { transform: 'scale(1)', opacity: 0.45 },
+        '70%, 100%': { transform: 'scale(2.75)', opacity: 0 },
+      },
+    },
     textStyles: {
       ...TEXT_STYLES,
     },

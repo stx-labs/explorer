@@ -34,6 +34,17 @@ const STATE_BADGES: Record<BondLifecycleState, { bg: string; color: string }> = 
 
 const ENROLLING_ACCENT = 'accent.bitcoin-500';
 
+export const hasBondActions = (state: BondLifecycleState) =>
+  state === 'scheduled' || state === 'enrolling';
+
+export function bondSummary(bond: BondTooltipData, currentBurnHeight: number, nowMs: number) {
+  const date = (height: number) =>
+    `${height > currentBurnHeight ? '~' : ''}${formatDateShort(
+      burnHeightToApproximateTimestamp(height, currentBurnHeight, nowMs)
+    )}`;
+  return `${bond.label} · ${STATE_LABELS[bond.state]} · ${date(bond.schedule.activationHeight)} → ${date(bond.schedule.termEndHeight)}`;
+}
+
 export interface BondTooltipData {
   label: string;
   state: BondLifecycleState;
@@ -191,8 +202,8 @@ export function BondTooltip({
         </Text>
       )}
 
-      {(state === 'scheduled' || state === 'enrolling') && (
-        <Flex gap={4} pt={2} borderTop="1px solid" borderColor="neutral.sand-500" flexWrap="wrap">
+      {hasBondActions(state) && (
+        <Flex gap={4} pt={1} flexWrap="wrap">
           <TooltipAction href={STAKING_LINKS.estimateYield} arrow="out">
             Estimate your yield
           </TooltipAction>

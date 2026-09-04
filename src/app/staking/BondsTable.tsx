@@ -132,7 +132,6 @@ const bondColumns: ColumnDef<BondRow>[] = [
     accessorKey: 'name',
     enableSorting: false,
     size: 110,
-    meta: { isPinned: 'left' },
     cell: info => (
       <Text textStyle="text-medium-sm" whiteSpace="nowrap">
         {info.getValue() as string}

@@ -27,6 +27,8 @@ import { bondLabel, formatBtc, formatDateWithYear, toBigInt } from './utils';
 
 const BAR_HEIGHT = 2;
 
+const PULSE_MS = 2400;
+
 const STATE_LABELS: Record<BondLifecycleState, string> = {
   scheduled: 'Scheduled',
   enrolling: 'Enrolling',
@@ -87,34 +89,52 @@ interface Milestone {
   isCurrent?: boolean;
 }
 
-function LifecycleRow({ milestone }: { milestone: Milestone }) {
+function LifecycleRow({ milestone, live }: { milestone: Milestone; live: boolean }) {
   const { label, height, timestamp, isPast, isCurrent } = milestone;
+  const reached = isPast || isCurrent;
   return (
     <Flex justify="space-between" gap={3} align="center" flexWrap="wrap">
       <Flex gap={3} align="center" minW="12rem">
         <Box
+          position="relative"
+          isolation="isolate"
           w={2}
           h={2}
           borderRadius="full"
           flexShrink={0}
           bg={isCurrent ? 'accent.stacks-500' : isPast ? 'feedback.green-500' : 'transparent'}
-          border={isPast || isCurrent ? undefined : '1px solid'}
+          border={reached ? undefined : '1px solid'}
           borderColor="redesignBorderSecondary"
+          _before={
+            isCurrent && live
+              ? {
+                  content: '""',
+                  position: 'absolute',
+                  inset: 0,
+                  zIndex: -1,
+                  borderRadius: 'full',
+                  bg: 'accent.stacks-500',
+                  opacity: 0.45,
+                  animation: `lifecycle-pulse ${PULSE_MS}ms cubic-bezier(0, 0, 0.2, 1) infinite`,
+                }
+              : undefined
+          }
+          _motionReduce={{ _before: { animation: 'none' } }}
         />
-        <Text textStyle={isPast || isCurrent ? 'text-medium-sm' : 'text-regular-sm'}>{label}</Text>
+        <Text textStyle={reached ? 'text-medium-sm' : 'text-regular-sm'}>{label}</Text>
       </Flex>
       <Flex gap={6} align="baseline">
-        <Text textStyle="text-mono-xs" color={isPast ? 'accent.stacks-500' : 'textSecondary'}>
+        <Text textStyle="text-mono-xs" color={reached ? 'accent.stacks-500' : 'textSecondary'}>
           #{height.toLocaleString()}
         </Text>
         <Text
           textStyle="text-regular-sm"
-          color={isPast ? 'textPrimary' : 'accent.stacks-500'}
+          color={reached ? 'textPrimary' : 'textSecondary'}
           minW="7rem"
           textAlign="right"
           suppressHydrationWarning
         >
-          {isPast ? formatDateShort(timestamp) : `~${formatDateShort(timestamp)}`}
+          {reached ? formatDateShort(timestamp) : `~${formatDateShort(timestamp)}`}
         </Text>
       </Flex>
     </Flex>
@@ -307,7 +327,7 @@ export function CurrentBond({
                 borderTop={index > 0 ? '1px solid' : undefined}
                 borderColor="redesignBorderSecondary"
               >
-                <LifecycleRow milestone={milestone} />
+                <LifecycleRow milestone={milestone} live={state === 'active'} />
               </Box>
             ))}
           </Stack>

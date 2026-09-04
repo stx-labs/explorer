@@ -4,10 +4,13 @@ import { ChartTooltipSurface } from '@/common/components/ChartTooltipSurface';
 import { Text } from '@/ui/Text';
 import { Box, Flex, Stack } from '@chakra-ui/react';
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 
-import { BondTooltip } from './BondTooltip';
+import { BondTooltip, bondSummary, hasBondActions } from './BondTooltip';
 import type { BondTooltipData } from './BondTooltip';
 import { DISTRIBUTIONS_PER_BOND } from './consts';
+import { isInsideApproach, placeHoverCard, preferredSide } from './hoverCard';
+import type { HoverCardAnchor, HoverCardView } from './hoverCard';
 import type { BondTimelineState, DistributionGridCell } from './projections';
 import { approximateBurnHeightAt, burnHeightToRewardCycle } from './projections';
 import { formatDateWithYear } from './utils';
@@ -19,11 +22,13 @@ const PLOT_TOP = 9;
 
 const FOLLOW_MS = 150;
 
-const BAR_GRACE_MS = 200;
+const BAR_HOLD_MS = 150;
 
-const POINTER_OFFSET = 14;
+const REST_MS = 220;
 
-const REST_TOP = 4;
+const REST_TOLERANCE = 4;
+
+const VIEW_MARGIN = 8;
 
 export const SEGMENT_PAID_BG = 'accent.stacks-500';
 export const SEGMENT_REMAINING_BG = 'accent.stacks-300';
@@ -70,29 +75,69 @@ export interface TimelineRow {
 
 export type PlotRow = TimelineRow & { tooltip: BondTooltipData };
 
+interface PlotOrigin {
+  x: number;
+  y: number;
+}
+
 interface PlotPointer {
   x: number;
   y: number;
   plotWidth: number;
   plotHeight: number;
+  view: HoverCardView;
+  origin: PlotOrigin;
+}
+
+function describePlot(rect: DOMRect) {
+  return {
+    plotWidth: rect.width,
+    plotHeight: rect.height,
+    view: {
+      width: rect.width,
+      top: VIEW_MARGIN - rect.top,
+      bottom: window.innerHeight - rect.top - VIEW_MARGIN,
+    },
+    origin: { x: rect.left + window.scrollX, y: rect.top + window.scrollY },
+  };
+}
+
+interface HoverState {
+  pointer: PlotPointer;
+  anchor: HoverCardAnchor;
+  bondIndex?: number;
+  held: boolean;
+  expanded: boolean;
 }
 
 function HoverCard({
-  pointer,
-  restPercent,
+  anchor,
+  view,
+  origin,
   plotWidth,
+  interactive,
+  restPercent,
+  restCenter,
   rich,
+  cardRef,
   children,
 }: {
-  pointer?: PlotPointer;
-  restPercent: number;
+  anchor?: HoverCardAnchor;
+  view?: HoverCardView;
+  origin?: PlotOrigin;
   plotWidth?: number;
+  interactive: boolean;
+  restPercent: number;
+  restCenter: number;
   rich: boolean;
+  cardRef: React.RefObject<HTMLDivElement | null>;
   children: React.ReactNode;
 }) {
   const contentRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState<{ width: number; height: number }>();
+  const [mounted, setMounted] = useState(false);
 
+  useEffect(() => setMounted(true), []);
   useEffect(() => {
     const element = contentRef.current;
     if (!element) return;
@@ -101,48 +146,51 @@ function HoverCard({
     const observer = new ResizeObserver(measure);
     observer.observe(element);
     return () => observer.disconnect();
-  }, []);
+  }, [mounted]);
+
+  if (!mounted || !origin) return null;
 
   const width = size?.width ?? 0;
   const height = size?.height ?? 0;
+  const { x, y } =
+    anchor && view
+      ? placeHoverCard(anchor, { width, height }, view)
+      : {
+          x: (restPercent / 100) * (plotWidth ?? 0) - width / 2,
+          y: Math.max(restCenter - height / 2, 0),
+        };
 
-  let x: number | undefined;
-  let y = REST_TOP;
-  if (pointer) {
-    x = Math.min(Math.max(pointer.x - width / 2, 0), Math.max(pointer.plotWidth - width, 0));
-    const below = pointer.y + POINTER_OFFSET;
-    y =
-      below + height <= pointer.plotHeight
-        ? below
-        : Math.max(pointer.y - POINTER_OFFSET - height, 0);
-  } else if (plotWidth !== undefined) {
-    x = (restPercent / 100) * plotWidth - width / 2;
-  }
-
-  return (
-    <ChartTooltipSurface
-      bg="var(--stacks-colors-alpha-black-alpha-800)"
+  return createPortal(
+    <Box
+      ref={cardRef}
       position="absolute"
       top={0}
-      left={x === undefined ? `calc(${restPercent}% - ${width / 2}px)` : 0}
-      w={size ? undefined : 'max-content'}
-      overflow="hidden"
-      zIndex={2}
-      pointerEvents={rich ? 'auto' : 'none'}
+      left={0}
+      zIndex="tooltip"
+      pointerEvents={interactive ? 'auto' : 'none'}
       data-hover-card="true"
       willChange="transform"
-      transition={`transform ${FOLLOW_MS}ms ease-out, width ${FOLLOW_MS}ms ease-out, height ${FOLLOW_MS}ms ease-out`}
+      transition={`transform ${FOLLOW_MS}ms ease-out`}
       _motionReduce={{ transition: 'none' }}
-      style={{
-        transform: x === undefined ? undefined : `translate3d(${x}px, ${y}px, 0)`,
-        width: size ? `${size.width}px` : undefined,
-        height: size ? `${size.height}px` : undefined,
-      }}
+      style={{ transform: `translate3d(${origin.x + x}px, ${origin.y + y}px, 0)` }}
     >
-      <Box ref={contentRef} w="max-content" px={rich ? 3 : 2} py={rich ? 2.5 : 1}>
-        {children}
-      </Box>
-    </ChartTooltipSurface>
+      <ChartTooltipSurface
+        bg="var(--stacks-colors-alpha-black-alpha-800)"
+        w={size ? undefined : 'max-content'}
+        overflow="hidden"
+        transition={`width ${FOLLOW_MS}ms ease-out, height ${FOLLOW_MS}ms ease-out`}
+        _motionReduce={{ transition: 'none' }}
+        style={{
+          width: size ? `${size.width}px` : undefined,
+          height: size ? `${size.height}px` : undefined,
+        }}
+      >
+        <Box ref={contentRef} w="max-content" px={rich ? 3 : 2} py={rich ? 2.5 : 1}>
+          {children}
+        </Box>
+      </ChartTooltipSurface>
+    </Box>,
+    document.body
   );
 }
 
@@ -157,8 +205,8 @@ const TimelineRows = memo(function TimelineRows({
 }) {
   return (
     <Stack gap={ROW_GAP} position="relative" zIndex={1}>
-      {rows.map(row => (
-        <Flex key={row.index} align="center">
+      {rows.map((row, rowIndex) => (
+        <Flex key={row.index} data-row-index={rowIndex} align="center">
           <Box w={ROW_LABEL_WIDTH} flexShrink={0} pr={3}>
             <Text textStyle="text-regular-sm" whiteSpace="nowrap">
               {row.label}
@@ -233,90 +281,198 @@ export function TimelinePlot({
   firstBurnchainBlockHeight: number;
 }) {
   const plotRef = useRef<HTMLDivElement>(null);
-  const [pointer, setPointer] = useState<PlotPointer>();
-  const [hoveredBondIndex, setHoveredBondIndex] = useState<number>();
-  const barGrace = useRef<ReturnType<typeof setTimeout>>(undefined);
-  const hoveredRef = useRef<number>(undefined);
+  const cardRef = useRef<HTMLDivElement>(null);
+  const [hover, setHover] = useState<HoverState>();
+  const hoverRef = useRef<HoverState>(undefined);
+  const rowBand = useRef<{ rowTop: number; rowBottom: number }>(undefined);
+  const hold = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const rest = useRef<{ timer: ReturnType<typeof setTimeout>; x: number; y: number }>(undefined);
   const frame = useRef<number>(undefined);
   const latestMove = useRef<{ x: number; y: number; target: EventTarget | null }>(null);
-  const trackCursor = useCallback((event: React.MouseEvent) => {
-    latestMove.current = { x: event.clientX, y: event.clientY, target: event.target };
-    if (frame.current !== undefined) return;
-    frame.current = requestAnimationFrame(() => {
-      frame.current = undefined;
-      const move = latestMove.current;
-      const rect = plotRef.current?.getBoundingClientRect();
-      if (!move || !rect || rect.width <= 0) return;
-      const target = move.target as HTMLElement | null;
-      if (target?.closest?.('[data-hover-card]')) {
-        clearTimeout(barGrace.current);
-        return;
-      }
-      const x = move.x - rect.left;
-      if (x < 0 || x > rect.width) {
-        setPointer(undefined);
-        return;
-      }
-      const bar = target?.closest?.('[data-bond-index]') as HTMLElement | null;
-      clearTimeout(barGrace.current);
-      if (bar?.dataset.bondIndex !== undefined) {
-        const index = Number(bar.dataset.bondIndex);
-        if (hoveredRef.current !== index) {
-          hoveredRef.current = index;
-          setHoveredBondIndex(index);
-          setPointer({ x, y: move.y - rect.top, plotWidth: rect.width, plotHeight: rect.height });
-        }
-        return;
-      }
-      setPointer({ x, y: move.y - rect.top, plotWidth: rect.width, plotHeight: rect.height });
-      if (hoveredRef.current !== undefined) {
-        barGrace.current = setTimeout(() => {
-          hoveredRef.current = undefined;
-          setHoveredBondIndex(undefined);
-        }, BAR_GRACE_MS);
-      }
-    });
+  const actionable = useRef(new Set<number>());
+  actionable.current = new Set(
+    rows.filter(row => hasBondActions(row.tooltip.state)).map(row => row.index)
+  );
+
+  const commit = useCallback((next: HoverState | undefined) => {
+    hoverRef.current = next;
+    setHover(next);
   }, []);
+  const releaseHold = useCallback(() => {
+    const latest = hoverRef.current;
+    if (latest?.held) commit({ ...latest, bondIndex: undefined, held: false });
+  }, [commit]);
+  const clearRest = useCallback(() => {
+    if (rest.current) clearTimeout(rest.current.timer);
+    rest.current = undefined;
+  }, []);
+  const expand = useCallback(() => {
+    rest.current = undefined;
+    const latest = hoverRef.current;
+    if (latest && latest.bondIndex !== undefined && !latest.held && !latest.expanded) {
+      commit({ ...latest, expanded: true });
+    }
+  }, [commit]);
+  const armRest = useCallback(
+    (x: number, y: number) => {
+      if (rest.current) clearTimeout(rest.current.timer);
+      rest.current = { timer: setTimeout(expand, REST_MS), x, y };
+    },
+    [expand]
+  );
+
+  const trackCursor = useCallback(
+    (event: React.MouseEvent) => {
+      latestMove.current = { x: event.clientX, y: event.clientY, target: event.target };
+      if (frame.current !== undefined) return;
+      frame.current = requestAnimationFrame(() => {
+        frame.current = undefined;
+        const move = latestMove.current;
+        const rect = plotRef.current?.getBoundingClientRect();
+        if (!move || !rect || rect.width <= 0) return;
+        const target = move.target as HTMLElement | null;
+        const bar = target?.closest?.('[data-bond-index]') as HTMLElement | null;
+        const bondIndex =
+          bar?.dataset.bondIndex === undefined ? undefined : Number(bar.dataset.bondIndex);
+        const current = hoverRef.current;
+        const x = move.x - rect.left;
+        const y = move.y - rect.top;
+        if (current?.expanded) {
+          const interactive =
+            current.bondIndex !== undefined && actionable.current.has(current.bondIndex);
+          const onCard = interactive && target?.closest?.('[data-hover-card]');
+          const cardRect = interactive ? cardRef.current?.getBoundingClientRect() : undefined;
+          const approaching =
+            cardRect &&
+            isInsideApproach(
+              current.anchor,
+              {
+                left: cardRect.left - rect.left,
+                right: cardRect.right - rect.left,
+                top: cardRect.top - rect.top,
+                bottom: cardRect.bottom - rect.top,
+              },
+              { x, y }
+            );
+          if (bondIndex === current.bondIndex || onCard || approaching) return;
+        }
+        if (x < 0 || x > rect.width) {
+          clearTimeout(hold.current);
+          clearRest();
+          rowBand.current = undefined;
+          commit(undefined);
+          return;
+        }
+        const row = target?.closest?.('[data-row-index]');
+        if (row) {
+          const rowRect = row.getBoundingClientRect();
+          rowBand.current = {
+            rowTop: rowRect.top - rect.top,
+            rowBottom: rowRect.bottom - rect.top,
+          };
+        }
+        const band = rowBand.current ?? { rowTop: y, rowBottom: y };
+        let shown = bondIndex;
+        let held = false;
+        if (bondIndex === undefined && current?.bondIndex !== undefined) {
+          shown = current.bondIndex;
+          held = true;
+          if (!current.held) hold.current = setTimeout(releaseHold, BAR_HOLD_MS);
+        } else {
+          clearTimeout(hold.current);
+        }
+        if (bondIndex === undefined) {
+          clearRest();
+        } else if (
+          !rest.current ||
+          bondIndex !== current?.bondIndex ||
+          current?.held ||
+          Math.hypot(x - rest.current.x, y - rest.current.y) > REST_TOLERANCE
+        ) {
+          armRest(x, y);
+        }
+        commit({
+          pointer: { x, y, ...describePlot(rect) },
+          anchor: { x, ...band, side: preferredSide(band, rect.height) },
+          bondIndex: shown,
+          held,
+          expanded: false,
+        });
+      });
+    },
+    [commit, releaseHold, armRest, clearRest]
+  );
   const clearCursor = useCallback(() => {
     if (frame.current !== undefined) cancelAnimationFrame(frame.current);
     frame.current = undefined;
-    clearTimeout(barGrace.current);
-    hoveredRef.current = undefined;
-    setPointer(undefined);
-    setHoveredBondIndex(undefined);
-  }, []);
-  const focusBond = useCallback((index: number, element: HTMLElement) => {
-    const plotRect = plotRef.current?.getBoundingClientRect();
-    if (!plotRect || plotRect.width <= 0) return;
-    const barRect = element.getBoundingClientRect();
-    clearTimeout(barGrace.current);
-    hoveredRef.current = index;
-    setHoveredBondIndex(index);
-    setPointer({
-      x: Math.min(Math.max(barRect.left + barRect.width / 2 - plotRect.left, 0), plotRect.width),
-      y: barRect.top + barRect.height / 2 - plotRect.top,
-      plotWidth: plotRect.width,
-      plotHeight: plotRect.height,
-    });
-  }, []);
+    clearTimeout(hold.current);
+    clearRest();
+    rowBand.current = undefined;
+    commit(undefined);
+  }, [commit, clearRest]);
+  const focusBond = useCallback(
+    (index: number, element: HTMLElement) => {
+      const plotRect = plotRef.current?.getBoundingClientRect();
+      if (!plotRect || plotRect.width <= 0) return;
+      const barRect = element.getBoundingClientRect();
+      const rowRect = element.closest('[data-row-index]')?.getBoundingClientRect() ?? barRect;
+      const x = Math.min(
+        Math.max(barRect.left + barRect.width / 2 - plotRect.left, 0),
+        plotRect.width
+      );
+      const band = { rowTop: rowRect.top - plotRect.top, rowBottom: rowRect.bottom - plotRect.top };
+      clearTimeout(hold.current);
+      clearRest();
+      commit({
+        pointer: {
+          x,
+          y: barRect.top + barRect.height / 2 - plotRect.top,
+          ...describePlot(plotRect),
+        },
+        anchor: { x, ...band, side: preferredSide(band, plotRect.height) },
+        bondIndex: index,
+        held: false,
+        expanded: true,
+      });
+    },
+    [commit, clearRest]
+  );
   useEffect(
     () => () => {
-      clearTimeout(barGrace.current);
+      clearTimeout(hold.current);
+      if (rest.current) clearTimeout(rest.current.timer);
       if (frame.current !== undefined) cancelAnimationFrame(frame.current);
     },
     []
   );
 
   const [plotWidth, setPlotWidth] = useState<number>();
+  const [plotOrigin, setPlotOrigin] = useState<PlotOrigin>();
+  const [restCenter, setRestCenter] = useState((PLOT_TOP * 4) / 2);
+  const measurePlot = useCallback(() => {
+    const element = plotRef.current;
+    if (!element) return;
+    const rect = element.getBoundingClientRect();
+    setPlotWidth(rect.width);
+    const origin = { x: rect.left + window.scrollX, y: rect.top + window.scrollY };
+    setPlotOrigin(previous =>
+      previous && previous.x === origin.x && previous.y === origin.y ? previous : origin
+    );
+    const firstRow = element.parentElement?.parentElement?.querySelector('[data-row-index="0"]');
+    if (firstRow) setRestCenter((firstRow.getBoundingClientRect().top - rect.top) / 2);
+  }, []);
+  useEffect(measurePlot);
   useEffect(() => {
     const element = plotRef.current;
     if (!element) return;
-    const measure = () => setPlotWidth(element.getBoundingClientRect().width);
-    measure();
-    const observer = new ResizeObserver(measure);
+    const observer = new ResizeObserver(measurePlot);
     observer.observe(element);
-    return () => observer.disconnect();
-  }, []);
+    window.addEventListener('resize', measurePlot);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', measurePlot);
+    };
+  }, [measurePlot]);
 
   const todayLabel = new Date(nowMs).toLocaleString('en-US', {
     month: 'short',
@@ -324,6 +480,7 @@ export function TimelinePlot({
     timeZone: 'UTC',
   });
 
+  const pointer = hover?.pointer;
   const pointerPercent = pointer ? (pointer.x / pointer.plotWidth) * 100 : undefined;
   const pointerLabel = (() => {
     if (pointerPercent === undefined) return undefined;
@@ -341,7 +498,9 @@ export function TimelinePlot({
       .filter(Boolean)
       .join(' · ');
   })();
-  const hoveredRow = rows.find(row => row.index === hoveredBondIndex);
+  const hoveredRow = rows.find(row => row.index === hover?.bondIndex);
+  const expanded = !!hover?.expanded && hoveredRow !== undefined;
+  const interactive = expanded && hasBondActions(hoveredRow.tooltip.state);
   const hoveredCell =
     pointerPercent === undefined
       ? undefined
@@ -358,13 +517,14 @@ export function TimelinePlot({
       onMouseMove={trackCursor}
       onMouseLeave={clearCursor}
       onBlurCapture={event => {
-        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) clearCursor();
+        const next = event.relatedTarget as Node | null;
+        if (!event.currentTarget.contains(next) && !cardRef.current?.contains(next)) clearCursor();
       }}
     >
       <TimelineRows rows={rows} cells={cells} onBondFocus={focusBond} />
       <Flex position="absolute" inset={0} pointerEvents="none">
         <Box w={ROW_LABEL_WIDTH} flexShrink={0} pr={3} />
-        <Box position="relative" flex={1} ref={plotRef}>
+        <Box position="relative" flex={1} ref={plotRef} data-timeline-plot="true">
           {hoveredCell &&
             rows.map((row, rowIndex) => (
               <Box
@@ -406,12 +566,17 @@ export function TimelinePlot({
             }
           />
           <HoverCard
-            pointer={pointer}
-            restPercent={todayPercent}
+            anchor={hover?.anchor}
+            view={pointer?.view}
+            origin={pointer?.origin ?? plotOrigin}
             plotWidth={plotWidth}
-            rich={!!hoveredRow}
+            interactive={interactive}
+            restPercent={todayPercent}
+            restCenter={restCenter}
+            rich={expanded}
+            cardRef={cardRef}
           >
-            {hoveredRow ? (
+            {expanded ? (
               <BondTooltip
                 bond={hoveredRow.tooltip}
                 distributionsPaid={hoveredRow.distributionsPaid}
@@ -426,7 +591,9 @@ export function TimelinePlot({
                 whiteSpace="nowrap"
                 suppressHydrationWarning
               >
-                {pointerLabel ?? `today · ${todayLabel}`}
+                {hoveredRow
+                  ? bondSummary(hoveredRow.tooltip, currentBurnHeight, nowMs)
+                  : (pointerLabel ?? `today · ${todayLabel}`)}
               </Text>
             )}
           </HoverCard>

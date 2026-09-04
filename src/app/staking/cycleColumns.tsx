@@ -39,7 +39,6 @@ export const cycleColumns: ColumnDef<CycleRow>[] = [
     header: 'Cycle',
     accessorKey: 'cycleNumber',
     enableSorting: false,
-    meta: { isPinned: 'left' },
     size: 70,
     cell: info => (
       <Text textStyle="text-medium-sm">{(info.getValue() as number).toLocaleString()}</Text>
