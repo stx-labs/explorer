@@ -461,7 +461,7 @@ export function TimelinePlot({
     const firstRow = element.parentElement?.parentElement?.querySelector('[data-row-index="0"]');
     if (firstRow) setRestCenter((firstRow.getBoundingClientRect().top - rect.top) / 2);
   }, []);
-useEffect(() => measurePlot(), [measurePlot]);
+  useEffect(() => measurePlot(), [measurePlot]);
   useEffect(() => {
     const element = plotRef.current;
     if (!element) return;
