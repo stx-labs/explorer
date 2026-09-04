@@ -180,7 +180,7 @@ export function BondTooltip({
               )
             : state !== 'maturity' &&
               targetRateBps !== undefined && (
-                <Row label="Target rate" value={formatRatePercent(targetRateBps)} />
+                <Row label="Protocol Yield Target" value={formatRatePercent(targetRateBps)} />
               )}
           {state !== 'enrolling' && <Row label="Rewarded" value={rewarded} />}
         </Stack>

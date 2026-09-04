@@ -334,6 +334,10 @@ function joinDetail(...parts: (string | undefined)[]): string | undefined {
   return kept.length > 0 ? kept.join(' · ') : undefined;
 }
 
+function unlocksCycleDetail(unlockCycle?: bigint): string | undefined {
+  return unlockCycle !== undefined ? `Unlocks cycle ${unlockCycle}` : undefined;
+}
+
 function describeDistribution(bond?: Bond, calculationHeight?: bigint): string | undefined {
   const activation = bond?.schedule?.activation?.bitcoin_height;
   const unlock = bond?.schedule?.unlock?.bitcoin_height;
@@ -377,9 +381,8 @@ function describeContractCall(
     const repr = find('stake') ?? find('stake-update');
     if (!repr) return {};
     const microStx = readUint(repr, 'amount-ustx');
-    const unlockCycle = readUint(repr, 'unlock-cycle');
     return {
-      text: unlockCycle !== undefined ? `Unlocks cycle ${unlockCycle}` : undefined,
+      text: unlocksCycleDetail(readUint(repr, 'unlock-cycle')),
       amount: microStx !== undefined ? formatStx(microStx, 0) : undefined,
     };
   }
@@ -387,7 +390,22 @@ function describeContractCall(
   const repr = find('register-for-bond') ?? find('update-bond-registration') ?? find('unstake');
   const index = repr ? readUint(repr, 'bond-index') : undefined;
   const bondIndex = index !== undefined ? Number(index) : undefined;
-  return { text: optionalBondLabel(bondIndex), bondIndex };
+  // A registration reports the BTC it bonds. An unstake reports the STX it releases
+  // and carries no bonded BTC, so the BTC field decides which unit applies.
+  const enrolledSats = repr ? readUint(repr, 'sats-total') : undefined;
+  const releasedMicroStx = repr ? readUint(repr, 'amount-ustx') : undefined;
+  return {
+    text:
+      optionalBondLabel(bondIndex) ??
+      (repr ? unlocksCycleDetail(readUint(repr, 'unlock-cycle')) : undefined),
+    bondIndex,
+    amount:
+      enrolledSats !== undefined
+        ? formatBtc(enrolledSats)
+        : releasedMicroStx !== undefined
+          ? formatStx(releasedMicroStx, 0)
+          : undefined,
+  };
 }
 
 const SETTLED_REVALIDATE_SECONDS = 24 * 60 * 60;
@@ -544,7 +562,7 @@ export async function fetchStakingActivity(
       const labels: Record<string, string> = {
         'register-for-bond': 'Enrolled',
         'update-bond-registration': 'Registration updated',
-        unstake: 'Unstaked',
+        unstake: 'STX unstaked',
         'unstake-sbtc': 'sBTC unstaked',
         stake: 'STX paired',
         'stake-update': 'STX paired',

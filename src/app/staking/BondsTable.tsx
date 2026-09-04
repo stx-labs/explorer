@@ -206,10 +206,10 @@ const bondColumns: ColumnDef<BondRow>[] = [
   },
   {
     id: 'targetRate',
-    header: 'Target APY',
+    header: 'Protocol Yield Target',
     accessorKey: 'targetRatePercent',
     enableSorting: false,
-    size: 100,
+    size: 180,
     meta: { textAlign: 'right' },
     cell: info => (
       <Text textStyle="text-regular-sm" whiteSpace="nowrap">

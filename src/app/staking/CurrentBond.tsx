@@ -170,6 +170,7 @@ export function CurrentBond({
     prepareCycleLength
   );
   const state = getBondLifecycleState(schedule, currentBurnHeight, true);
+  const hasStarted = currentBurnHeight >= schedule.activationHeight;
   const progress = getBondProgress(schedule, currentBurnHeight, rewardCycleLength);
   const cadence = getDistributionCadence(rewardCycleLength);
   const distributionHeight = (n: number) => schedule.activationHeight + n * cadence;
@@ -255,7 +256,9 @@ export function CurrentBond({
           <Stack gap={2}>
             <Flex justify="space-between" gap={3}>
               <Text textStyle="text-medium-sm">
-                Day {progress.dayOfTerm} of {progress.termDays}
+                {hasStarted
+                  ? `Day ${progress.dayOfTerm} of ${progress.termDays}`
+                  : 'Not yet started'}
               </Text>
               <Text textStyle="text-regular-sm" color="textSecondary">
                 {(progress.elapsedRatio * 100).toFixed(1)}% elapsed

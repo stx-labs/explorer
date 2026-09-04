@@ -9,7 +9,7 @@ export const GLOSSARY = {
   bondTerm: {
     term: 'Bond term',
     definition:
-      'Every bond runs for the same fixed length: 12 reward cycles from the block it activates. The contract sets this, so no bond is longer or shorter than another.',
+      'Every bond runs for the same fixed length: 12 reward cycles from the block it activates.',
     docsUrl: `${DOCS_GLOSSARY}#bonding-period`,
   },
   rewardDistribution: {
@@ -19,9 +19,8 @@ export const GLOSSARY = {
     docsUrl: `${DOCS_GLOSSARY}#distribution-cycle`,
   },
   targetRewardRate: {
-    term: 'Target reward rate',
-    definition:
-      'The annual rate a bond aims to pay on the BTC bonded to it. The contract pays a fixed fraction of it at each distribution, so a bond whose blocks arrive faster than average realises slightly more than the target, and slower slightly less.',
+    term: 'Protocol Yield Target',
+    definition: 'The annual rate a bond aims to pay on the BTC bonded to it.',
     docsUrl: `${DOCS_GLOSSARY}#apy-target`,
   },
   stxPairing: {
