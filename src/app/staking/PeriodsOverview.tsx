@@ -346,10 +346,6 @@ export function PeriodsOverview({
             {statesShown.has('upcoming') && (
               <LegendKey swatch={<Swatch dashed />} label="Scheduled · not yet started" />
             )}
-            <LegendKey
-              swatch={<Box w={4} borderTop="1px dashed" borderColor="neutral.sand-400" />}
-              label="Today"
-            />
           </Flex>
         </Stack>
       )}
