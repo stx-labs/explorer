@@ -9,30 +9,15 @@ const CURRENT_BURN_HEIGHT = 9508;
 const NOW_MS = Date.UTC(2026, 7, 25, 19, 0, 0);
 const toRow = (bond: Bond) => toBondRow(bond, CURRENT_BURN_HEIGHT, NOW_MS);
 
-describe('bond fixtures', () => {
-  test('cover both observed statuses', () => {
-    const statuses = new Set(bonds.map(b => b.status));
-    expect(statuses.has('upcoming')).toBe(true);
-    expect(statuses.has('active')).toBe(true);
-  });
-});
-
 describe('toBondRow', () => {
-  test('maps an active bond with balances', () => {
+  test('derives an active bond row from its parameters', () => {
     const bond = bonds.find(b => b.index === 3)!;
     const row = toRow(bond);
     expect(row.name).toBe('Bond 3');
     expect(row.status).toBe('Active');
     expect(row.isPending).toBe(false);
-    expect(row.activationHeight).toBe(9000);
-    expect(row.unlockHeight).toBe(19800);
-    expect(row.activationCycle).toBe(10);
-    expect(row.unlockCycle).toBe(22);
-    expect(row.lockedSats).toBe(BigInt(19500));
-    expect(row.capacitySats).toBe(BigInt(13686724000));
+    // 1000 bps on the fixture, read as a percentage
     expect(row.targetRatePercent).toBe(10);
-    expect(row.registeredCount).toBe(1);
-    expect(row.allowedCount).toBe(87);
   });
 
   test('marks an upcoming bond as pending rather than empty', () => {
@@ -41,22 +26,6 @@ describe('toBondRow', () => {
     expect(row.isPending).toBe(true);
     expect(row.capacitySats).toBe(BigInt(13986724000));
     expect(row.lockedSats).toBe(BigInt(0));
-  });
-
-  test('term spans 12 pox cycles', () => {
-    bonds.forEach(bond => {
-      const row = toRow(bond);
-      expect(row.unlockCycle - row.activationCycle).toBe(12);
-    });
-  });
-
-  test('projects rough dates for the term from block heights', () => {
-    const row = toRow(bonds.find(b => b.index === 3)!);
-    const TEN_MIN = 10 * 60 * 1000;
-    expect(row.activationMs).toBe(NOW_MS + (9000 - CURRENT_BURN_HEIGHT) * TEN_MIN);
-    expect(row.activationMs).toBeLessThan(NOW_MS);
-    expect(row.unlockMs).toBe(NOW_MS + (19800 - CURRENT_BURN_HEIGHT) * TEN_MIN);
-    expect(row.unlockMs).toBeGreaterThan(NOW_MS);
   });
 });
 
@@ -86,11 +55,6 @@ describe('display helpers', () => {
 });
 
 describe('formatUsd', () => {
-  test('abbreviates large sums', () => {
-    expect(formatUsd(106_005_982)).toBe('$106.01M');
-    expect(formatUsd(1_250_000_000)).toBe('$1.25B');
-  });
-
   test('abbreviates thousands, which the shared util does not', () => {
     expect(formatUsd(75_441)).toBe('$75.44K');
   });

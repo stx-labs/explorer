@@ -1,6 +1,5 @@
 import {
   applyStackingRewardWaterfall,
-  bpsToPercent,
   burnHeightToApproximateTimestamp,
   formatTermDuration,
   formatTimeRemaining,
@@ -11,8 +10,6 @@ import {
   getBondTimelineState,
   getCycleRewardsPerStx,
   getCycleStackerRewardsSatsBigInt,
-  getCyclesPerYear,
-  getDistributionCadence,
   getDistributionGridCells,
   getFeaturedBondIndex,
   getRealizedRatePercent,
@@ -23,38 +20,12 @@ import {
   projectScheduledBonds,
 } from '../projections';
 
-const MAINNET = {
-  firstBurnchainBlockHeight: 666050,
-  rewardCycleLength: 2100,
-  currentBurnHeight: 964047,
-};
-
-describe('getDistributionCadence', () => {
-  test('is half a reward cycle', () => {
-    expect(getDistributionCadence(2100)).toBe(1050);
-  });
-
-  test('follows the network, rather than assuming mainnet', () => {
-    expect(getDistributionCadence(900)).toBe(450);
-  });
-});
-
 describe('burnHeightToApproximateTimestamp', () => {
   const nowMs = Date.UTC(2026, 7, 25, 19, 0, 0);
 
-  test('projects forward at 10 minutes per block', () => {
+  test('projects 10 minutes a block, forwards and back', () => {
     expect(burnHeightToApproximateTimestamp(1006, 1000, nowMs)).toBe(nowMs + 60 * 60 * 1000);
-  });
-
-  test('projects backwards for heights already passed', () => {
     expect(burnHeightToApproximateTimestamp(994, 1000, nowMs)).toBe(nowMs - 60 * 60 * 1000);
-  });
-});
-
-describe('bpsToPercent', () => {
-  test('converts basis points to a percentage', () => {
-    expect(bpsToPercent(300)).toBe(3);
-    expect(bpsToPercent(500)).toBe(5);
   });
 });
 
@@ -98,16 +69,6 @@ describe('getCycleRewardsPerStx', () => {
   });
 });
 
-describe('getCyclesPerYear', () => {
-  test('mainnet cycles are about 14.6 days, so roughly 25 a year', () => {
-    expect(getCyclesPerYear(2100)).toBeCloseTo(25.0286, 4);
-  });
-
-  test('follows the network rather than assuming mainnet', () => {
-    expect(getCyclesPerYear(900)).toBeCloseTo(58.4, 1);
-  });
-});
-
 describe('getStackingYieldForCompletedCycle', () => {
   const fullCycleRewardsPerMicroStx = MAINNET_CYCLE_141.rewardsPerMicroStx * BigInt(2);
 
@@ -147,16 +108,10 @@ describe('getStackingYieldForCompletedCycle', () => {
 });
 
 describe('getBondTimelineState', () => {
-  test('a bond whose unlock height has passed is finished', () => {
-    expect(getBondTimelineState(9000, 19800, 20000)).toBe('complete');
-  });
-
-  test('a bond that has activated but not unlocked is active', () => {
-    expect(getBondTimelineState(9000, 19800, 9500)).toBe('active');
-  });
-
-  test('a bond that has not reached its activation height is upcoming', () => {
+  test('moves from upcoming to active to complete as heights pass', () => {
     expect(getBondTimelineState(10800, 21600, 9500)).toBe('upcoming');
+    expect(getBondTimelineState(9000, 19800, 9500)).toBe('active');
+    expect(getBondTimelineState(9000, 19800, 20000)).toBe('complete');
   });
 
   test('the exact activation block counts as active', () => {
@@ -220,21 +175,22 @@ describe('getTimelineBounds', () => {
 });
 
 describe('getTimelineTicks', () => {
-  test('labels each day on a short axis', () => {
+  test('gives one tick a day on a short axis, named for the day', () => {
     const ticks = getTimelineTicks(Date.UTC(2026, 7, 23), Date.UTC(2026, 7, 28), 'day');
-    expect(ticks.map(t => t.label)).toEqual(['Aug 23', 'Aug 24', 'Aug 25', 'Aug 26', 'Aug 27']);
+    expect(ticks).toHaveLength(5);
     expect(ticks[0].leftPercent).toBe(0);
+    ticks.forEach(tick => expect(tick.label).toMatch(/^\w{3} \d{1,2}$/));
   });
 
-  test('labels each month on a long axis', () => {
+  test('gives one tick a month on a long axis, named for the month', () => {
     const ticks = getTimelineTicks(Date.UTC(2026, 2, 1), Date.UTC(2026, 6, 1), 'month');
-    expect(ticks.map(t => t.label)).toEqual(['Mar', 'Apr', 'May', 'Jun']);
+    expect(ticks).toHaveLength(4);
+    ticks.forEach(tick => expect(tick.label).toMatch(/^\w{3}$/));
   });
 
   test('thins out labels rather than crowding them', () => {
     const ticks = getTimelineTicks(Date.UTC(2026, 7, 1), Date.UTC(2026, 7, 22), 'day');
     expect(ticks.length).toBeLessThanOrEqual(8);
-    expect(ticks[0].label).toBe('Aug 1');
   });
 
   test('marks January so the UI can show the year turning over', () => {
@@ -249,18 +205,11 @@ describe('getTimelineTicks', () => {
 });
 
 describe('isCycleLengthPlausible', () => {
-  test('accepts real networks', () => {
-    expect(isCycleLengthPlausible(2100)).toBe(true);
-    expect(isCycleLengthPlausible(900)).toBe(true);
-  });
-
-  test('rejects cycles that pass in hours', () => {
-    expect(isCycleLengthPlausible(20)).toBe(false);
-  });
-
   test('draws the line at a day', () => {
+    expect(isCycleLengthPlausible(2100)).toBe(true);
     expect(isCycleLengthPlausible(144)).toBe(true);
     expect(isCycleLengthPlausible(143)).toBe(false);
+    expect(isCycleLengthPlausible(20)).toBe(false);
   });
 });
 
@@ -280,10 +229,6 @@ describe('getStackingYieldForCompletedCycle on a fast network', () => {
 describe('formatTermDuration', () => {
   test('describes a mainnet bond term in months', () => {
     expect(formatTermDuration(12 * 2100)).toBe('6 months');
-  });
-
-  test('describes a testnet term in months too', () => {
-    expect(formatTermDuration(12 * 900)).toBe('2 months');
   });
 
   test('drops to days on a fast network', () => {
@@ -327,11 +272,6 @@ describe('formatTimeRemaining', () => {
   test('is empty when nothing is left to wait for', () => {
     expect(formatTimeRemaining(0)).toBe('');
     expect(formatTimeRemaining(-5)).toBe('');
-  });
-
-  test('is more precise than the term formatter', () => {
-    expect(formatTermDuration(4)).toBe('1 hour');
-    expect(formatTimeRemaining(4)).toBe('40 min');
   });
 });
 

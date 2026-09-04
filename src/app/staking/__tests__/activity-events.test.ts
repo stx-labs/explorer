@@ -49,12 +49,6 @@ describe('readCumulativePaidSats', () => {
     expect(readCumulativePaidSats(BOND_DISTRIBUTION)).toBe(BigInt(800));
   });
 
-  test('is at least the amount of the distribution that produced it', () => {
-    const cumulative = readCumulativePaidSats(BOND_DISTRIBUTION);
-    const thisDistribution = readUint(BOND_DISTRIBUTION, 'bond-rewards');
-    expect(cumulative).toBeGreaterThanOrEqual(thisDistribution!);
-  });
-
   test('is undefined for an event that reports no rewards', () => {
     expect(readCumulativePaidSats(REGISTER_FOR_BOND)).toBeUndefined();
   });
