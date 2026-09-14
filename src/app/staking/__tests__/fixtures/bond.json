@@ -1,0 +1,17 @@
+{
+  "index": 3,
+  "pox_version": "pox5",
+  "status": "active",
+  "parameters": {
+    "target_rate_bps": 1000,
+    "stx_value_ratio": 1000,
+    "minimum_stx_ratio": 500,
+    "btc_capacity": "13686724000"
+  },
+  "registrations": { "allowed_count": 87, "registered_count": 1 },
+  "schedule": {
+    "activation": { "bitcoin_height": 9000, "pox_cycle": 10 },
+    "unlock": { "bitcoin_height": 19800, "pox_cycle": 22 }
+  },
+  "balances": { "locked": { "btc": "19500", "stx": "1009750" }, "paid_out": { "btc": "0" } }
+}
