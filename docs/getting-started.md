@@ -28,7 +28,7 @@ To install project dependencies:
 
 ## Setting Environment Variables
 
-The Explorer application needs the environment variables listed below to work properly. 
+The Explorer application needs the environment variables listed below to work properly.
 
 ```
 NEXT_PUBLIC_MAINNET_API_SERVER=https://api.hiro.so
@@ -38,6 +38,11 @@ NEXT_PUBLIC_DEPLOYMENT_URL=https://explorer.hiro.so
 NEXT_PUBLIC_MAINNET_ENABLED="true"
 NEXT_PUBLIC_DEFAULT_POLLING_INTERVAL="10000"
 ```
+
+`EXPLORER_STACKS_API_KEY` (optional, server-side only) authenticates the server's requests to the
+Stacks API. It is sent only to the servers named by `NEXT_PUBLIC_MAINNET_API_SERVER` and
+`NEXT_PUBLIC_TESTNET_API_SERVER`; a custom `api` host chosen by a visitor never receives it, and the
+transaction page does not fetch from such a host during server-side rendering at all.
 
 > **_NOTE:_**
 >
