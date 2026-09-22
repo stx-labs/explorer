@@ -20,10 +20,15 @@ function ProgressKnob({ diameter, ...boxProps }: { diameter: number } & BoxProps
 }
 
 export function ProgressBar({ percentage = 0 }: { percentage?: number }) {
-  const progress = Math.min(Math.max(percentage, 0), 100);
-
+  const safePercentage = Number.isFinite(percentage) ? percentage : 0;
+  const progress = Math.min(Math.max(safePercentage, 0), 100);
   return (
     <Stack
+      role="progressbar"
+      aria-label="Stacking cycle progress"
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-valuenow={Number.isFinite(percentage) ? progress : undefined}
       bg={{
         base: 'neutral.sand-200',
         _dark: 'neutral.sand-700',
@@ -39,7 +44,7 @@ export function ProgressBar({ percentage = 0 }: { percentage?: number }) {
         borderRadius={'redesign.2xl'}
         w={`${progress}%`}
         position="absolute"
-        boxShadow={'0px 2px 10px 0px rgba(255, 85, 18, 0.50)'}
+        boxShadow="brandGlow"
       />
       <ProgressKnob
         diameter={PROGRESS_KNOB_DIAMETER}

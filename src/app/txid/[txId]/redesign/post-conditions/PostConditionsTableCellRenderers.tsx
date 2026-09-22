@@ -1,9 +1,9 @@
 import { AmountCellRenderer, AssetType } from '@/common/components/table/CommonTableCellRenderers';
 
-import { PostConditionWithStaking, getAmount } from './post-condition-table-utils';
+import { ExtendedPostCondition, getAmount } from './post-condition-table-utils';
 
 export function getAssetTypeFromPostConditionType(
-  postConditionType: PostConditionWithStaking['type']
+  postConditionType: ExtendedPostCondition['type']
 ) {
   switch (postConditionType) {
     case 'stx':
@@ -20,7 +20,7 @@ export function getAssetTypeFromPostConditionType(
 }
 
 export interface PostConditionAmountData {
-  postCondition: PostConditionWithStaking;
+  postCondition: ExtendedPostCondition;
   ftDecimals?: number;
 }
 

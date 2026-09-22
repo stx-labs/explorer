@@ -95,6 +95,10 @@ export const SIGNER_KEY_MAP: Record<string, { poolOperator: string; name: string
     poolOperator: 'SMNDR0TBKJRFGGD87M5AAKYFG4BM7W87YVM5QZJP',
     name: 'Nansen',
   },
+  '0x03810f16994e46ad0401ddf8d4b112b23bdcda3594688c089850c88c2206ac6ded': {
+    poolOperator: 'SPEMC1B9BG0BNGMDVQE1SG2DY8X95ZS157N98P7N.signer-manager-stakin-1',
+    name: 'Stakin by The Tie',
+  },
 };
 export const mobileBorderCss = {
   '.has-horizontal-scroll &:before': {

@@ -30,7 +30,7 @@ import {
 
 function Figure({ value, unit }: { value: string; unit?: string }) {
   return (
-    <Flex gap={1.5} align="baseline">
+    <Flex gap={1.5} align="baseline" flexWrap="wrap">
       <Text textStyle="heading-sm" fontWeight="medium" color="textPrimary" whiteSpace="nowrap">
         {value}
       </Text>
@@ -87,8 +87,8 @@ export function StakingStats({
   const bondedSats = toBigInt(featuredBond.balances?.locked?.btc);
   const pairedMicroStx = toBigInt(featuredBond.balances?.locked?.stx);
   const rewardedSats = rewardsByBond ? (rewardsByBond[featuredBond.index] ?? BigInt(0)) : undefined;
-  const bondedBtc = satsToBtc(bondedSats);
-  const pairedStx = microStxToStx(pairedMicroStx);
+  const bondedBtc = bondedSats === undefined ? undefined : satsToBtc(bondedSats);
+  const pairedStx = pairedMicroStx === undefined ? undefined : microStxToStx(pairedMicroStx);
 
   const schedule = getBondSchedule(
     featuredBond.schedule?.activation?.bitcoin_height ?? 0,
@@ -110,11 +110,19 @@ export function StakingStats({
         )}`
       : undefined;
 
-  const usd = (amount: number, price?: number) => (price ? formatUsd(amount * price) : undefined);
+  const usd = (amount: number | undefined, price?: number) =>
+    amount !== undefined && price ? formatUsd(amount * price) : undefined;
   const join = (...parts: (string | undefined)[]) => parts.filter(Boolean).join(' · ') || undefined;
 
   return (
-    <Grid templateColumns={{ base: '1fr', sm: 'repeat(2, 1fr)', lg: 'repeat(4, 1fr)' }} gap={3}>
+    <Grid
+      templateColumns={{
+        base: 'minmax(0, 1fr)',
+        sm: 'repeat(2, minmax(0, 1fr))',
+        lg: 'repeat(4, minmax(0, 1fr))',
+      }}
+      gap={3}
+    >
       <OverviewCard
         title={<GlossaryTerm entry="targetRewardRate" />}
         stat={<Figure value={formatRatePercent(featuredBond.parameters?.target_rate_bps ?? 0)} />}
@@ -127,15 +135,24 @@ export function StakingStats({
       />
       <OverviewCard
         title="BTC bonded"
-        stat={<Figure value={formatBtc(bondedSats, 1).replace(' BTC', '')} unit="BTC" />}
-        caption={join(usd(bondedBtc, btcPrice), 'total of confirmed enrollments')}
+        stat={
+          <Figure
+            value={bondedSats === undefined ? 'N/A' : formatBtc(bondedSats, 1).replace(' BTC', '')}
+            unit={bondedSats === undefined ? undefined : 'BTC'}
+          />
+        }
+        caption={
+          bondedSats === undefined
+            ? 'Bond balance unavailable'
+            : join(usd(bondedBtc, btcPrice), 'total of confirmed enrollments')
+        }
       />
       <OverviewCard
         title="Rewards credited"
         stat={
           <Figure
             value={
-              rewardedSats === undefined ? '—' : formatBtc(rewardedSats, 4).replace(' BTC', '')
+              rewardedSats === undefined ? 'N/A' : formatBtc(rewardedSats, 4).replace(' BTC', '')
             }
             unit={rewardedSats === undefined ? undefined : 'sBTC'}
           />
@@ -153,10 +170,17 @@ export function StakingStats({
       />
       <OverviewCard
         title="STX paired"
-        stat={<Figure value={formatStx(pairedMicroStx).replace(' STX', '')} unit="STX" />}
+        stat={
+          <Figure
+            value={
+              pairedMicroStx === undefined ? 'N/A' : formatStx(pairedMicroStx).replace(' STX', '')
+            }
+            unit={pairedMicroStx === undefined ? undefined : 'STX'}
+          />
+        }
         caption={join(
-          usd(pairedStx, stxPrice),
-          `unlocks #${schedule.termEndHeight.toLocaleString()}`
+          pairedMicroStx === undefined ? 'Paired balance unavailable' : usd(pairedStx, stxPrice),
+          `unlocks #${schedule.termEndHeight.toLocaleString('en-US')}`
         )}
       />
     </Grid>

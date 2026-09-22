@@ -6,12 +6,12 @@ import type { BondStatus } from './data';
 import { burnHeightToApproximateTimestamp } from './projections';
 import { bpsToPercent } from './projections';
 
-export function toBigInt(value: string | undefined | null): bigint {
-  if (!value) return BigInt(0);
+export function toBigInt(value: string | undefined | null): bigint | undefined {
+  if (typeof value !== 'string' || !value.trim()) return undefined;
   try {
     return BigInt(value);
   } catch {
-    return BigInt(0);
+    return undefined;
   }
 }
 
@@ -32,7 +32,8 @@ const STATUS_LABELS: Record<string, string> = {
   active: 'Active',
 };
 
-export function getBondStatusLabel(status: BondStatus): string {
+export function getBondStatusLabel(status: BondStatus | null | undefined): string {
+  if (typeof status !== 'string' || !status.trim()) return 'Unknown';
   return STATUS_LABELS[status] ?? status.charAt(0).toUpperCase() + status.slice(1);
 }
 
@@ -45,12 +46,12 @@ export function formatBtc(sats: bigint, decimals = 4): string {
   if (btc === 0) return '0 BTC';
   if (btc < 0.0001) return `<0.0001 BTC`;
   const maximumFractionDigits = btc < 1 ? Math.max(decimals, 4) : decimals;
-  return `${btc.toLocaleString(undefined, { maximumFractionDigits })} BTC`;
+  return `${btc.toLocaleString('en-US', { maximumFractionDigits })} BTC`;
 }
 
 export function formatStx(microStx: bigint, decimals = 2): string {
   const stx = microStxToStx(microStx);
-  return `${stx.toLocaleString(undefined, { maximumFractionDigits: decimals })} STX`;
+  return `${stx.toLocaleString('en-US', { maximumFractionDigits: decimals })} STX`;
 }
 
 export function formatRatePercent(bps: number, decimals = 2): string {
@@ -58,7 +59,7 @@ export function formatRatePercent(bps: number, decimals = 2): string {
 }
 
 export function formatUsd(amount: number): string {
-  if (!Number.isFinite(amount)) return '-';
+  if (!Number.isFinite(amount)) return 'N/A';
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
@@ -69,8 +70,10 @@ export function formatUsd(amount: number): string {
 }
 
 export function formatSbtc(sats: bigint, decimals?: number): string {
-  if (decimals === undefined) return formatBtc(sats).replace('BTC', 'sBTC');
-  return `${satsToBtc(sats).toLocaleString(undefined, {
+  if (decimals === undefined || (sats > BigInt(0) && satsToBtc(sats) < 10 ** -decimals)) {
+    return formatBtc(sats, decimals).replace('BTC', 'sBTC');
+  }
+  return `${satsToBtc(sats).toLocaleString('en-US', {
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals,
   })} sBTC`;

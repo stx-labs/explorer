@@ -1,4 +1,4 @@
-import { toCycleRow } from '../cycleColumns';
+import { toCycleRow } from '../cycle-transforms';
 import { getCyclePrices } from '../prices';
 
 const endedMs = Date.UTC(2026, 8, 1);
@@ -35,7 +35,7 @@ const input = {
   cycleStartHeight: (cycle: number) => cycle * 2100,
   currentBurnHeight: 142 * 2100,
   nowMs: endedMs,
-  burnBlockTimes: { [142 * 2100]: endedMs },
+  burnBlockTimes: { [142 * 2100 - 1]: endedMs },
   lastCalculationHeightByCycle: { 141: 142 * 2100 - 1 },
   btcPrice: 100000,
   stxPrice: 1,
@@ -52,6 +52,28 @@ test('matched historical prices take precedence over current market prices', () 
   const row = toCycleRow({ ...input, prices });
   const changedMarket = toCycleRow({ ...input, prices, btcPrice: 200000, stxPrice: 2 });
   expect(row.apyPercent).toBe(changedMarket.apyPercent);
+  expect(row.yieldEstimated).toBe(false);
+});
+
+test('historical prices use the final block date, even when the next cycle starts a day later', () => {
+  const row = toCycleRow({
+    ...input,
+    burnBlockTimes: {
+      [142 * 2100 - 1]: Date.UTC(2026, 7, 31, 23, 55),
+      [142 * 2100]: Date.UTC(2026, 8, 1),
+    },
+    prices: {
+      btc: new Map([
+        ['2026-08-31', 100000],
+        ['2026-09-01', 200000],
+      ]),
+      stx: new Map([
+        ['2026-08-31', 1],
+        ['2026-09-01', 1],
+      ]),
+    },
+  });
+  expect(row.apyPercent).toBeCloseTo(2.53315928, 6);
   expect(row.yieldEstimated).toBe(false);
 });
 

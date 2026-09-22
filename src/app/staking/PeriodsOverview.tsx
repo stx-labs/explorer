@@ -218,7 +218,9 @@ export function PeriodsOverview({
   return (
     <Stack gap={4}>
       <Flex justify="space-between" align="center" gap={4}>
-        <Text textStyle="heading-xs">Period overview</Text>
+        <Text as="h2" textStyle="heading-xs">
+          Period overview
+        </Text>
         <ButtonLink
           href={viewAllHref}
           buttonLinkSize="big"

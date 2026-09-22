@@ -6,77 +6,14 @@ import { TableContainer } from '@/common/components/table/TableContainer';
 import { Text } from '@/ui/Text';
 import { Stack } from '@chakra-ui/react';
 import { ColumnDef } from '@tanstack/react-table';
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { AnnotatedValue, NO_VALUE } from './AnnotatedValue';
 import { BondStateBadge } from './BondStateBadge';
+import { BondRow, toBondRow } from './bond-transforms';
 import { BONDS_TABLE_LIMIT } from './consts';
 import type { Bond, BondRewards } from './data';
-import { bpsToPercent } from './projections';
-import { RealizedBondRate, getRealizedBondRate } from './reward-metrics';
-import {
-  bondLabel,
-  formatBtc,
-  formatBurnDate,
-  formatSbtc,
-  getBondStatusLabel,
-  isBondPending,
-  toBigInt,
-} from './utils';
-
-export interface BondRow {
-  index: number;
-  name: string;
-  status: string;
-  isPending: boolean;
-  activationHeight: number;
-  activationCycle: number;
-  unlockHeight: number;
-  unlockCycle: number;
-  capacitySats: bigint;
-  lockedSats: bigint;
-  rewardedSats?: bigint;
-  targetRatePercent: number;
-  realizedRate: RealizedBondRate;
-  registeredCount: number;
-  allowedCount: number;
-  activationDate: string;
-  unlockDate: string;
-}
-
-export function toBondRow(
-  bond: Bond,
-  currentBurnHeight: number,
-  nowMs: number,
-  rewardsByBond?: Record<number, bigint>,
-  burnBlockTimes: Record<number, number> = {},
-  settlementsByBond?: BondRewards['settlementsByBond']
-): BondRow {
-  const capacitySats = toBigInt(bond.parameters?.btc_capacity);
-  const lockedSats = toBigInt(bond.balances?.locked?.btc);
-  const activationHeight = bond.schedule?.activation?.bitcoin_height ?? 0;
-  const unlockHeight = bond.schedule?.unlock?.bitcoin_height ?? 0;
-  const rewardedSats = rewardsByBond ? (rewardsByBond[bond.index] ?? BigInt(0)) : undefined;
-  return {
-    activationDate: formatBurnDate(activationHeight, currentBurnHeight, nowMs, burnBlockTimes),
-    unlockDate: formatBurnDate(unlockHeight, currentBurnHeight, nowMs, burnBlockTimes),
-    index: bond.index,
-    name: bondLabel(bond.index),
-    status: getBondStatusLabel(bond.status),
-    isPending: isBondPending(bond.status),
-    activationHeight,
-    activationCycle: bond.schedule?.activation?.pox_cycle ?? 0,
-    unlockHeight,
-    unlockCycle: bond.schedule?.unlock?.pox_cycle ?? 0,
-    capacitySats,
-    lockedSats,
-    rewardedSats,
-    realizedRate: getRealizedBondRate(bond, currentBurnHeight, settlementsByBond?.[bond.index]),
-    targetRatePercent: bpsToPercent(bond.parameters?.target_rate_bps ?? 0),
-    registeredCount: bond.registrations?.registered_count ?? 0,
-    allowedCount: bond.registrations?.allowed_count ?? 0,
-  };
-}
+import { formatBtc, formatSbtc } from './utils';
 
 const REWARD_HISTORY_UNAVAILABLE = 'Complete reward allocation history is unavailable.';
 
@@ -84,7 +21,7 @@ function PendingOr({ isPending, children }: { isPending: boolean; children: Reac
   if (isPending) {
     return (
       <Text textStyle="text-regular-sm" color="textSecondary">
-        &mdash;
+        {NO_VALUE}
       </Text>
     );
   }
@@ -111,10 +48,7 @@ const bondColumns: ColumnDef<BondRow>[] = [
     enableSorting: false,
     size: 100,
     cell: info => (
-      <BondStateBadge
-        tone={info.row.original.isPending ? 'pending' : 'active'}
-        label={info.getValue() as string}
-      />
+      <BondStateBadge tone={info.row.original.statusTone} label={info.getValue() as string} />
     ),
   },
   {
@@ -128,7 +62,8 @@ const bondColumns: ColumnDef<BondRow>[] = [
       return (
         <Stack gap={0.5}>
           <Text textStyle="text-mono-xs" whiteSpace="nowrap">
-            #{row.activationHeight.toLocaleString()} &rarr; #{row.unlockHeight.toLocaleString()}
+            #{row.activationHeight.toLocaleString('en-US')} &rarr; #
+            {row.unlockHeight.toLocaleString('en-US')}
           </Text>
           <Text
             textStyle="text-regular-xs"
@@ -155,7 +90,9 @@ const bondColumns: ColumnDef<BondRow>[] = [
     },
     cell: info => (
       <Text textStyle="text-regular-sm" whiteSpace="nowrap">
-        {formatBtc(info.row.original.capacitySats, 2)}
+        {info.row.original.capacitySats === undefined
+          ? NO_VALUE
+          : formatBtc(info.row.original.capacitySats, 2)}
       </Text>
     ),
   },
@@ -169,7 +106,9 @@ const bondColumns: ColumnDef<BondRow>[] = [
     cell: info => (
       <PendingOr isPending={info.row.original.isPending}>
         <Text textStyle="text-regular-sm" whiteSpace="nowrap">
-          {formatBtc(info.row.original.lockedSats)}
+          {info.row.original.lockedSats === undefined
+            ? NO_VALUE
+            : formatBtc(info.row.original.lockedSats)}
         </Text>
       </PendingOr>
     ),
@@ -215,7 +154,7 @@ const bondColumns: ColumnDef<BondRow>[] = [
       const row = info.row.original;
       return (
         <Text textStyle="text-regular-sm" whiteSpace="nowrap">
-          {row.registeredCount.toLocaleString()} / {row.allowedCount.toLocaleString()}
+          {row.registeredCount.toLocaleString('en-US')} / {row.allowedCount.toLocaleString('en-US')}
         </Text>
       );
     },
@@ -262,8 +201,8 @@ export function BondsTable({
   rewardsByBond,
   settlementsByBond,
   burnBlockTimes = {},
-  limit = BONDS_TABLE_LIMIT,
-  pagination,
+  pageSize = BONDS_TABLE_LIMIT,
+  serverPagination,
   fullPage = false,
 }: {
   bonds: Bond[];
@@ -273,15 +212,27 @@ export function BondsTable({
   rewardsByBond?: Record<number, bigint>;
   settlementsByBond?: BondRewards['settlementsByBond'];
   burnBlockTimes?: Record<number, number>;
-  limit?: number;
-  pagination?: React.ComponentProps<typeof Table>['pagination'];
+  pageSize?: number;
+  serverPagination?: Pick<
+    NonNullable<React.ComponentProps<typeof Table>['pagination']>,
+    'pageIndex' | 'pageSize' | 'totalRows' | 'onPageChange'
+  >;
   fullPage?: boolean;
 }) {
+  const [pageIndex, setPageIndex] = useState(0);
+  const hasServerPagination = serverPagination !== undefined;
+  useEffect(() => {
+    setPageIndex(0);
+  }, [bonds, pageSize]);
+
   const data = useMemo(
     () =>
       [...bonds]
         .sort((a, b) => b.index - a.index)
-        .slice(0, limit)
+        .slice(
+          hasServerPagination ? 0 : pageIndex * pageSize,
+          hasServerPagination ? bonds.length : (pageIndex + 1) * pageSize
+        )
         .map(bond =>
           toBondRow(
             bond,
@@ -292,7 +243,17 @@ export function BondsTable({
             settlementsByBond
           )
         ),
-    [bonds, currentBurnHeight, nowMs, rewardsByBond, burnBlockTimes, settlementsByBond, limit]
+    [
+      bonds,
+      currentBurnHeight,
+      nowMs,
+      rewardsByBond,
+      burnBlockTimes,
+      settlementsByBond,
+      pageIndex,
+      pageSize,
+      hasServerPagination,
+    ]
   );
   return (
     <Table
@@ -302,7 +263,21 @@ export function BondsTable({
       }
       columns={bondColumns}
       emptyTableUi={<NoBondsYet />}
-      pagination={pagination}
+      pagination={
+        unavailable
+          ? undefined
+          : serverPagination
+            ? { ...serverPagination, manualPagination: true }
+            : bonds.length > pageSize
+              ? {
+                  manualPagination: true,
+                  pageIndex,
+                  pageSize,
+                  totalRows: bonds.length,
+                  onPageChange: next => setPageIndex(next.pageIndex),
+                }
+              : undefined
+      }
       tableContainerWrapper={table => (
         <TableContainer pt={{ base: 3, lg: 4 }} minH={fullPage ? '500px' : undefined}>
           {table}

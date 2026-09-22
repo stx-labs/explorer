@@ -116,3 +116,8 @@ test('selects the due interval or the next interval after a completed calculatio
   expect(getPendingCalculationHeight(285, 965299, 666050, 2100)).toBe(966349);
   expect(getPendingCalculationHeight(285, 966349, 666050, 2100)).toBeUndefined();
 });
+
+test('uses integer contract cadence for odd cycle lengths', () => {
+  expect(getPendingCalculationHeight(2, 1051, 1000, 105)).toBe(1103);
+  expect(getPendingCalculationHeight(2, 1103, 1000, 105)).toBe(1155);
+});

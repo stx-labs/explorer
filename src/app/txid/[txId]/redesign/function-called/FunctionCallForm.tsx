@@ -5,6 +5,12 @@ import { Select } from '@/common/components/Select';
 import { useGlobalContext } from '@/common/context/useGlobalContext';
 import { logError } from '@/common/utils/error-utils';
 import { getConnectNetworkString } from '@/common/utils/network-utils';
+import {
+  postConditionModeDescriptions,
+  postConditionModeFromName,
+  postConditionModeNames,
+  postConditionModeOptions,
+} from '@/common/utils/post-condition-mode-utils';
 import { InvalidFunctionType, getInvalidFunctionType, showFn } from '@/common/utils/sandbox';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/ui/Button';
@@ -147,22 +153,12 @@ export const FunctionCallForm: FC<FunctionCallFormProps> = ({
                     Post-conditions:
                   </Text>
                   <Select
-                    defaultValue={['allow']}
-                    items={[
-                      {
-                        value: 'allow',
-                        label: 'Allow mode',
-                      },
-                      {
-                        value: 'deny',
-                        label: 'Deny mode',
-                      },
-                    ]}
+                    defaultValue={[postConditionModeNames[PostConditionMode.Allow]]}
+                    items={postConditionModeOptions}
+                    label="Post-condition mode"
                     onValueChange={details => {
-                      const postConditionMode =
-                        details.value[0] === 'allow'
-                          ? PostConditionMode.Allow
-                          : PostConditionMode.Deny;
+                      const postConditionMode = postConditionModeFromName(details.value[0]);
+                      if (postConditionMode == null) return;
                       setFieldValue('postConditionMode', postConditionMode);
                     }}
                     size="sm"
@@ -170,7 +166,11 @@ export const FunctionCallForm: FC<FunctionCallFormProps> = ({
                 </Flex>
                 <Alert
                   status="neutral"
-                  description={`In the context of post-conditions, \"allow mode\" and \"deny mode\" determine how transactions are processed when they don't exactly match the specified post-conditions. Allow mode permits transactions that satisfy the post-condition criteria, while deny mode restricts transactions to only the criteria explicitly listed in the post-conditions; anything not listed will cause the transaction to fail. Learn more about post-conditions.`}
+                  description={
+                    postConditionModeDescriptions[
+                      values.postConditionMode ?? PostConditionMode.Allow
+                    ]
+                  }
                 />
               </Stack>
             )}

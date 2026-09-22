@@ -13,14 +13,14 @@ export interface ActivityPageData {
   events: StakingActivityEvent[];
   selectedGroup?: ActivityGroup;
   bondIndex?: number;
-  unavailable?: boolean;
+  incomplete?: boolean;
 }
 
 export function ActivityPageClient({
   events,
   selectedGroup,
   bondIndex,
-  unavailable,
+  incomplete,
 }: ActivityPageData) {
   return (
     <Stack gap={6}>
@@ -34,7 +34,7 @@ export function ActivityPageClient({
       <Stack gap={3}>
         <StakingActivity
           events={events}
-          unavailable={unavailable}
+          incomplete={incomplete}
           selectedGroup={selectedGroup}
           pageSize={ACTIVITY_PAGE_SIZE}
           standalone

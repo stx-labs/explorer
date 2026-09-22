@@ -15,7 +15,7 @@ import {
 
 import type { Bond } from './data';
 import { readUint } from './data';
-import { getCycleStackerRewardsSatsBigInt } from './projections';
+import { getCycleStackerRewardsSatsBigInt, getDistributionCadence } from './projections';
 import { estimatePendingStackerRewards, projectCycleRewards } from './reward-metrics';
 
 export interface CurrentCycleEstimate {
@@ -31,7 +31,7 @@ export function getPendingCalculationHeight(
   firstBurnHeight: number,
   cycleLength: number
 ): number | undefined {
-  const cadence = cycleLength / 2;
+  const cadence = getDistributionCadence(cycleLength);
   if (cadence <= 0 || !Number.isInteger(cadence) || distributionIndex < 1) return undefined;
   const latestBoundary = firstBurnHeight + distributionIndex * cadence - 1;
   if (lastCalculationHeight > latestBoundary || lastCalculationHeight < latestBoundary - cadence)

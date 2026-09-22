@@ -48,7 +48,7 @@ export interface BondTooltipData {
   state: BondLifecycleState;
   schedule: BondSchedule;
   capacitySats?: bigint;
-  lockedSats: bigint;
+  lockedSats?: bigint;
   rewardedSats?: bigint;
   targetRateBps?: number;
   realizedRate?: RealizedBondRate;
@@ -125,7 +125,7 @@ export function BondTooltip({
         : '';
 
   const rewarded = rewardedSats === undefined ? 'Unavailable' : formatSbtc(rewardedSats);
-  const bonded = formatBtc(lockedSats);
+  const bonded = lockedSats === undefined ? 'N/A' : formatBtc(lockedSats);
 
   return (
     <Stack gap={2.5} minW="14rem">

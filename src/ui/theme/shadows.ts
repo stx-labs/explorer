@@ -1,4 +1,7 @@
 export const SHADOWS = {
+  brandGlow: {
+    value: '0px 2px 10px 0px {colors.alpha.stacks-500-alpha-50}',
+  },
   elevation1: {
     value: {
       base: '0 2px 6px rgba(183, 180, 176, 0.2)',

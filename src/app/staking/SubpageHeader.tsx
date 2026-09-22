@@ -17,7 +17,7 @@ export function SubpageHeader({ title }: { title: string }) {
       >
         Staking
       </ButtonLink>
-      <Text textStyle="heading-md" color="textPrimary">
+      <Text as="h1" textStyle="heading-md" color="textPrimary">
         {title}
       </Text>
     </Stack>

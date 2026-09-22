@@ -47,20 +47,13 @@ const STATE_TONES: Record<BondLifecycleState, BondStateTone> = {
   closed: 'closed',
 };
 
-function EnrollmentBar({
-  enrollments,
-  totalSats,
-}: {
-  enrollments: EnrollmentShare[];
-  totalSats: bigint;
-}) {
+function EnrollmentBar({ enrollments, totalSats }: { enrollments: bigint[]; totalSats: bigint }) {
   if (totalSats <= BigInt(0) || enrollments.length === 0) {
     return <Box bg="surfaceFifth" h={BAR_HEIGHT} w="100%" borderRadius="redesign.xl" />;
   }
   return (
     <Flex h={BAR_HEIGHT} w="100%" borderRadius="redesign.xl" overflow="hidden" gap="1px">
-      {enrollments.map((enrollment, index) => {
-        const sats = toBigInt(enrollment.btc);
+      {enrollments.map((sats, index) => {
         const share = Number(sats) / Number(totalSats);
         return (
           <Tooltip
@@ -128,7 +121,7 @@ function LifecycleRow({ milestone, live }: { milestone: Milestone; live: boolean
       </Flex>
       <Flex gap={6} align="baseline">
         <Text textStyle="text-mono-xs" color={reached ? 'accent.stacks-500' : 'textSecondary'}>
-          #{height.toLocaleString()}
+          #{height.toLocaleString('en-US')}
         </Text>
         <Text
           textStyle="text-regular-sm"
@@ -182,10 +175,13 @@ export function CurrentBond({
   const cadence = getDistributionCadence(rewardCycleLength);
   const distributionHeight = (n: number) => schedule.activationHeight + n * cadence;
 
-  const enrolledSats = enrollments?.reduce(
-    (total, enrollment) => total + toBigInt(enrollment.btc),
-    BigInt(0)
-  );
+  const enrollmentAmounts = enrollments?.map(enrollment => toBigInt(enrollment.btc));
+  const confirmedAmounts = enrollmentAmounts?.every(
+    (amount): amount is bigint => amount !== undefined && amount >= BigInt(0)
+  )
+    ? enrollmentAmounts
+    : undefined;
+  const enrolledSats = confirmedAmounts?.reduce((total, amount) => total + amount, BigInt(0));
 
   const at = (height: number) => burnHeightToApproximateTimestamp(height, currentBurnHeight, nowMs);
   const past = (height: number) => currentBurnHeight >= height;
@@ -257,7 +253,7 @@ export function CurrentBond({
             <Text textStyle="text-regular-sm" color="textSecondary">
               {featuredBond.index === GENESIS_BOND_INDEX && `Bond ${featuredBond.index} · `}
               <GlossaryTerm entry="bondTerm">{cycleRange}</GlossaryTerm> ·{' '}
-              {(termEndHeight - activationHeight).toLocaleString()} blocks
+              {(termEndHeight - activationHeight).toLocaleString('en-US')} blocks
             </Text>
           </Stack>
 
@@ -275,10 +271,10 @@ export function CurrentBond({
             <ProgressBar percentage={Math.min(Math.max(progress.elapsedRatio, 0), 1) * 100} />
             <Flex justify="space-between" gap={3}>
               <Text textStyle="text-mono-xs" color="textSecondary">
-                #{activationHeight.toLocaleString()}
+                #{activationHeight.toLocaleString('en-US')}
               </Text>
               <Text textStyle="text-mono-xs" color="textSecondary">
-                #{termEndHeight.toLocaleString()}
+                #{termEndHeight.toLocaleString('en-US')}
               </Text>
             </Flex>
           </Stack>
@@ -290,11 +286,11 @@ export function CurrentBond({
                 {enrolledSats === undefined ? 'Unavailable' : formatBtc(enrolledSats)}
               </Text>
             </Flex>
-            {enrollments && enrolledSats !== undefined && (
-              <EnrollmentBar enrollments={enrollments} totalSats={enrolledSats} />
+            {confirmedAmounts && enrolledSats !== undefined && (
+              <EnrollmentBar enrollments={confirmedAmounts} totalSats={enrolledSats} />
             )}
             <Text textStyle="text-regular-xs" color="textSecondary">
-              {enrollments === undefined
+              {confirmedAmounts === undefined
                 ? 'Enrollment data could not be loaded. Refresh the page to try again.'
                 : 'Confirmed on-chain enrollments within this bond. Bond parameters are set by the Stacks Endowment.'}
             </Text>
@@ -310,13 +306,13 @@ export function CurrentBond({
               </Flex>
               <Flex gap={1.5} align="center" flexWrap="wrap">
                 <Text textStyle="text-regular-xs" color="textSecondary">
-                  Bond {nextBond.index} · term #{nextBond.activationHeight.toLocaleString()}
+                  Bond {nextBond.index} · term #{nextBond.activationHeight.toLocaleString('en-US')}
                 </Text>
                 <Icon w={3} h={3} color="textSecondary">
                   <ArrowRight weight="bold" />
                 </Icon>
                 <Text textStyle="text-regular-xs" color="textSecondary">
-                  #{nextBond.termEndHeight.toLocaleString()}
+                  #{nextBond.termEndHeight.toLocaleString('en-US')}
                 </Text>
               </Flex>
             </Stack>

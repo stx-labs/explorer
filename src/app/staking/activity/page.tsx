@@ -22,8 +22,8 @@ export default async function StakingActivityPage(props: {
     bond,
   } = await props.searchParams;
 
-  const parsedBond = Number.parseInt(bond ?? '', 10);
-  const bondIndex = Number.isFinite(parsedBond) ? parsedBond : undefined;
+  const parsedBond = Number(bond);
+  const bondIndex = Number.isSafeInteger(parsedBond) && parsedBond > 0 ? parsedBond : undefined;
   const selectedActivityGroup = parseActivityGroup(activityGroup);
 
   const [poxInfoResult] = await Promise.allSettled([fetchPoxInfo(chain, api)]);
@@ -45,7 +45,7 @@ export default async function StakingActivityPage(props: {
   return (
     <ActivityPageClient
       events={all?.events ?? []}
-      unavailable={all === undefined || all.incomplete}
+      incomplete={all === undefined || all.incomplete}
       selectedGroup={selectedActivityGroup}
       bondIndex={bondIndex}
     />

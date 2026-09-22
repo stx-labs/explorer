@@ -62,10 +62,8 @@ export function BondsPageClient({
         rewardsByBond={rewardsByBond}
         settlementsByBond={settlementsByBond}
         burnBlockTimes={burnBlockTimes}
-        limit={pageSize}
         fullPage
-        pagination={{
-          manualPagination: true,
+        serverPagination={{
           pageIndex,
           pageSize,
           totalRows: total,

@@ -1,9 +1,11 @@
 import { stacksAPIFetch } from '@/api/stacksAPIFetch';
+import { logError } from '@/common/utils/error-utils';
 
 import { fetchStakingActivity } from '../data';
 import bondFixture from './fixtures/bond.json';
 
 jest.mock('@/api/stacksAPIFetch');
+jest.mock('@/common/utils/error-utils');
 
 const fetchMock = stacksAPIFetch as jest.MockedFunction<typeof stacksAPIFetch>;
 
@@ -65,7 +67,11 @@ function serveChain(txs: TxStub[], { failingFunction }: { failingFunction?: stri
 
     const txId = /\/extended\/v1\/tx\/(0x[0-9a-f]+)/.exec(url)?.[1];
     const events = (txId ? byId.get(txId)?.events : undefined) ?? [];
-    return respond({ events: events.map(repr => ({ contract_log: { value: { repr } } })) });
+    return respond({
+      events: events.map(repr => ({
+        contract_log: { contract_id: POX_CONTRACT, value: { repr } },
+      })),
+    });
   });
 }
 
@@ -81,9 +87,67 @@ function enrollmentTx(seq: number, sats: number): TxStub {
 
 beforeEach(() => {
   fetchMock.mockReset();
+  jest.mocked(logError).mockClear();
 });
 
 describe('fetchStakingActivity', () => {
+  test('reports an initial metadata failure while preserving activity rows', async () => {
+    serveChain([enrollmentTx(1, 100_000_000)]);
+    const serve = fetchMock.getMockImplementation()!;
+    fetchMock.mockImplementation((url, options) =>
+      url.includes('/extended/v3/staking/bonds?')
+        ? Promise.resolve({ ok: false, status: 503 } as Response)
+        : serve(url, options)
+    );
+    const result = await fetchStakingActivity(POX_CONTRACT, 'mainnet');
+    expect(result.incomplete).toBe(true);
+    expect(result.events[0].amount).toBe('1 BTC');
+    expect(logError).toHaveBeenCalledWith(
+      expect.objectContaining({ message: 'Failed to fetch bonds: 503' }),
+      'Staking activity: partial fetch failure',
+      { chain: 'mainnet' },
+      'error'
+    );
+  });
+
+  test('ignores another contract emitting the same activity topic', async () => {
+    serveChain([enrollmentTx(1, 100_000_000)]);
+    const serve = fetchMock.getMockImplementation()!;
+    fetchMock.mockImplementation(async (url, options) => {
+      const response = await serve(url, options);
+      if (!url.includes('/extended/v1/tx/')) return response;
+      const body = await response.json();
+      body.events.unshift({
+        contract_log: {
+          contract_id: 'SP000000000000000000002Q6VF78.other-contract',
+          value: { repr: enrollment(99, 900_000_000, 1) },
+        },
+      });
+      return respond(body);
+    });
+    const { events } = await fetchStakingActivity(POX_CONTRACT, 'mainnet');
+    expect(events[0]).toMatchObject({ bondIndex: 1, amount: '1 BTC' });
+  });
+
+  test('marks invalid setup capacity unavailable instead of showing zero', async () => {
+    serveChain([
+      {
+        ...enrollmentTx(1, 0),
+        functionName: 'setup-bond',
+        events: ['(tuple (topic "setup-bond") (bond-index u100))'],
+      },
+    ]);
+    const serve = fetchMock.getMockImplementation()!;
+    fetchMock.mockImplementation((url, options) =>
+      url.endsWith('/bonds/100')
+        ? Promise.resolve(respond({ ...bondFixture, parameters: { btc_capacity: 'invalid' } }))
+        : serve(url, options)
+    );
+    const { events } = await fetchStakingActivity(POX_CONTRACT, 'mainnet');
+    expect(events[0].amount).toBeUndefined();
+    expect(events[0].amountUnavailable).toBe(true);
+  });
+
   test('loads capacity for a setup bond absent from the first page', async () => {
     serveChain([
       {
@@ -158,6 +222,14 @@ describe('fetchStakingActivity', () => {
     expect(events).toHaveLength(60);
     expect(events.at(-1)?.blockHeight).toBe(8_900_006);
     expect(fetchMock.mock.calls.some(([url]) => url.includes('offset=50'))).toBe(true);
+    for (const [url, options] of fetchMock.mock.calls) {
+      if (url.includes('function_name=')) {
+        expect(options?.cache).toBe('no-store');
+        expect(options?.next).toBeUndefined();
+      } else if (url.includes('/extended/v1/tx/')) {
+        expect(options?.next?.revalidate).toBe(86400);
+      }
+    }
   });
 
   test('filters a bond before capping expanded distribution events', async () => {

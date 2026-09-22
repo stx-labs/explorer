@@ -22,8 +22,8 @@ export default async function StakingBondsPage(props: {
 }) {
   const { chain = NetworkModes.Mainnet, api, page } = await props.searchParams;
 
-  const requestedPage = Number.parseInt(page ?? '1', 10);
-  let pageIndex = Number.isFinite(requestedPage) && requestedPage > 1 ? requestedPage - 1 : 0;
+  const requestedPage = Number(page ?? '1');
+  let pageIndex = Number.isSafeInteger(requestedPage) && requestedPage > 1 ? requestedPage - 1 : 0;
 
   let cursor: string | undefined;
   if (pageIndex > 0) {

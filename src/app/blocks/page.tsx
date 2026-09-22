@@ -1,4 +1,3 @@
-import { DEFAULT_MAINNET_SERVER } from '@/common/constants/env';
 import { GenericResponseType } from '@/common/hooks/useInfiniteQueryResult';
 import { NetworkModes } from '@/common/types/network';
 import { logError } from '@/common/utils/error-utils';
@@ -39,11 +38,7 @@ function BlocksPageClient({
 }
 
 export default async function BlocksPage(props: { searchParams: Promise<BlocksSearchParams> }) {
-  const {
-    chain = NetworkModes.Mainnet,
-    api = DEFAULT_MAINNET_SERVER,
-    ssr = 'true',
-  } = await props.searchParams;
+  const { chain = NetworkModes.Mainnet, api, ssr = 'true' } = await props.searchParams;
   const apiUrl = getApiUrl(chain, api);
   const isSSRDisabled = ssr === 'false';
 

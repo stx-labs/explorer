@@ -3,19 +3,25 @@ import {
   NonFungibleConditionCode,
   PostConditionMode,
   PostConditionType,
+  PoxConditionCode,
+  postConditionToHex,
 } from '@stacks/transactions';
 
 import {
+  PostConditionBuilderParameters,
   PostConditionParameters,
   checkPostConditionParameters,
   extractPostConditionParams,
   fungibleConditionCodeToComparator,
   getPostCondition,
   getPostConditionConditionCodeOptions,
+  isConditionCodeValidForType,
   isFungibleConditionCode,
   isNonFungibleConditionCode,
   isPostConditionParameter,
+  isPoxConditionCode,
   nonFungibleConditionCodeToComparator,
+  poxConditionCodeToComparator,
 } from '../function-call-post-condition-params-utils';
 
 describe('Type Guard Functions', () => {
@@ -186,7 +192,7 @@ describe('Validation Functions', () => {
 describe('Post Condition Creation', () => {
   describe('getPostCondition', () => {
     it('should create STX post condition', () => {
-      const params: PostConditionParameters = {
+      const params: PostConditionBuilderParameters = {
         postConditionType: PostConditionType.STX,
         postConditionAddress: 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM',
         postConditionConditionCode: FungibleConditionCode.Equal,
@@ -202,7 +208,7 @@ describe('Post Condition Creation', () => {
     });
 
     it('should create Fungible post condition', () => {
-      const params: PostConditionParameters = {
+      const params: PostConditionBuilderParameters = {
         postConditionType: PostConditionType.Fungible,
         postConditionAddress: 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM',
         postConditionConditionCode: FungibleConditionCode.Greater,
@@ -222,7 +228,7 @@ describe('Post Condition Creation', () => {
     });
 
     it('should create Non-Fungible post condition', () => {
-      const params: PostConditionParameters = {
+      const params: PostConditionBuilderParameters = {
         postConditionType: PostConditionType.NonFungible,
         postConditionAddress: 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM',
         postConditionConditionCode: NonFungibleConditionCode.Sends,
@@ -244,7 +250,7 @@ describe('Post Condition Creation', () => {
     });
 
     it('should throw error for invalid STX post condition (missing parameters)', () => {
-      const params: PostConditionParameters = {
+      const params: PostConditionBuilderParameters = {
         postConditionType: PostConditionType.STX,
         postConditionAddress: 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM',
         // Missing condition code and amount
@@ -254,7 +260,7 @@ describe('Post Condition Creation', () => {
     });
 
     it('should throw error for invalid amount (not uint128)', () => {
-      const params: PostConditionParameters = {
+      const params: PostConditionBuilderParameters = {
         postConditionType: PostConditionType.STX,
         postConditionAddress: 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM',
         postConditionConditionCode: FungibleConditionCode.Equal,
@@ -270,10 +276,11 @@ describe('Utility Functions', () => {
   describe('getPostConditionConditionCodeOptions', () => {
     it('should return non-fungible options for NonFungible post condition type', () => {
       const options = getPostConditionConditionCodeOptions(PostConditionType.NonFungible);
-      expect(options).toHaveLength(2);
+      expect(options).toHaveLength(3);
       expect(options).toEqual([
         { label: 'Does not send', value: 'does-not-send' },
         { label: 'Sends', value: 'sends' },
+        { label: 'May send', value: 'may-send' },
       ]);
     });
 
@@ -376,5 +383,133 @@ describe('Utility Functions', () => {
         postConditionAssetName: undefined,
       });
     });
+  });
+});
+
+describe('pox-5 post conditions', () => {
+  it('recognizes PoX condition codes and keeps them distinct from asset codes', () => {
+    expect(isPoxConditionCode(PoxConditionCode.MayPerform)).toBe(true);
+    expect(isPoxConditionCode(FungibleConditionCode.Equal)).toBe(false);
+    expect(isPoxConditionCode(NonFungibleConditionCode.MaybeSent)).toBe(false);
+  });
+
+  it('maps PoX condition codes to comparators', () => {
+    expect(poxConditionCodeToComparator(PoxConditionCode.WillNotPerform)).toBe('will-not-perform');
+    expect(poxConditionCodeToComparator(PoxConditionCode.MayPerform)).toBe('may-perform');
+    expect(poxConditionCodeToComparator(PoxConditionCode.WillPerform)).toBe('will-perform');
+  });
+
+  it('maps the new NFT maybe-sent comparator', () => {
+    expect(nonFungibleConditionCodeToComparator(NonFungibleConditionCode.MaybeSent)).toBe(
+      'maybe-sent'
+    );
+  });
+
+  it('builds a staking post condition', () => {
+    const params: PostConditionBuilderParameters = {
+      postConditionType: PostConditionType.Staking,
+      postConditionAddress: 'SP2J6ZY48GV1EZ5V2V5RB9MP66SW86PYKKNRV9EJ7',
+      postConditionConditionCode: FungibleConditionCode.LessEqual,
+      postConditionAmount: 1100000,
+    };
+
+    expect(getPostCondition(params)).toEqual({
+      type: 'staking-postcondition',
+      address: 'SP2J6ZY48GV1EZ5V2V5RB9MP66SW86PYKKNRV9EJ7',
+      condition: 'lte',
+      amount: '1100000',
+    });
+  });
+
+  it('builds a pox post condition, which carries no amount', () => {
+    const params: PostConditionBuilderParameters = {
+      postConditionType: PostConditionType.PoX,
+      postConditionAddress: 'SP2J6ZY48GV1EZ5V2V5RB9MP66SW86PYKKNRV9EJ7',
+      postConditionConditionCode: PoxConditionCode.WillPerform,
+    };
+
+    expect(getPostCondition(params)).toEqual({
+      type: 'pox-postcondition',
+      address: 'SP2J6ZY48GV1EZ5V2V5RB9MP66SW86PYKKNRV9EJ7',
+      condition: 'will-perform',
+    });
+  });
+
+  it('offers PoX condition codes for the PoX post condition type', () => {
+    expect(getPostConditionConditionCodeOptions(PostConditionType.PoX).map(o => o.value)).toEqual([
+      'will-not-perform',
+      'may-perform',
+      'will-perform',
+    ]);
+  });
+
+  it('validates originator mode like deny mode, not like allow mode', () => {
+    const params = {
+      postConditionMode: PostConditionMode.Originator,
+    } as PostConditionParameters;
+
+    expect(checkPostConditionParameters(params)).toEqual({
+      postConditionType: 'Post condition type is required',
+    });
+  });
+});
+
+describe('condition code / post condition type pairing', () => {
+  it('accepts fungible codes for stx, fungible and staking', () => {
+    [PostConditionType.STX, PostConditionType.Fungible, PostConditionType.Staking].forEach(type => {
+      expect(isConditionCodeValidForType(type, FungibleConditionCode.Equal)).toBe(true);
+      expect(isConditionCodeValidForType(type, PoxConditionCode.MayPerform)).toBe(false);
+    });
+  });
+
+  it('accepts only its own codes for non-fungible and pox', () => {
+    expect(
+      isConditionCodeValidForType(PostConditionType.NonFungible, NonFungibleConditionCode.MaybeSent)
+    ).toBe(true);
+    expect(
+      isConditionCodeValidForType(PostConditionType.NonFungible, FungibleConditionCode.Equal)
+    ).toBe(false);
+    expect(isConditionCodeValidForType(PostConditionType.PoX, PoxConditionCode.WillPerform)).toBe(
+      true
+    );
+    expect(isConditionCodeValidForType(PostConditionType.PoX, FungibleConditionCode.Equal)).toBe(
+      false
+    );
+  });
+
+  it('reports a code left over from a previously selected type', () => {
+    const errors = checkPostConditionParameters({
+      postConditionMode: PostConditionMode.Deny,
+      postConditionType: PostConditionType.PoX,
+      postConditionAddress: 'SP2J6ZY48GV1EZ5V2V5RB9MP66SW86PYKKNRV9EJ7',
+      postConditionConditionCode: FungibleConditionCode.Equal,
+    });
+
+    expect(errors.postConditionConditionCode).toBe(
+      'Condition code does not match the selected post condition type'
+    );
+  });
+});
+
+describe('wallet serialization', () => {
+  it('serializes a staking post condition to wire type 0x03', () => {
+    const pc = getPostCondition({
+      postConditionType: PostConditionType.Staking,
+      postConditionAddress: 'SP2J6ZY48GV1EZ5V2V5RB9MP66SW86PYKKNRV9EJ7',
+      postConditionConditionCode: FungibleConditionCode.LessEqual,
+      postConditionAmount: 1100000,
+    });
+
+    expect(postConditionToHex(pc!).startsWith('03')).toBe(true);
+  });
+
+  it('serializes a pox post condition to wire type 0x04', () => {
+    const pc = getPostCondition({
+      postConditionType: PostConditionType.PoX,
+      postConditionAddress: 'SP2J6ZY48GV1EZ5V2V5RB9MP66SW86PYKKNRV9EJ7',
+      postConditionConditionCode: PoxConditionCode.WillPerform,
+    });
+
+    expect(postConditionToHex(pc!).startsWith('04')).toBe(true);
   });
 });

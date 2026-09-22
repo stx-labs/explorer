@@ -9,6 +9,7 @@ import {
 import { encodeOptional, encodeOptionalTuple, encodeTuple, getTuple } from '@/app/sandbox/utils';
 import { callContract } from '@/app/sandbox/utils/walletTransactions';
 import { isUint128 } from '@/common/utils/number-utils';
+import { postConditionModeNames } from '@/common/utils/post-condition-mode-utils';
 import { QueryClient } from '@tanstack/react-query';
 
 import { asciiToBytes, bytesToHex } from '@stacks/common';
@@ -121,7 +122,7 @@ export async function handlePublicFunctionCall(
   postConditionParams: PostConditionParameters,
   { contractId, fnAbi, network, queryClient }: ContractCallDependencies
 ): Promise<void> {
-  const postCondition = shouldUsePostConditions(postConditionParams.postConditionMode!)
+  const postCondition = shouldUsePostConditions(postConditionParams.postConditionMode)
     ? getPostCondition(postConditionParams)
     : undefined;
   const functionArgs = Object.values(final);
@@ -132,8 +133,7 @@ export async function handlePublicFunctionCall(
     functionArgs,
     network: network,
     postConditions: postCondition ? [postCondition] : undefined,
-    postConditionMode:
-      postConditionParams.postConditionMode === PostConditionMode.Allow ? 'allow' : 'deny',
+    postConditionMode: postConditionModeNames[postConditionParams.postConditionMode],
   }).then(() => {
     void queryClient.invalidateQueries({ queryKey: ['addressMempoolTxsInfinite'] });
   });

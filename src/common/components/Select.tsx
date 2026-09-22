@@ -1,14 +1,19 @@
 import {
   SelectContent,
   SelectControl,
-  SelectHiddenSelect,
   SelectItem,
+  SelectLabel,
   SelectRoot,
   SelectRootProps,
   SelectTrigger,
   SelectVariantProps,
 } from '@/components/ui/select';
-import { SelectValueChangeDetails, Stack, createListCollection } from '@chakra-ui/react';
+import {
+  SelectValueChangeDetails,
+  Stack,
+  VisuallyHidden,
+  createListCollection,
+} from '@chakra-ui/react';
 import { useEffect, useRef, useState } from 'react';
 
 export function Select<V extends string, L extends string>({
@@ -18,12 +23,14 @@ export function Select<V extends string, L extends string>({
   onValueChange,
   selectProps,
   size,
+  label,
 }: {
   items: { value: V; label: L }[];
   onValueChange?: (details: SelectValueChangeDetails<{ value: V; label: L }>) => void;
   defaultValue?: V[];
   placeholder?: string;
   selectProps?: SelectRootProps<V, L>;
+  label?: string;
 } & SelectVariantProps) {
   const positioning = selectProps?.positioning;
   const list = createListCollection<{ value: V; label: L }>({
@@ -68,7 +75,11 @@ export function Select<V extends string, L extends string>({
       size={size}
       {...selectProps}
     >
-      <SelectHiddenSelect />
+      {label ? (
+        <VisuallyHidden asChild>
+          <SelectLabel>{label}</SelectLabel>
+        </VisuallyHidden>
+      ) : null}
       <SelectControl
         ref={controlRef}
         open={open}

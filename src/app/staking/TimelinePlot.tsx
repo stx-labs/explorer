@@ -491,7 +491,7 @@ export function TimelinePlot({
     const cycle = burnHeightToRewardCycle(height, firstBurnchainBlockHeight, rewardCycleLength);
     return [
       cycle !== undefined ? `cycle ${cycle}` : undefined,
-      `#${height.toLocaleString()}`,
+      `#${height.toLocaleString('en-US')}`,
       `~${formatDateWithYear(atMs)}`,
     ]
       .filter(Boolean)

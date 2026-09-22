@@ -422,6 +422,7 @@ export function Table<T>({
                     )}
                     {header.column.columnDef.meta?.tooltip && (
                       <Tooltip
+                        portalled
                         content={header.column.columnDef.meta.tooltip}
                         contentProps={{ maxW: '20rem', whiteSpace: 'normal', textAlign: 'left' }}
                       >
@@ -430,12 +431,17 @@ export function Table<T>({
                           aria-label={
                             typeof header.column.columnDef.header === 'string'
                               ? `About ${header.column.columnDef.header}`
-                              : 'About this column'
+                              : `About ${header.column.id}`
                           }
                           display="inline-flex"
+                          alignItems="center"
+                          justifyContent="center"
+                          minW={6}
+                          minH={6}
                           flexShrink={0}
                           cursor="help"
                           focusVisibleRing="outside"
+                          focusRingColor="brand"
                           onClick={event => event.stopPropagation()}
                         >
                           <Icon h={3.5} w={3.5} color="iconSecondary">

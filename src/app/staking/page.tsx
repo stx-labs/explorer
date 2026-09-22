@@ -4,7 +4,6 @@ import { NetworkModes } from '@/common/types/network';
 import { StakingPageClient } from './PageClient';
 import { ACTIVITY_FEED_LIMIT, PREVIOUS_CYCLES_LIMIT } from './consts';
 import {
-  fetchBond,
   fetchBondRegistrations,
   fetchBondRewards,
   fetchBondsPage,
@@ -15,6 +14,7 @@ import {
   fetchStakingActivity,
   parseActivityGroup,
 } from './data';
+import { fetchFeaturedBond } from './page-data';
 import { fetchDailyPrices } from './prices';
 import {
   burnHeightToApproximateTimestamp,
@@ -74,7 +74,7 @@ export default async function StakingPage(props: { searchParams: Promise<Staking
   heights.push(
     ...cycles.flatMap(cycle => [
       firstBurnchainBlockHeight + cycle.cycle_number * rewardCycleLength,
-      firstBurnchainBlockHeight + (cycle.cycle_number + 1) * rewardCycleLength,
+      firstBurnchainBlockHeight + (cycle.cycle_number + 1) * rewardCycleLength - 1,
     ])
   );
   const [
@@ -101,7 +101,7 @@ export default async function StakingPage(props: { searchParams: Promise<Staking
         )
       : undefined,
     featuredIndex !== undefined ? fetchBondRegistrations(featuredIndex, chain, api) : undefined,
-    featuredIndex !== undefined ? fetchBond(featuredIndex, chain, api) : undefined,
+    featuredIndex !== undefined ? fetchFeaturedBond(featuredIndex, chain, api) : undefined,
     fetchBurnBlockTimes(heights, currentBurnHeight, chain, api),
     cycles.length && rewardCycleLength
       ? fetchDailyPrices(
@@ -150,7 +150,7 @@ export default async function StakingPage(props: { searchParams: Promise<Staking
       burnBlockTimes={burnBlockTimes ?? {}}
       enrollments={enrollments?.map(enrollment => ({ btc: enrollment.balances.btc }))}
       activity={activity?.events ?? []}
-      activityUnavailable={activity === undefined || activity.incomplete}
+      activityIncomplete={activity === undefined || activity.incomplete}
       rewarded={rewarded}
       selectedActivityGroup={selectedActivityGroup}
     />

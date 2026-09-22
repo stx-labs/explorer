@@ -3,7 +3,7 @@
 import { Badge, DefaultBadgeLabel } from '@/ui/Badge';
 import { Box, Flex } from '@chakra-ui/react';
 
-export type BondStateTone = 'active' | 'pending' | 'enrolling' | 'maturity' | 'closed';
+export type BondStateTone = 'active' | 'pending' | 'enrolling' | 'maturity' | 'closed' | 'neutral';
 
 const DOT_COLORS: Record<BondStateTone, string> = {
   active: 'feedback.green-500',
@@ -11,6 +11,7 @@ const DOT_COLORS: Record<BondStateTone, string> = {
   enrolling: 'accent.bitcoin-500',
   maturity: 'feedback.bronze-600',
   closed: 'iconTertiary',
+  neutral: 'iconTertiary',
 };
 
 export function BondStateBadge({ tone, label }: { tone: BondStateTone; label: string }) {

@@ -1,26 +1,48 @@
 import { renderWithChakraProviders } from '@/common/utils/test-utils/render-utils';
 import { Column, ColumnDef } from '@tanstack/react-table';
-import { fireEvent, screen } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import { Table, getColumnPinningState, getCommonPinningStyles } from './Table';
 
-test('header help is keyboard-focusable and activation does not sort the column', async () => {
+const originalResizeObserver = globalThis.ResizeObserver;
+
+beforeAll(() => {
+  (globalThis as any).ResizeObserver = jest.fn().mockImplementation(() => ({
+    observe: jest.fn(),
+    unobserve: jest.fn(),
+    disconnect: jest.fn(),
+  }));
+});
+
+afterAll(() => {
+  globalThis.ResizeObserver = originalResizeObserver;
+});
+
+test.each([
+  { header: 'Amount', name: 'About Amount' },
+  { header: () => 'Amount', name: 'About amount' },
+])('header help "$name" opens outside the table without sorting', async ({ header, name }) => {
   const user = userEvent.setup();
   const onSort = jest.fn(async () => [{ amount: 1 }]);
-  renderWithChakraProviders(
+  const { container } = renderWithChakraProviders(
     <Table
       data={[{ amount: 1 }]}
-      columns={[{ accessorKey: 'amount', header: 'Amount', meta: { tooltip: 'Amount in BTC.' } }]}
+      columns={[{ accessorKey: 'amount', header, meta: { tooltip: 'Amount in BTC.' } }]}
       onSort={onSort}
     />
   );
-  const trigger = screen.getByRole('button', { name: 'About Amount' });
+  const trigger = screen.getByRole('button', { name });
   await user.tab();
   expect(trigger).toHaveFocus();
+  const tooltip = await screen.findByRole('tooltip');
+  expect(tooltip).toHaveTextContent('Amount in BTC.');
+  expect(container).not.toContainElement(tooltip);
   await user.keyboard('{Enter}');
   expect(onSort).not.toHaveBeenCalled();
-  fireEvent.click(screen.getByText('Amount', { exact: true }));
+  await user.keyboard('{Escape}');
+  await waitFor(() => expect(screen.queryByRole('tooltip')).not.toBeInTheDocument());
+  await user.click(screen.getByText('Amount', { exact: true }));
   expect(onSort).toHaveBeenCalledWith('amount', 'desc');
 });
 

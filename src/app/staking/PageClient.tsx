@@ -37,7 +37,7 @@ export interface StakingPageData {
   firstBurnchainBlockHeight: number;
   enrollments?: EnrollmentShare[];
   activity: StakingActivityEvent[];
-  activityUnavailable?: boolean;
+  activityIncomplete?: boolean;
   rewarded?: BondRewards;
   selectedActivityGroup?: ActivityGroup;
   burnBlockTimes: Record<number, number>;
@@ -59,7 +59,7 @@ export function StakingPageClient({
   firstBurnchainBlockHeight,
   enrollments,
   activity,
-  activityUnavailable,
+  activityIncomplete,
   rewarded,
   selectedActivityGroup,
   burnBlockTimes,
@@ -98,7 +98,9 @@ export function StakingPageClient({
   return (
     <Stack gap={{ base: 16, md: 18, lg: 20, xl: 24 }}>
       <Stack gap={{ base: 10, lg: 12 }}>
-        <Text textStyle="heading-md">Bitcoin Staking</Text>
+        <Text as="h1" textStyle="heading-md">
+          Bitcoin Staking
+        </Text>
         {bondsUnavailable || !poxInfo ? (
           <Text role="status" textStyle="text-regular-sm" color="textSecondary">
             Some staking data could not be loaded. Refresh the page to try again.
@@ -112,7 +114,9 @@ export function StakingPageClient({
           <>
             <Stack gap={4}>
               <Flex justify="space-between" align="center" gap={4} flexWrap="wrap">
-                <Text textStyle="heading-xs">Current bond</Text>
+                <Text as="h2" textStyle="heading-xs">
+                  Current bond
+                </Text>
                 <HowToParticipateButton />
               </Flex>
               <StakingStats
@@ -157,7 +161,7 @@ export function StakingPageClient({
         <StakingActivity
           events={activity}
           selectedGroup={selectedActivityGroup}
-          unavailable={activityUnavailable}
+          incomplete={activityIncomplete}
         />
       </Stack>
       {poxInfo && (

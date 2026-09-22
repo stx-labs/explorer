@@ -1,8 +1,8 @@
 import { stacksAPIFetch } from '@/api/stacksAPIFetch';
 
 import { MAINNET_HISTORIC_CYCLES } from '../consts';
-import { toCycleRow } from '../cycleColumns';
-import { fetchBurnBlockTimes } from '../data';
+import { toCycleRow } from '../cycle-transforms';
+import { PoxCycle, fetchBurnBlockTimes } from '../data';
 import { getBondLifecycleState, getBondSchedule } from '../projections';
 import { formatBurnDate } from '../utils';
 
@@ -46,6 +46,28 @@ test('does not call an ended cycle settled before its final calculation', () => 
   expect(toCycleRow({ ...input, lastCalculationHeightByCycle: { 143: end - 1 } }).settled).toBe(
     true
   );
+});
+
+test('cycle end is the last block of that cycle, including its date', () => {
+  const nextStart = input.cycleStartHeight(144);
+  const lastBlockTime = Date.UTC(2026, 8, 7, 23, 55);
+  const row = toCycleRow({
+    ...input,
+    burnBlockTimes: {
+      [nextStart - 1]: lastBlockTime,
+      [nextStart]: Date.UTC(2026, 8, 8),
+    },
+  });
+  expect(row.endedHeight).toBe(nextStart - 1);
+  expect(row.endedDate).toBe('07 Sept 2026');
+  expect(
+    toCycleRow({ ...input, lastCalculationHeightByCycle: { 143: nextStart - 2 } }).settled
+  ).toBe(false);
+});
+
+test('missing signer counts use zero', () => {
+  const { total_signers, ...withoutSigners } = cycle;
+  expect(toCycleRow({ ...input, cycle: withoutSigners as PoxCycle }).totalSigners).toBe(0);
 });
 
 test('a zero-share STX tranche stays zero instead of receiving a projected residual', () => {

@@ -12,12 +12,13 @@ import { BlockHeightBadge } from '@/ui/Badge';
 import { ButtonLink } from '@/ui/ButtonLink';
 import { Text } from '@/ui/Text';
 import { Tooltip } from '@/ui/Tooltip';
-import { Box, Flex, Grid, Icon, Stack } from '@chakra-ui/react';
+import { Box, Flex, Grid, Icon, Stack, chakra } from '@chakra-ui/react';
 import { Info } from '@phosphor-icons/react';
 import { useCallback, useMemo } from 'react';
 
 import { MAINNET_HISTORIC_CYCLES, PREVIOUS_CYCLES_LIMIT, STAKING_LINKS } from './consts';
-import { CycleRow, cycleColumns, toCycleRow } from './cycleColumns';
+import { CycleRow, toCycleRow } from './cycle-transforms';
+import { cycleColumns } from './cycleColumns';
 import { CycleRewards, PoxCycle } from './data';
 import type { DailyPrices } from './prices';
 import {
@@ -97,25 +98,6 @@ export function StackingOverview({
   const elapsed = rewardCycleLength > 0 ? 1 - blocksUntilNextCycle / rewardCycleLength : 0;
   const daysLeft = formatTermDuration(blocksUntilNextCycle);
 
-  const previousCycle = cycles
-    .filter(cycle => currentCycleId !== undefined && cycle.cycle_number < currentCycleId)
-    .sort((a, b) => b.cycle_number - a.cycle_number)[0];
-  const previousRow = previousCycle
-    ? toCycleRow({
-        cycle: previousCycle,
-        rewards: cycleRewards[previousCycle.cycle_number],
-        pox5FirstCycleId,
-        cycleStartHeight,
-        burnBlockTimes,
-        lastCalculationHeightByCycle,
-        historic,
-        currentBurnHeight,
-        nowMs,
-        prices,
-        btcPrice,
-        stxPrice,
-      })
-    : undefined;
   const estimate =
     currentCycleEstimate?.cycleNumber === currentCycleId ? currentCycleEstimate : undefined;
   const currentCycleSats =
@@ -135,7 +117,9 @@ export function StackingOverview({
   const rows = useMemo<CycleRow[]>(
     () =>
       cycles
-        .filter(cycle => currentCycleId === undefined || cycle.cycle_number < currentCycleId)
+        .filter(cycle => currentCycleId !== undefined && cycle.cycle_number < currentCycleId)
+        .sort((a, b) => b.cycle_number - a.cycle_number)
+        .slice(0, PREVIOUS_CYCLES_LIMIT)
         .map(cycle =>
           toCycleRow({
             cycle,
@@ -169,11 +153,15 @@ export function StackingOverview({
     ]
   );
 
+  const previousRow = rows[0];
+
   return (
     <Stack gap={8}>
       <Stack gap={4}>
         <Flex justify="space-between" align="baseline" gap={4} flexWrap="wrap">
-          <Text textStyle="heading-md">STX-only Staking</Text>
+          <Text as="h2" textStyle="heading-md">
+            STX-only Staking
+          </Text>
           <ButtonLink
             href={STAKING_LINKS.stackingTracker}
             buttonLinkSize="big"
@@ -243,17 +231,23 @@ export function StackingOverview({
                     contentProps={{ maxW: '18rem', whiteSpace: 'normal', textAlign: 'left' }}
                     content={currentRewardNote}
                   >
-                    <Icon
-                      w={3.5}
-                      h={3.5}
-                      flexShrink={0}
-                      color="iconSecondary"
-                      cursor="help"
-                      tabIndex={0}
+                    <chakra.button
+                      type="button"
                       aria-label={currentRewardNote}
+                      display="inline-flex"
+                      alignItems="center"
+                      justifyContent="center"
+                      minW={6}
+                      minH={6}
+                      flexShrink={0}
+                      cursor="help"
+                      focusVisibleRing="outside"
+                      focusRingColor="brand"
                     >
-                      <Info />
-                    </Icon>
+                      <Icon w={3.5} h={3.5} color="iconSecondary">
+                        <Info />
+                      </Icon>
+                    </chakra.button>
                   </Tooltip>
                 </Flex>
               )}
@@ -323,10 +317,14 @@ export function StackingOverview({
               <Flex gap={2} align="baseline" flexWrap="wrap">
                 <Text textStyle="heading-md">{(currentCycleId ?? 0) + 1}</Text>
                 <Text textStyle="text-regular-sm" color="textSecondary" whiteSpace="nowrap">
-                  starts #{currentEnd.toLocaleString()}
+                  starts #{currentEnd.toLocaleString('en-US')}
                 </Text>
               </Flex>
-              <Text textStyle="text-regular-sm" color="accent.stacks-500" suppressHydrationWarning>
+              <Text
+                textStyle="text-regular-sm"
+                color="textInteractiveHover"
+                suppressHydrationWarning
+              >
                 ~{formatDateWithYear(at(currentEnd))} · projected
               </Text>
             </Stack>
@@ -368,7 +366,9 @@ export function StackingOverview({
 
       <Stack gap={4}>
         <Flex justify="space-between" align="center" gap={4}>
-          <Text textStyle="heading-xs">Previous cycles</Text>
+          <Text as="h3" textStyle="heading-xs">
+            Previous cycles
+          </Text>
           <ButtonLink
             href={STAKING_LINKS.stackingTracker}
             buttonLinkSize="big"
@@ -380,7 +380,7 @@ export function StackingOverview({
           </ButtonLink>
         </Flex>
         <Table
-          data={rows.slice(0, PREVIOUS_CYCLES_LIMIT)}
+          data={rows}
           columns={cycleColumns}
           tableContainerWrapper={table => (
             <TableContainer pt={{ base: 3, lg: 4 }}>{table}</TableContainer>

@@ -44,8 +44,9 @@ async function fetchDailySeries(
 
 export async function fetchDailyPrices(startMs: number, endMs: number): Promise<DailyPrices> {
   const day = 24 * 60 * 60;
-  const start = Math.floor(startMs / 1000) - day;
-  const end = Math.floor(endMs / 1000) + day;
+  // Cover the padded UTC dates with stable URLs, rather than a new cache key each second.
+  const start = (Math.floor(startMs / (day * 1000)) - 1) * day;
+  const end = (Math.floor(endMs / (day * 1000)) + 2) * day;
   try {
     const [btc, stx] = await Promise.all([
       fetchDailySeries('btc', start, end),
