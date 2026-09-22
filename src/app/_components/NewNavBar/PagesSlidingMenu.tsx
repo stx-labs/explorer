@@ -21,6 +21,7 @@ const getPageLabelFromPath = (
   if (path === '/blocks') return 'Blocks';
   if (path === '/mempool') return 'Mempool';
   if (path === '/stacking') return 'Stacking';
+  if (path === '/staking' || path.startsWith('/staking/')) return 'Staking';
   if (path === '/analytics') return 'Analytics';
   if (path === '/nfts') return 'NFTs';
   if (path === '/') return 'Home';

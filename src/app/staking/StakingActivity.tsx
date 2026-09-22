@@ -26,7 +26,7 @@ import {
 } from '@phosphor-icons/react';
 import type { ColumnDef } from '@tanstack/react-table';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, useTransition } from 'react';
 
 import type { Transaction } from '@stacks/stacks-blockchain-api-types';
 
@@ -184,6 +184,7 @@ const activityColumns: ColumnDef<StakingActivityEvent>[] = [
 function ActionFilter({ selected }: { selected?: ActivityGroup }) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [isPending, startTransition] = useTransition();
 
   const hrefFor = useCallback(
     (group?: string) => {
@@ -205,7 +206,9 @@ function ActionFilter({ selected }: { selected?: ActivityGroup }) {
       size="redesignMd"
       value={selected ?? ALL_GROUPS}
       onValueChange={({ value }) =>
-        router.replace(hrefFor(value === ALL_GROUPS ? undefined : value), { scroll: false })
+        startTransition(() =>
+          router.replace(hrefFor(value === ALL_GROUPS ? undefined : value), { scroll: false })
+        )
       }
       aria-label="Filter activity by event type"
     >
@@ -224,6 +227,11 @@ function ActionFilter({ selected }: { selected?: ActivityGroup }) {
           </TabsList>
         </ScrollIndicator>
       </Flex>
+      {isPending && (
+        <Text role="status" textStyle="text-regular-xs" color="textSecondary">
+          Loading activity…
+        </Text>
+      )}
     </TabsRoot>
   );
 }
