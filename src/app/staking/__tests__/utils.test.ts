@@ -37,3 +37,14 @@ test('uses consistent US number formatting and the USD unavailable label', () =>
   expect(formatUsd(Infinity)).toBe('N/A');
   expect(formatUsd(0)).toBe('$0.00');
 });
+
+test.each([
+  [0, '0.00 sBTC'],
+  [1, '<0.0001 sBTC'],
+  [9999, '<0.0001 sBTC'],
+  [10000, '0.0001 sBTC'],
+  [350000, '0.0035 sBTC'],
+  [100000000, '1.00 sBTC'],
+])('fixed-precision rewards preserve small nonzero amounts: %s sats', (sats, expected) => {
+  expect(formatSbtc(BigInt(sats), 2)).toBe(expected);
+});

@@ -70,7 +70,9 @@ export function formatUsd(amount: number): string {
 }
 
 export function formatSbtc(sats: bigint, decimals?: number): string {
-  if (decimals === undefined) return formatBtc(sats).replace('BTC', 'sBTC');
+  if (decimals === undefined || (sats > BigInt(0) && satsToBtc(sats) < 10 ** -decimals)) {
+    return formatBtc(sats, decimals).replace('BTC', 'sBTC');
+  }
   return `${satsToBtc(sats).toLocaleString('en-US', {
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals,
