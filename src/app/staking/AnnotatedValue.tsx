@@ -2,7 +2,7 @@
 
 import { Text } from '@/ui/Text';
 import { Tooltip } from '@/ui/Tooltip';
-import { Flex, Icon } from '@chakra-ui/react';
+import { Flex, Icon, chakra } from '@chakra-ui/react';
 import { Info } from '@phosphor-icons/react';
 
 export function AnnotatedValue({ value, note }: { value: string; note?: string }) {
@@ -25,12 +25,26 @@ export function AnnotatedValue({ value, note }: { value: string; note?: string }
         contentProps={{ maxW: '20rem', whiteSpace: 'normal', textAlign: 'left' }}
         content={note}
       >
-        <Icon w={3.5} h={3.5} color="iconSecondary" cursor="help" tabIndex={0} aria-label={note}>
-          <Info />
-        </Icon>
+        <chakra.button
+          type="button"
+          aria-label={note}
+          display="inline-flex"
+          alignItems="center"
+          justifyContent="center"
+          minW={6}
+          minH={6}
+          flexShrink={0}
+          cursor="help"
+          focusVisibleRing="outside"
+          focusRingColor="brand"
+        >
+          <Icon w={3.5} h={3.5} color="iconSecondary">
+            <Info />
+          </Icon>
+        </chakra.button>
       </Tooltip>
     </Flex>
   );
 }
 
-export const NO_VALUE = '—';
+export const NO_VALUE = 'N/A';

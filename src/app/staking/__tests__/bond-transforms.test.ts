@@ -1,4 +1,4 @@
-import { toBondRow } from '../BondsTable';
+import { toBondRow } from '../bond-transforms';
 import type { Bond } from '../data';
 import { bondLabel, formatBtc, formatUsd } from '../utils';
 import bondFixture from './fixtures/bond.json';
@@ -8,6 +8,20 @@ const NOW_MS = Date.UTC(2026, 7, 25, 19, 0, 0);
 const toRow = (bond: Bond) => toBondRow(bond, CURRENT_BURN_HEIGHT, NOW_MS);
 
 describe('toBondRow', () => {
+  test.each([
+    ['upcoming', 'pending'],
+    ['active', 'active'],
+    ['enrolling', 'enrolling'],
+    ['mature', 'maturity'],
+    ['unlocked', 'closed'],
+    ['closed', 'closed'],
+    ['complete', 'closed'],
+    ['future-status', 'neutral'],
+    ['', 'neutral'],
+  ])('uses a lifecycle-specific tone for %s', (status, tone) => {
+    expect(toRow({ ...bondFixture, status }).statusTone).toBe(tone);
+  });
+
   test('converts the target from basis points to a percentage', () => {
     expect(toRow(bondFixture).targetRatePercent).toBe(10);
   });

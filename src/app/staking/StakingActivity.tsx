@@ -30,7 +30,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import type { Transaction } from '@stacks/stacks-blockchain-api-types';
 
-import { AnnotatedValue } from './AnnotatedValue';
+import { AnnotatedValue, NO_VALUE } from './AnnotatedValue';
 import type { ActivityGroup, StakingActivityEvent } from './data';
 import { bondLabel } from './utils';
 
@@ -44,15 +44,14 @@ const GROUP_LABELS: { value: ActivityGroup | typeof ALL_GROUPS; label: string }[
   { value: 'bonds', label: 'Bonds' },
 ];
 
-const GROUP_ICONS: Record<ActivityGroup, { icon: React.ReactNode; bg: string; color: string }> = {
-  distributions: { icon: <Coins />, bg: 'accent.stacks-200', color: 'accent.stacks-600' },
-  enrollments: { icon: <LinkIcon />, bg: 'feedback.blue-200', color: 'feedback.blue-600' },
-  unlocks: { icon: <LockOpen />, bg: 'feedback.bronze-200', color: 'feedback.bronze-600' },
-  bonds: { icon: <Flag />, bg: 'feedback.green-200', color: 'feedback.green-600' },
+const GROUP_ICONS: Record<ActivityGroup, React.ReactNode> = {
+  distributions: <Coins />,
+  enrollments: <LinkIcon />,
+  unlocks: <LockOpen />,
+  bonds: <Flag />,
 };
 
 function EventIcon({ group }: { group: ActivityGroup }) {
-  const { icon, bg, color } = GROUP_ICONS[group];
   return (
     <Flex
       w={7}
@@ -61,10 +60,10 @@ function EventIcon({ group }: { group: ActivityGroup }) {
       align="center"
       justify="center"
       borderRadius="redesign.md"
-      bg={bg}
+      bg="surfaceFifth"
     >
-      <Icon w={4} h={4} color={color}>
-        {icon}
+      <Icon w={4} h={4} color="iconSecondary">
+        {GROUP_ICONS[group]}
       </Icon>
     </Flex>
   );
@@ -108,12 +107,12 @@ const activityColumns: ColumnDef<StakingActivityEvent>[] = [
     cell: info =>
       info.row.original.amountUnavailable ? (
         <AnnotatedValue
-          value="Unavailable"
+          value={NO_VALUE}
           note="Transaction details could not be loaded completely. Refresh to retry, or open the transaction."
         />
       ) : (
         <Text textStyle="text-regular-sm" whiteSpace="nowrap">
-          {(info.getValue() as string) ?? '—'}
+          {(info.getValue() as string) ?? NO_VALUE}
         </Text>
       ),
   },
@@ -130,7 +129,7 @@ const activityColumns: ColumnDef<StakingActivityEvent>[] = [
     },
     cell: info => (
       <Text textStyle="text-regular-sm" color="textSecondary" whiteSpace="nowrap">
-        {(info.getValue() as string) ?? '—'}
+        {(info.getValue() as string) ?? NO_VALUE}
       </Text>
     ),
   },
@@ -242,7 +241,7 @@ function NoActivity({
   txWindow?: number;
   group?: ActivityGroup;
 }) {
-  const glyph = group ? GROUP_ICONS[group].icon : <ClockCounterClockwise />;
+  const glyph = group ? GROUP_ICONS[group] : <ClockCounterClockwise />;
   const badge = (
     <Flex
       w={10}
@@ -287,10 +286,10 @@ export function StakingActivity({
   standalone = false,
   bondIndex,
   txWindow,
-  unavailable,
+  incomplete,
 }: {
   events: StakingActivityEvent[];
-  unavailable?: boolean;
+  incomplete?: boolean;
   selectedGroup?: ActivityGroup;
   pageSize?: number;
   standalone?: boolean;
@@ -318,7 +317,9 @@ export function StakingActivity({
     <Stack gap={4}>
       {!standalone && (
         <Flex justify="space-between" align="center" gap={4}>
-          <Text textStyle="heading-xs">Bond activity</Text>
+          <Text as="h2" textStyle="heading-xs">
+            Bond activity
+          </Text>
           {showViewAll && (
             <ButtonLink
               href={viewAllHref}
@@ -335,7 +336,7 @@ export function StakingActivity({
         Reward amounts are sBTC credited by the contract. Onward payment by signer-managers is
         separate.
       </Text>
-      {unavailable && (
+      {incomplete && (
         <Text role="status" textStyle="text-regular-sm" color="textSecondary">
           Some activity could not be loaded. Refresh the page to try again.
         </Text>
@@ -344,7 +345,7 @@ export function StakingActivity({
         data={page}
         columns={activityColumns}
         emptyTableUi={
-          unavailable ? (
+          incomplete ? (
             <Text textStyle="text-regular-sm" color="textSecondary">
               Activity unavailable
             </Text>

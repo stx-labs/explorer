@@ -1,40 +1,17 @@
 'use client';
 
-import { MICROSTACKS_IN_STACKS, abbreviateNumber } from '@/common/utils/utils';
+import { abbreviateNumber } from '@/common/utils/utils';
 import { Text } from '@/ui/Text';
 import { ColumnDef } from '@tanstack/react-table';
 
 import { AnnotatedValue, NO_VALUE } from './AnnotatedValue';
-import { CycleRewards, PoxCycle } from './data';
-import { DailyPrices, getCyclePrices } from './prices';
-import {
-  getCycleRewardsPerStx,
-  getCycleStackerRewardsSatsBigInt,
-  getStackingYieldForCompletedCycle,
-} from './projections';
-import { formatBurnDate, formatDateWithYear, formatSbtc } from './utils';
+import type { CycleRow } from './cycle-transforms';
+import { formatSbtc } from './utils';
 
 const NO_REWARD_DATA = 'On-chain reward data is unavailable for this cycle.';
 
 const FROM_STACKING_TRACKER =
   'This cycle predates PoX-5. Historical rewards and gross yield come from stacking-tracker.com.';
-
-export interface CycleRow {
-  cycleNumber: number;
-  totalStackedStx?: number;
-  totalSigners: number;
-  rewardsSats: bigint;
-  satsPerStx?: number;
-  apyPercent?: number;
-  yieldEstimated: boolean;
-  historic?: { rewardsBtc: number; apyPercent: number };
-  settled: boolean;
-  hasRewardData: boolean;
-  startedHeight: number;
-  startedDate: string;
-  endedHeight: number;
-  endedDate: string;
-}
 
 export const cycleColumns: ColumnDef<CycleRow>[] = [
   {
@@ -44,7 +21,7 @@ export const cycleColumns: ColumnDef<CycleRow>[] = [
     enableSorting: false,
     size: 70,
     cell: info => (
-      <Text textStyle="text-medium-sm">{(info.getValue() as number).toLocaleString()}</Text>
+      <Text textStyle="text-medium-sm">{(info.getValue() as number).toLocaleString('en-US')}</Text>
     ),
   },
   {
@@ -71,7 +48,7 @@ export const cycleColumns: ColumnDef<CycleRow>[] = [
       const row = info.row.original;
       return (
         <Text textStyle="text-regular-sm" whiteSpace="nowrap" suppressHydrationWarning>
-          #{row.startedHeight.toLocaleString()} · {row.startedDate}
+          #{row.startedHeight.toLocaleString('en-US')} · {row.startedDate}
         </Text>
       );
     },
@@ -86,7 +63,7 @@ export const cycleColumns: ColumnDef<CycleRow>[] = [
       const row = info.row.original;
       return (
         <Text textStyle="text-regular-sm" whiteSpace="nowrap" suppressHydrationWarning>
-          #{row.endedHeight.toLocaleString()} · {row.endedDate}
+          #{row.endedHeight.toLocaleString('en-US')} · {row.endedDate}
         </Text>
       );
     },
@@ -178,92 +155,7 @@ export const cycleColumns: ColumnDef<CycleRow>[] = [
     size: 90,
     meta: { textAlign: 'right' },
     cell: info => (
-      <Text textStyle="text-regular-sm">{(info.getValue() as number).toLocaleString()}</Text>
+      <Text textStyle="text-regular-sm">{(info.getValue() as number).toLocaleString('en-US')}</Text>
     ),
   },
 ];
-
-export function toCycleRow({
-  cycle,
-  rewards,
-  pox5FirstCycleId,
-  cycleStartHeight,
-  burnBlockTimes,
-  lastCalculationHeightByCycle,
-  historic,
-  currentBurnHeight,
-  nowMs,
-  prices,
-  btcPrice,
-  stxPrice,
-}: {
-  cycle: PoxCycle;
-  rewards?: CycleRewards;
-  pox5FirstCycleId?: number;
-  cycleStartHeight: (cycle: number) => number;
-  burnBlockTimes: Record<number, number>;
-  lastCalculationHeightByCycle?: Record<number, number>;
-  historic?: Record<number, { rewardsBtc: number; apyPercent: number }>;
-  currentBurnHeight: number;
-  nowMs: number;
-  prices?: DailyPrices;
-  btcPrice?: number;
-  stxPrice?: number;
-}): CycleRow {
-  const isPrePox5 = pox5FirstCycleId !== undefined && cycle.cycle_number < pox5FirstCycleId;
-  const hasRewardData =
-    rewards !== undefined &&
-    pox5FirstCycleId !== undefined &&
-    cycle.cycle_number >= pox5FirstCycleId;
-  const startedHeight = cycleStartHeight(cycle.cycle_number);
-  const endedHeight = cycleStartHeight(cycle.cycle_number + 1);
-  const settled = (lastCalculationHeightByCycle?.[cycle.cycle_number] ?? -1) >= endedHeight - 1;
-  const endedMs = burnBlockTimes[endedHeight];
-  const historicalPrices =
-    prices && endedMs !== undefined ? getCyclePrices(prices, endedMs) : undefined;
-  const hasHistoricalPrices =
-    historicalPrices?.btcPriceUsd !== undefined && historicalPrices?.stxPriceUsd !== undefined;
-  const apy =
-    hasRewardData && settled
-      ? getStackingYieldForCompletedCycle({
-          rewardsPerMicroStx: rewards.rewardsPerMicroStx,
-          rewardCycleLength: endedHeight - startedHeight,
-          btcPriceUsd: hasHistoricalPrices ? historicalPrices.btcPriceUsd : btcPrice,
-          stxPriceUsd: hasHistoricalPrices ? historicalPrices.stxPriceUsd : stxPrice,
-        })
-      : undefined;
-  return {
-    cycleNumber: cycle.cycle_number,
-    apyPercent: apy?.apyPercent,
-    yieldEstimated: !hasHistoricalPrices,
-    totalStackedStx: hasRewardData
-      ? Number(rewards.stakedMicroStx) / MICROSTACKS_IN_STACKS
-      : isPrePox5
-        ? Number(cycle.total_stacked_amount) / MICROSTACKS_IN_STACKS
-        : undefined,
-    historic: isPrePox5 ? historic?.[cycle.cycle_number] : undefined,
-    totalSigners: cycle.total_signers,
-    rewardsSats: hasRewardData
-      ? getCycleStackerRewardsSatsBigInt(rewards.rewardsPerMicroStx, rewards.stakedMicroStx)
-      : BigInt(0),
-    satsPerStx: hasRewardData ? getCycleRewardsPerStx(rewards.rewardsPerMicroStx) : undefined,
-    hasRewardData,
-    settled,
-    startedHeight,
-    endedHeight,
-    startedDate: formatBurnDate(
-      startedHeight,
-      currentBurnHeight,
-      nowMs,
-      burnBlockTimes,
-      formatDateWithYear
-    ),
-    endedDate: formatBurnDate(
-      endedHeight,
-      currentBurnHeight,
-      nowMs,
-      burnBlockTimes,
-      formatDateWithYear
-    ),
-  };
-}
