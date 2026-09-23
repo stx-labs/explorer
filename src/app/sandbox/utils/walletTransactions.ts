@@ -52,14 +52,12 @@ export const transferStx = async (params: {
 export const deployContract = async (params: {
   name: string;
   clarityCode: string;
-  clarityVersion?: number;
   network?: string;
 }) => {
   try {
     const response = await request('stx_deployContract', {
       name: params.name,
       clarityCode: params.clarityCode,
-      clarityVersion: params.clarityVersion || 4,
       network: params.network || 'mainnet',
       postConditionMode: 'allow',
     });
