@@ -17,6 +17,7 @@ export type PrimaryPageLabel =
   | 'sBTC'
   | 'STX'
   | 'Stacking'
+  | 'Staking'
   | 'Signers'
   | 'Tokens'
   | 'NFTs'
@@ -31,6 +32,7 @@ export type PrimaryPageId =
   | 'sbtc'
   | 'stx'
   | 'stacking'
+  | 'staking'
   | 'signers'
   | 'tokens'
   | 'nfts'
@@ -74,11 +76,11 @@ export const getPrimaryPages = (networkMode: NetworkModes | undefined): PrimaryP
       label: 'STX',
       href: '/stx',
     },
-    // {
-    //   id: 'stacking',
-    //   label: 'Stacking',
-    //   href: '/stacking',
-    // },
+    {
+      id: 'staking',
+      label: 'Staking',
+      href: '/staking',
+    },
     {
       id: 'signers',
       label: 'Signers',
