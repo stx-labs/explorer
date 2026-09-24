@@ -19,6 +19,7 @@ import { useEffect, useRef, useState } from 'react';
 export function Select<V extends string, L extends string>({
   placeholder,
   defaultValue,
+  value,
   items,
   onValueChange,
   selectProps,
@@ -28,6 +29,7 @@ export function Select<V extends string, L extends string>({
   items: { value: V; label: L }[];
   onValueChange?: (details: SelectValueChangeDetails<{ value: V; label: L }>) => void;
   defaultValue?: V[];
+  value?: V[];
   placeholder?: string;
   selectProps?: SelectRootProps<V, L>;
   label?: string;
@@ -63,7 +65,8 @@ export function Select<V extends string, L extends string>({
   return (
     <SelectRoot
       collection={list}
-      defaultValue={defaultValue}
+      defaultValue={value === undefined ? defaultValue : undefined}
+      value={value}
       onOpenChange={details => {
         setOpen(details.open);
       }}
