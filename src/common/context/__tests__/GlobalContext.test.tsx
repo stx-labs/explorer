@@ -126,32 +126,4 @@ describe('GlobalContext', () => {
       expect(updatedNetworks[customApiUrl].isCustomNetwork).toBe(true);
     });
   });
-
-  it('keeps built-in networks intact regardless of the custom network cookies', () => {
-    useSearchParams.mockReturnValue({ get: () => null } as any);
-    const staleCustomEntry = {
-      ...stakingTestnetNetwork,
-      label: 'my old staking entry',
-      isCustomNetwork: true,
-    };
-    render(
-      <CookiesProvider>
-        <GlobalContextProvider
-          addedCustomNetworksCookie={JSON.stringify({
-            [stakingTestnetNetwork.url]: staleCustomEntry,
-          })}
-          removedCustomNetworksCookie={JSON.stringify({
-            [stakingTestnetNetwork.url]: staleCustomEntry,
-          })}
-          tokenPrice={mockTokenPrice}
-        >
-          <GlobalContextTestComponent />
-        </GlobalContextProvider>
-      </CookiesProvider>
-    );
-
-    const networks = getContextField('networks');
-    expect(networks[stakingTestnetNetwork.url]).toEqual(stakingTestnetNetwork);
-    expect(Object.keys(networks).length).toBe(4);
-  });
 });

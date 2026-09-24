@@ -4,7 +4,7 @@ import { ListValueType, ValueType } from '@/app/sandbox/types/values';
 import { Select } from '@/common/components/Select';
 import { useGlobalContext } from '@/common/context/useGlobalContext';
 import { logError } from '@/common/utils/error-utils';
-import { getConnectNetworkString, isWalletSupportedNetwork } from '@/common/utils/network-utils';
+import { getConnectNetworkString } from '@/common/utils/network-utils';
 import {
   postConditionModeDescriptions,
   postConditionModeFromName,
@@ -84,16 +84,6 @@ export const FunctionCallForm: FC<FunctionCallFormProps> = ({
             : 'This function is not valid.'
         }
         status="error"
-      />
-    );
-  }
-
-  if (isPublicFunction(fnAbi) && !isWalletSupportedNetwork(network)) {
-    return (
-      <Alert
-        title="Wallet transactions are unavailable on this network"
-        description="Stacks wallets can only sign for Stacks Mainnet, Stacks Testnet (Primary) and a local devnet."
-        status="warning"
       />
     );
   }

@@ -12,7 +12,6 @@ import { useGlobalContext } from '../../common/context/useGlobalContext';
 import { useAppDispatch, useAppSelector } from '../../common/state/hooks';
 import { NetworkModes } from '../../common/types/network';
 import { getQueryParams } from '../../common/utils/buildUrl';
-import { isWalletSupportedNetwork } from '../../common/utils/network-utils';
 import { Button } from '../../ui/Button';
 import { IconButton } from '../../ui/IconButton';
 import { Caption } from '../../ui/typography';
@@ -21,7 +20,6 @@ import { useUser } from './hooks/useUser';
 import { ConnectToStacks } from './layout/ConnectToStacks';
 import { RightPanelSkeleton } from './layout/RightPanelSkeleton';
 import { SideNav } from './layout/SideNav';
-import { WalletUnsupportedNetwork } from './layout/WalletUnsupportedNetwork';
 import { selectShowRightPanel, toggleRightPanel } from './sandbox-slice';
 
 const RightPanel = dynamic(() => import('./layout/RightPanel').then(mod => mod.RightPanel), {
@@ -43,7 +41,6 @@ export function Wrapper({ children }: { children: ReactNode }) {
   const requiresWallet = getRequiresWallet(pathname);
   const { activeNetwork } = useGlobalContext();
   const showRightPanel = useAppSelector(selectShowRightPanel);
-  const walletUnsupported = requiresWallet && !isWalletSupportedNetwork(activeNetwork);
 
   if (activeNetwork.isSubnet) {
     void router.replace(`/${getQueryParams(activeNetwork)}`);
@@ -66,7 +63,7 @@ export function Wrapper({ children }: { children: ReactNode }) {
           </Flex>
         }
         topRight={
-          walletUnsupported ? null : !isConnected ? (
+          !isConnected ? (
             <Button onClick={connect} size="xs" fontSize="xs" variant="secondary" height={8}>
               Connect Stacks Wallet
             </Button>
@@ -98,13 +95,7 @@ export function Wrapper({ children }: { children: ReactNode }) {
           minHeight={'768px'}
         >
           <SideNav />
-          {walletUnsupported ? (
-            <WalletUnsupportedNetwork />
-          ) : isConnected || !requiresWallet ? (
-            children
-          ) : (
-            <ConnectToStacks />
-          )}
+          {isConnected || !requiresWallet ? children : <ConnectToStacks />}
           {showRightPanel ? <RightPanel /> : null}
         </Grid>
       </Section>

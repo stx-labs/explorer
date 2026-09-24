@@ -38,13 +38,6 @@ function filterNetworks(
   );
 }
 
-const builtInNetworks: Record<string, Network> = {
-  [mainnetNetwork.url]: mainnetNetwork,
-  [testnetNetwork.url]: testnetNetwork,
-  [stakingTestnetNetwork.url]: stakingTestnetNetwork,
-  [devnetNetwork.url]: devnetNetwork,
-};
-
 interface GlobalContext {
   activeNetwork: Network;
   activeNetworkKey: string;
@@ -108,11 +101,18 @@ export const GlobalContextProvider: FC<{
   const [_, setAddedCustomNetworksCookie] = useCookies(['addedCustomNetworks']);
   const [__, setRemovedCustomNetworksCookie] = useCookies(['removedCustomNetworks']);
 
-  // Built-in networks can neither be overridden nor hidden by the custom-network cookies.
-  const [networks, setNetworks] = useState<Record<string, Network>>({
-    ...builtInNetworks,
-    ...filterNetworks(filterNetworks(addedCustomNetworks, builtInNetworks), removedCustomNetworks),
-  });
+  const [networks, setNetworks] = useState<Record<string, Network>>(
+    filterNetworks(
+      {
+        [mainnetNetwork.url]: mainnetNetwork,
+        [testnetNetwork.url]: testnetNetwork,
+        [stakingTestnetNetwork.url]: stakingTestnetNetwork,
+        [devnetNetwork.url]: devnetNetwork,
+        ...addedCustomNetworks,
+      },
+      removedCustomNetworks
+    )
+  );
 
   const addCustomNetwork = useCallback(
     (network: Network) => {

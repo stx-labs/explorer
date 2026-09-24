@@ -13,16 +13,6 @@ export function getConnectNetworkString(network: Network): string {
   return network.mode;
 }
 
-/**
- * Wallets only know the public mainnet/testnet nodes and a local devnet, so wallet-signed
- * transactions on any other network (staking testnet, custom APIs) would be broadcast elsewhere.
- */
-export function isWalletSupportedNetwork(network: Network): boolean {
-  return [DEFAULT_MAINNET_SERVER, DEFAULT_TESTNET_SERVER, DEFAULT_DEVNET_SERVER].includes(
-    network.url
-  );
-}
-
 export function getApiUrl(chain: string, customApiUrl?: string): string {
   if (customApiUrl) {
     return customApiUrl;
