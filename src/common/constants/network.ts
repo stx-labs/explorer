@@ -1,4 +1,4 @@
-import { STACKS_MAINNET, STACKS_TESTNET } from '@stacks/network';
+import { ChainId, STACKS_MAINNET, STACKS_TESTNET } from '@stacks/network';
 
 import { Network, NetworkModes } from '../types/network';
 import { DEFAULT_DEVNET_SERVER } from './constants';
@@ -13,9 +13,13 @@ import {
   TESTNET_BTC_TX_BASE_URL,
 } from './env';
 
+// `network_id` reported by https://api.staking-testnet.hiro.so/v2/info
+export const STAKING_TESTNET_CHAIN_ID = 1280 as ChainId;
+
 export const NetworkIdModeMap: { [key: number]: NetworkModes } = {
   [STACKS_MAINNET.chainId]: NetworkModes.Mainnet,
   [STACKS_TESTNET.chainId]: NetworkModes.Testnet,
+  [STAKING_TESTNET_CHAIN_ID]: NetworkModes.Testnet,
 };
 
 export const NetworkModeUrlMap: Record<NetworkModes, string> = {
@@ -56,6 +60,17 @@ export const testnetNetwork: Network = {
   btcAddressBaseUrl: NetworkModeBtcAddressBaseUrlMap[NetworkModes.Testnet],
   networkId: STACKS_TESTNET.chainId,
   mode: NetworkModes.Testnet,
+};
+
+export const stakingTestnetNetwork: Network = {
+  label: 'Stacks Testnet (Staking)',
+  url: 'https://api.staking-testnet.hiro.so',
+  btcBlockBaseUrl: 'https://mempool.bitcoin.staking-testnet.hiro.so/block',
+  btcTxBaseUrl: 'https://mempool.bitcoin.staking-testnet.hiro.so/tx',
+  btcAddressBaseUrl: 'https://mempool.bitcoin.staking-testnet.hiro.so/address',
+  networkId: STAKING_TESTNET_CHAIN_ID,
+  mode: NetworkModes.Testnet,
+  isCustomNetwork: true, // like devnet: makes buildUrl add the `api` param the server needs
 };
 
 export const devnetNetwork: Network = {

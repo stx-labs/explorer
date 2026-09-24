@@ -3,6 +3,7 @@
 import { openModal } from '@/common/components/modals/modal-slice';
 import { DEFAULT_DEVNET_SERVER, MODALS } from '@/common/constants/constants';
 import { DEFAULT_MAINNET_SERVER, DEFAULT_TESTNET_SERVER } from '@/common/constants/env';
+import { stakingTestnetNetwork } from '@/common/constants/network';
 import { useGlobalContext } from '@/common/context/useGlobalContext';
 import { useCustomNetworkApiInfo } from '@/common/queries/useCustomNetworkApiInfo';
 import { useAppDispatch } from '@/common/state/hooks';
@@ -85,6 +86,7 @@ const NetworkLabel = ({ network }: { network: Network }) => {
   const isTestnet = network.url === DEFAULT_TESTNET_SERVER;
   const isDefault = isMainnet || isTestnet;
   const isDevnet = network.url === DEFAULT_DEVNET_SERVER;
+  const isStakingTestnet = network.url === stakingTestnetNetwork.url;
 
   const isLocalNetwork = isLocalhost(network.url);
 
@@ -94,8 +96,8 @@ const NetworkLabel = ({ network }: { network: Network }) => {
   const isDisabled = isFetching || !!error;
 
   const isNetworkRemovable = useMemo(
-    () => network.isCustomNetwork && !isDevnet && !isActiveNetwork,
-    [network.isCustomNetwork, isDevnet, isActiveNetwork]
+    () => network.isCustomNetwork && !isDevnet && !isStakingTestnet && !isActiveNetwork,
+    [network.isCustomNetwork, isDevnet, isStakingTestnet, isActiveNetwork]
   );
 
   const [isDeletingNetwork, setIsDeletingNetwork] = useState(false);
