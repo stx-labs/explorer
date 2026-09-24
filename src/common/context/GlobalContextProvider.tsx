@@ -19,6 +19,7 @@ import {
   NetworkModeUrlMap,
   devnetNetwork,
   mainnetNetwork,
+  stakingTestnetNetwork,
   testnetNetwork,
 } from '../constants/network';
 import { useDevnetRedirect } from '../hooks/useDevnetRedirect';
@@ -105,6 +106,7 @@ export const GlobalContextProvider: FC<{
       {
         [mainnetNetwork.url]: mainnetNetwork,
         [testnetNetwork.url]: testnetNetwork,
+        [stakingTestnetNetwork.url]: stakingTestnetNetwork,
         [devnetNetwork.url]: devnetNetwork,
         ...addedCustomNetworks,
       },
