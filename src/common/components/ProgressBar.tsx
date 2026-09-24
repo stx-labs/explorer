@@ -19,13 +19,19 @@ function ProgressKnob({ diameter, ...boxProps }: { diameter: number } & BoxProps
   );
 }
 
-export function ProgressBar({ percentage = 0 }: { percentage?: number }) {
+export function ProgressBar({
+  percentage = 0,
+  'aria-label': ariaLabel = 'Stacking cycle progress',
+}: {
+  percentage?: number;
+  'aria-label'?: string;
+}) {
   const safePercentage = Number.isFinite(percentage) ? percentage : 0;
   const progress = Math.min(Math.max(safePercentage, 0), 100);
   return (
     <Stack
       role="progressbar"
-      aria-label="Stacking cycle progress"
+      aria-label={ariaLabel}
       aria-valuemin={0}
       aria-valuemax={100}
       aria-valuenow={Number.isFinite(percentage) ? progress : undefined}

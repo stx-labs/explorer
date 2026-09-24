@@ -225,7 +225,9 @@ export function CurrentBond({
     }))
     .sort((a, b) => a.height - b.height);
 
-  const latestCredit = settlements?.reduce<(typeof settlements)[number] | undefined>(
+  const latestCredit = settlements?.reduce<
+    BondRewards['settlementsByBond'][number][number] | undefined
+  >(
     (latest, entry) =>
       !latest || entry.calculationHeight > latest.calculationHeight ? entry : latest,
     undefined
@@ -261,14 +263,17 @@ export function CurrentBond({
             <Flex justify="space-between" gap={3}>
               <Text textStyle="text-medium-sm">
                 {hasStarted
-                  ? `Day ${progress.dayOfTerm} of ${progress.termDays}`
+                  ? `Day ${Math.min(progress.dayOfTerm, progress.termDays)} of ${progress.termDays}`
                   : 'Not yet started'}
               </Text>
               <Text textStyle="text-regular-sm" color="textSecondary">
                 {(progress.elapsedRatio * 100).toFixed(1)}% elapsed
               </Text>
             </Flex>
-            <ProgressBar percentage={Math.min(Math.max(progress.elapsedRatio, 0), 1) * 100} />
+            <ProgressBar
+              percentage={Math.min(Math.max(progress.elapsedRatio, 0), 1) * 100}
+              aria-label="Bond term progress"
+            />
             <Flex justify="space-between" gap={3}>
               <Text textStyle="text-mono-xs" color="textSecondary">
                 #{activationHeight.toLocaleString('en-US')}

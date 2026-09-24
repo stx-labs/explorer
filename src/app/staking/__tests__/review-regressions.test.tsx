@@ -92,3 +92,21 @@ test('an invalid enrollment prevents a misleading partial total', () => {
   expect(screen.getByText(/Enrollment data could not be loaded/)).toBeInTheDocument();
   expect(screen.queryByText('1 BTC')).not.toBeInTheDocument();
 });
+
+test('a finished bond shows its final day and identifies progress as a bond term', () => {
+  renderWithChakraProviders(
+    <CurrentBond
+      featuredBond={bondFixture}
+      burnBlockTimes={{}}
+      rewardCycleLength={900}
+      prepareCycleLength={100}
+      currentBurnHeight={bondFixture.schedule.unlock.bitcoin_height + 144}
+      nowMs={Date.UTC(2026, 7, 25)}
+    />
+  );
+  expect(screen.getByText('Day 75 of 75')).toBeInTheDocument();
+  expect(screen.getByRole('progressbar', { name: 'Bond term progress' })).toHaveAttribute(
+    'aria-valuenow',
+    '100'
+  );
+});

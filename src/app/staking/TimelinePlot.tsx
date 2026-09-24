@@ -465,14 +465,18 @@ export function TimelinePlot({
   useEffect(() => {
     const element = plotRef.current;
     if (!element) return;
-    const observer = new ResizeObserver(measurePlot);
+    const handleResize = () => {
+      clearCursor();
+      measurePlot();
+    };
+    const observer = new ResizeObserver(handleResize);
     observer.observe(element);
-    window.addEventListener('resize', measurePlot);
+    window.addEventListener('resize', handleResize);
     return () => {
       observer.disconnect();
-      window.removeEventListener('resize', measurePlot);
+      window.removeEventListener('resize', handleResize);
     };
-  }, [measurePlot]);
+  }, [clearCursor, measurePlot]);
 
   const todayLabel = new Date(nowMs).toLocaleString('en-US', {
     month: 'short',
