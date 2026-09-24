@@ -4,6 +4,7 @@ import {
   getConnectNetworkString,
   isHiroSubdomain,
   isLocalhost,
+  isWalletSupportedNetwork,
   sanitizeNetworkUrlForTag,
 } from '../network-utils';
 
@@ -228,5 +229,38 @@ describe('sanitizeNetworkUrlForTag', () => {
 
   it('returns "invalid" for malformed input', () => {
     expect(sanitizeNetworkUrlForTag('not a url')).toBe('invalid');
+  });
+});
+
+describe('isWalletSupportedNetwork', () => {
+  const baseNetwork: Network = {
+    label: '',
+    url: '',
+    btcBlockBaseUrl: '',
+    btcTxBaseUrl: '',
+    btcAddressBaseUrl: '',
+    networkId: 1,
+    mode: NetworkModes.Testnet,
+  };
+
+  it('supports the default mainnet, testnet and devnet URLs', () => {
+    expect(isWalletSupportedNetwork({ ...baseNetwork, url: 'https://api.hiro.so' })).toBe(true);
+    expect(isWalletSupportedNetwork({ ...baseNetwork, url: 'https://api.testnet.hiro.so' })).toBe(
+      true
+    );
+    expect(isWalletSupportedNetwork({ ...baseNetwork, url: DEFAULT_DEVNET_SERVER })).toBe(true);
+  });
+
+  it('does not support testnet-mode networks served from other URLs', () => {
+    expect(
+      isWalletSupportedNetwork({ ...baseNetwork, url: 'https://api.staking-testnet.hiro.so' })
+    ).toBe(false);
+    expect(
+      isWalletSupportedNetwork({
+        ...baseNetwork,
+        url: 'https://custom.example.com',
+        isCustomNetwork: true,
+      })
+    ).toBe(false);
   });
 });

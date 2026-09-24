@@ -29,6 +29,9 @@ describe('getDocumentableFaucetApiUrl', () => {
       'https://api.testnet.hiro.so'
     );
     expect(getDocumentableFaucetApiUrl('http://localhost:3999')).toBe('http://localhost:3999');
+    expect(getDocumentableFaucetApiUrl('https://api.staking-testnet.hiro.so')).toBe(
+      'https://api.staking-testnet.hiro.so'
+    );
   });
 
   it('refuses a custom api url so it can never reach a copy-paste shell command', () => {

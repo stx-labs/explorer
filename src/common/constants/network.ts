@@ -70,7 +70,6 @@ export const stakingTestnetNetwork: Network = {
   btcAddressBaseUrl: 'https://mempool.bitcoin.staking-testnet.hiro.so/address',
   networkId: STAKING_TESTNET_CHAIN_ID,
   mode: NetworkModes.Testnet,
-  isCustomNetwork: true, // like devnet: makes buildUrl add the `api` param the server needs
 };
 
 export const devnetNetwork: Network = {
@@ -81,5 +80,4 @@ export const devnetNetwork: Network = {
   btcAddressBaseUrl: NetworkModeBtcAddressBaseUrlMap[NetworkModes.Testnet],
   networkId: STACKS_TESTNET.chainId,
   mode: NetworkModes.Testnet,
-  isCustomNetwork: true,
 };

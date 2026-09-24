@@ -1,4 +1,4 @@
-import { NetworkModeUrlMap } from '@/common/constants/network';
+import { NetworkModeUrlMap, stakingTestnetNetwork } from '@/common/constants/network';
 import { NetworkModes } from '@/common/types/network';
 import { isAddressForNetworkMode, validateStacksAddress } from '@/common/utils/utils';
 
@@ -15,7 +15,11 @@ export function getRecipientAddressError(address: string): string | undefined {
   return undefined;
 }
 
-const DOCUMENTABLE_FAUCET_HOSTS = [NetworkModeUrlMap[NetworkModes.Testnet], DEFAULT_DEVNET_SERVER];
+const DOCUMENTABLE_FAUCET_HOSTS = [
+  NetworkModeUrlMap[NetworkModes.Testnet],
+  stakingTestnetNetwork.url,
+  DEFAULT_DEVNET_SERVER,
+];
 
 export function getDocumentableFaucetApiUrl(apiUrl: string | undefined) {
   return apiUrl && DOCUMENTABLE_FAUCET_HOSTS.includes(apiUrl) ? apiUrl : undefined;

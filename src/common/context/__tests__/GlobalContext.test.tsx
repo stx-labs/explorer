@@ -8,6 +8,7 @@ import { useContext } from 'react';
 import { CookiesProvider } from 'react-cookie';
 
 import { fetchCustomNetworkId } from '../../components/modals/AddNetwork/utils';
+import { stakingTestnetNetwork } from '../../constants/network';
 import { TokenPrice } from '../../types/tokenPrice';
 import { GlobalContext, GlobalContextProvider } from '../GlobalContextProvider';
 
@@ -113,6 +114,7 @@ describe('GlobalContext', () => {
 
     const networks = getContextField('networks');
     expect(Object.keys(networks).length).toBe(4);
+    expect(networks[stakingTestnetNetwork.url]).toEqual(stakingTestnetNetwork);
 
     await waitFor(() => {
       expect(fetchCustomNetworkId).toHaveBeenCalledWith(customApiUrl, false);
@@ -123,5 +125,33 @@ describe('GlobalContext', () => {
       expect(Object.keys(updatedNetworks).length).toBe(5);
       expect(updatedNetworks[customApiUrl].isCustomNetwork).toBe(true);
     });
+  });
+
+  it('keeps built-in networks intact regardless of the custom network cookies', () => {
+    useSearchParams.mockReturnValue({ get: () => null } as any);
+    const staleCustomEntry = {
+      ...stakingTestnetNetwork,
+      label: 'my old staking entry',
+      isCustomNetwork: true,
+    };
+    render(
+      <CookiesProvider>
+        <GlobalContextProvider
+          addedCustomNetworksCookie={JSON.stringify({
+            [stakingTestnetNetwork.url]: staleCustomEntry,
+          })}
+          removedCustomNetworksCookie={JSON.stringify({
+            [stakingTestnetNetwork.url]: staleCustomEntry,
+          })}
+          tokenPrice={mockTokenPrice}
+        >
+          <GlobalContextTestComponent />
+        </GlobalContextProvider>
+      </CookiesProvider>
+    );
+
+    const networks = getContextField('networks');
+    expect(networks[stakingTestnetNetwork.url]).toEqual(stakingTestnetNetwork);
+    expect(Object.keys(networks).length).toBe(4);
   });
 });
