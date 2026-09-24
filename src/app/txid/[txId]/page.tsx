@@ -3,7 +3,7 @@ import { getTokenPrice } from '@/app/getTokenPriceInfo';
 import { CommonSearchParams } from '@/app/transactions/page';
 import { NetworkModes } from '@/common/types/network';
 import { logError } from '@/common/utils/error-utils';
-import { getApiUrl } from '@/common/utils/network-utils';
+import { canServerFetch, getApiUrl } from '@/common/utils/network-utils';
 import { validateStacksContractId } from '@/common/utils/utils';
 
 import {
@@ -51,7 +51,8 @@ export default async function Page(props: {
   let numFunctions: number | undefined;
 
   const isContractId = validateStacksContractId(txId);
-  const isSSRDisabled = ssr === 'false';
+  // A custom `api` host comes from the visitor: never fetched from the server, rendered client-side.
+  const isSSRDisabled = ssr === 'false' || !canServerFetch(apiUrl);
 
   if (!isSSRDisabled) {
     try {
