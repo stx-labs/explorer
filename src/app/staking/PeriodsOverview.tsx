@@ -24,7 +24,6 @@ import {
   getBarPosition,
   getBondLifecycleState,
   getBondSchedule,
-  getBondTimelineState,
   getDistributionCadence,
   getDistributionGridCells,
   getTimelineBounds,
@@ -99,7 +98,7 @@ export function PeriodsOverview({
     const byIndex = [...bonds].sort((a, b) => a.index - b.index);
     const featuredPosition = byIndex.findIndex(bond => bond.index === featuredIndex);
     const fallback = byIndex.findIndex(
-      bond => (bond.schedule?.unlock?.bitcoin_height ?? 0) > currentBurnHeight
+      bond => bond.schedule.unlock.bitcoin_height > currentBurnHeight
     );
     const current = featuredPosition >= 0 ? featuredPosition : Math.max(fallback, 0);
     const from = Math.max(current - TIMELINE_BONDS_BEFORE, 0);
@@ -108,25 +107,31 @@ export function PeriodsOverview({
 
     const bars = [
       ...onChain.map(bond => {
-        const activationHeight = bond.schedule?.activation?.bitcoin_height ?? 0;
-        const unlockHeight = bond.schedule?.unlock?.bitcoin_height ?? 0;
+        const activationHeight = bond.schedule.activation.bitcoin_height;
+        const unlockHeight = bond.schedule.unlock.bitcoin_height;
         const schedule = getBondSchedule(
           activationHeight,
           unlockHeight,
           rewardCycleLength,
           prepareCycleLength
         );
+        const state = getBondLifecycleState(schedule, currentBurnHeight, true);
         return {
           index: bond.index,
           label: bondLabel(bond.index),
           startMs: burnHeightToApproximateTimestamp(activationHeight, currentBurnHeight, nowMs),
           endMs: burnHeightToApproximateTimestamp(unlockHeight, currentBurnHeight, nowMs),
-          state: getBondTimelineState(activationHeight, unlockHeight, currentBurnHeight),
+          state:
+            state === 'closed'
+              ? ('complete' as const)
+              : state === 'active' || state === 'maturity'
+                ? ('active' as const)
+                : ('upcoming' as const),
           elapsedDistributions: countElapsedDistributions(activationHeight),
           tooltip: {
             burnBlockTimes,
             label: bondLabel(bond.index),
-            state: getBondLifecycleState(schedule, currentBurnHeight, true),
+            state,
             schedule,
             capacitySats: toBigInt(bond.parameters?.btc_capacity),
             lockedSats: toBigInt(bond.balances?.locked?.btc),

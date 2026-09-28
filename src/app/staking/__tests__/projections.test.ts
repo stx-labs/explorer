@@ -296,4 +296,35 @@ describe('getDistributionGridCells', () => {
     });
     expect(cells).toHaveLength(50);
   });
+
+  test.each(
+    [
+      'cadence',
+      'firstBurnchainBlockHeight',
+      'currentBurnHeight',
+      'nowMs',
+      'startMs',
+      'endMs',
+      'maxCells',
+    ].flatMap(field =>
+      (field === 'maxCells' ? [NaN, Infinity] : [NaN, Infinity, undefined]).map(value => ({
+        field,
+        value,
+      }))
+    )
+  )('rejects invalid $field=$value without entering the grid loop', ({ field, value }) => {
+    const inputs = { ...grid, startMs: nowMs, endMs: nowMs + 25 * BLOCK_MS, [field]: value };
+    expect(getDistributionGridCells(inputs)).toEqual([]);
+  });
+
+  it('rejects an unrepresentable starting grid index', () => {
+    expect(
+      getDistributionGridCells({
+        ...grid,
+        cadence: Number.MIN_VALUE,
+        startMs: nowMs,
+        endMs: nowMs + BLOCK_MS,
+      })
+    ).toEqual([]);
+  });
 });

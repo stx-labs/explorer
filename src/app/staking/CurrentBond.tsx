@@ -2,7 +2,6 @@
 
 import { ProgressBar } from '@/common/components/ProgressBar';
 import { useGlobalContext } from '@/common/context/useGlobalContext';
-import { buildUrl } from '@/common/utils/buildUrl';
 import { formatDateShort } from '@/common/utils/date-utils';
 import { ButtonLink } from '@/ui/ButtonLink';
 import { Text } from '@/ui/Text';
@@ -15,6 +14,7 @@ import type { BondStateTone } from './BondStateBadge';
 import { GlossaryTerm } from './GlossaryTerm';
 import { GENESIS_BOND_INDEX } from './consts';
 import type { Bond, BondRewards, EnrollmentShare } from './data';
+import { bondActivityHref } from './links';
 import {
   BondLifecycleState,
   burnHeightToApproximateTimestamp,
@@ -111,7 +111,7 @@ function LifecycleRow({ milestone, live }: { milestone: Milestone; live: boolean
                   borderRadius: 'full',
                   bg: 'accent.stacks-500',
                   opacity: 0.45,
-                  animation: `lifecycle-pulse ${PULSE_MS}ms cubic-bezier(0, 0, 0.2, 1) infinite`,
+                  animation: `ping ${PULSE_MS}ms cubic-bezier(0, 0, 0.2, 1) infinite`,
                 }
               : undefined
           }
@@ -120,7 +120,12 @@ function LifecycleRow({ milestone, live }: { milestone: Milestone; live: boolean
         <Text textStyle={reached ? 'text-medium-sm' : 'text-regular-sm'}>{label}</Text>
       </Flex>
       <Flex gap={6} align="baseline">
-        <Text textStyle="text-mono-xs" color={reached ? 'accent.stacks-500' : 'textSecondary'}>
+        <Text
+          textStyle="text-mono-xs"
+          color={
+            reached ? { base: 'accent.stacks-700', _dark: 'accent.stacks-500' } : 'textSecondary'
+          }
+        >
           #{height.toLocaleString('en-US')}
         </Text>
         <Text
@@ -161,8 +166,8 @@ export function CurrentBond({
   const network = useGlobalContext().activeNetwork;
   if (!featuredBond) return null;
 
-  const activationHeight = featuredBond.schedule?.activation?.bitcoin_height ?? 0;
-  const termEndHeight = featuredBond.schedule?.unlock?.bitcoin_height ?? 0;
+  const activationHeight = featuredBond.schedule.activation.bitcoin_height;
+  const termEndHeight = featuredBond.schedule.unlock.bitcoin_height;
   const schedule = getBondSchedule(
     activationHeight,
     termEndHeight,
@@ -233,8 +238,8 @@ export function CurrentBond({
     undefined
   );
   const name = bondLabel(featuredBond.index);
-  const cycleRange = `cycles ${featuredBond.schedule?.activation?.pox_cycle ?? '?'}–${
-    (featuredBond.schedule?.unlock?.pox_cycle ?? 1) - 1
+  const cycleRange = `cycles ${featuredBond.schedule.activation.pox_cycle}–${
+    featuredBond.schedule.unlock.pox_cycle - 1
   }`;
 
   return (
@@ -327,10 +332,7 @@ export function CurrentBond({
         <Stack gap={4} flex={1} bg="surfaceTertiary" borderRadius="redesign.sm" p={[4, 5]}>
           <Flex justify="space-between" gap={3} align="baseline" flexWrap="wrap">
             <Text textStyle="heading-xs">Lifecycle</Text>
-            <ButtonLink
-              href={buildUrl(`/staking/activity?bond=${featuredBond.index}`, network)}
-              buttonLinkSize="big"
-            >
+            <ButtonLink href={bondActivityHref(featuredBond.index, network)} buttonLinkSize="big">
               View bond activity
             </ButtonLink>
           </Flex>

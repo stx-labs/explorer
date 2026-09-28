@@ -1,5 +1,6 @@
 'use client';
 
+import { BlockHeightBadge } from '@/ui/Badge';
 import { Text } from '@/ui/Text';
 import { Badge, Flex, Icon, Stack } from '@chakra-ui/react';
 import { ArrowRight, ArrowUpRight } from '@phosphor-icons/react';
@@ -14,7 +15,7 @@ import {
 import type { RealizedBondRate } from './reward-metrics';
 import { formatBtc, formatBurnDate, formatRatePercent, formatSbtc } from './utils';
 
-const STATE_LABELS: Record<BondLifecycleState, string> = {
+export const BOND_STATE_LABELS: Record<BondLifecycleState, string> = {
   scheduled: 'scheduled',
   enrolling: 'enrolling',
   awaitingActivation: 'enrollment closed',
@@ -34,13 +35,16 @@ const STATE_BADGES: Record<BondLifecycleState, { bg: string; color: string }> = 
 
 const ENROLLING_ACCENT = 'accent.bitcoin-500';
 
-export const hasBondActions = (state: BondLifecycleState) =>
+const hasBondActions = (state: BondLifecycleState) =>
   state === 'scheduled' || state === 'enrolling';
+
+export const hasBondLinks = (state: BondLifecycleState) =>
+  hasBondActions(state) || state === 'maturity';
 
 export function bondSummary(bond: BondTooltipData, currentBurnHeight: number, nowMs: number) {
   const date = (height: number) =>
     formatBurnDate(height, currentBurnHeight, nowMs, bond.burnBlockTimes);
-  return `${bond.label} · ${STATE_LABELS[bond.state]} · ${date(bond.schedule.activationHeight)} → ${date(bond.schedule.termEndHeight)}`;
+  return `${bond.label} · ${BOND_STATE_LABELS[bond.state]} · ${date(bond.schedule.activationHeight)} → ${date(bond.schedule.termEndHeight)}`;
 }
 
 export interface BondTooltipData {
@@ -142,7 +146,7 @@ export function BondTooltip({
             borderRadius="redesign.xl"
             whiteSpace="nowrap"
           >
-            {STATE_LABELS[state]}
+            {BOND_STATE_LABELS[state]}
           </Badge>
         </Flex>
         <Text textStyle="text-regular-xs" color="neutral.sand-300" whiteSpace="nowrap">
@@ -206,9 +210,12 @@ export function BondTooltip({
         </Text>
       )}
       {state === 'maturity' && (
-        <Text textStyle="text-regular-xs" color="neutral.sand-300">
-          Bitcoin unlocked at #{schedule.l1UnlockHeight.toLocaleString()}.
-        </Text>
+        <Flex align="center" gap={1.5} flexWrap="wrap">
+          <Text textStyle="text-regular-xs" color="neutral.sand-300">
+            Bitcoin unlocked at
+          </Text>
+          <BlockHeightBadge blockType="btc" blockHeight={schedule.l1UnlockHeight} />
+        </Flex>
       )}
 
       {hasBondActions(state) && (

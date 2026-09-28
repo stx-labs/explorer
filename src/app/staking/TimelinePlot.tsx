@@ -6,7 +6,7 @@ import { Box, Flex, Stack } from '@chakra-ui/react';
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
-import { BondTooltip, bondSummary, hasBondActions } from './BondTooltip';
+import { BOND_STATE_LABELS, BondTooltip, bondSummary, hasBondLinks } from './BondTooltip';
 import type { BondTooltipData } from './BondTooltip';
 import { DISTRIBUTIONS_PER_BOND } from './consts';
 import { isInsideApproach, placeHoverCard, preferredSide } from './hoverCard';
@@ -175,7 +175,7 @@ function HoverCard({
       style={{ transform: `translate3d(${origin.x + x}px, ${origin.y + y}px, 0)` }}
     >
       <ChartTooltipSurface
-        bg="var(--stacks-colors-alpha-black-alpha-800)"
+        bg="alpha.black-alpha-800"
         w={size ? undefined : 'max-content'}
         overflow="hidden"
         transition={`width ${FOLLOW_MS}ms ease-out, height ${FOLLOW_MS}ms ease-out`}
@@ -199,7 +199,7 @@ const TimelineRows = memo(function TimelineRows({
   cells,
   onBondFocus,
 }: {
-  rows: TimelineRow[];
+  rows: PlotRow[];
   cells: DistributionGridCell[];
   onBondFocus: (index: number, element: HTMLElement) => void;
 }) {
@@ -230,7 +230,7 @@ const TimelineRows = memo(function TimelineRows({
               data-bond-index={row.index}
               role="img"
               tabIndex={0}
-              aria-label={`${row.label}, ${row.state}, ${row.elapsedDistributions} of ${DISTRIBUTIONS_PER_BOND} scheduled intervals elapsed`}
+              aria-label={`${row.label}, ${BOND_STATE_LABELS[row.tooltip.state]}, ${row.elapsedDistributions} of ${DISTRIBUTIONS_PER_BOND} scheduled intervals elapsed`}
               onFocus={event => onBondFocus(row.index, event.currentTarget)}
               position="absolute"
               left={`${row.leftPercent}%`}
@@ -291,7 +291,7 @@ export function TimelinePlot({
   const latestMove = useRef<{ x: number; y: number; target: EventTarget | null }>(null);
   const actionable = useRef(new Set<number>());
   actionable.current = new Set(
-    rows.filter(row => hasBondActions(row.tooltip.state)).map(row => row.index)
+    rows.filter(row => hasBondLinks(row.tooltip.state)).map(row => row.index)
   );
 
   const commit = useCallback((next: HoverState | undefined) => {
@@ -485,13 +485,20 @@ export function TimelinePlot({
   });
 
   const pointer = hover?.pointer;
-  const pointerPercent = pointer ? (pointer.x / pointer.plotWidth) * 100 : undefined;
+  const pointerPercent =
+    pointer &&
+    Number.isFinite(pointer.x) &&
+    Number.isFinite(pointer.plotWidth) &&
+    pointer.plotWidth > 0
+      ? (pointer.x / pointer.plotWidth) * 100
+      : undefined;
   const pointerLabel = (() => {
     if (pointerPercent === undefined) return undefined;
     const span = bounds.endMs - bounds.startMs;
-    if (span <= 0) return undefined;
+    if (!Number.isFinite(span) || span <= 0) return undefined;
     const atMs = bounds.startMs + (pointerPercent / 100) * span;
     const height = approximateBurnHeightAt(atMs, currentBurnHeight, nowMs);
+    if (![atMs, height].every(Number.isFinite)) return undefined;
     const cycle = burnHeightToRewardCycle(height, firstBurnchainBlockHeight, rewardCycleLength);
     return [
       cycle !== undefined ? `cycle ${cycle}` : undefined,
@@ -503,7 +510,7 @@ export function TimelinePlot({
   })();
   const hoveredRow = rows.find(row => row.index === hover?.bondIndex);
   const expanded = !!hover?.expanded && hoveredRow !== undefined;
-  const interactive = expanded && hasBondActions(hoveredRow.tooltip.state);
+  const interactive = expanded && hasBondLinks(hoveredRow.tooltip.state);
   const hoveredCell =
     pointerPercent === undefined
       ? undefined
@@ -537,6 +544,7 @@ export function TimelinePlot({
           event.preventDefault();
           bar?.focus();
         } else if (!event.shiftKey && event.target === links[links.length - 1]) {
+          event.preventDefault();
           bar?.focus();
           clearCursor();
         }

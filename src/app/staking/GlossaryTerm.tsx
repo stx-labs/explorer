@@ -26,19 +26,15 @@ export function GlossaryTerm({
       contentProps={{ maxW: '22rem', whiteSpace: 'normal' }}
       content={
         <Stack gap={1.5}>
-          <Text textStyle="text-medium-sm" color="textInvert">
-            {term}
-          </Text>
-          <Text textStyle="text-regular-sm" color="textInvert">
-            {definition}
-          </Text>
+          <Text textStyle="text-medium-sm">{term}</Text>
+          <Text textStyle="text-regular-sm">{definition}</Text>
           {docsUrl && (
             <a href={docsUrl} target="_blank" rel="noopener noreferrer">
               <Flex align="center" gap={1}>
-                <Text textStyle="text-medium-sm" color="textInvert" textDecoration="underline">
+                <Text textStyle="text-medium-sm" textDecoration="underline">
                   Read in the docs
                 </Text>
-                <Icon w={3.5} h={3.5} color="textInvert">
+                <Icon w={3.5} h={3.5}>
                   <ArrowUpRight weight="bold" />
                 </Icon>
               </Flex>

@@ -32,7 +32,11 @@ export function burnHeightToRewardCycle(
   firstBurnchainBlockHeight: number,
   rewardCycleLength: number
 ): number | undefined {
-  if (!rewardCycleLength) return undefined;
+  if (
+    ![burnHeight, firstBurnchainBlockHeight, rewardCycleLength].every(Number.isFinite) ||
+    rewardCycleLength <= 0
+  )
+    return undefined;
   return Math.floor((burnHeight - firstBurnchainBlockHeight) / rewardCycleLength);
 }
 
@@ -352,11 +356,20 @@ export function getDistributionGridCells({
   nowMs: number;
   maxCells?: number;
 }): DistributionGridCell[] {
-  if (cadence <= 0 || endMs <= startMs) return [];
+  if (
+    ![startMs, endMs, cadence, firstBurnchainBlockHeight, currentBurnHeight, nowMs, maxCells].every(
+      Number.isFinite
+    ) ||
+    cadence <= 0 ||
+    endMs <= startMs ||
+    maxCells <= 0
+  )
+    return [];
   const cells: DistributionGridCell[] = [];
   const startHeight = approximateBurnHeightAt(startMs, currentBurnHeight, nowMs);
   let index = Math.floor((startHeight - firstBurnchainBlockHeight) / cadence);
-  while (cells.length < maxCells) {
+  if (!Number.isSafeInteger(index)) return [];
+  for (let attempts = 0; attempts < maxCells; attempts++, index++) {
     const cellStartHeight = firstBurnchainBlockHeight + index * cadence;
     const cellStartMs = burnHeightToApproximateTimestamp(cellStartHeight, currentBurnHeight, nowMs);
     if (cellStartMs >= endMs) break;
@@ -372,7 +385,6 @@ export function getDistributionGridCells({
       endMs
     );
     if (position.widthPercent > 0) cells.push({ index, ...position });
-    index += 1;
   }
   return cells;
 }

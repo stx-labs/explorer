@@ -91,8 +91,8 @@ export function StakingStats({
   const pairedStx = pairedMicroStx === undefined ? undefined : microStxToStx(pairedMicroStx);
 
   const schedule = getBondSchedule(
-    featuredBond.schedule?.activation?.bitcoin_height ?? 0,
-    featuredBond.schedule?.unlock?.bitcoin_height ?? 0,
+    featuredBond.schedule.activation.bitcoin_height,
+    featuredBond.schedule.unlock.bitcoin_height,
     rewardCycleLength,
     prepareCycleLength
   );
