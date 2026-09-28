@@ -13,6 +13,9 @@ export async function fetchFeaturedBond(index: number, chain: string, api?: stri
   if (!('burn_block_height' in tx) || !tx.canonical || tx.burn_block_height <= 0) {
     throw new Error('Bond setup transaction is not confirmed');
   }
+  if (tx.tx_status !== 'success') {
+    throw new Error('Bond setup transaction failed');
+  }
   return {
     ...bond,
     transaction: {

@@ -28,6 +28,7 @@ test.each([
   'corrects setup height and time using the selected $chain API',
   async ({ chain, api, expectedApi }) => {
     jest.mocked(fetchTx).mockResolvedValue({
+      tx_status: 'success',
       canonical: true,
       burn_block_height: 8500,
       burn_block_time: 1699999900,
@@ -56,14 +57,30 @@ test('leaves bonds without setup metadata unchanged', async () => {
 
 test.each([
   { tx_status: 'pending' },
-  { canonical: false, burn_block_height: 8500, burn_block_time: 1700000000 },
-  { canonical: true, burn_block_height: 0, burn_block_time: 1700000000 },
+  { tx_status: 'success', canonical: false, burn_block_height: 8500, burn_block_time: 1700000000 },
+  { tx_status: 'success', canonical: true, burn_block_height: 0, burn_block_time: 1700000000 },
 ])('rejects unconfirmed setup metadata: %j', async tx => {
   jest.mocked(fetchTx).mockResolvedValue(tx as Awaited<ReturnType<typeof fetchTx>>);
   await expect(fetchFeaturedBond(bond.index, 'testnet')).rejects.toThrow(
     'Bond setup transaction is not confirmed'
   );
 });
+
+test.each(['abort_by_response', 'abort_by_post_condition'] as const)(
+  'rejects a confirmed setup transaction with status %s',
+  async tx_status => {
+    jest.mocked(fetchTx).mockResolvedValue({
+      tx_status,
+      canonical: true,
+      burn_block_height: 8500,
+      burn_block_time: 1700000000,
+    } as Awaited<ReturnType<typeof fetchTx>>);
+
+    await expect(fetchFeaturedBond(bond.index, 'testnet')).rejects.toThrow(
+      'Bond setup transaction failed'
+    );
+  }
+);
 
 test('propagates transaction lookup failure so the caller can use its unavailable state', async () => {
   jest.mocked(fetchTx).mockRejectedValue(new Error('API unavailable'));
