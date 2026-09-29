@@ -202,6 +202,7 @@ export function BondsTable({
   settlementsByBond,
   burnBlockTimes = {},
   pageSize = BONDS_TABLE_LIMIT,
+  serverPagination,
   fullPage = false,
 }: {
   bonds: Bond[];
@@ -212,9 +213,14 @@ export function BondsTable({
   settlementsByBond?: BondRewards['settlementsByBond'];
   burnBlockTimes?: Record<number, number>;
   pageSize?: number;
+  serverPagination?: Pick<
+    NonNullable<React.ComponentProps<typeof Table>['pagination']>,
+    'pageIndex' | 'pageSize' | 'totalRows' | 'onPageChange'
+  >;
   fullPage?: boolean;
 }) {
   const [pageIndex, setPageIndex] = useState(0);
+  const hasServerPagination = serverPagination !== undefined;
   useEffect(() => {
     setPageIndex(0);
   }, [bonds, pageSize]);
@@ -223,7 +229,10 @@ export function BondsTable({
     () =>
       [...bonds]
         .sort((a, b) => b.index - a.index)
-        .slice(pageIndex * pageSize, (pageIndex + 1) * pageSize)
+        .slice(
+          hasServerPagination ? 0 : pageIndex * pageSize,
+          hasServerPagination ? bonds.length : (pageIndex + 1) * pageSize
+        )
         .map(bond =>
           toBondRow(
             bond,
@@ -243,6 +252,7 @@ export function BondsTable({
       settlementsByBond,
       pageIndex,
       pageSize,
+      hasServerPagination,
     ]
   );
   return (
@@ -254,15 +264,19 @@ export function BondsTable({
       columns={bondColumns}
       emptyTableUi={<NoBondsYet />}
       pagination={
-        !unavailable && bonds.length > pageSize
-          ? {
-              manualPagination: true,
-              pageIndex,
-              pageSize,
-              totalRows: bonds.length,
-              onPageChange: next => setPageIndex(next.pageIndex),
-            }
-          : undefined
+        unavailable
+          ? undefined
+          : serverPagination
+            ? { ...serverPagination, manualPagination: true }
+            : bonds.length > pageSize
+              ? {
+                  manualPagination: true,
+                  pageIndex,
+                  pageSize,
+                  totalRows: bonds.length,
+                  onPageChange: next => setPageIndex(next.pageIndex),
+                }
+              : undefined
       }
       tableContainerWrapper={table => (
         <TableContainer pt={{ base: 3, lg: 4 }} minH={fullPage ? '500px' : undefined}>
