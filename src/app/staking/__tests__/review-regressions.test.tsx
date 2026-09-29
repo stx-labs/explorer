@@ -4,6 +4,8 @@ import userEvent from '@testing-library/user-event';
 
 import { AnnotatedValue } from '../AnnotatedValue';
 import { BondsTable } from '../BondsTable';
+import { CurrentBond } from '../CurrentBond';
+import { StakingStats } from '../StakingStats';
 import bondFixture from './fixtures/bond.json';
 
 const originalResizeObserver = globalThis.ResizeObserver;
@@ -54,4 +56,96 @@ test('bond pagination reaches every row, including the short final page, and res
   expect(screen.getByText('Bond 5')).toBeInTheDocument();
   expect(screen.getByText('Bond 4')).toBeInTheDocument();
   expect(screen.queryByRole('button', { name: 'Go to next page' })).not.toBeInTheDocument();
+});
+
+test('featured-bond cards preserve missing balances rather than showing zero or crashing', () => {
+  renderWithChakraProviders(
+    <StakingStats
+      featuredBond={{
+        ...bondFixture,
+        balances: { ...bondFixture.balances, locked: { btc: '', stx: 'invalid' } },
+      }}
+      rewardCycleLength={900}
+      prepareCycleLength={100}
+      currentBurnHeight={9508}
+      nowMs={Date.UTC(2026, 7, 25)}
+    />
+  );
+  expect(screen.getAllByText('N/A')).toHaveLength(3);
+  expect(screen.getByText('Bond balance unavailable')).toBeInTheDocument();
+  expect(screen.getByText(/Paired balance unavailable/)).toBeInTheDocument();
+  expect(screen.getByRole('link', { name: '#19800' })).toHaveAttribute(
+    'href',
+    expect.stringContaining('/btcblock/19800?')
+  );
+});
+
+test('an invalid enrollment prevents a misleading partial total', () => {
+  renderWithChakraProviders(
+    <CurrentBond
+      featuredBond={bondFixture}
+      enrollments={[{ btc: '100000000' }, { btc: 'invalid' }]}
+      burnBlockTimes={{}}
+      rewardCycleLength={900}
+      prepareCycleLength={100}
+      currentBurnHeight={9508}
+      nowMs={Date.UTC(2026, 7, 25)}
+    />
+  );
+  expect(screen.getByText('Unavailable')).toBeInTheDocument();
+  expect(screen.getByText(/Enrollment data could not be loaded/)).toBeInTheDocument();
+  expect(screen.queryByText('1 BTC')).not.toBeInTheDocument();
+});
+
+test('a finished bond shows its final day and identifies progress as a bond term', () => {
+  renderWithChakraProviders(
+    <CurrentBond
+      featuredBond={bondFixture}
+      burnBlockTimes={{}}
+      rewardCycleLength={900}
+      prepareCycleLength={100}
+      currentBurnHeight={bondFixture.schedule.unlock.bitcoin_height + 144}
+      nowMs={Date.UTC(2026, 7, 25)}
+    />
+  );
+  expect(screen.getByText('Day 75 of 75')).toBeInTheDocument();
+  expect(screen.getByRole('progressbar', { name: 'Bond term progress' })).toHaveAttribute(
+    'aria-valuenow',
+    '100'
+  );
+});
+
+test('unknown progress shows an unavailable label and an indeterminate progress bar', () => {
+  renderWithChakraProviders(
+    <CurrentBond
+      featuredBond={bondFixture}
+      burnBlockTimes={{}}
+      rewardCycleLength={900}
+      prepareCycleLength={100}
+      currentBurnHeight={NaN}
+      nowMs={Date.UTC(2026, 7, 25)}
+    />
+  );
+  expect(screen.getByText('Progress unavailable')).toBeInTheDocument();
+  expect(screen.getByText('Day unavailable')).toBeInTheDocument();
+  expect(screen.getByRole('progressbar', { name: 'Bond term progress' })).not.toHaveAttribute(
+    'aria-valuenow'
+  );
+  expect(screen.queryByText(/NaN% elapsed/)).not.toBeInTheDocument();
+});
+
+test('a bond without verified setup metadata renders its schedule estimate', () => {
+  renderWithChakraProviders(
+    <CurrentBond
+      featuredBond={bondFixture}
+      burnBlockTimes={{}}
+      rewardCycleLength={900}
+      prepareCycleLength={100}
+      currentBurnHeight={9508}
+      nowMs={Date.UTC(2026, 7, 25)}
+    />
+  );
+  expect(screen.getByText('Earliest setup window')).toBeInTheDocument();
+  expect(screen.getByText('#7,200')).toBeInTheDocument();
+  expect(screen.queryByText('Enrollment opened')).not.toBeInTheDocument();
 });
