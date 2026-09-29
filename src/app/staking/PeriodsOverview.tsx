@@ -88,7 +88,7 @@ export function PeriodsOverview({
   const { rows, bounds, ticks, todayPercent, cells } = useMemo(() => {
     const cadence = getDistributionCadence(rewardCycleLength);
     const countElapsedDistributions = (activationHeight: number) =>
-      cadence > 0
+      [cadence, currentBurnHeight, activationHeight].every(Number.isFinite) && cadence > 0
         ? Math.min(
             Math.max(Math.floor((currentBurnHeight - activationHeight) / cadence), 0),
             DISTRIBUTIONS_PER_BOND

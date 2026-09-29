@@ -113,6 +113,48 @@ test('maturity has a consistent state and a keyboard-accessible Bitcoin block ba
   expect(screen.queryByRole('link', { name: '#19350' })).not.toBeInTheDocument();
 });
 
+test.each(
+  ['currentBurnHeight', 'activationHeight', 'rewardCycleLength'].flatMap(field =>
+    [NaN, Infinity].map(value => ({ field, value }))
+  )
+)(
+  'invalid $field=$value does not produce an invalid elapsed-distribution count',
+  ({ field, value }) => {
+    const inputs = {
+      currentBurnHeight: 9508,
+      activationHeight: 9000,
+      rewardCycleLength: 900,
+      [field]: value,
+    };
+    renderWithChakraProviders(
+      <PeriodsOverview
+        bonds={[
+          {
+            ...bondFixture,
+            schedule: {
+              ...bondFixture.schedule,
+              activation: {
+                ...bondFixture.schedule.activation,
+                bitcoin_height: inputs.activationHeight,
+              },
+            },
+          },
+        ]}
+        featuredIndex={3}
+        burnBlockTimes={{}}
+        rewardCycleLength={inputs.rewardCycleLength}
+        prepareCycleLength={100}
+        firstBurnchainBlockHeight={0}
+        currentBurnHeight={inputs.currentBurnHeight}
+        nowMs={Date.UTC(2026, 7, 25)}
+      />
+    );
+    expect(screen.getByRole('img', { name: /Bond 3,/ })).toHaveAccessibleName(
+      /, 0 of 24 scheduled intervals elapsed$/
+    );
+  }
+);
+
 test.each([NaN, Infinity])(
   'a pointer with invalid first burn height %s never displays a NaN cycle',
   firstBurnchainBlockHeight => {
