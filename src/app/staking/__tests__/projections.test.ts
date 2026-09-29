@@ -5,7 +5,6 @@ import {
   getBondLifecycleState,
   getBondProgress,
   getBondSchedule,
-  getBondTimelineState,
   getCycleStackerRewardsSatsBigInt,
   getDistributionGridCells,
   getFeaturedBondIndex,
@@ -31,18 +30,6 @@ describe('getCycleStackerRewardsSatsBigInt', () => {
 
   test('is zero when nobody staked', () => {
     expect(getCycleStackerRewardsSatsBigInt(BigInt(0), BigInt(0))).toBe(BigInt(0));
-  });
-});
-
-describe('getBondTimelineState', () => {
-  test('moves from upcoming to active to complete as heights pass', () => {
-    expect(getBondTimelineState(10800, 21600, 9500)).toBe('upcoming');
-    expect(getBondTimelineState(9000, 19800, 9500)).toBe('active');
-    expect(getBondTimelineState(9000, 19800, 20000)).toBe('complete');
-  });
-
-  test('the exact activation block counts as active', () => {
-    expect(getBondTimelineState(9000, 19800, 9000)).toBe('active');
   });
 });
 

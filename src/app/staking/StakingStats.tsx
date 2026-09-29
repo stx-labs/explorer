@@ -3,6 +3,7 @@
 import { OverviewCard } from '@/common/components/OverviewCard';
 import { useGlobalContext } from '@/common/context/useGlobalContext';
 import { formatDateShort } from '@/common/utils/date-utils';
+import { BlockHeightBadge } from '@/ui/Badge';
 import { Button } from '@/ui/Button';
 import type { ButtonProps } from '@/ui/Button';
 import { Text } from '@/ui/Text';
@@ -178,10 +179,13 @@ export function StakingStats({
             unit={pairedMicroStx === undefined ? undefined : 'STX'}
           />
         }
-        caption={join(
-          pairedMicroStx === undefined ? 'Paired balance unavailable' : usd(pairedStx, stxPrice),
-          `unlocks #${schedule.termEndHeight.toLocaleString('en-US')}`
-        )}
+        caption={
+          <Flex align="center" gap={1.5} flexWrap="wrap">
+            {pairedMicroStx === undefined ? 'Paired balance unavailable' : usd(pairedStx, stxPrice)}
+            <span>unlocks</span>
+            <BlockHeightBadge blockType="btc" blockHeight={schedule.termEndHeight} />
+          </Flex>
+        }
       />
     </Grid>
   );

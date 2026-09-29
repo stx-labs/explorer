@@ -5,6 +5,10 @@ import { fetchFeaturedBond } from '../page-data';
 import bond from './fixtures/bond.json';
 
 jest.mock('@/api/data-fetchers', () => ({ fetchTx: jest.fn() }));
+jest.mock('@/common/utils/error-utils', () => ({
+  ...jest.requireActual('@/common/utils/error-utils'),
+  logError: jest.fn(),
+}));
 jest.mock('../data', () => ({ fetchBond: jest.fn() }));
 
 const bondWithSetup = {
@@ -59,15 +63,16 @@ test.each([
   { tx_status: 'pending' },
   { tx_status: 'success', canonical: false, burn_block_height: 8500, burn_block_time: 1700000000 },
   { tx_status: 'success', canonical: true, burn_block_height: 0, burn_block_time: 1700000000 },
-])('rejects unconfirmed setup metadata: %j', async tx => {
+])('falls back to the schedule for unconfirmed setup metadata: %j', async tx => {
   jest.mocked(fetchTx).mockResolvedValue(tx as Awaited<ReturnType<typeof fetchTx>>);
-  await expect(fetchFeaturedBond(bond.index, 'testnet')).rejects.toThrow(
-    'Bond setup transaction is not confirmed'
-  );
+  await expect(fetchFeaturedBond(bond.index, 'testnet')).resolves.toEqual({
+    ...bond,
+    transaction: undefined,
+  });
 });
 
 test.each(['abort_by_response', 'abort_by_post_condition'] as const)(
-  'rejects a confirmed setup transaction with status %s',
+  'preserves the bond without setup metadata when a confirmed transaction has status %s',
   async tx_status => {
     jest.mocked(fetchTx).mockResolvedValue({
       tx_status,
@@ -76,13 +81,23 @@ test.each(['abort_by_response', 'abort_by_post_condition'] as const)(
       burn_block_time: 1700000000,
     } as Awaited<ReturnType<typeof fetchTx>>);
 
-    await expect(fetchFeaturedBond(bond.index, 'testnet')).rejects.toThrow(
-      'Bond setup transaction failed'
-    );
+    await expect(fetchFeaturedBond(bond.index, 'testnet')).resolves.toEqual({
+      ...bond,
+      transaction: undefined,
+    });
   }
 );
 
-test('propagates transaction lookup failure so the caller can use its unavailable state', async () => {
+test('preserves the bond and falls back to its schedule when transaction lookup fails', async () => {
   jest.mocked(fetchTx).mockRejectedValue(new Error('API unavailable'));
-  await expect(fetchFeaturedBond(bond.index, 'testnet')).rejects.toThrow('API unavailable');
+  await expect(fetchFeaturedBond(bond.index, 'testnet')).resolves.toEqual({
+    ...bond,
+    transaction: undefined,
+  });
+});
+
+test('still propagates primary bond fetch failures', async () => {
+  jest.mocked(fetchBond).mockRejectedValue(new Error('Bond unavailable'));
+  await expect(fetchFeaturedBond(bond.index, 'testnet')).rejects.toThrow('Bond unavailable');
+  expect(fetchTx).not.toHaveBeenCalled();
 });

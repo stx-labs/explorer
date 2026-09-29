@@ -112,16 +112,6 @@ export function getCycleStackerRewardsSatsBigInt(
 
 export type BondTimelineState = 'complete' | 'active' | 'upcoming';
 
-export function getBondTimelineState(
-  activationHeight: number,
-  unlockHeight: number,
-  currentBurnHeight: number
-): BondTimelineState {
-  if (unlockHeight > 0 && currentBurnHeight >= unlockHeight) return 'complete';
-  if (activationHeight > 0 && currentBurnHeight >= activationHeight) return 'active';
-  return 'upcoming';
-}
-
 export function getBarPosition(
   startMs: number,
   endMs: number,

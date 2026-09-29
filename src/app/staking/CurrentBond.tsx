@@ -177,6 +177,8 @@ export function CurrentBond({
   const state = getBondLifecycleState(schedule, currentBurnHeight, true);
   const hasStarted = currentBurnHeight >= schedule.activationHeight;
   const progress = getBondProgress(schedule, currentBurnHeight, rewardCycleLength);
+  const elapsedPercentage = progress.elapsedRatio * 100;
+  const hasValidDay = Number.isFinite(progress.dayOfTerm) && Number.isFinite(progress.termDays);
   const cadence = getDistributionCadence(rewardCycleLength);
   const distributionHeight = (n: number) => schedule.activationHeight + n * cadence;
 
@@ -267,18 +269,19 @@ export function CurrentBond({
           <Stack gap={2}>
             <Flex justify="space-between" gap={3}>
               <Text textStyle="text-medium-sm">
-                {hasStarted
-                  ? `Day ${Math.min(progress.dayOfTerm, progress.termDays)} of ${progress.termDays}`
-                  : 'Not yet started'}
+                {!hasValidDay
+                  ? 'Day unavailable'
+                  : hasStarted
+                    ? `Day ${Math.min(progress.dayOfTerm, progress.termDays)} of ${progress.termDays}`
+                    : 'Not yet started'}
               </Text>
               <Text textStyle="text-regular-sm" color="textSecondary">
-                {(progress.elapsedRatio * 100).toFixed(1)}% elapsed
+                {Number.isFinite(elapsedPercentage)
+                  ? `${elapsedPercentage.toFixed(1)}% elapsed`
+                  : 'Progress unavailable'}
               </Text>
             </Flex>
-            <ProgressBar
-              percentage={Math.min(Math.max(progress.elapsedRatio, 0), 1) * 100}
-              aria-label="Bond term progress"
-            />
+            <ProgressBar percentage={elapsedPercentage} aria-label="Bond term progress" />
             <Flex justify="space-between" gap={3}>
               <Text textStyle="text-mono-xs" color="textSecondary">
                 #{activationHeight.toLocaleString('en-US')}
