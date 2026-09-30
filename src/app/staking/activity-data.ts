@@ -1,4 +1,4 @@
-import { handleSettledResult } from '@/app/address/[principal]/page-data';
+import { ensureError, logError } from '@/common/utils/error-utils';
 
 import type { ActivityGroup } from './activity-filter';
 import { ACTIVITY_FEED_LIMIT } from './consts';
@@ -9,10 +9,11 @@ export async function loadActivityFeed(
   api?: string,
   group?: ActivityGroup
 ): Promise<StakingActivityResult> {
-  const [poxResult] = await Promise.allSettled([fetchPoxInfo(chain, api)]);
-  const pox = handleSettledResult(poxResult, 'Staking activity: PoX info');
-  const [result] = await Promise.allSettled([
-    pox ? fetchStakingActivity(pox.contract_id, chain, api, ACTIVITY_FEED_LIMIT, group) : undefined,
-  ]);
-  return handleSettledResult(result, 'Staking activity: load') ?? { events: [], incomplete: true };
+  try {
+    const pox = await fetchPoxInfo(chain, api);
+    return await fetchStakingActivity(pox.contract_id, chain, api, ACTIVITY_FEED_LIMIT, group);
+  } catch (error) {
+    logError(ensureError(error), 'Staking activity: load', { chain });
+    return { events: [], incomplete: true };
+  }
 }

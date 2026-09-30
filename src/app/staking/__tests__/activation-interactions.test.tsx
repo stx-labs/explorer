@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { Suspense, use, useState } from 'react';
 
 import { StakingActivity } from '../StakingActivity';
+import { ActivityPageClient } from '../activity/PageClient';
 import { BondsPageClient } from '../bonds/PageClient';
 import type { ActivityGroup } from '../data';
 import bond from './fixtures/bond.json';
@@ -35,6 +36,36 @@ function WaitForRoute({ pending }: { pending?: Promise<void> }) {
   if (pending) use(pending);
   return null;
 }
+
+test.each([
+  [false, false, 'No activity for Bond 3'],
+  [false, true, 'No recent activity for Bond 3'],
+  [true, false, 'Activity unavailable'],
+  [true, true, 'Activity unavailable'],
+])(
+  'activity failure=%s and truncated=%s have independent notices',
+  (incomplete, historyTruncated, emptyMessage) => {
+    renderWithChakraProviders(
+      <ActivityPageClient
+        events={[]}
+        bondIndex={3}
+        incomplete={incomplete}
+        historyTruncated={historyTruncated}
+      />
+    );
+    expect(screen.getByText(emptyMessage)).toBeInTheDocument();
+    expect(Boolean(screen.queryByText(/Some activity could not be loaded/))).toBe(incomplete);
+    expect(Boolean(screen.queryByText(/This bond history may be incomplete/))).toBe(
+      historyTruncated
+    );
+    expect(Boolean(screen.queryByText(/Only the newest 60 staking transactions/))).toBe(
+      historyTruncated
+    );
+    if (incomplete) expect(screen.queryByText(/No (recent )?activity for/)).not.toBeInTheDocument();
+    if (!historyTruncated)
+      expect(screen.queryByText(/Older activity is not shown/)).not.toBeInTheDocument();
+  }
+);
 
 test('arrow navigation waits for activation, selected filter updates immediately, and status stays mounted', async () => {
   const user = userEvent.setup();

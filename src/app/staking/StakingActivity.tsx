@@ -262,12 +262,12 @@ function groupLabel(group?: ActivityGroup): string {
 
 function NoActivity({
   bondIndex,
-  txWindow,
   group,
+  historyTruncated,
 }: {
   bondIndex?: number;
-  txWindow?: number;
   group?: ActivityGroup;
+  historyTruncated?: boolean;
 }) {
   const glyph = group ? GROUP_ICONS[group] : <ClockCounterClockwise />;
   const badge = (
@@ -290,10 +290,9 @@ function NoActivity({
       <Stack minH="9rem" gap={3} align="center" justify="center">
         {badge}
         <Stack gap={1} align="center">
-          <Text textStyle="text-medium-sm">No recent activity for {bondLabel(bondIndex)}</Text>
-          <Text textStyle="text-regular-sm" color="textSecondary" textAlign="center">
-            Its events are not among the {txWindow ?? 'most recent'} newest staking transactions.
-            Older activity is not shown here.
+          <Text textStyle="text-medium-sm">
+            No {historyTruncated ? 'recent ' : ''}
+            {groupLabel(group)} for {bondLabel(bondIndex)}
           </Text>
         </Stack>
       </Stack>
@@ -370,9 +369,13 @@ export function StakingActivity({
       </Text>
       {incomplete && (
         <Text role="status" textStyle="text-regular-sm" color="textSecondary">
-          {historyTruncated
-            ? 'This bond history may be incomplete. Only the newest staking transactions were searched.'
-            : 'Some activity could not be loaded. Refresh the page to try again.'}
+          Some activity could not be loaded. Refresh the page to try again.
+        </Text>
+      )}
+      {historyTruncated && (
+        <Text role="status" textStyle="text-regular-sm" color="textSecondary">
+          This bond history may be incomplete. Only the newest {txWindow ? `${txWindow} ` : ''}
+          staking transactions were searched.
         </Text>
       )}
       <Table
@@ -380,12 +383,16 @@ export function StakingActivity({
         data={page}
         columns={activityColumns}
         emptyTableUi={
-          incomplete && !historyTruncated ? (
+          incomplete ? (
             <Text textStyle="text-regular-sm" color="textSecondary">
               Activity unavailable
             </Text>
           ) : (
-            <NoActivity bondIndex={bondIndex} txWindow={txWindow} group={selectedGroup} />
+            <NoActivity
+              bondIndex={bondIndex}
+              group={selectedGroup}
+              historyTruncated={historyTruncated}
+            />
           )
         }
         tableContainerWrapper={table => (

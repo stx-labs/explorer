@@ -45,17 +45,10 @@ export function ActivityPageClient({
           txWindow={ACTIVITY_PAGE_LIMIT}
         />
 
-        {bondIndex !== undefined ? (
+        {bondIndex === undefined && events.length >= ACTIVITY_PAGE_LIMIT && (
           <Text textStyle="text-regular-xs" color="textSecondary">
-            {bondLabel(bondIndex)} events found among the {ACTIVITY_PAGE_LIMIT} newest staking
-            transactions. Older activity is not shown.
+            Showing recent staking events, not a full historical feed.
           </Text>
-        ) : (
-          events.length >= ACTIVITY_PAGE_LIMIT && (
-            <Text textStyle="text-regular-xs" color="textSecondary">
-              Showing recent staking events, not a full historical feed.
-            </Text>
-          )
         )}
       </Stack>
     </Stack>

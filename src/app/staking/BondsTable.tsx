@@ -210,10 +210,11 @@ type BondsTableProps = {
 };
 
 export function BondsTable(props: BondsTableProps) {
+  const sorted = useMemo(() => [...props.bonds].sort((a, b) => b.index - a.index), [props.bonds]);
   return props.serverPagination ? (
-    <BondTableView {...props} />
+    <BondTableView {...props} bonds={sorted} />
   ) : (
-    <ClientPaginatedBondsTable {...props} />
+    <ClientPaginatedBondsTable {...props} bonds={sorted} />
   );
 }
 
@@ -223,11 +224,10 @@ function ClientPaginatedBondsTable(props: BondsTableProps) {
   useEffect(() => {
     setPageIndex(0);
   }, [bonds, pageSize]);
-  const sorted = useMemo(() => [...bonds].sort((a, b) => b.index - a.index), [bonds]);
   return (
     <BondTableView
       {...props}
-      bonds={sorted.slice(pageIndex * pageSize, (pageIndex + 1) * pageSize)}
+      bonds={bonds.slice(pageIndex * pageSize, (pageIndex + 1) * pageSize)}
       serverPagination={
         bonds.length > pageSize
           ? {
@@ -255,18 +255,9 @@ function BondTableView({
 }: BondsTableProps) {
   const data = useMemo(
     () =>
-      [...bonds]
-        .sort((a, b) => b.index - a.index)
-        .map(bond =>
-          toBondRow(
-            bond,
-            currentBurnHeight,
-            nowMs,
-            rewardsByBond,
-            burnBlockTimes,
-            settlementsByBond
-          )
-        ),
+      bonds.map(bond =>
+        toBondRow(bond, currentBurnHeight, nowMs, rewardsByBond, burnBlockTimes, settlementsByBond)
+      ),
     [bonds, currentBurnHeight, nowMs, rewardsByBond, burnBlockTimes, settlementsByBond]
   );
   return (

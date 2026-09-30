@@ -541,6 +541,7 @@ const TX_WINDOW_PER_ROW = 3;
 
 export interface StakingActivityResult {
   events: StakingActivityEvent[];
+  /** At least one request failed. Independent of the bounded history window. */
   incomplete: boolean;
   historyTruncated?: boolean;
 }
@@ -556,10 +557,8 @@ export async function fetchStakingActivity(
   const apiUrl = getApiUrl(chain, api);
   const groups = group ? [group] : (Object.keys(ACTIVITY_GROUP_FUNCTIONS) as ActivityGroup[]);
   const txWindow = Math.max(limit, Math.min(limit * TX_WINDOW_PER_ROW, MAX_PAGE_LIMIT));
-  let incomplete = false;
   const failures: Error[] = [];
   const activityFailure = (error: unknown) => {
-    incomplete = true;
     failures.push(ensureError(error));
     return [];
   };
@@ -571,7 +570,7 @@ export async function fetchStakingActivity(
       try {
         return await fetchTxEvents(apiUrl, tx.tx_id, poxContractId, tx.tx_status === 'success');
       } catch (error) {
-        activityFailure(error as Error);
+        activityFailure(error);
         return undefined;
       }
     }
@@ -728,7 +727,7 @@ export async function fetchStakingActivity(
       .filter(event => bondIndex === undefined || event.bondIndex === bondIndex)
       .sort((a, b) => b.burnBlockTime - a.burnBlockTime || b.blockHeight - a.blockHeight)
       .slice(0, limit),
-    incomplete: incomplete || historyTruncated,
+    incomplete: failures.length > 0,
     ...(historyTruncated ? { historyTruncated: true } : {}),
   };
 }

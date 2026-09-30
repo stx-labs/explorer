@@ -10,7 +10,10 @@ jest.mock('../data', () => ({
   fetchCycleRewards: jest.fn(),
   fetchBurnBlockTimes: jest.fn(),
 }));
-jest.mock('@/common/utils/error-utils', () => ({ logError: jest.fn() }));
+jest.mock('@/common/utils/error-utils', () => ({
+  ...jest.requireActual('@/common/utils/error-utils'),
+  logError: jest.fn(),
+}));
 
 beforeEach(() => {
   jest.clearAllMocks();

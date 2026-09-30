@@ -443,7 +443,26 @@ describe('fetchStakingActivity', () => {
 test('an older bond outside the transaction window reports truncated history', async () => {
   serveChain(Array.from({ length: 62 }, (_, i) => enrollmentTx(i, 100)));
   const result = await fetchStakingActivity(POX_CONTRACT, 'mainnet', undefined, 60, undefined, 99);
+  expect(result).toEqual({ events: [], incomplete: false, historyTruncated: true });
+});
+
+test('a fully searched short history does not report truncation for an absent bond', async () => {
+  serveChain([enrollmentTx(1, 100)]);
+  const result = await fetchStakingActivity(POX_CONTRACT, 'mainnet', undefined, 60, undefined, 99);
+  expect(result).toEqual({ events: [], incomplete: false });
+});
+
+test('a truncated search also preserves detail lookup failures', async () => {
+  serveChain(Array.from({ length: 4 }, (_, i) => enrollmentTx(i, 100)));
+  const serve = fetchMock.getMockImplementation()!;
+  fetchMock.mockImplementation((url, options) =>
+    url.includes('/extended/v1/tx/0x')
+      ? Promise.resolve({ ok: false, status: 503 } as Response)
+      : serve(url, options)
+  );
+  const result = await fetchStakingActivity(POX_CONTRACT, 'mainnet', undefined, 1, undefined, 99);
   expect(result).toEqual({ events: [], incomplete: true, historyTruncated: true });
+  expect(logError).toHaveBeenCalledTimes(1);
 });
 
 test('reports many activity failures as one Sentry event', async () => {

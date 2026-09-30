@@ -74,3 +74,21 @@ test('timeline window contains five neighbors on each side without mutating inpu
   expect(forwardOnChain).toBe(6);
   expect(bonds[0].index).toBe(30);
 });
+
+test('an all-expired timeline shows recent history beside the next projected bonds', () => {
+  const bonds = Array.from({ length: 30 }, (_, index) => ({
+    ...bond,
+    index: 30 - index,
+    status: 'unlocked',
+  }));
+  const { onChain, forwardOnChain } = getTimelineBondWindow(bonds, undefined, 100000);
+  expect(onChain.map(bond => bond.index)).toEqual([25, 26, 27, 28, 29, 30]);
+  expect(forwardOnChain).toBe(1);
+});
+
+test('an empty timeline leaves the full projected window available', () => {
+  expect(getTimelineBondWindow([], undefined, 100000)).toEqual({
+    onChain: [],
+    forwardOnChain: 0,
+  });
+});

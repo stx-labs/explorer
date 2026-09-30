@@ -396,7 +396,8 @@ export function getTimelineBondWindow(
   const fallback = byIndex.findIndex(
     bond => bond.schedule.unlock.bitcoin_height > currentBurnHeight
   );
-  const current = featuredPosition >= 0 ? featuredPosition : Math.max(fallback, 0);
+  const fallbackPosition = fallback >= 0 ? fallback : Math.max(byIndex.length - 1, 0);
+  const current = featuredPosition >= 0 ? featuredPosition : fallbackPosition;
   const from = Math.max(current - TIMELINE_BONDS_BEFORE, 0);
   const onChain = byIndex.slice(from, current + TIMELINE_BONDS_AFTER + 1);
   return { onChain, forwardOnChain: onChain.length - (current - from) };
