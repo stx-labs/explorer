@@ -23,6 +23,38 @@ export function getApiUrl(chain: string, customApiUrl?: string): string {
   return DEFAULT_MAINNET_SERVER;
 }
 
+/**
+ * Whether `url` is one of the configured public API servers. Server-side code must only attach
+ * `EXPLORER_STACKS_API_KEY` to, and only fetch on a visitor's behalf from, these servers: a custom
+ * `api` parameter is visitor-controlled and could name any host.
+ */
+export function isConfiguredApiUrl(url: string | undefined | null): boolean {
+  if (!url) return false;
+  let target: URL;
+  try {
+    target = new URL(url);
+  } catch {
+    return false;
+  }
+  return [DEFAULT_MAINNET_SERVER, DEFAULT_TESTNET_SERVER].some(configured => {
+    try {
+      const c = new URL(configured);
+      const base = c.pathname.replace(/\/$/, '');
+      return (
+        target.origin === c.origin &&
+        (base === '' || target.pathname === base || target.pathname.startsWith(`${base}/`))
+      );
+    } catch {
+      return false;
+    }
+  });
+}
+
+/** Whether a server component may fetch from `apiUrl` during render (custom networks stay client-side). */
+export function canServerFetch(apiUrl: string | undefined | null): boolean {
+  return isConfiguredApiUrl(apiUrl);
+}
+
 export function isHiroSubdomain(url: string): boolean {
   try {
     const parsedUrl = new URL(url);
