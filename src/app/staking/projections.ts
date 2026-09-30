@@ -7,7 +7,11 @@ import {
   MINUTES_PER_BLOCK,
   REWARDS_PRECISION,
   SATS_IN_BTC,
+  SCHEDULED_BONDS_AHEAD,
+  TIMELINE_BONDS_AFTER,
+  TIMELINE_BONDS_BEFORE,
 } from './consts';
+import type { Bond } from './data';
 
 export function burnHeightToApproximateTimestamp(
   targetBurnHeight: number,
@@ -48,8 +52,9 @@ export function bpsToPercent(bps: number): number {
   return bps / 100;
 }
 
-export function getCycleRewardsPerStx(rewardsPerMicroStx: bigint): number {
-  return (Number(rewardsPerMicroStx) * MICROSTACKS_IN_STACKS) / Number(REWARDS_PRECISION);
+export function getCycleRewardsPerStx(rewardsSats: bigint, stakedMicroStx: bigint): number {
+  if (stakedMicroStx <= BigInt(0)) return 0;
+  return (Number(rewardsSats) * MICROSTACKS_IN_STACKS) / Number(stakedMicroStx);
 }
 
 const MINUTES_IN_YEAR = 365 * 24 * 60;
@@ -71,20 +76,22 @@ export interface StackingYield {
 }
 
 export function getStackingYieldForCompletedCycle({
-  rewardsPerMicroStx,
+  rewardsSats,
+  stakedMicroStx,
   rewardCycleLength,
   btcPriceUsd,
   stxPriceUsd,
 }: {
-  rewardsPerMicroStx: bigint;
+  rewardsSats: bigint;
+  stakedMicroStx: bigint;
   rewardCycleLength: number;
   btcPriceUsd?: number;
   stxPriceUsd?: number;
 }): StackingYield {
-  const satsPerStxPerCycle = getCycleRewardsPerStx(rewardsPerMicroStx);
+  const satsPerStxPerCycle = getCycleRewardsPerStx(rewardsSats, stakedMicroStx);
   const satsPerStxPerYear = satsPerStxPerCycle * getCyclesPerYear(rewardCycleLength);
 
-  if (!isCycleLengthPlausible(rewardCycleLength)) {
+  if (stakedMicroStx <= BigInt(0) || !isCycleLengthPlausible(rewardCycleLength)) {
     return { satsPerStxPerCycle, satsPerStxPerYear, apyPercent: undefined };
   }
 
@@ -377,4 +384,51 @@ export function getDistributionGridCells({
     if (position.widthPercent > 0) cells.push({ index, ...position });
   }
   return cells;
+}
+
+export function getTimelineBondWindow(
+  bonds: Bond[],
+  featuredIndex: number | undefined,
+  currentBurnHeight: number
+) {
+  const byIndex = [...bonds].sort((a, b) => a.index - b.index);
+  const featuredPosition = byIndex.findIndex(bond => bond.index === featuredIndex);
+  const fallback = byIndex.findIndex(
+    bond => bond.schedule.unlock.bitcoin_height > currentBurnHeight
+  );
+  const current = featuredPosition >= 0 ? featuredPosition : Math.max(fallback, 0);
+  const from = Math.max(current - TIMELINE_BONDS_BEFORE, 0);
+  const onChain = byIndex.slice(from, current + TIMELINE_BONDS_AFTER + 1);
+  return { onChain, forwardOnChain: onChain.length - (current - from) };
+}
+
+export function getBondProjections(bonds: Bond[], rewardCycleLength: number) {
+  const featuredIndex = getFeaturedBondIndex(bonds);
+  const featuredBond = bonds.find(bond => bond.index === featuredIndex);
+  const onChainNext = bonds.find(bond => bond.index === (featuredIndex ?? 0) + 1);
+  const nextBond = onChainNext
+    ? {
+        index: onChainNext.index,
+        activationHeight: onChainNext.schedule.activation.bitcoin_height,
+        termEndHeight: onChainNext.schedule.unlock.bitcoin_height,
+      }
+    : featuredBond && rewardCycleLength > 0
+      ? projectScheduledBonds(
+          featuredBond.index,
+          featuredBond.schedule.activation.bitcoin_height,
+          rewardCycleLength,
+          1
+        )[0]
+      : undefined;
+  const latest = [...bonds].sort((a, b) => b.index - a.index)[0];
+  const scheduledBonds =
+    latest && rewardCycleLength > 0
+      ? projectScheduledBonds(
+          latest.index,
+          latest.schedule.activation.bitcoin_height,
+          rewardCycleLength,
+          SCHEDULED_BONDS_AHEAD
+        )
+      : [];
+  return { featuredIndex, featuredBond, nextBond, scheduledBonds };
 }

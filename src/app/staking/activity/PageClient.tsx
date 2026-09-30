@@ -14,6 +14,7 @@ export interface ActivityPageData {
   selectedGroup?: ActivityGroup;
   bondIndex?: number;
   incomplete?: boolean;
+  historyTruncated?: boolean;
 }
 
 export function ActivityPageClient({
@@ -21,6 +22,7 @@ export function ActivityPageClient({
   selectedGroup,
   bondIndex,
   incomplete,
+  historyTruncated,
 }: ActivityPageData) {
   return (
     <Stack gap={6}>
@@ -35,6 +37,7 @@ export function ActivityPageClient({
         <StakingActivity
           events={events}
           incomplete={incomplete}
+          historyTruncated={historyTruncated}
           selectedGroup={selectedGroup}
           pageSize={ACTIVITY_PAGE_SIZE}
           standalone

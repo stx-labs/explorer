@@ -1,15 +1,12 @@
 import { handleSettledResult } from '@/app/address/[principal]/page-data';
 import { NetworkModes } from '@/common/types/network';
+import { redirect } from 'next/navigation';
 
 import { BONDS_PAGE_SIZE } from '../consts';
-import {
-  fetchBondRewards,
-  fetchBondsPage,
-  fetchBurnBlockTimes,
-  fetchHighestBondIndex,
-  fetchPoxInfo,
-} from '../data';
+import { fetchBondRewards, fetchBurnBlockTimes, fetchPoxInfo } from '../data';
 import { BondsPageClient } from './PageClient';
+import { fetchBondPageAtIndex } from './page-data';
+import { bondPageHref, parseBondPage } from './pagination';
 
 interface BondsSearchParams {
   chain?: string;
@@ -22,46 +19,45 @@ export default async function StakingBondsPage(props: {
 }) {
   const { chain = NetworkModes.Mainnet, api, page } = await props.searchParams;
 
-  const requestedPage = Number(page ?? '1');
-  let pageIndex = Number.isSafeInteger(requestedPage) && requestedPage > 1 ? requestedPage - 1 : 0;
-
-  let cursor: string | undefined;
-  if (pageIndex > 0) {
-    const [headResult] = await Promise.allSettled([fetchHighestBondIndex(chain, api)]);
-    const head = handleSettledResult(headResult, 'Bonds page: fetch bond index head');
-    if (head?.highestIndex === undefined) {
-      pageIndex = 0;
-    } else {
-      const lastPageIndex = Math.max(Math.ceil(head.total / BONDS_PAGE_SIZE) - 1, 0);
-      pageIndex = Math.min(pageIndex, lastPageIndex);
-      cursor =
-        pageIndex > 0
-          ? String(Math.max(head.highestIndex - pageIndex * BONDS_PAGE_SIZE, 0))
-          : undefined;
-    }
-  }
-
+  const requestedIndex = parseBondPage(page);
   const [poxInfoResult, bondsPageResult] = await Promise.allSettled([
     fetchPoxInfo(chain, api),
-    fetchBondsPage(chain, api, BONDS_PAGE_SIZE, cursor),
+    fetchBondPageAtIndex(requestedIndex, chain, api),
   ]);
   const poxInfo = handleSettledResult(poxInfoResult, 'Bonds page: fetch pox info');
   const bondsPage = handleSettledResult(bondsPageResult, 'Bonds page: fetch bonds');
 
-  const [rewardedResult] = await Promise.allSettled([
-    poxInfo?.contract_id ? fetchBondRewards(poxInfo.contract_id, chain, api) : undefined,
+  const pageIndex = bondsPage?.pageIndex ?? requestedIndex;
+  const canonicalPage = pageIndex > 0 ? String(pageIndex + 1) : undefined;
+  if (bondsPage && page !== canonicalPage) {
+    const params = new URLSearchParams();
+    params.set('chain', chain);
+    if (api !== undefined) params.set('api', api);
+    redirect(bondPageHref(params, pageIndex));
+  }
+
+  const [rewardedResult, timesResult] = await Promise.allSettled([
+    bondsPage
+      ? fetchBondRewards(
+          bondsPage.bonds.map(bond => bond.index),
+          chain,
+          api,
+          poxInfo?.contract_id
+        )
+      : undefined,
+    fetchBurnBlockTimes(
+      (bondsPage?.bonds ?? []).flatMap(bond => [
+        bond.schedule.activation.bitcoin_height,
+        bond.schedule.unlock.bitcoin_height,
+      ]),
+      poxInfo?.current_burnchain_block_height ?? 0,
+      chain,
+      api
+    ),
   ]);
   const rewarded = handleSettledResult(rewardedResult, 'Bonds page: fetch bond rewards');
 
-  const burnBlockTimes = await fetchBurnBlockTimes(
-    (bondsPage?.bonds ?? []).flatMap(bond => [
-      bond.schedule.activation.bitcoin_height,
-      bond.schedule.unlock.bitcoin_height,
-    ]),
-    poxInfo?.current_burnchain_block_height ?? 0,
-    chain,
-    api
-  );
+  const burnBlockTimes = handleSettledResult(timesResult, 'Bonds page: burn block times');
 
   return (
     <BondsPageClient
@@ -72,7 +68,7 @@ export default async function StakingBondsPage(props: {
       pageSize={BONDS_PAGE_SIZE}
       rewardsByBond={rewarded?.byBondIndex}
       settlementsByBond={rewarded?.settlementsByBond}
-      burnBlockTimes={burnBlockTimes}
+      burnBlockTimes={burnBlockTimes ?? {}}
       currentBurnHeight={poxInfo?.current_burnchain_block_height ?? 0}
       nowMs={Date.now()}
     />

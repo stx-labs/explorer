@@ -1,12 +1,14 @@
 'use client';
 
+import { Text } from '@/ui/Text';
 import { Stack } from '@chakra-ui/react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useCallback } from 'react';
+import { useCallback, useTransition } from 'react';
 
 import { BondsTable } from '../BondsTable';
 import { SubpageHeader } from '../SubpageHeader';
 import { Bond, BondRewards } from '../data';
+import { bondPageHref } from './pagination';
 
 export interface BondsPageData {
   bonds: Bond[];
@@ -35,25 +37,29 @@ export function BondsPageClient({
 }: BondsPageData) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [isPending, startTransition] = useTransition();
 
   const handlePageChange = useCallback(
     (page: { pageIndex: number }) => {
       const params = new URLSearchParams(searchParams?.toString() ?? '');
-      if (page.pageIndex > 0) {
-        params.set('page', String(page.pageIndex + 1));
-      } else {
-        params.delete('page');
-      }
-      const query = params.toString();
-      router.push(query ? `?${query}` : '?', { scroll: true });
+      startTransition(() => router.push(bondPageHref(params, page.pageIndex), { scroll: true }));
     },
     [router, searchParams]
   );
 
   return (
-    <Stack gap={6}>
+    <Stack gap={6} aria-busy={isPending}>
       <SubpageHeader title="Bonds" />
 
+      <Text
+        role="status"
+        aria-live="polite"
+        textStyle="text-regular-xs"
+        color="textSecondary"
+        minH={4}
+      >
+        {isPending ? 'Loading bonds…' : ''}
+      </Text>
       <BondsTable
         bonds={bonds}
         unavailable={unavailable}

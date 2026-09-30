@@ -46,6 +46,7 @@ export default async function StakingActivityPage(props: {
     <ActivityPageClient
       events={all?.events ?? []}
       incomplete={all === undefined || all.incomplete}
+      historyTruncated={all?.historyTruncated}
       selectedGroup={selectedActivityGroup}
       bondIndex={bondIndex}
     />

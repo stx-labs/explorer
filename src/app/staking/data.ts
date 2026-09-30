@@ -1,9 +1,10 @@
 import { stacksAPIFetch } from '@/api/stacksAPIFetch';
 import type { PoxInfo } from '@/common/queries/usePoxInforRaw';
-import { logError } from '@/common/utils/error-utils';
+import { ensureError, logError } from '@/common/utils/error-utils';
 import { getApiUrl } from '@/common/utils/network-utils';
 
 import { DISTRIBUTIONS_PER_BOND, REWARDS_PRECISION } from './consts';
+import { getCycleStackerRewardsSatsBigInt } from './projections';
 import { bondLabel, formatBtc, formatSbtc, formatStx, toBigInt } from './utils';
 
 export type BondStatus = 'upcoming' | 'active' | (string & {});
@@ -198,10 +199,19 @@ export async function fetchPoxCycles(chain: string, api?: string, limit = 10): P
 
 export interface CycleRewards {
   cycleNumber: number;
-  rewardsPerMicroStx: bigint;
+  rewardsSats: bigint;
   stakedMicroStx: bigint;
 }
 
+// Do not coerce missing or malformed API amounts to zero.
+function parseAmount(value: unknown): bigint {
+  if (typeof value !== 'string' || !/^\d+$/.test(value)) {
+    throw new Error('Invalid staking amount');
+  }
+  return BigInt(value);
+}
+
+// Compatibility for API deployments that do not have the v3 staking endpoints yet.
 function parseUintResult(result: string | undefined): bigint {
   if (!result?.startsWith('0x01')) {
     throw new Error('PoX read-only call returned an invalid uint');
@@ -248,28 +258,39 @@ async function callPoxReadOnly(
 
 export async function fetchCycleRewards(
   cycleNumbers: number[],
-  poxContractId: string,
   chain: string,
-  api?: string
+  api?: string,
+  poxContractId?: string
 ): Promise<Record<number, CycleRewards>> {
   const apiUrl = getApiUrl(chain, api);
-  const byCycle: Record<number, CycleRewards> = {};
-
   const results = await Promise.all(
-    cycleNumbers.map(async cycleNumber => {
-      const [rewardsPerMicroStx, stakedMicroStx] = await Promise.all([
-        callPoxReadOnly(apiUrl, poxContractId, 'get-rewards-per-token-for-cycle', cycleNumber),
-        callPoxReadOnly(apiUrl, poxContractId, 'get-total-shares-staked-for-cycle', cycleNumber),
-      ]);
-      return { cycleNumber, rewardsPerMicroStx, stakedMicroStx };
+    Array.from(new Set(cycleNumbers)).map(async cycleNumber => {
+      const response = await stacksAPIFetch(`${apiUrl}/extended/v3/staking/cycles/${cycleNumber}`, {
+        cache: 'default',
+        next: { revalidate: REVALIDATE_SECONDS, tags: [`staking-cycle-rewards-${cycleNumber}`] },
+      });
+      if (response.status === 404 && poxContractId) {
+        const [rate, stakedMicroStx] = await Promise.all([
+          callPoxReadOnly(apiUrl, poxContractId, 'get-rewards-per-token-for-cycle', cycleNumber),
+          callPoxReadOnly(apiUrl, poxContractId, 'get-total-shares-staked-for-cycle', cycleNumber),
+        ]);
+        return {
+          cycleNumber,
+          stakedMicroStx,
+          rewardsSats: getCycleStackerRewardsSatsBigInt(rate, stakedMicroStx),
+        };
+      }
+      if (!response.ok) throw new Error(`Failed to fetch cycle ${cycleNumber}: ${response.status}`);
+      const data = await response.json();
+      if (data?.number !== cycleNumber) throw new Error('Staking summary returned another cycle');
+      return {
+        cycleNumber,
+        stakedMicroStx: parseAmount(data?.locked?.stx?.stx_only),
+        rewardsSats: parseAmount(data?.rewards?.btc?.waterfall?.stx_only),
+      };
     })
   );
-
-  results.forEach(result => {
-    if (result.stakedMicroStx === BigInt(0)) return;
-    byCycle[result.cycleNumber] = result;
-  });
-  return byCycle;
+  return Object.fromEntries(results.map(result => [result.cycleNumber, result]));
 }
 
 const ACTIVITY_GROUPS = ['distributions', 'enrollments', 'unlocks', 'bonds'] as const;
@@ -486,6 +507,7 @@ export async function fetchBurnBlockTimes(
   api?: string
 ): Promise<Record<number, number>> {
   const times: Record<number, number> = {};
+  const failures: Error[] = [];
   const mined = Array.from(new Set(heights)).filter(
     height => height > 0 && height <= currentBurnHeight
   );
@@ -501,15 +523,21 @@ export async function fetchBurnBlockTimes(
               next: { revalidate: SETTLED_REVALIDATE_SECONDS, tags: [`burn-block-${height}`] },
             }
           );
-          if (!response.ok) return;
+          if (response.status === 404) return;
+          if (!response.ok) throw new Error(`Burn block lookup failed: ${response.status}`);
           const data: { burn_block_time?: number } = await response.json();
           if (typeof data.burn_block_time === 'number') times[height] = data.burn_block_time * 1000;
-        } catch {
-          // The presentation layer supplies a marked date estimate when this lookup fails.
+        } catch (error) {
+          failures.push(ensureError(error));
         }
       })
     );
   }
+  if (failures.length)
+    logError(failures[0], 'Staking burn block dates: partial fetch failure', {
+      chain,
+      failureCount: failures.length,
+    });
   return times;
 }
 
@@ -518,6 +546,7 @@ const TX_WINDOW_PER_ROW = 3;
 export interface StakingActivityResult {
   events: StakingActivityEvent[];
   incomplete: boolean;
+  historyTruncated?: boolean;
 }
 
 export async function fetchStakingActivity(
@@ -532,9 +561,10 @@ export async function fetchStakingActivity(
   const groups = group ? [group] : (Object.keys(ACTIVITY_GROUP_FUNCTIONS) as ActivityGroup[]);
   const txWindow = Math.max(limit, Math.min(limit * TX_WINDOW_PER_ROW, MAX_PAGE_LIMIT));
   let incomplete = false;
-  const activityFailure = (error: Error) => {
+  const failures: Error[] = [];
+  const activityFailure = (error: unknown) => {
     incomplete = true;
-    logError(error, 'Staking activity: partial fetch failure', { chain }, 'error');
+    failures.push(ensureError(error));
     return [];
   };
   const readActivityEvents = async (tx: RawTx): Promise<string[] | undefined> => {
@@ -568,7 +598,7 @@ export async function fetchStakingActivity(
           apiUrl,
           poxContractId,
           functionName,
-          txWindow,
+          txWindow + 1,
           0,
           'no-store'
         ).catch(activityFailure);
@@ -576,6 +606,7 @@ export async function fetchStakingActivity(
       })
     )
   );
+  const historyTruncated = bondIndex !== undefined && pages.flat().length > txWindow;
   const txs = pages
     .flat()
     .sort(
@@ -685,21 +716,29 @@ export async function fetchStakingActivity(
     );
   }
 
+  if (failures.length)
+    logError(
+      failures[0],
+      'Staking activity: partial fetch failure',
+      {
+        chain,
+        failureCount: failures.length,
+      },
+      'error'
+    );
   return {
     events: rows
       .flat()
       .filter(event => bondIndex === undefined || event.bondIndex === bondIndex)
       .sort((a, b) => b.burnBlockTime - a.burnBlockTime || b.blockHeight - a.blockHeight)
       .slice(0, limit),
-    incomplete,
+    incomplete: incomplete || historyTruncated,
+    ...(historyTruncated ? { historyTruncated: true } : {}),
   };
 }
 
-const DISTRIBUTION_TX_PAGE = MAX_PAGE_LIMIT;
-
 export interface BondRewards {
   byBondIndex: Record<number, bigint>;
-  byCycle: Record<number, bigint>;
   lastCalculationHeightByCycle: Record<number, number>;
   settlementsByBond: Record<
     number,
@@ -712,15 +751,12 @@ export interface BondRewards {
   >;
 }
 
-// Temporary protection until the API provides aggregated bond reward history.
 const MAX_REWARD_HISTORY_REQUESTS = 250;
 const REWARD_HISTORY_TIMEOUT_MS = 15_000;
 
-export async function fetchBondRewards(
-  poxContractId: string,
-  chain: string,
-  api?: string
-): Promise<BondRewards | undefined> {
+async function withRewardHistoryBudget<T>(
+  load: (fetchRequest: typeof stacksAPIFetch) => Promise<T>
+): Promise<T> {
   const controller = new AbortController();
   const timeout = setTimeout(
     () => controller.abort(new Error('Reward history request timed out')),
@@ -736,105 +772,262 @@ export async function fetchBondRewards(
     return stacksAPIFetch(url, { ...options, signal: controller.signal });
   };
   try {
-    return await fetchBondRewardsHistory(getApiUrl(chain, api), poxContractId, fetchRequest);
+    return await load(fetchRequest);
   } finally {
     clearTimeout(timeout);
     controller.abort();
   }
 }
 
-async function fetchBondRewardsHistory(
-  apiUrl: string,
-  poxContractId: string,
-  fetchRequest: typeof stacksAPIFetch
-): Promise<BondRewards | undefined> {
-  const txs: RawTx[] = [];
-  const seenTxIds = new Set<string>();
-  for (let offset = 0; ; offset += DISTRIBUTION_TX_PAGE) {
-    const batch = await fetchTxsByFunction(
-      apiUrl,
-      poxContractId,
-      'calculate-rewards',
-      DISTRIBUTION_TX_PAGE,
-      offset,
-      'default',
-      fetchRequest
-    );
-    if (batch.length && batch.every(tx => seenTxIds.has(tx.tx_id))) {
-      throw new Error('Reward transaction history pagination did not advance');
-    }
-    batch.forEach(tx => seenTxIds.add(tx.tx_id));
-    txs.push(...batch);
-    if (batch.length < DISTRIBUTION_TX_PAGE) break;
-  }
+interface BondEvent {
+  name: string;
+  bond_index: number;
+  transaction: { tx_id: string; event_index: number };
+  block: { time: number };
+  data?: {
+    calculation?: { bitcoin_height: number; reward_cycle: number };
+    rewards?: { btc: string };
+    staked?: { btc: string };
+  };
+}
 
-  const settled = Array.from(
-    new Map(txs.filter(tx => tx.tx_status === 'success').map(tx => [tx.tx_id, tx])).values()
-  );
+class StakingEndpointUnavailable extends Error {}
 
-  const perTx = [];
-  // Settled event responses are cached for 24 hours; bound cold-cache reads as history grows.
-  for (let start = 0; start < settled.length; start += 4) {
-    perTx.push(
-      ...(await Promise.all(
-        settled.slice(start, start + 4).map(async tx => {
-          const reprs = await fetchTxEvents(apiUrl, tx.tx_id, poxContractId, true, fetchRequest);
-          const summary = reprs.find(repr => readTopic(repr) === 'calculate-rewards');
-          if (!summary) return undefined;
-          const total = readUint(summary, 'total-bond-rewards');
-          const cycle = readUint(summary, 'stx-cycle');
-          const calculationHeight = readUint(summary, 'calculation-height');
-          if (total === undefined || cycle === undefined || calculationHeight === undefined)
-            return undefined;
-
-          const perBond: Record<number, bigint> = {};
-          const principalByBond: Record<number, bigint | undefined> = {};
-          for (const repr of reprs.filter(repr => readTopic(repr) === 'bond-distribution')) {
-            const index = readUint(repr, 'bond-index');
-            const rewarded = readUint(repr, 'bond-rewards');
-            if (index === undefined || rewarded === undefined) return undefined;
-            const key = Number(index);
-            if (perBond[key] !== undefined) return undefined;
-            principalByBond[key] = readUint(repr, 'bond-staked-sats');
-            perBond[key] = (perBond[key] ?? BigInt(0)) + rewarded;
+export async function fetchBondRewards(
+  bondIndexes: number[],
+  chain: string,
+  api?: string,
+  poxContractId?: string
+): Promise<BondRewards> {
+  return withRewardHistoryBudget(async fetchRequest => {
+    const result: BondRewards = {
+      byBondIndex: {},
+      lastCalculationHeightByCycle: {},
+      settlementsByBond: {},
+    };
+    const indexes = Array.from(new Set(bondIndexes));
+    // Bound concurrency across bonds; each history follows its opaque cursor sequentially.
+    for (let start = 0; start < indexes.length; start += 4) {
+      await Promise.all(
+        indexes.slice(start, start + 4).map(async index => {
+          let cursor: string | null = null;
+          const seenCursors = new Set<string>();
+          const seenEvents = new Map<string, string>();
+          let expectedEvents: number | undefined;
+          result.byBondIndex[index] = BigInt(0);
+          result.settlementsByBond[index] = [];
+          do {
+            const params = new URLSearchParams({ limit: String(MAX_PAGE_LIMIT) });
+            if (cursor !== null) params.set('cursor', cursor);
+            const response = await fetchRequest(
+              `${getApiUrl(chain, api)}/extended/v3/staking/bonds/${index}/events?${params}`,
+              {
+                cache: 'default',
+                next: { revalidate: REVALIDATE_SECONDS, tags: [`staking-bond-${index}-events`] },
+              }
+            );
+            if (response.status === 404)
+              throw new StakingEndpointUnavailable('Bond events endpoint unavailable');
+            if (!response.ok)
+              throw new Error(`Failed to fetch bond ${index} events: ${response.status}`);
+            const page: CursorPaginated<BondEvent> = await response.json();
+            if (
+              !Array.isArray(page?.results) ||
+              !Number.isSafeInteger(page.total) ||
+              page.total < 0 ||
+              (page?.cursor?.next !== null && typeof page?.cursor?.next !== 'string')
+            ) {
+              throw new Error(`Invalid events page for bond ${index}`);
+            }
+            expectedEvents ??= page.total;
+            let newEvents = 0;
+            for (const event of page.results) {
+              if (
+                event?.bond_index !== index ||
+                typeof event.name !== 'string' ||
+                !event.transaction?.tx_id ||
+                !Number.isSafeInteger(event.transaction.event_index)
+              ) {
+                throw new Error(`Invalid event for bond ${index}`);
+              }
+              const key = `${event.transaction.tx_id}:${event.transaction.event_index}`;
+              const contents = JSON.stringify(event);
+              const previous = seenEvents.get(key);
+              if (previous !== undefined) {
+                if (previous !== contents) throw new Error(`Conflicting events for bond ${index}`);
+                continue;
+              }
+              seenEvents.set(key, contents);
+              newEvents++;
+              if (event.name !== 'bond-distribution') continue;
+              const calculation = event.data?.calculation;
+              if (
+                !calculation ||
+                !Number.isSafeInteger(calculation.bitcoin_height) ||
+                calculation.bitcoin_height < 0 ||
+                !Number.isSafeInteger(calculation.reward_cycle) ||
+                calculation.reward_cycle < 0 ||
+                !Number.isSafeInteger(event.block?.time) ||
+                event.block.time < 0
+              ) {
+                throw new Error(`Invalid distribution calculation for bond ${index}`);
+              }
+              const rewardedSats = parseAmount(event.data?.rewards?.btc);
+              const principalSats = parseAmount(event.data?.staked?.btc);
+              result.byBondIndex[index] += rewardedSats;
+              result.settlementsByBond[index].push({
+                calculationHeight: calculation.bitcoin_height,
+                timestampMs: event.block.time * 1000,
+                principalSats,
+                rewardedSats,
+              });
+              const cycle = calculation.reward_cycle;
+              result.lastCalculationHeightByCycle[cycle] = Math.max(
+                result.lastCalculationHeightByCycle[cycle] ?? -1,
+                calculation.bitcoin_height
+              );
+            }
+            cursor = page.cursor.next;
+            if (cursor !== null) {
+              if (!newEvents || seenCursors.has(cursor)) {
+                throw new Error(`Bond ${index} event pagination did not advance`);
+              }
+              seenCursors.add(cursor);
+            }
+          } while (cursor !== null);
+          if (seenEvents.size < expectedEvents) {
+            throw new Error(`Incomplete events for bond ${index}`);
           }
-
-          return {
-            total,
-            cycle,
-            perBond,
-            principalByBond,
-            calculationHeight: Number(calculationHeight),
-            timestampMs: (tx.block_time ?? tx.burn_block_time) * 1000,
-          };
         })
-      ))
-    );
-  }
-  if (perTx.some(entry => entry === undefined)) return undefined;
-
-  const byBondIndex: Record<number, bigint> = {};
-  const byCycle: Record<number, bigint> = {};
-  const lastCalculationHeightByCycle: Record<number, number> = {};
-  const settlementsByBond: BondRewards['settlementsByBond'] = {};
-  perTx.forEach(entry => {
-    if (!entry) return;
-    const cycle = Number(entry.cycle);
-    lastCalculationHeightByCycle[cycle] = Math.max(
-      lastCalculationHeightByCycle[cycle] ?? 0,
-      entry.calculationHeight
-    );
-    byCycle[cycle] = (byCycle[cycle] ?? BigInt(0)) + entry.total;
-    Object.entries(entry.perBond).forEach(([index, sats]) => {
-      const key = Number(index);
-      byBondIndex[key] = (byBondIndex[key] ?? BigInt(0)) + sats;
-      (settlementsByBond[key] ??= []).push({
-        calculationHeight: entry.calculationHeight,
-        timestampMs: entry.timestampMs,
-        principalSats: entry.principalByBond[key],
-        rewardedSats: sats,
-      });
-    });
+      );
+    }
+    return result;
+  }).catch(error => {
+    if (error instanceof StakingEndpointUnavailable && poxContractId) {
+      return fetchLegacyBondRewards(poxContractId, chain, api);
+    }
+    throw error;
   });
-  return { byBondIndex, byCycle, lastCalculationHeightByCycle, settlementsByBond };
+}
+
+// A finished cycle's summary can precede its final calculation. Bond events prove
+// settlement when available; cycles without bonds still need calculate-rewards logs.
+export async function fetchCycleCalculationHeights(
+  cycleEndHeights: Record<number, number>,
+  poxContractId: string,
+  chain: string,
+  api?: string,
+  knownHeights: Record<number, number> = {}
+): Promise<Record<number, number>> {
+  const heights = { ...knownHeights };
+  const complete = () =>
+    Object.entries(cycleEndHeights).every(([cycle, end]) => (heights[Number(cycle)] ?? -1) >= end);
+  if (complete()) return heights;
+  await forEachRewardCalculation(
+    poxContractId,
+    chain,
+    api,
+    (_tx, _reprs, cycle, height) => {
+      if (cycleEndHeights[cycle] !== undefined) {
+        heights[cycle] = Math.max(heights[cycle] ?? -1, height);
+      }
+    },
+    complete
+  );
+  return heights;
+}
+
+async function forEachRewardCalculation(
+  poxContractId: string,
+  chain: string,
+  api: string | undefined,
+  visit: (tx: RawTx, reprs: string[], cycle: number, height: number) => void,
+  complete: () => boolean = () => false
+): Promise<void> {
+  await withRewardHistoryBudget(async fetchRequest => {
+    const apiUrl = getApiUrl(chain, api);
+    const seenTxIds = new Set<string>();
+    for (let offset = 0; ; offset += MAX_PAGE_LIMIT) {
+      const batch = await fetchTxsByFunction(
+        apiUrl,
+        poxContractId,
+        'calculate-rewards',
+        MAX_PAGE_LIMIT,
+        offset,
+        'default',
+        fetchRequest
+      );
+      if (batch.length && batch.every(tx => seenTxIds.has(tx.tx_id))) {
+        throw new Error('Reward transaction history pagination did not advance');
+      }
+      const settled = batch.filter(tx => {
+        const seen = seenTxIds.has(tx.tx_id);
+        seenTxIds.add(tx.tx_id);
+        return !seen && tx.tx_status === 'success';
+      });
+      for (let start = 0; start < settled.length; start += 4) {
+        await Promise.all(
+          settled.slice(start, start + 4).map(async tx => {
+            const reprs = await fetchTxEvents(apiUrl, tx.tx_id, poxContractId, true, fetchRequest);
+            const summary = reprs.find(repr => readTopic(repr) === 'calculate-rewards');
+            const cycle = summary === undefined ? undefined : readUint(summary, 'stx-cycle');
+            const height =
+              summary === undefined ? undefined : readUint(summary, 'calculation-height');
+            if (
+              cycle === undefined ||
+              height === undefined ||
+              !Number.isSafeInteger(Number(cycle)) ||
+              !Number.isSafeInteger(Number(height))
+            ) {
+              throw new Error('Invalid cycle calculation');
+            }
+            visit(tx, reprs, Number(cycle), Number(height));
+          })
+        );
+        if (complete()) return;
+      }
+      if (batch.length < MAX_PAGE_LIMIT) return;
+    }
+  });
+}
+
+async function fetchLegacyBondRewards(
+  poxContractId: string,
+  chain: string,
+  api?: string
+): Promise<BondRewards> {
+  const result: BondRewards = {
+    byBondIndex: {},
+    lastCalculationHeightByCycle: {},
+    settlementsByBond: {},
+  };
+  await forEachRewardCalculation(poxContractId, chain, api, (tx, reprs, cycle, height) => {
+    result.lastCalculationHeightByCycle[cycle] = Math.max(
+      result.lastCalculationHeightByCycle[cycle] ?? -1,
+      height
+    );
+    const seenBonds = new Set<number>();
+    for (const repr of reprs.filter(repr => readTopic(repr) === 'bond-distribution')) {
+      const index = readUint(repr, 'bond-index');
+      const rewardedSats = readUint(repr, 'bond-rewards');
+      if (
+        index === undefined ||
+        !Number.isSafeInteger(Number(index)) ||
+        rewardedSats === undefined ||
+        seenBonds.has(Number(index))
+      ) {
+        throw new Error('Invalid legacy bond distribution');
+      }
+      const key = Number(index);
+      seenBonds.add(key);
+      result.byBondIndex[key] = (result.byBondIndex[key] ?? BigInt(0)) + rewardedSats;
+      (result.settlementsByBond[key] ??= []).push({
+        calculationHeight: height,
+        timestampMs: (tx.block_time ?? tx.burn_block_time) * 1000,
+        principalSats: readUint(repr, 'bond-staked-sats'),
+        rewardedSats,
+      });
+    }
+  });
+  return result;
 }

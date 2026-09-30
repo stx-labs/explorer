@@ -26,7 +26,7 @@ import {
 } from '@phosphor-icons/react';
 import type { ColumnDef } from '@tanstack/react-table';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useCallback, useEffect, useMemo, useState, useTransition } from 'react';
+import { useCallback, useEffect, useMemo, useOptimistic, useState, useTransition } from 'react';
 
 import type { Transaction } from '@stacks/stacks-blockchain-api-types';
 
@@ -185,6 +185,7 @@ function ActionFilter({ selected }: { selected?: ActivityGroup }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
+  const [optimisticGroup, setOptimisticGroup] = useOptimistic(selected ?? ALL_GROUPS);
 
   const hrefFor = useCallback(
     (group?: string) => {
@@ -204,11 +205,13 @@ function ActionFilter({ selected }: { selected?: ActivityGroup }) {
     <TabsRoot
       variant="primary"
       size="redesignMd"
-      value={selected ?? ALL_GROUPS}
+      value={optimisticGroup}
+      activationMode="manual"
       onValueChange={({ value }) =>
-        startTransition(() =>
-          router.replace(hrefFor(value === ALL_GROUPS ? undefined : value), { scroll: false })
-        )
+        startTransition(() => {
+          setOptimisticGroup(value);
+          router.replace(hrefFor(value === ALL_GROUPS ? undefined : value), { scroll: false });
+        })
       }
       aria-label="Filter activity by event type"
     >
@@ -227,11 +230,15 @@ function ActionFilter({ selected }: { selected?: ActivityGroup }) {
           </TabsList>
         </ScrollIndicator>
       </Flex>
-      {isPending && (
-        <Text role="status" textStyle="text-regular-xs" color="textSecondary">
-          Loading activity…
-        </Text>
-      )}
+      <Text
+        role="status"
+        aria-live="polite"
+        textStyle="text-regular-xs"
+        color="textSecondary"
+        minH={4}
+      >
+        {isPending ? 'Loading activity…' : ''}
+      </Text>
     </TabsRoot>
   );
 }
@@ -295,9 +302,11 @@ export function StakingActivity({
   bondIndex,
   txWindow,
   incomplete,
+  historyTruncated,
 }: {
   events: StakingActivityEvent[];
   incomplete?: boolean;
+  historyTruncated?: boolean;
   selectedGroup?: ActivityGroup;
   pageSize?: number;
   standalone?: boolean;
@@ -346,14 +355,16 @@ export function StakingActivity({
       </Text>
       {incomplete && (
         <Text role="status" textStyle="text-regular-sm" color="textSecondary">
-          Some activity could not be loaded. Refresh the page to try again.
+          {historyTruncated
+            ? 'This bond history may be incomplete. Only the newest staking transactions were searched.'
+            : 'Some activity could not be loaded. Refresh the page to try again.'}
         </Text>
       )}
       <Table
         data={page}
         columns={activityColumns}
         emptyTableUi={
-          incomplete ? (
+          incomplete && !historyTruncated ? (
             <Text textStyle="text-regular-sm" color="textSecondary">
               Activity unavailable
             </Text>

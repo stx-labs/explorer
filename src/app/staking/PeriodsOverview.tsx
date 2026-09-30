@@ -17,7 +17,7 @@ import {
   SEGMENT_REMAINING_BG,
   TimelinePlot,
 } from './TimelinePlot';
-import { DISTRIBUTIONS_PER_BOND, TIMELINE_BONDS_AFTER, TIMELINE_BONDS_BEFORE } from './consts';
+import { DISTRIBUTIONS_PER_BOND, TIMELINE_BONDS_AFTER } from './consts';
 import type { Bond, BondRewards } from './data';
 import {
   burnHeightToApproximateTimestamp,
@@ -26,6 +26,7 @@ import {
   getBondSchedule,
   getDistributionCadence,
   getDistributionGridCells,
+  getTimelineBondWindow,
   getTimelineBounds,
   getTimelineTicks,
 } from './projections';
@@ -95,15 +96,11 @@ export function PeriodsOverview({
           )
         : 0;
 
-    const byIndex = [...bonds].sort((a, b) => a.index - b.index);
-    const featuredPosition = byIndex.findIndex(bond => bond.index === featuredIndex);
-    const fallback = byIndex.findIndex(
-      bond => bond.schedule.unlock.bitcoin_height > currentBurnHeight
+    const { onChain, forwardOnChain } = getTimelineBondWindow(
+      bonds,
+      featuredIndex,
+      currentBurnHeight
     );
-    const current = featuredPosition >= 0 ? featuredPosition : Math.max(fallback, 0);
-    const from = Math.max(current - TIMELINE_BONDS_BEFORE, 0);
-    const onChain = byIndex.slice(from, current + TIMELINE_BONDS_AFTER + 1);
-    const forwardOnChain = onChain.length - (current - from);
 
     const bars = [
       ...onChain.map(bond => {

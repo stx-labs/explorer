@@ -193,18 +193,7 @@ function NoBondsYet() {
   );
 }
 
-export function BondsTable({
-  bonds,
-  unavailable,
-  currentBurnHeight,
-  nowMs,
-  rewardsByBond,
-  settlementsByBond,
-  burnBlockTimes = {},
-  pageSize = BONDS_TABLE_LIMIT,
-  serverPagination,
-  fullPage = false,
-}: {
+type BondsTableProps = {
   bonds: Bond[];
   unavailable?: boolean;
   currentBurnHeight: number;
@@ -218,21 +207,56 @@ export function BondsTable({
     'pageIndex' | 'pageSize' | 'totalRows' | 'onPageChange'
   >;
   fullPage?: boolean;
-}) {
+};
+
+export function BondsTable(props: BondsTableProps) {
+  return props.serverPagination ? (
+    <BondTableView {...props} />
+  ) : (
+    <ClientPaginatedBondsTable {...props} />
+  );
+}
+
+function ClientPaginatedBondsTable(props: BondsTableProps) {
+  const { bonds, pageSize = BONDS_TABLE_LIMIT } = props;
   const [pageIndex, setPageIndex] = useState(0);
-  const hasServerPagination = serverPagination !== undefined;
   useEffect(() => {
     setPageIndex(0);
   }, [bonds, pageSize]);
+  const sorted = useMemo(() => [...bonds].sort((a, b) => b.index - a.index), [bonds]);
+  return (
+    <BondTableView
+      {...props}
+      bonds={sorted.slice(pageIndex * pageSize, (pageIndex + 1) * pageSize)}
+      serverPagination={
+        bonds.length > pageSize
+          ? {
+              pageIndex,
+              pageSize,
+              totalRows: bonds.length,
+              onPageChange: next => setPageIndex(next.pageIndex),
+            }
+          : undefined
+      }
+    />
+  );
+}
 
+function BondTableView({
+  bonds,
+  unavailable,
+  currentBurnHeight,
+  nowMs,
+  rewardsByBond,
+  settlementsByBond,
+  burnBlockTimes = {},
+  serverPagination,
+  fullPage = false,
+}: BondsTableProps) {
   const data = useMemo(
     () =>
       [...bonds]
         .sort((a, b) => b.index - a.index)
-        .slice(
-          hasServerPagination ? 0 : pageIndex * pageSize,
-          hasServerPagination ? bonds.length : (pageIndex + 1) * pageSize
-        )
         .map(bond =>
           toBondRow(
             bond,
@@ -243,17 +267,7 @@ export function BondsTable({
             settlementsByBond
           )
         ),
-    [
-      bonds,
-      currentBurnHeight,
-      nowMs,
-      rewardsByBond,
-      burnBlockTimes,
-      settlementsByBond,
-      pageIndex,
-      pageSize,
-      hasServerPagination,
-    ]
+    [bonds, currentBurnHeight, nowMs, rewardsByBond, burnBlockTimes, settlementsByBond]
   );
   return (
     <Table
@@ -264,19 +278,9 @@ export function BondsTable({
       columns={bondColumns}
       emptyTableUi={<NoBondsYet />}
       pagination={
-        unavailable
+        unavailable || !serverPagination
           ? undefined
-          : serverPagination
-            ? { ...serverPagination, manualPagination: true }
-            : bonds.length > pageSize
-              ? {
-                  manualPagination: true,
-                  pageIndex,
-                  pageSize,
-                  totalRows: bonds.length,
-                  onPageChange: next => setPageIndex(next.pageIndex),
-                }
-              : undefined
+          : { ...serverPagination, manualPagination: true }
       }
       tableContainerWrapper={table => (
         <TableContainer pt={{ base: 3, lg: 4 }} minH={fullPage ? '500px' : undefined}>

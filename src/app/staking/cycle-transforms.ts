@@ -2,11 +2,7 @@ import { MICROSTACKS_IN_STACKS } from '@/common/utils/utils';
 
 import type { CycleRewards, PoxCycle } from './data';
 import { DailyPrices, getCyclePrices } from './prices';
-import {
-  getCycleRewardsPerStx,
-  getCycleStackerRewardsSatsBigInt,
-  getStackingYieldForCompletedCycle,
-} from './projections';
+import { getCycleRewardsPerStx, getStackingYieldForCompletedCycle } from './projections';
 import { formatBurnDate, formatDateWithYear } from './utils';
 
 export interface CycleRow {
@@ -69,7 +65,8 @@ export function toCycleRow({
   const apy =
     hasRewardData && settled
       ? getStackingYieldForCompletedCycle({
-          rewardsPerMicroStx: rewards.rewardsPerMicroStx,
+          rewardsSats: rewards.rewardsSats,
+          stakedMicroStx: rewards.stakedMicroStx,
           rewardCycleLength: endedHeight - startedHeight + 1,
           btcPriceUsd: hasHistoricalPrices ? historicalPrices.btcPriceUsd : btcPrice,
           stxPriceUsd: hasHistoricalPrices ? historicalPrices.stxPriceUsd : stxPrice,
@@ -86,10 +83,10 @@ export function toCycleRow({
         : undefined,
     historic: isPrePox5 ? historic?.[cycle.cycle_number] : undefined,
     totalSigners: cycle.total_signers ?? 0,
-    rewardsSats: hasRewardData
-      ? getCycleStackerRewardsSatsBigInt(rewards.rewardsPerMicroStx, rewards.stakedMicroStx)
-      : BigInt(0),
-    satsPerStx: hasRewardData ? getCycleRewardsPerStx(rewards.rewardsPerMicroStx) : undefined,
+    rewardsSats: hasRewardData ? rewards.rewardsSats : BigInt(0),
+    satsPerStx: hasRewardData
+      ? getCycleRewardsPerStx(rewards.rewardsSats, rewards.stakedMicroStx)
+      : undefined,
     hasRewardData,
     settled,
     startedHeight,
