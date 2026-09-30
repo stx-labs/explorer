@@ -3,6 +3,7 @@ import type { PoxInfo } from '@/common/queries/usePoxInforRaw';
 import { ensureError, logError } from '@/common/utils/error-utils';
 import { getApiUrl } from '@/common/utils/network-utils';
 
+import type { ActivityGroup } from './activity-filter';
 import { DISTRIBUTIONS_PER_BOND, REWARDS_PRECISION } from './consts';
 import { getCycleStackerRewardsSatsBigInt } from './projections';
 import { bondLabel, formatBtc, formatSbtc, formatStx, toBigInt } from './utils';
@@ -293,13 +294,8 @@ export async function fetchCycleRewards(
   return Object.fromEntries(results.map(result => [result.cycleNumber, result]));
 }
 
-const ACTIVITY_GROUPS = ['distributions', 'enrollments', 'unlocks', 'bonds'] as const;
-
-export type ActivityGroup = (typeof ACTIVITY_GROUPS)[number];
-
-export function parseActivityGroup(value?: string): ActivityGroup | undefined {
-  return ACTIVITY_GROUPS.find(group => group === value);
-}
+export { parseActivityGroup } from './activity-filter';
+export type { ActivityGroup } from './activity-filter';
 
 const ACTIVITY_GROUP_FUNCTIONS: Record<ActivityGroup, string[]> = {
   distributions: ['calculate-rewards'],

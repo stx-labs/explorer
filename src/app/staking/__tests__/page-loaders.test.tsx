@@ -121,8 +121,8 @@ test('overview fetches final cycle blocks independently of activity', async () =
   );
   expect(data.fetchStakingActivity).not.toHaveBeenCalled();
   const activity = await ActivitySection({ chain: 'testnet', group: 'enrollments' });
-  expect(activity.props.incomplete).toBe(true);
-  expect(activity.props.selectedGroup).toBe('enrollments');
+  expect(activity.props.initialData.incomplete).toBe(true);
+  expect(activity.props.initialGroup).toBe('enrollments');
   expect(page.props.cycles.map((cycle: data.PoxCycle) => cycle.cycle_number)).toEqual([
     12, 11, 10, 9,
   ]);

@@ -181,7 +181,18 @@ const activityColumns: ColumnDef<StakingActivityEvent>[] = [
   },
 ];
 
-function ActionFilter({ selected }: { selected?: ActivityGroup }) {
+interface ActivityFilterControl {
+  isPending: boolean;
+  onChange: (group?: ActivityGroup) => void;
+}
+
+function ActionFilter({
+  selected,
+  control,
+}: {
+  selected?: ActivityGroup;
+  control?: ActivityFilterControl;
+}) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
@@ -210,7 +221,9 @@ function ActionFilter({ selected }: { selected?: ActivityGroup }) {
       onValueChange={({ value }) =>
         startTransition(() => {
           setOptimisticGroup(value);
-          router.replace(hrefFor(value === ALL_GROUPS ? undefined : value), { scroll: false });
+          const group = value === ALL_GROUPS ? undefined : (value as ActivityGroup);
+          if (control) control.onChange(group);
+          else router.replace(hrefFor(group), { scroll: false });
         })
       }
       aria-label="Filter activity by event type"
@@ -237,7 +250,7 @@ function ActionFilter({ selected }: { selected?: ActivityGroup }) {
         color="textSecondary"
         minH={4}
       >
-        {isPending ? 'Loading activity…' : ''}
+        {isPending || control?.isPending ? 'Loading activity…' : ''}
       </Text>
     </TabsRoot>
   );
@@ -303,6 +316,7 @@ export function StakingActivity({
   txWindow,
   incomplete,
   historyTruncated,
+  filterControl,
 }: {
   events: StakingActivityEvent[];
   incomplete?: boolean;
@@ -312,6 +326,7 @@ export function StakingActivity({
   standalone?: boolean;
   bondIndex?: number;
   txWindow?: number;
+  filterControl?: ActivityFilterControl;
 }) {
   const network = useGlobalContext().activeNetwork;
   const [pageIndex, setPageIndex] = useState(0);
@@ -348,7 +363,7 @@ export function StakingActivity({
           )}
         </Flex>
       )}
-      <ActionFilter selected={selectedGroup} />
+      <ActionFilter selected={selectedGroup} control={filterControl} />
       <Text textStyle="text-regular-xs" color="textSecondary">
         Reward amounts are sBTC credited by the contract. Onward payment by signer-managers is
         separate.
@@ -361,6 +376,7 @@ export function StakingActivity({
         </Text>
       )}
       <Table
+        isLoading={filterControl?.isPending && events.length === 0}
         data={page}
         columns={activityColumns}
         emptyTableUi={

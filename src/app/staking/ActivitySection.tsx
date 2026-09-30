@@ -1,8 +1,6 @@
-import { handleSettledResult } from '@/app/address/[principal]/page-data';
-
-import { StakingActivity } from './StakingActivity';
-import { ACTIVITY_FEED_LIMIT } from './consts';
-import { ActivityGroup, fetchPoxInfo, fetchStakingActivity } from './data';
+import { OverviewActivity } from './OverviewActivity';
+import { loadActivityFeed } from './activity-data';
+import type { ActivityGroup } from './activity-filter';
 
 export async function ActivitySection({
   chain,
@@ -13,17 +11,14 @@ export async function ActivitySection({
   api?: string;
   group?: ActivityGroup;
 }) {
-  const [poxResult] = await Promise.allSettled([fetchPoxInfo(chain, api)]);
-  const pox = handleSettledResult(poxResult, 'Staking activity: PoX info');
-  const [result] = await Promise.allSettled([
-    pox ? fetchStakingActivity(pox.contract_id, chain, api, ACTIVITY_FEED_LIMIT, group) : undefined,
-  ]);
-  const activity = handleSettledResult(result, 'Staking activity: load');
+  const activity = await loadActivityFeed(chain, api, group);
   return (
-    <StakingActivity
-      events={activity?.events ?? []}
-      selectedGroup={group}
-      incomplete={activity === undefined || activity.incomplete}
+    <OverviewActivity
+      chain={chain}
+      api={api}
+      initialGroup={group}
+      initialData={activity}
+      initialDataUpdatedAt={Date.now()}
     />
   );
 }
