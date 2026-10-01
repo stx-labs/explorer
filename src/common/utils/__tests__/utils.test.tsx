@@ -335,6 +335,16 @@ describe('stacksToMicro', () => {
     expect(stacksToMicro(0)).toBe(0);
     expect(stacksToMicro('')).toBe(0);
   });
+
+  test('should not lose a microstack to floating-point error', () => {
+    expect(stacksToMicro('0.000249')).toBe(249);
+    expect(stacksToMicro('0.000251')).toBe(251);
+    expect(stacksToMicro(0.000493)).toBe(493);
+  });
+
+  test('should drop digits beyond microstack precision', () => {
+    expect(stacksToMicro('1.0000019')).toBe(1000001);
+  });
 });
 
 describe('getContractName', () => {
