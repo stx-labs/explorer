@@ -37,6 +37,12 @@ importers:
       '@date-fns/utc':
         specifier: 2.1.0
         version: 2.1.0
+      '@emotion/cache':
+        specifier: 11.14.0
+        version: 11.14.0
+      '@emotion/react':
+        specifier: 11.14.0
+        version: 11.14.0(@types/react@19.2.0)(react@19.2.0)
       '@emotion/styled':
         specifier: 11.14.0
         version: 11.14.0(@emotion/react@11.14.0(@types/react@19.2.0)(react@19.2.0))(@types/react@19.2.0)(react@19.2.0)
