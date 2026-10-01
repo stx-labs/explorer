@@ -342,9 +342,11 @@ export function StackingOverview({
                 </Flex>
                 <Text textStyle="text-regular-sm" color="textSecondary">
                   {previousRow.settled
-                    ? previousRow.yieldEstimated
-                      ? 'Gross APY estimated at current prices, assuming repeated cycle returns.'
-                      : 'Gross APY at historical daily prices, assuming repeated cycle returns.'
+                    ? previousRow.totalStackedStx === 0
+                      ? 'No STX was staked.'
+                      : previousRow.yieldEstimated
+                        ? 'Gross APY estimated at current prices, assuming repeated cycle returns.'
+                        : 'Gross APY at historical daily prices, assuming repeated cycle returns.'
                     : 'Final reward calculation pending or unverified.'}
                 </Text>
               </Stack>

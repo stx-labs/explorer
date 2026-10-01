@@ -196,7 +196,7 @@ function NoBondsYet() {
 type BondsTableProps = {
   bonds: Bond[];
   unavailable?: boolean;
-  currentBurnHeight: number;
+  currentBurnHeight: number | undefined;
   nowMs: number;
   rewardsByBond?: Record<number, bigint>;
   settlementsByBond?: BondRewards['settlementsByBond'];

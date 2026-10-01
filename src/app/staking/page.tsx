@@ -1,4 +1,3 @@
-import { getAllowedStakingApiUrl } from '@/api/server-api-origin';
 import { NetworkModes } from '@/common/types/network';
 import { Text } from '@/ui/Text';
 import { Stack } from '@chakra-ui/react';
@@ -10,6 +9,7 @@ import { StakingLoading } from './StakingLoading';
 import { UnsupportedStakingNetwork } from './UnsupportedStakingNetwork';
 import { parseActivityGroup } from './data';
 import { loadStakingOverview } from './overview-data';
+import { getStakingPageApiUrl } from './page-network';
 
 async function OverviewSection({
   data,
@@ -26,8 +26,9 @@ export default async function StakingPage({
 }: {
   searchParams: Promise<{ chain?: string; api?: string; activity?: string }>;
 }) {
-  const { chain = NetworkModes.Mainnet, api, activity } = await searchParams;
-  const allowedApi = getAllowedStakingApiUrl(chain, api);
+  const params = await searchParams;
+  const { chain = NetworkModes.Mainnet, api, activity } = params;
+  const allowedApi = getStakingPageApiUrl('/staking', params);
   if (!allowedApi) return <UnsupportedStakingNetwork />;
   const group = parseActivityGroup(activity);
   // Shared by both overview sections; activity filters are not inputs to this loader.

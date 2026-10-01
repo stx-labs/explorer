@@ -282,6 +282,29 @@ test('failed first cursor lookup preserves the requested page and shows unavaila
   }
 });
 
+test('a failed PoX lookup preserves available bonds and pagination without fabricated heights', async () => {
+  const error = jest.spyOn(console, 'error').mockImplementation(() => {});
+  try {
+    jest.mocked(data.fetchPoxInfo).mockRejectedValueOnce(new Error('PoX unavailable'));
+    jest
+      .mocked(data.fetchBondsPage)
+      .mockResolvedValueOnce({ bonds: [bond], total: 40, nextCursor: 'next' });
+    const page = await StakingBondsPage({ searchParams: Promise.resolve({}) });
+    expect(page.props).toMatchObject({
+      bonds: [bond],
+      unavailable: false,
+      total: 40,
+      pageIndex: 0,
+      currentBurnHeight: undefined,
+      burnBlockTimes: {},
+    });
+    expect(data.fetchBondRewards).toHaveBeenCalled();
+    expect(data.fetchBurnBlockTimes).not.toHaveBeenCalled();
+  } finally {
+    error.mockRestore();
+  }
+});
+
 test('bond rewards and dates start concurrently', async () => {
   let finish!: (value: data.BondRewards) => void;
   jest.mocked(data.fetchBondRewards).mockReturnValueOnce(

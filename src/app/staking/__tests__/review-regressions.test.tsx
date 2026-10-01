@@ -5,6 +5,7 @@ import userEvent from '@testing-library/user-event';
 import { AnnotatedValue } from '../AnnotatedValue';
 import { BondsTable } from '../BondsTable';
 import { CurrentBond } from '../CurrentBond';
+import { StackingOverview } from '../StackingOverview';
 import { StakingStats } from '../StakingStats';
 import bondFixture from './fixtures/bond.json';
 
@@ -169,3 +170,52 @@ test('a bond without verified setup metadata renders its schedule estimate', () 
   expect(screen.getByText('#7,200')).toBeInTheDocument();
   expect(screen.queryByText('Enrollment opened')).not.toBeInTheDocument();
 });
+
+test.each([true, false])(
+  'zero-stake APY uses a simple explanation with historical prices=%s',
+  historical => {
+    const endedMs = Date.UTC(2026, 8, 8);
+    renderWithChakraProviders(
+      <StackingOverview
+        poxInfo={
+          {
+            current_cycle: { id: 144 },
+            reward_cycle_length: 2100,
+            next_reward_cycle_in: 2000,
+          } as React.ComponentProps<typeof StackingOverview>['poxInfo']
+        }
+        cycles={[
+          {
+            cycle_number: 143,
+            total_stacked_amount: '0',
+            total_signers: 0,
+            total_weight: 0,
+            block_height: 0,
+          },
+        ]}
+        cycleRewards={{
+          143: { cycleNumber: 143, rewardsSats: BigInt(0), stakedMicroStx: BigInt(0) },
+        }}
+        pox5FirstCycleId={141}
+        firstBurnchainBlockHeight={0}
+        currentBurnHeight={302500}
+        nowMs={endedMs + 86400000}
+        burnBlockTimes={{ 302399: endedMs }}
+        lastCalculationHeightByCycle={{ 143: 302399 }}
+        prices={
+          historical
+            ? { btc: new Map([['2026-09-08', 100000]]), stx: new Map([['2026-09-08', 1]]) }
+            : undefined
+        }
+      />
+    );
+    expect(screen.getByText('No STX was staked.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'No STX was staked.' })).toBeInTheDocument();
+    expect(
+      screen.queryByText(/Gross APY at historical|Gross APY estimated at current/)
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /Prices are unavailable/ })
+    ).not.toBeInTheDocument();
+  }
+);

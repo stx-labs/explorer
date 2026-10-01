@@ -48,7 +48,7 @@ export interface BondRow {
 
 export function toBondRow(
   bond: Bond,
-  currentBurnHeight: number,
+  currentBurnHeight: number | undefined,
   nowMs: number,
   rewardsByBond?: Record<number, bigint>,
   burnBlockTimes: Record<number, number> = {},
@@ -60,8 +60,14 @@ export function toBondRow(
   const unlockHeight = bond.schedule?.unlock?.bitcoin_height ?? 0;
   const rewardedSats = rewardsByBond ? (rewardsByBond[bond.index] ?? BigInt(0)) : undefined;
   return {
-    activationDate: formatBurnDate(activationHeight, currentBurnHeight, nowMs, burnBlockTimes),
-    unlockDate: formatBurnDate(unlockHeight, currentBurnHeight, nowMs, burnBlockTimes),
+    activationDate:
+      currentBurnHeight === undefined
+        ? 'Unavailable'
+        : formatBurnDate(activationHeight, currentBurnHeight, nowMs, burnBlockTimes),
+    unlockDate:
+      currentBurnHeight === undefined
+        ? 'Unavailable'
+        : formatBurnDate(unlockHeight, currentBurnHeight, nowMs, burnBlockTimes),
     index: bond.index,
     name: bondLabel(bond.index),
     status: getBondStatusLabel(bond.status),
@@ -74,7 +80,10 @@ export function toBondRow(
     capacitySats,
     lockedSats,
     rewardedSats,
-    realizedRate: getRealizedBondRate(bond, currentBurnHeight, settlementsByBond?.[bond.index]),
+    realizedRate:
+      currentBurnHeight === undefined
+        ? { note: 'Current Bitcoin block height is unavailable.' }
+        : getRealizedBondRate(bond, currentBurnHeight, settlementsByBond?.[bond.index]),
     targetRatePercent: bpsToPercent(bond.parameters?.target_rate_bps ?? 0),
     registeredCount: bond.registrations?.registered_count ?? 0,
     allowedCount: bond.registrations?.allowed_count ?? 0,

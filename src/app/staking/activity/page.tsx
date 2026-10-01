@@ -1,10 +1,10 @@
-import { getAllowedStakingApiUrl } from '@/api/server-api-origin';
 import { handleSettledResult } from '@/app/address/[principal]/page-data';
 import { NetworkModes } from '@/common/types/network';
 
 import { UnsupportedStakingNetwork } from '../UnsupportedStakingNetwork';
 import { ACTIVITY_PAGE_LIMIT } from '../consts';
 import { fetchPoxInfo, fetchStakingActivity, parseActivityGroup } from '../data';
+import { getStakingPageApiUrl } from '../page-network';
 import { ActivityPageClient } from './PageClient';
 
 interface ActivitySearchParams {
@@ -17,13 +17,9 @@ interface ActivitySearchParams {
 export default async function StakingActivityPage(props: {
   searchParams: Promise<ActivitySearchParams>;
 }) {
-  const {
-    chain = NetworkModes.Mainnet,
-    api: requestedApi,
-    activity: activityGroup,
-    bond,
-  } = await props.searchParams;
-  const api = getAllowedStakingApiUrl(chain, requestedApi);
+  const searchParams = await props.searchParams;
+  const { chain = NetworkModes.Mainnet, activity: activityGroup, bond } = searchParams;
+  const api = getStakingPageApiUrl('/staking/activity', { ...searchParams });
   if (!api) return <UnsupportedStakingNetwork />;
 
   const parsedBond = Number(bond);

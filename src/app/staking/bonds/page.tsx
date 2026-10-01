@@ -1,4 +1,3 @@
-import { getAllowedStakingApiUrl } from '@/api/server-api-origin';
 import { handleSettledResult } from '@/app/address/[principal]/page-data';
 import { NetworkModes } from '@/common/types/network';
 import { redirect } from 'next/navigation';
@@ -6,6 +5,7 @@ import { redirect } from 'next/navigation';
 import { UnsupportedStakingNetwork } from '../UnsupportedStakingNetwork';
 import { BONDS_PAGE_SIZE } from '../consts';
 import { fetchBondRewards, fetchBurnBlockTimes, fetchPoxInfo } from '../data';
+import { getStakingPageApiUrl } from '../page-network';
 import { BondsPageClient } from './PageClient';
 import { fetchBondPageAtIndex } from './page-data';
 import { bondPageHref, parseBondPage } from './pagination';
@@ -19,8 +19,9 @@ interface BondsSearchParams {
 export default async function StakingBondsPage(props: {
   searchParams: Promise<BondsSearchParams>;
 }) {
-  const { chain = NetworkModes.Mainnet, api: requestedApi, page } = await props.searchParams;
-  const api = getAllowedStakingApiUrl(chain, requestedApi);
+  const searchParams = await props.searchParams;
+  const { chain = NetworkModes.Mainnet, api: requestedApi, page } = searchParams;
+  const api = getStakingPageApiUrl('/staking/bonds', { ...searchParams });
   if (!api) return <UnsupportedStakingNetwork />;
 
   const requestedIndex = parseBondPage(page);
@@ -49,15 +50,17 @@ export default async function StakingBondsPage(props: {
           poxInfo?.contract_id
         )
       : undefined,
-    fetchBurnBlockTimes(
-      (bondsPage?.bonds ?? []).flatMap(bond => [
-        bond.schedule.activation.bitcoin_height,
-        bond.schedule.unlock.bitcoin_height,
-      ]),
-      poxInfo?.current_burnchain_block_height ?? 0,
-      chain,
-      api
-    ),
+    poxInfo
+      ? fetchBurnBlockTimes(
+          (bondsPage?.bonds ?? []).flatMap(bond => [
+            bond.schedule.activation.bitcoin_height,
+            bond.schedule.unlock.bitcoin_height,
+          ]),
+          poxInfo.current_burnchain_block_height,
+          chain,
+          api
+        )
+      : undefined,
   ]);
   const rewarded = handleSettledResult(rewardedResult, 'Bonds page: fetch bond rewards');
 
@@ -66,14 +69,14 @@ export default async function StakingBondsPage(props: {
   return (
     <BondsPageClient
       bonds={bondsPage?.bonds ?? []}
-      unavailable={bondsPage === undefined || poxInfo === undefined}
+      unavailable={bondsPage === undefined}
       total={bondsPage?.total ?? 0}
       pageIndex={pageIndex}
       pageSize={BONDS_PAGE_SIZE}
       rewardsByBond={rewarded?.byBondIndex}
       settlementsByBond={rewarded?.settlementsByBond}
       burnBlockTimes={burnBlockTimes ?? {}}
-      currentBurnHeight={poxInfo?.current_burnchain_block_height ?? 0}
+      currentBurnHeight={poxInfo?.current_burnchain_block_height}
       nowMs={Date.now()}
     />
   );

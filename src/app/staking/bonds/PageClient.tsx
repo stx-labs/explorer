@@ -19,7 +19,7 @@ export interface BondsPageData {
   rewardsByBond?: Record<number, bigint>;
   settlementsByBond?: BondRewards['settlementsByBond'];
   burnBlockTimes: Record<number, number>;
-  currentBurnHeight: number;
+  currentBurnHeight: number | undefined;
   nowMs: number;
 }
 
@@ -60,6 +60,11 @@ export function BondsPageClient({
       >
         {isPending ? 'Loading bonds…' : ''}
       </Text>
+      {!unavailable && currentBurnHeight === undefined && (
+        <Text textStyle="text-regular-sm" color="textSecondary">
+          Some bond details are unavailable. Refresh the page to try again.
+        </Text>
+      )}
       <BondsTable
         bonds={bonds}
         unavailable={unavailable}

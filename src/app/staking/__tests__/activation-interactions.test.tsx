@@ -114,6 +114,32 @@ test('arrow navigation waits for activation, selected filter updates immediately
   expect(screen.getByRole('status')).toBe(status);
 });
 
+test('available bonds remain browsable when the current Bitcoin height is unavailable', async () => {
+  const user = userEvent.setup();
+  renderWithChakraProviders(
+    <BondsPageClient
+      bonds={[bond]}
+      total={40}
+      pageIndex={0}
+      pageSize={20}
+      burnBlockTimes={{}}
+      currentBurnHeight={undefined}
+      nowMs={Date.UTC(2026, 8, 1)}
+    />
+  );
+  expect(screen.getByText('Bond 3')).toBeInTheDocument();
+  expect(screen.getByText(/Some bond details are unavailable/)).toBeInTheDocument();
+  expect(screen.getByText('Unavailable → Unavailable')).toBeInTheDocument();
+  expect(
+    screen.getByRole('button', { name: 'Current Bitcoin block height is unavailable.' })
+  ).toBeInTheDocument();
+  expect(screen.queryByText(/Bond data could not be loaded/)).not.toBeInTheDocument();
+  await user.click(screen.getByRole('button', { name: 'Go to next page' }));
+  expect(mockPush).toHaveBeenCalledWith('/staking/bonds?chain=testnet&bond=3&page=2', {
+    scroll: true,
+  });
+});
+
 test('bond page navigation preserves network settings and announces the pending server update', async () => {
   const user = userEvent.setup();
   let finish!: () => void;
