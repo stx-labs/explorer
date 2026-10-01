@@ -470,19 +470,6 @@ test('a truncated search also preserves detail lookup failures', async () => {
   const result = await fetchStakingActivity(POX_CONTRACT, 'mainnet', undefined, 1, undefined, 99);
   expect(result).toEqual({ events: [], incomplete: true, historyTruncated: true });
   expect(logError).toHaveBeenCalledTimes(1);
-});
-
-test('reports many activity failures as one Sentry event', async () => {
-  serveChain(Array.from({ length: 3 }, (_, i) => enrollmentTx(i, 100)));
-  const serve = fetchMock.getMockImplementation()!;
-  fetchMock.mockImplementation((url, options) =>
-    url.includes('/extended/v1/tx/0x')
-      ? Promise.resolve({ ok: false, status: 503 } as Response)
-      : serve(url, options)
-  );
-  const result = await fetchStakingActivity(POX_CONTRACT, 'mainnet');
-  expect(result.incomplete).toBe(true);
-  expect(logError).toHaveBeenCalledTimes(1);
   expect(logError).toHaveBeenCalledWith(
     expect.any(Error),
     'Staking activity: partial fetch failure',

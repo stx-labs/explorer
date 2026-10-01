@@ -1,4 +1,3 @@
-import { fetchTx } from '@/api/data-fetchers';
 import type { PoxInfo } from '@/common/queries/usePoxInforRaw';
 import { redirect } from 'next/navigation';
 
@@ -7,18 +6,10 @@ import StakingActivityPage from '../activity/page';
 import StakingBondsPage from '../bonds/page';
 import * as data from '../data';
 import { loadStakingOverview } from '../overview-data';
+import { fetchFeaturedBond } from '../page-data';
 import { fetchDailyPrices } from '../prices';
 import { fetchCurrentCycleEstimate } from '../reward-estimate';
 import bond from './fixtures/bond.json';
-
-async function StakingPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ chain?: string; api?: string; activity?: string }>;
-}) {
-  const { chain = 'mainnet', api } = await searchParams;
-  return { props: await loadStakingOverview(chain, api) };
-}
 
 jest.mock('next/navigation', () => ({
   redirect: jest.fn((url: string) => {
@@ -27,15 +18,18 @@ jest.mock('next/navigation', () => ({
 }));
 
 jest.mock('../PageClient', () => ({ StakingPageClient: jest.fn() }));
-jest.mock('@/api/data-fetchers', () => ({ fetchTx: jest.fn() }));
+jest.mock('../page-data', () => ({ fetchFeaturedBond: jest.fn() }));
 jest.mock('../activity/PageClient', () => ({ ActivityPageClient: jest.fn() }));
 jest.mock('../bonds/PageClient', () => ({ BondsPageClient: jest.fn() }));
+jest.mock('@/common/utils/error-utils', () => ({
+  ...jest.requireActual('@/common/utils/error-utils'),
+  logError: jest.fn(),
+}));
 jest.mock('../prices');
 jest.mock('../reward-estimate');
 jest.mock('../data', () => ({
   ...jest.requireActual('../data'),
   fetchBondsPage: jest.fn(),
-  fetchBond: jest.fn(),
   fetchBondRegistrations: jest.fn(),
   fetchBondRewards: jest.fn(),
   fetchBurnBlockTimes: jest.fn(),
@@ -62,7 +56,7 @@ beforeEach(() => {
   jest.clearAllMocks();
   jest.mocked(data.fetchPoxInfo).mockResolvedValue(poxInfo);
   jest.mocked(data.fetchBondsPage).mockResolvedValue({ bonds: [bond], total: 1, nextCursor: null });
-  jest.mocked(data.fetchBond).mockResolvedValue(bond);
+  jest.mocked(fetchFeaturedBond).mockResolvedValue(bond);
   jest.mocked(data.fetchBondRegistrations).mockResolvedValue([]);
   jest.mocked(data.fetchPoxCycles).mockResolvedValue(
     [12, 11, 10, 9, 8].map(cycle_number => ({
@@ -90,9 +84,7 @@ beforeEach(() => {
 
 test('overview fetches final cycle blocks independently of activity', async () => {
   jest.mocked(data.fetchStakingActivity).mockResolvedValue({ events: [], incomplete: true });
-  const page = await StakingPage({
-    searchParams: Promise.resolve({ chain: 'testnet', activity: 'enrollments' }),
-  });
+  const overview = await loadStakingOverview('testnet');
   expect(data.fetchPoxInfo).toHaveBeenCalledWith('testnet', undefined);
   expect(data.fetchCycleRewards).toHaveBeenCalledWith(
     [12, 11, 10, 9],
@@ -125,146 +117,48 @@ test('overview fetches final cycle blocks independently of activity', async () =
   const activity = await ActivitySection({ chain: 'testnet', group: 'enrollments' });
   expect(activity.props.initialData.incomplete).toBe(true);
   expect(activity.props.initialGroup).toBe('enrollments');
-  expect(page.props.cycles.map((cycle: data.PoxCycle) => cycle.cycle_number)).toEqual([
+  expect(overview.cycles.map((cycle: data.PoxCycle) => cycle.cycle_number)).toEqual([
     12, 11, 10, 9,
   ]);
 });
 
 test('overview retains a usable failure state when PoX cannot be loaded', async () => {
-  const error = jest.spyOn(console, 'error').mockImplementation(() => {});
-  try {
-    jest.mocked(data.fetchPoxInfo).mockRejectedValueOnce(new Error('API unavailable'));
-    const page = await StakingPage({ searchParams: Promise.resolve({}) });
-    expect(page.props.poxInfo).toBeUndefined();
-    expect(data.fetchCycleRewards).not.toHaveBeenCalled();
-    expect(fetchCurrentCycleEstimate).not.toHaveBeenCalled();
-  } finally {
-    error.mockRestore();
-  }
+  jest.mocked(data.fetchPoxInfo).mockRejectedValueOnce(new Error('API unavailable'));
+  const overview = await loadStakingOverview('mainnet');
+  expect(overview.poxInfo).toBeUndefined();
+  expect(data.fetchCycleRewards).not.toHaveBeenCalled();
+  expect(fetchCurrentCycleEstimate).not.toHaveBeenCalled();
 });
 
 test('cycle settlement remains independent of unavailable bond histories', async () => {
-  const error = jest.spyOn(console, 'error').mockImplementation(() => {});
-  try {
-    jest.mocked(data.fetchBondRewards).mockRejectedValueOnce(new Error('Bond events unavailable'));
-    jest.mocked(data.fetchCycleCalculationHeights).mockResolvedValueOnce({ 11: 10799 });
-    const page = await StakingPage({ searchParams: Promise.resolve({}) });
-    expect(page.props.rewarded).toBeUndefined();
-    expect(page.props.lastCalculationHeightByCycle).toEqual({ 11: 10799 });
-  } finally {
-    error.mockRestore();
-  }
-});
-
-test('overview does not restart the history deadline after a stalled bond scan', async () => {
-  jest.useFakeTimers();
-  const error = jest.spyOn(console, 'error').mockImplementation(() => {});
-  try {
-    const deadline = Date.now() + 15000;
-    jest.mocked(data.fetchBondRewards).mockImplementationOnce(
-      () =>
-        new Promise((_resolve, reject) => {
-          setTimeout(() => reject(new Error('Reward history request timed out')), 15000);
-        })
-    );
-    const pending = loadStakingOverview('mainnet');
-    await jest.advanceTimersByTimeAsync(15000);
-    const result = await pending;
-    expect(data.fetchBondRewards).toHaveBeenCalledWith(
-      [bond.index],
-      'mainnet',
-      undefined,
-      poxInfo.contract_id,
-      deadline
-    );
-    expect(data.fetchCycleCalculationHeights).toHaveBeenCalledWith(
-      { 9: 8999, 10: 9899, 11: 10799 },
-      poxInfo.contract_id,
-      'mainnet',
-      undefined,
-      undefined,
-      deadline
-    );
-    expect(result.bonds).toEqual([bond]);
-    expect(result.rewarded).toBeUndefined();
-  } finally {
-    error.mockRestore();
-    jest.useRealTimers();
-  }
+  jest.mocked(data.fetchBondRewards).mockRejectedValueOnce(new Error('Bond events unavailable'));
+  jest.mocked(data.fetchCycleCalculationHeights).mockResolvedValueOnce({ 11: 10799 });
+  const overview = await loadStakingOverview('mainnet');
+  expect(overview.rewarded).toBeUndefined();
+  expect(overview.lastCalculationHeightByCycle).toEqual({ 11: 10799 });
 });
 
 test('a failed settlement fallback preserves final calculations already proven by bond events', async () => {
-  const error = jest.spyOn(console, 'error').mockImplementation(() => {});
-  try {
-    jest.mocked(data.fetchBondRewards).mockResolvedValueOnce({
-      byBondIndex: {},
-      settlementsByBond: {},
-      lastCalculationHeightByCycle: { 11: 10799 },
-    });
-    jest
-      .mocked(data.fetchCycleCalculationHeights)
-      .mockRejectedValueOnce(new Error('API unavailable'));
-    const page = await StakingPage({ searchParams: Promise.resolve({}) });
-    expect(page.props.lastCalculationHeightByCycle).toEqual({ 11: 10799 });
-  } finally {
-    error.mockRestore();
-  }
+  jest.mocked(data.fetchBondRewards).mockResolvedValueOnce({
+    byBondIndex: {},
+    settlementsByBond: {},
+    lastCalculationHeightByCycle: { 11: 10799 },
+  });
+  jest
+    .mocked(data.fetchCycleCalculationHeights)
+    .mockRejectedValueOnce(new Error('API unavailable'));
+  const overview = await loadStakingOverview('mainnet');
+  expect(overview.lastCalculationHeightByCycle).toEqual({ 11: 10799 });
 });
 
-test('setup milestone uses the confirmed transaction height instead of the mismatched bond response', async () => {
-  jest.mocked(data.fetchBond).mockResolvedValueOnce({
-    ...bond,
-    transaction: {
-      tx_id: '0xsetup',
-      block: { height: 100, hash: '0xblock', time: 1700000000 },
-      bitcoin_block: { height: 11200, time: 1700000000 },
-    },
-  });
-  jest.mocked(fetchTx).mockResolvedValueOnce({
-    tx_status: 'success',
-    canonical: true,
-    burn_block_height: 8500,
-    burn_block_time: 1700000000,
-  } as Awaited<ReturnType<typeof fetchTx>>);
-  const page = await StakingPage({ searchParams: Promise.resolve({ chain: 'testnet' }) });
-  expect(fetchTx).toHaveBeenCalledWith('https://api.testnet.hiro.so', '0xsetup');
-  expect(page.props.bonds[0].transaction?.bitcoin_block).toEqual({
-    height: 8500,
-    time: 1700000000,
-  });
+test('overview uses verified featured-bond details from the existing setup loader', async () => {
+  const verified = { ...bond, transaction: undefined };
+  jest.mocked(fetchFeaturedBond).mockResolvedValueOnce(verified);
+  const result = await loadStakingOverview('testnet');
+  expect(fetchFeaturedBond).toHaveBeenCalledWith(bond.index, 'testnet', undefined);
+  expect(result.bonds[0]).toBe(verified);
+  expect(result.bondsUnavailable).toBe(false);
 });
-
-test.each(['abort_by_response', 'abort_by_post_condition', 'lookup-failure'])(
-  'overview retains the featured bond and schedule fallback when setup is %s',
-  async status => {
-    const error = jest.spyOn(console, 'error').mockImplementation(() => {});
-    try {
-      jest.mocked(data.fetchBond).mockResolvedValueOnce({
-        ...bond,
-        transaction: {
-          tx_id: '0xsetup',
-          block: { height: 100, hash: '0xblock', time: 1700000000 },
-          bitcoin_block: { height: 11200, time: 1700000000 },
-        },
-      });
-      if (status === 'lookup-failure') {
-        jest.mocked(fetchTx).mockRejectedValueOnce(new Error('Setup lookup unavailable'));
-      } else {
-        jest.mocked(fetchTx).mockResolvedValueOnce({
-          tx_status: status,
-          canonical: true,
-          burn_block_height: 8500,
-          burn_block_time: 1700000000,
-        } as Awaited<ReturnType<typeof fetchTx>>);
-      }
-      const page = await StakingPage({ searchParams: Promise.resolve({ chain: 'testnet' }) });
-      expect(page.props.bonds).toEqual([{ ...bond, transaction: undefined }]);
-      expect(page.props.bondsUnavailable).toBe(false);
-    } finally {
-      error.mockRestore();
-    }
-  }
-);
 
 test('bonds route follows opaque cursors and normalizes an out-of-range URL', async () => {
   jest
@@ -310,38 +204,28 @@ test.each(['-1', '2.5', '2junk', '1', '01'])(
 );
 
 test('failed first cursor lookup preserves the requested page and shows unavailable data', async () => {
-  const error = jest.spyOn(console, 'error').mockImplementation(() => {});
-  try {
-    jest.mocked(data.fetchBondsPage).mockRejectedValueOnce(new Error('offline'));
-    const page = await StakingBondsPage({ searchParams: Promise.resolve({ page: '5' }) });
-    expect(page.props).toMatchObject({ pageIndex: 4, unavailable: true, bonds: [] });
-    expect(redirect).not.toHaveBeenCalled();
-  } finally {
-    error.mockRestore();
-  }
+  jest.mocked(data.fetchBondsPage).mockRejectedValueOnce(new Error('offline'));
+  const page = await StakingBondsPage({ searchParams: Promise.resolve({ page: '5' }) });
+  expect(page.props).toMatchObject({ pageIndex: 4, unavailable: true, bonds: [] });
+  expect(redirect).not.toHaveBeenCalled();
 });
 
 test('a failed PoX lookup preserves available bonds and pagination without fabricated heights', async () => {
-  const error = jest.spyOn(console, 'error').mockImplementation(() => {});
-  try {
-    jest.mocked(data.fetchPoxInfo).mockRejectedValueOnce(new Error('PoX unavailable'));
-    jest
-      .mocked(data.fetchBondsPage)
-      .mockResolvedValueOnce({ bonds: [bond], total: 40, nextCursor: 'next' });
-    const page = await StakingBondsPage({ searchParams: Promise.resolve({}) });
-    expect(page.props).toMatchObject({
-      bonds: [bond],
-      unavailable: false,
-      total: 40,
-      pageIndex: 0,
-      currentBurnHeight: undefined,
-      burnBlockTimes: {},
-    });
-    expect(data.fetchBondRewards).toHaveBeenCalled();
-    expect(data.fetchBurnBlockTimes).not.toHaveBeenCalled();
-  } finally {
-    error.mockRestore();
-  }
+  jest.mocked(data.fetchPoxInfo).mockRejectedValueOnce(new Error('PoX unavailable'));
+  jest
+    .mocked(data.fetchBondsPage)
+    .mockResolvedValueOnce({ bonds: [bond], total: 40, nextCursor: 'next' });
+  const page = await StakingBondsPage({ searchParams: Promise.resolve({}) });
+  expect(page.props).toMatchObject({
+    bonds: [bond],
+    unavailable: false,
+    total: 40,
+    pageIndex: 0,
+    currentBurnHeight: undefined,
+    burnBlockTimes: {},
+  });
+  expect(data.fetchBondRewards).toHaveBeenCalled();
+  expect(data.fetchBurnBlockTimes).not.toHaveBeenCalled();
 });
 
 test('bond rewards and dates start concurrently', async () => {

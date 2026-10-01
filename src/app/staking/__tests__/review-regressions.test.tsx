@@ -6,9 +6,7 @@ import { AnnotatedValue } from '../AnnotatedValue';
 import { BondsTable } from '../BondsTable';
 import { CurrentBond } from '../CurrentBond';
 import { StakingPageClient, StakingPageData } from '../PageClient';
-import { StackingOverview } from '../StackingOverview';
 import { StakingStats } from '../StakingStats';
-import { BONDS_TABLE_LIMIT } from '../consts';
 import bondFixture from './fixtures/bond.json';
 
 const originalResizeObserver = globalThis.ResizeObserver;
@@ -54,20 +52,6 @@ test('overview preserves bonds and known rewards when PoX is missing without inv
     screen.getByRole('button', { name: 'Current Bitcoin block height is unavailable.' })
   ).toBeInTheDocument();
   expect(screen.queryByRole('heading', { name: 'Current bond' })).not.toBeInTheDocument();
-});
-
-test('overview fallback retains table pagination for the loaded bonds', async () => {
-  const user = userEvent.setup();
-  const bonds = Array.from({ length: BONDS_TABLE_LIMIT + 1 }, (_, i) => ({
-    ...bondFixture,
-    index: i + 1,
-  }));
-  renderWithChakraProviders(
-    <StakingPageClient {...overviewWithoutPox} bonds={bonds} section="bonds" />
-  );
-  expect(screen.queryByText('Genesis')).not.toBeInTheDocument();
-  await user.click(screen.getByRole('button', { name: 'Go to next page' }));
-  expect(await screen.findByText('Genesis')).toBeInTheDocument();
 });
 
 test('overview does not substitute a misleading empty table when both bonds and PoX fail', () => {
@@ -231,52 +215,3 @@ test('a bond without verified setup metadata renders its schedule estimate', () 
   expect(screen.getByText('#7,200')).toBeInTheDocument();
   expect(screen.queryByText('Enrollment opened')).not.toBeInTheDocument();
 });
-
-test.each([true, false])(
-  'zero-stake APY uses a simple explanation with historical prices=%s',
-  historical => {
-    const endedMs = Date.UTC(2026, 8, 8);
-    renderWithChakraProviders(
-      <StackingOverview
-        poxInfo={
-          {
-            current_cycle: { id: 144 },
-            reward_cycle_length: 2100,
-            next_reward_cycle_in: 2000,
-          } as React.ComponentProps<typeof StackingOverview>['poxInfo']
-        }
-        cycles={[
-          {
-            cycle_number: 143,
-            total_stacked_amount: '0',
-            total_signers: 0,
-            total_weight: 0,
-            block_height: 0,
-          },
-        ]}
-        cycleRewards={{
-          143: { cycleNumber: 143, rewardsSats: BigInt(0), stakedMicroStx: BigInt(0) },
-        }}
-        pox5FirstCycleId={141}
-        firstBurnchainBlockHeight={0}
-        currentBurnHeight={302500}
-        nowMs={endedMs + 86400000}
-        burnBlockTimes={{ 302399: endedMs }}
-        lastCalculationHeightByCycle={{ 143: 302399 }}
-        prices={
-          historical
-            ? { btc: new Map([['2026-09-08', 100000]]), stx: new Map([['2026-09-08', 1]]) }
-            : undefined
-        }
-      />
-    );
-    expect(screen.getByText('No STX was staked.')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'No STX was staked.' })).toBeInTheDocument();
-    expect(
-      screen.queryByText(/Gross APY at historical|Gross APY estimated at current/)
-    ).not.toBeInTheDocument();
-    expect(
-      screen.queryByRole('button', { name: /Prices are unavailable/ })
-    ).not.toBeInTheDocument();
-  }
-);

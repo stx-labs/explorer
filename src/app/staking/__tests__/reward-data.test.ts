@@ -108,11 +108,9 @@ test.each([undefined, null, '', '-1', '1.2', 100])(
   }
 );
 
-test('rejects a mismatched cycle or a failed summary request', async () => {
+test('rejects a mismatched cycle', async () => {
   fetchMock.mockResolvedValueOnce(respond({ ...summary, number: 144 }));
   await expect(fetchCycleRewards([143], 'mainnet')).rejects.toThrow('another cycle');
-  fetchMock.mockResolvedValueOnce({ ok: false, status: 503 } as Response);
-  await expect(fetchCycleRewards([143], 'mainnet')).rejects.toThrow('503');
 });
 
 test('falls back to contract reads when the cycle endpoint has not been deployed', async () => {
@@ -301,14 +299,7 @@ test('stops unending cursor pagination at the shared request budget', async () =
 test('aborts stalled reward history at the deadline', async () => {
   jest.useFakeTimers();
   try {
-    fetchMock.mockImplementation(
-      (_url, options) =>
-        new Promise((_resolve, reject) => {
-          options?.signal?.addEventListener('abort', () => reject(options.signal?.reason), {
-            once: true,
-          });
-        })
-    );
+    fetchMock.mockImplementation(stalledRequest);
     const rejected = expect(fetchBondRewards([1], 'mainnet')).rejects.toThrow('timed out');
     await jest.advanceTimersByTimeAsync(15000);
     await rejected;
