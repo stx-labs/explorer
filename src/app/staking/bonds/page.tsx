@@ -1,7 +1,9 @@
+import { getAllowedStakingApiUrl } from '@/api/server-api-origin';
 import { handleSettledResult } from '@/app/address/[principal]/page-data';
 import { NetworkModes } from '@/common/types/network';
 import { redirect } from 'next/navigation';
 
+import { UnsupportedStakingNetwork } from '../UnsupportedStakingNetwork';
 import { BONDS_PAGE_SIZE } from '../consts';
 import { fetchBondRewards, fetchBurnBlockTimes, fetchPoxInfo } from '../data';
 import { BondsPageClient } from './PageClient';
@@ -17,7 +19,9 @@ interface BondsSearchParams {
 export default async function StakingBondsPage(props: {
   searchParams: Promise<BondsSearchParams>;
 }) {
-  const { chain = NetworkModes.Mainnet, api, page } = await props.searchParams;
+  const { chain = NetworkModes.Mainnet, api: requestedApi, page } = await props.searchParams;
+  const api = getAllowedStakingApiUrl(chain, requestedApi);
+  if (!api) return <UnsupportedStakingNetwork />;
 
   const requestedIndex = parseBondPage(page);
   const [poxInfoResult, bondsPageResult] = await Promise.allSettled([
@@ -32,7 +36,7 @@ export default async function StakingBondsPage(props: {
   if (bondsPage && page !== canonicalPage) {
     const params = new URLSearchParams();
     params.set('chain', chain);
-    if (api !== undefined) params.set('api', api);
+    if (requestedApi !== undefined) params.set('api', api);
     redirect(bondPageHref(params, pageIndex));
   }
 

@@ -24,14 +24,14 @@ beforeEach(() => {
 test('activity endpoint preserves network/filter settings and only loads the bounded feed', async () => {
   const response = await GET(
     new Request(
-      'http://localhost/api/staking/activity?chain=testnet&api=https%3A%2F%2Fcustom.test&activity=enrollments&limit=999'
+      'http://localhost/api/staking/activity?chain=testnet&api=https%3A%2F%2Fapi.testnet.hiro.so&activity=enrollments&limit=999'
     )
   );
-  expect(data.fetchPoxInfo).toHaveBeenCalledWith('testnet', 'https://custom.test');
+  expect(data.fetchPoxInfo).toHaveBeenCalledWith('testnet', 'https://api.testnet.hiro.so');
   expect(data.fetchStakingActivity).toHaveBeenCalledWith(
     'ST123.pox-5',
     'testnet',
-    'https://custom.test',
+    'https://api.testnet.hiro.so',
     5,
     'enrollments'
   );
@@ -47,7 +47,7 @@ test('invalid filters use the mainnet all-events feed by default', async () => {
   expect(data.fetchStakingActivity).toHaveBeenCalledWith(
     'ST123.pox-5',
     'mainnet',
-    undefined,
+    'https://api.hiro.so',
     5,
     undefined
   );
@@ -62,5 +62,17 @@ test.each(['pox', 'activity'])(
     const response = await GET(new Request('http://localhost/api/staking/activity'));
     expect(await response.json()).toEqual({ events: [], incomplete: true });
     if (failure === 'pox') expect(data.fetchStakingActivity).not.toHaveBeenCalled();
+  }
+);
+
+test.each(['https://attacker.example', 'http://localhost:3999', 'https://169.254.169.254'])(
+  'rejects API override %s before any upstream call',
+  async api => {
+    const response = await GET(
+      new Request(`http://localhost/api/staking/activity?api=${encodeURIComponent(api)}`)
+    );
+    expect(response.status).toBe(400);
+    expect(data.fetchPoxInfo).not.toHaveBeenCalled();
+    expect(data.fetchStakingActivity).not.toHaveBeenCalled();
   }
 );

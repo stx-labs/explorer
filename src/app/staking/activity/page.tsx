@@ -1,6 +1,8 @@
+import { getAllowedStakingApiUrl } from '@/api/server-api-origin';
 import { handleSettledResult } from '@/app/address/[principal]/page-data';
 import { NetworkModes } from '@/common/types/network';
 
+import { UnsupportedStakingNetwork } from '../UnsupportedStakingNetwork';
 import { ACTIVITY_PAGE_LIMIT } from '../consts';
 import { fetchPoxInfo, fetchStakingActivity, parseActivityGroup } from '../data';
 import { ActivityPageClient } from './PageClient';
@@ -17,10 +19,12 @@ export default async function StakingActivityPage(props: {
 }) {
   const {
     chain = NetworkModes.Mainnet,
-    api,
+    api: requestedApi,
     activity: activityGroup,
     bond,
   } = await props.searchParams;
+  const api = getAllowedStakingApiUrl(chain, requestedApi);
+  if (!api) return <UnsupportedStakingNetwork />;
 
   const parsedBond = Number(bond);
   const bondIndex = Number.isSafeInteger(parsedBond) && parsedBond > 0 ? parsedBond : undefined;

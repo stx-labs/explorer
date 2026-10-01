@@ -237,7 +237,7 @@ test('bonds route follows opaque cursors and normalizes an out-of-range URL', as
     StakingBondsPage({
       searchParams: Promise.resolve({
         chain: 'testnet',
-        api: 'https://api.example.test',
+        api: 'https://api.testnet.hiro.so',
         page: '999',
       }),
     })
@@ -245,19 +245,19 @@ test('bonds route follows opaque cursors and normalizes an out-of-range URL', as
   expect(data.fetchBondsPage).toHaveBeenNthCalledWith(
     2,
     'testnet',
-    'https://api.example.test',
+    'https://api.testnet.hiro.so',
     20,
     'opaque:second'
   );
   expect(data.fetchBondsPage).toHaveBeenNthCalledWith(
     3,
     'testnet',
-    'https://api.example.test',
+    'https://api.testnet.hiro.so',
     20,
     'opaque:last'
   );
   expect(redirect).toHaveBeenCalledWith(
-    '/staking/bonds?chain=testnet&api=https%3A%2F%2Fapi.example.test&page=3'
+    '/staking/bonds?chain=testnet&api=https%3A%2F%2Fapi.testnet.hiro.so&page=3'
   );
 });
 
@@ -304,7 +304,7 @@ test('activity route forwards a valid bond filter and incomplete result', async 
   expect(data.fetchStakingActivity).toHaveBeenCalledWith(
     poxInfo.contract_id,
     'testnet',
-    undefined,
+    'https://api.testnet.hiro.so',
     60,
     'distributions',
     3
