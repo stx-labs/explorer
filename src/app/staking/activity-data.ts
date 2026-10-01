@@ -7,12 +7,23 @@ import { StakingActivityResult, fetchPoxInfo, fetchStakingActivity } from './dat
 export async function loadActivityFeed(
   chain: string,
   api?: string,
-  group?: ActivityGroup
+  group?: ActivityGroup,
+  signal?: AbortSignal
 ): Promise<StakingActivityResult> {
   try {
-    const pox = await fetchPoxInfo(chain, api);
-    return await fetchStakingActivity(pox.contract_id, chain, api, ACTIVITY_FEED_LIMIT, group);
+    if (signal?.aborted) throw signal.reason;
+    const pox = await fetchPoxInfo(chain, api, signal);
+    return await fetchStakingActivity(
+      pox.contract_id,
+      chain,
+      api,
+      ACTIVITY_FEED_LIMIT,
+      group,
+      undefined,
+      signal
+    );
   } catch (error) {
+    if (signal?.aborted) throw signal.reason;
     logError(ensureError(error), 'Staking activity: load', { chain });
     return { events: [], incomplete: true };
   }

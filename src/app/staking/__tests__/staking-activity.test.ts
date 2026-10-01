@@ -1,6 +1,7 @@
 import { stacksAPIFetch } from '@/api/stacksAPIFetch';
 import { logError } from '@/common/utils/error-utils';
 
+import { loadActivityFeed } from '../activity-data';
 import { fetchStakingActivity } from '../data';
 import bondFixture from './fixtures/bond.json';
 
@@ -346,6 +347,8 @@ describe('fetchStakingActivity', () => {
   });
 
   test('recovers the amount after a transient transaction-detail failure', async () => {
+    const controller = new AbortController();
+    const removeListener = jest.spyOn(controller.signal, 'removeEventListener');
     serveChain([enrollmentTx(1, 2500000000)]);
     const serve = fetchMock.getMockImplementation()!;
     let detailRequests = 0;
@@ -359,9 +362,13 @@ describe('fetchStakingActivity', () => {
       POX_CONTRACT,
       'mainnet',
       undefined,
-      5
+      5,
+      undefined,
+      undefined,
+      controller.signal
     );
     expect(detailRequests).toBe(2);
+    expect(removeListener).toHaveBeenCalledWith('abort', expect.any(Function));
     expect(incomplete).toBe(false);
     expect(events[0].amount).toBe('25 BTC');
   });
@@ -482,4 +489,103 @@ test('reports many activity failures as one Sentry event', async () => {
     { chain: 'mainnet', failureCount: 3 },
     'error'
   );
+});
+
+test.each(['pox', 'bonds', 'transactions', 'details', 'setup-bond'])(
+  'cancellation stops upstream %s requests without retries, later batches, or error reports',
+  async stage => {
+    const controller = new AbortController();
+    serveChain(
+      stage === 'setup-bond'
+        ? [
+            {
+              ...enrollmentTx(1, 0),
+              functionName: 'setup-bond',
+              events: ['(tuple (topic "setup-bond") (bond-index u100))'],
+            },
+          ]
+        : Array.from({ length: 8 }, (_, i) => enrollmentTx(i, 100))
+    );
+    const serve = fetchMock.getMockImplementation()!;
+    let started!: () => void;
+    const reachedStage = new Promise<void>(resolve => {
+      started = resolve;
+    });
+    fetchMock.mockImplementation((url, options) => {
+      const shouldStall =
+        stage === 'pox'
+          ? url.endsWith('/v2/pox')
+          : stage === 'bonds'
+            ? url.includes('/staking/bonds?')
+            : stage === 'transactions'
+              ? url.includes('function_name=')
+              : stage === 'details'
+                ? url.includes('/extended/v1/tx/0x')
+                : url.endsWith('/bonds/100');
+      if (shouldStall) {
+        expect(options?.signal).toBe(controller.signal);
+        return new Promise((_resolve, reject) => {
+          options!.signal!.addEventListener('abort', () => reject(options!.signal!.reason), {
+            once: true,
+          });
+          started();
+        });
+      }
+      if (url.endsWith('/v2/pox'))
+        return Promise.resolve(respond({ contract_id: POX_CONTRACT, current_cycle: { id: 143 } }));
+      return serve(url, options);
+    });
+    const pending = loadActivityFeed('mainnet', undefined, undefined, controller.signal);
+    await reachedStage;
+    const reason = new Error('Filter changed');
+    const rejected = expect(pending).rejects.toBe(reason);
+    controller.abort(reason);
+    await rejected;
+    const calls = fetchMock.mock.calls.length;
+    await Promise.resolve();
+    expect(fetchMock).toHaveBeenCalledTimes(calls);
+    expect(fetchMock.mock.calls.every(([, options]) => options?.signal === controller.signal)).toBe(
+      true
+    );
+    expect(logError).not.toHaveBeenCalled();
+  }
+);
+
+test('cancelling during the retry delay clears the timer and stops the retry', async () => {
+  jest.useFakeTimers();
+  try {
+    const controller = new AbortController();
+    serveChain([enrollmentTx(1, 100)]);
+    const serve = fetchMock.getMockImplementation()!;
+    let attempts = 0;
+    fetchMock.mockImplementation((url, options) => {
+      if (url.includes('/extended/v1/tx/0x')) {
+        attempts++;
+        return Promise.resolve({ ok: false, status: 503 } as Response);
+      }
+      return serve(url, options);
+    });
+    const pending = fetchStakingActivity(
+      POX_CONTRACT,
+      'mainnet',
+      undefined,
+      5,
+      'enrollments',
+      undefined,
+      controller.signal
+    );
+    await jest.advanceTimersByTimeAsync(0);
+    expect(attempts).toBe(1);
+    expect(jest.getTimerCount()).toBe(1);
+    const reason = new Error('Filter changed');
+    const rejected = expect(pending).rejects.toBe(reason);
+    controller.abort(reason);
+    await rejected;
+    expect(jest.getTimerCount()).toBe(0);
+    await jest.advanceTimersByTimeAsync(1000);
+    expect(attempts).toBe(1);
+    expect(logError).not.toHaveBeenCalled();
+  } finally {
+    jest.useRealTimers();
+  }
 });

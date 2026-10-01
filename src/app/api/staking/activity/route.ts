@@ -10,10 +10,16 @@ export async function GET(request: Request) {
   if (!api) {
     return Response.json({ error: 'Unsupported staking API' }, { status: 400 });
   }
-  const activity = await loadActivityFeed(
-    chain,
-    api,
-    parseActivityGroup(params.get('activity') ?? undefined)
-  );
-  return Response.json(activity, { headers: { 'Cache-Control': 'no-store' } });
+  try {
+    const activity = await loadActivityFeed(
+      chain,
+      api,
+      parseActivityGroup(params.get('activity') ?? undefined),
+      request.signal
+    );
+    return Response.json(activity, { headers: { 'Cache-Control': 'no-store' } });
+  } catch (error) {
+    if (request.signal.aborted) return new Response(null, { status: 499 });
+    throw error;
+  }
 }

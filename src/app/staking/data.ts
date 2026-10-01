@@ -78,12 +78,15 @@ export async function fetchBondsPage(
   chain: string,
   api?: string,
   limit = MAX_PAGE_LIMIT,
-  cursor?: string
+  cursor?: string,
+  signal?: AbortSignal
 ): Promise<BondsPage> {
+  if (signal?.aborted) throw signal.reason;
   const apiUrl = getApiUrl(chain, api);
   const params = new URLSearchParams({ limit: String(Math.min(limit, MAX_PAGE_LIMIT)) });
   if (cursor !== undefined) params.set('cursor', cursor);
   const response = await stacksAPIFetch(`${apiUrl}/extended/v3/staking/bonds?${params}`, {
+    signal,
     cache: 'default',
     next: { revalidate: REVALIDATE_SECONDS, tags: ['staking-bonds'] },
   });
@@ -99,10 +102,17 @@ export async function fetchBondsPage(
   };
 }
 
-export async function fetchBond(index: number, chain: string, api?: string): Promise<Bond> {
+export async function fetchBond(
+  index: number,
+  chain: string,
+  api?: string,
+  signal?: AbortSignal
+): Promise<Bond> {
+  if (signal?.aborted) throw signal.reason;
   const response = await stacksAPIFetch(
     `${getApiUrl(chain, api)}/extended/v3/staking/bonds/${index}`,
     {
+      signal,
       cache: 'default',
       next: { revalidate: REVALIDATE_SECONDS, tags: [`staking-bond-${index}`] },
     }
@@ -160,9 +170,15 @@ export async function fetchBondRegistrations(
   return registrations;
 }
 
-export async function fetchPoxInfo(chain: string, api?: string): Promise<PoxInfo> {
+export async function fetchPoxInfo(
+  chain: string,
+  api?: string,
+  signal?: AbortSignal
+): Promise<PoxInfo> {
+  if (signal?.aborted) throw signal.reason;
   const apiUrl = getApiUrl(chain, api);
   const response = await stacksAPIFetch(`${apiUrl}/v2/pox`, {
+    signal,
     cache: 'default',
     next: { revalidate: REVALIDATE_SECONDS, tags: ['staking-pox'] },
   });
@@ -546,29 +562,53 @@ export interface StakingActivityResult {
   historyTruncated?: boolean;
 }
 
+function waitForActivityRetry(signal?: AbortSignal): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (signal?.aborted) throw signal.reason;
+    const onAbort = () => {
+      clearTimeout(timeout);
+      reject(signal?.reason);
+    };
+    const timeout = setTimeout(() => {
+      signal?.removeEventListener('abort', onAbort);
+      resolve();
+    }, 300);
+    signal?.addEventListener('abort', onAbort, { once: true });
+  });
+}
+
 export async function fetchStakingActivity(
   poxContractId: string,
   chain: string,
   api?: string,
   limit = 12,
   group?: ActivityGroup,
-  bondIndex?: number
+  bondIndex?: number,
+  signal?: AbortSignal
 ): Promise<StakingActivityResult> {
+  if (signal?.aborted) throw signal.reason;
+  const fetchRequest: typeof stacksAPIFetch = (url, options) => {
+    if (signal?.aborted) throw signal.reason;
+    return stacksAPIFetch(url, { ...options, signal });
+  };
   const apiUrl = getApiUrl(chain, api);
   const groups = group ? [group] : (Object.keys(ACTIVITY_GROUP_FUNCTIONS) as ActivityGroup[]);
   const txWindow = Math.max(limit, Math.min(limit * TX_WINDOW_PER_ROW, MAX_PAGE_LIMIT));
   const failures: Error[] = [];
   const activityFailure = (error: unknown) => {
+    if (signal?.aborted) throw signal.reason;
     failures.push(ensureError(error));
     return [];
   };
   const readActivityEvents = async (tx: RawTx): Promise<string[] | undefined> => {
+    const read = () =>
+      fetchTxEvents(apiUrl, tx.tx_id, poxContractId, tx.tx_status === 'success', fetchRequest);
     try {
-      return await fetchTxEvents(apiUrl, tx.tx_id, poxContractId, tx.tx_status === 'success');
+      return await read();
     } catch {
-      await new Promise(resolve => setTimeout(resolve, 300));
+      await waitForActivityRetry(signal);
       try {
-        return await fetchTxEvents(apiUrl, tx.tx_id, poxContractId, tx.tx_status === 'success');
+        return await read();
       } catch (error) {
         activityFailure(error);
         return undefined;
@@ -578,7 +618,7 @@ export async function fetchStakingActivity(
 
   const bondsByIndex = new Map<number, Bond>();
   const bondRequests = new Map<number, Promise<Bond | undefined>>();
-  const page = await fetchBondsPage(chain, api).catch(error => {
+  const page = await fetchBondsPage(chain, api, MAX_PAGE_LIMIT, undefined, signal).catch(error => {
     activityFailure(error);
     return undefined;
   });
@@ -595,7 +635,8 @@ export async function fetchStakingActivity(
           functionName,
           txWindow + 1,
           0,
-          'no-store'
+          'no-store',
+          fetchRequest
         ).catch(activityFailure);
         return txs.map(tx => ({ tx, activityGroup }));
       })
@@ -612,6 +653,7 @@ export async function fetchStakingActivity(
   const rows: StakingActivityEvent[][] = [];
   // Avoid bursting up to 60 transaction-detail requests at the API at once.
   for (let start = 0; start < txs.length; start += 4) {
+    if (signal?.aborted) throw signal.reason;
     rows.push(
       ...(await Promise.all(
         txs
@@ -682,7 +724,7 @@ export async function fetchStakingActivity(
                 if (!bondRequests.has(key)) {
                   bondRequests.set(
                     key,
-                    fetchBond(key, chain, api).catch(error => {
+                    fetchBond(key, chain, api, signal).catch(error => {
                       activityFailure(error);
                       return undefined;
                     })
@@ -711,6 +753,7 @@ export async function fetchStakingActivity(
     );
   }
 
+  if (signal?.aborted) throw signal.reason;
   if (failures.length)
     logError(
       failures[0],

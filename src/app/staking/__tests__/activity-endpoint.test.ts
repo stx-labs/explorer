@@ -1,5 +1,6 @@
 /** @jest-environment node */
 import { GET } from '@/app/api/staking/activity/route';
+import { logError } from '@/common/utils/error-utils';
 
 import * as data from '../data';
 
@@ -22,18 +23,23 @@ beforeEach(() => {
 });
 
 test('activity endpoint preserves network/filter settings and only loads the bounded feed', async () => {
-  const response = await GET(
-    new Request(
-      'http://localhost/api/staking/activity?chain=testnet&api=https%3A%2F%2Fapi.testnet.hiro.so&activity=enrollments&limit=999'
-    )
+  const request = new Request(
+    'http://localhost/api/staking/activity?chain=testnet&api=https%3A%2F%2Fapi.testnet.hiro.so&activity=enrollments&limit=999'
   );
-  expect(data.fetchPoxInfo).toHaveBeenCalledWith('testnet', 'https://api.testnet.hiro.so');
+  const response = await GET(request);
+  expect(data.fetchPoxInfo).toHaveBeenCalledWith(
+    'testnet',
+    'https://api.testnet.hiro.so',
+    request.signal
+  );
   expect(data.fetchStakingActivity).toHaveBeenCalledWith(
     'ST123.pox-5',
     'testnet',
     'https://api.testnet.hiro.so',
     5,
-    'enrollments'
+    'enrollments',
+    undefined,
+    request.signal
   );
   expect(data.fetchBondRewards).not.toHaveBeenCalled();
   expect(data.fetchCycleRewards).not.toHaveBeenCalled();
@@ -43,14 +49,44 @@ test('activity endpoint preserves network/filter settings and only loads the bou
 });
 
 test('invalid filters use the mainnet all-events feed by default', async () => {
-  await GET(new Request('http://localhost/api/staking/activity?activity=invalid'));
+  const request = new Request('http://localhost/api/staking/activity?activity=invalid');
+  await GET(request);
   expect(data.fetchStakingActivity).toHaveBeenCalledWith(
     'ST123.pox-5',
     'mainnet',
     'https://api.hiro.so',
     5,
-    undefined
+    undefined,
+    undefined,
+    request.signal
   );
+});
+
+test('an already cancelled request does no upstream work or error reporting', async () => {
+  const controller = new AbortController();
+  controller.abort();
+  const response = await GET(
+    new Request('http://localhost/api/staking/activity', { signal: controller.signal })
+  );
+  expect(response.status).toBe(499);
+  expect(data.fetchPoxInfo).not.toHaveBeenCalled();
+  expect(data.fetchStakingActivity).not.toHaveBeenCalled();
+  expect(logError).not.toHaveBeenCalled();
+});
+
+test('cancellation during PoX loading does not start an activity scan or report a failure', async () => {
+  const controller = new AbortController();
+  jest.mocked(data.fetchPoxInfo).mockImplementationOnce(async (_chain, _api, signal) => {
+    controller.abort();
+    if (signal?.aborted) throw signal.reason;
+    throw new Error('Expected cancellation');
+  });
+  const response = await GET(
+    new Request('http://localhost/api/staking/activity', { signal: controller.signal })
+  );
+  expect(response.status).toBe(499);
+  expect(data.fetchStakingActivity).not.toHaveBeenCalled();
+  expect(logError).not.toHaveBeenCalled();
 });
 
 test.each(['pox', 'activity'])(
