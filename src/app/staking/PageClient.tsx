@@ -4,6 +4,7 @@ import { PoxInfo } from '@/common/queries/usePoxInforRaw';
 import { Text } from '@/ui/Text';
 import { Flex, Stack } from '@chakra-ui/react';
 
+import { BondsTable } from './BondsTable';
 import { CurrentBond } from './CurrentBond';
 import { PeriodsOverview } from './PeriodsOverview';
 import { StackingOverview } from './StackingOverview';
@@ -84,6 +85,21 @@ export function StakingPageClient({
           No bonds yet. Bonds appear here once they are created on-chain.
         </Text>
       ) : null}
+      {!poxInfo && !bondsUnavailable && bonds.length > 0 && (
+        <Stack gap={4}>
+          <Text as="h2" textStyle="heading-xs">
+            Bonds
+          </Text>
+          <BondsTable
+            bonds={bonds}
+            currentBurnHeight={undefined}
+            nowMs={nowMs}
+            rewardsByBond={rewarded?.byBondIndex}
+            settlementsByBond={rewarded?.settlementsByBond}
+            burnBlockTimes={burnBlockTimes}
+          />
+        </Stack>
+      )}
       {poxInfo && (
         <>
           <Stack gap={4}>

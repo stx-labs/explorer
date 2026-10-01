@@ -5,8 +5,10 @@ import userEvent from '@testing-library/user-event';
 import { AnnotatedValue } from '../AnnotatedValue';
 import { BondsTable } from '../BondsTable';
 import { CurrentBond } from '../CurrentBond';
+import { StakingPageClient, StakingPageData } from '../PageClient';
 import { StackingOverview } from '../StackingOverview';
 import { StakingStats } from '../StakingStats';
+import { BONDS_TABLE_LIMIT } from '../consts';
 import bondFixture from './fixtures/bond.json';
 
 const originalResizeObserver = globalThis.ResizeObserver;
@@ -21,6 +23,65 @@ beforeAll(() => {
 
 afterAll(() => {
   globalThis.ResizeObserver = originalResizeObserver;
+});
+
+const overviewWithoutPox: StakingPageData = {
+  bonds: [bondFixture],
+  bondsUnavailable: false,
+  cycles: [],
+  cycleRewards: {},
+  currentBurnHeight: 0,
+  nowMs: Date.UTC(2026, 8, 1),
+  rewardCycleLength: 0,
+  prepareCycleLength: 0,
+  firstBurnchainBlockHeight: 0,
+  burnBlockTimes: {},
+  rewarded: {
+    byBondIndex: { [bondFixture.index]: BigInt(100000000) },
+    settlementsByBond: {},
+    lastCalculationHeightByCycle: {},
+  },
+};
+
+test('overview preserves bonds and known rewards when PoX is missing without inventing dates or rates', () => {
+  renderWithChakraProviders(<StakingPageClient {...overviewWithoutPox} section="bonds" />);
+  expect(screen.getByText(/Some staking data could not be loaded/)).toBeInTheDocument();
+  expect(screen.getByRole('heading', { name: 'Bonds' })).toBeInTheDocument();
+  expect(screen.getByText('Bond 3')).toBeInTheDocument();
+  expect(screen.getByText('1 sBTC')).toBeInTheDocument();
+  expect(screen.getByText('Unavailable → Unavailable')).toBeInTheDocument();
+  expect(
+    screen.getByRole('button', { name: 'Current Bitcoin block height is unavailable.' })
+  ).toBeInTheDocument();
+  expect(screen.queryByRole('heading', { name: 'Current bond' })).not.toBeInTheDocument();
+});
+
+test('overview fallback retains table pagination for the loaded bonds', async () => {
+  const user = userEvent.setup();
+  const bonds = Array.from({ length: BONDS_TABLE_LIMIT + 1 }, (_, i) => ({
+    ...bondFixture,
+    index: i + 1,
+  }));
+  renderWithChakraProviders(
+    <StakingPageClient {...overviewWithoutPox} bonds={bonds} section="bonds" />
+  );
+  expect(screen.queryByText('Genesis')).not.toBeInTheDocument();
+  await user.click(screen.getByRole('button', { name: 'Go to next page' }));
+  expect(await screen.findByText('Genesis')).toBeInTheDocument();
+});
+
+test('overview does not substitute a misleading empty table when both bonds and PoX fail', () => {
+  renderWithChakraProviders(
+    <StakingPageClient {...overviewWithoutPox} bonds={[]} bondsUnavailable section="bonds" />
+  );
+  expect(screen.getByText(/Some staking data could not be loaded/)).toBeInTheDocument();
+  expect(screen.queryByRole('table')).not.toBeInTheDocument();
+  expect(screen.queryByText('No bonds yet')).not.toBeInTheDocument();
+});
+
+test('missing PoX does not duplicate the bond fallback in the stacking section', () => {
+  renderWithChakraProviders(<StakingPageClient {...overviewWithoutPox} section="stacking" />);
+  expect(screen.queryByRole('table')).not.toBeInTheDocument();
 });
 
 test('value annotations have a named, keyboard-accessible help trigger', async () => {
