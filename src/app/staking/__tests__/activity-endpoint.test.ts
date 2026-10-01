@@ -65,6 +65,16 @@ test.each(['pox', 'activity'])(
   }
 );
 
+test.each(['chain=devnet', 'chain=devnet&api=https%3A%2F%2Fapi.hiro.so'])(
+  'rejects unsupported chains before upstream loading: %s',
+  async query => {
+    const response = await GET(new Request(`http://localhost/api/staking/activity?${query}`));
+    expect(response.status).toBe(400);
+    expect(data.fetchPoxInfo).not.toHaveBeenCalled();
+    expect(data.fetchStakingActivity).not.toHaveBeenCalled();
+  }
+);
+
 test.each(['https://attacker.example', 'http://localhost:3999', 'https://169.254.169.254'])(
   'rejects API override %s before any upstream call',
   async api => {

@@ -14,6 +14,15 @@ test('uses configured networks and canonicalizes allowed overrides', () => {
   expect(isTrustedStacksApiUrl('https://api.hiro.so/extended/v1/tx?limit=5')).toBe(true);
 });
 
+test.each(['devnet', 'unknown', '', 'MAINNET', ' testnet '])(
+  'rejects unsupported chain %j even with a configured API override',
+  chain => {
+    expect(getAllowedStakingApiUrl(chain)).toBeUndefined();
+    expect(getAllowedStakingApiUrl(chain, 'https://api.hiro.so')).toBeUndefined();
+    expect(getAllowedStakingApiUrl(chain, 'https://api.testnet.hiro.so')).toBeUndefined();
+  }
+);
+
 test.each([
   'https://attacker.example',
   'https://api.hiro.so.attacker.example',

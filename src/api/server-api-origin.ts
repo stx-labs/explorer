@@ -1,4 +1,5 @@
 import { DEFAULT_MAINNET_SERVER, DEFAULT_TESTNET_SERVER } from '@/common/constants/env';
+import { NetworkModes } from '@/common/types/network';
 import { getApiUrl } from '@/common/utils/network-utils';
 
 function parseApiUrl(value: string): URL | undefined {
@@ -23,6 +24,7 @@ export function isTrustedStacksApiUrl(value: string): boolean {
 
 /** URL parameters may select a configured API, never an arbitrary server-side destination. */
 export function getAllowedStakingApiUrl(chain: string, api?: string): string | undefined {
+  if (chain !== NetworkModes.Mainnet && chain !== NetworkModes.Testnet) return undefined;
   const url = parseApiUrl(getApiUrl(chain, api));
   if (!url || url.search || url.hash) return undefined;
   const base = configuredApis.find(

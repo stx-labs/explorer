@@ -15,6 +15,20 @@ jest.mock('../data', () => ({
 }));
 beforeEach(() => jest.clearAllMocks());
 
+test.each([undefined, 'https://api.hiro.so'])(
+  'all three pages reject devnet before upstream loading (API: %s)',
+  async api => {
+    for (const page of [StakingPage, ActivityPage, BondsPage]) {
+      const result = await page({ searchParams: Promise.resolve({ chain: 'devnet', api }) });
+      expect(result.type).toBe(UnsupportedStakingNetwork);
+    }
+    expect(loadStakingOverview).not.toHaveBeenCalled();
+    expect(fetchBondPageAtIndex).not.toHaveBeenCalled();
+    expect(fetchPoxInfo).not.toHaveBeenCalled();
+    expect(fetchStakingActivity).not.toHaveBeenCalled();
+  }
+);
+
 test.each([
   'https://attacker.example',
   'https://api.hiro.so.attacker.example',
