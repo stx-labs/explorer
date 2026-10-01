@@ -1,8 +1,17 @@
 import { stacksAPIFetch } from '@/api/stacksAPIFetch';
 
-import { fetchBondRewards, fetchCycleCalculationHeights, fetchCycleRewards } from '../data';
+import {
+  createRewardHistoryDeadline,
+  fetchBondRewards,
+  fetchCycleCalculationHeights,
+  fetchCycleRewards,
+} from '../data';
 
 jest.mock('@/api/stacksAPIFetch');
+jest.mock('@/common/utils/error-utils', () => ({
+  ...jest.requireActual('@/common/utils/error-utils'),
+  logError: jest.fn(),
+}));
 const fetchMock = jest.mocked(stacksAPIFetch);
 const contract = 'SP000000000000000000002Q6VF78.pox-5';
 const respond = (body: unknown) => ({ ok: true, json: async () => body }) as Response;
@@ -50,6 +59,13 @@ const calculationLog = (cycle: number, height: number, contract_id = contract) =
     },
   },
 });
+
+const stalledRequest: typeof stacksAPIFetch = (_url, options) =>
+  new Promise((_resolve, reject) => {
+    options?.signal?.addEventListener('abort', () => reject(options.signal?.reason), {
+      once: true,
+    });
+  });
 
 beforeEach(() => fetchMock.mockReset());
 
@@ -305,6 +321,95 @@ test('aborts stalled reward history at the deadline', async () => {
 test('final bond calculations avoid the transaction fallback entirely', async () => {
   await expect(
     fetchCycleCalculationHeights({ 143: 968449 }, contract, 'mainnet', undefined, { 143: 968449 })
+  ).resolves.toEqual({ 143: 968449 });
+  expect(fetchMock).not.toHaveBeenCalled();
+});
+
+test('bond history and settlement share one deadline and retain verified cycle heights', async () => {
+  jest.useFakeTimers();
+  try {
+    const deadline = createRewardHistoryDeadline();
+    fetchMock.mockImplementationOnce(
+      () =>
+        new Promise(resolve => {
+          setTimeout(() => resolve(respond(page([distribution()]))), 10000);
+        })
+    );
+    const bondRequest = fetchBondRewards([1], 'mainnet', undefined, contract, deadline);
+    await jest.advanceTimersByTimeAsync(10000);
+    const bonds = await bondRequest;
+    expect(bonds.byBondIndex[1]).toBe(BigInt(13810222));
+
+    fetchMock
+      .mockResolvedValueOnce(
+        respond({ results: [calculationTx('0xverified'), calculationTx('0xstalled')] })
+      )
+      .mockResolvedValueOnce(respond({ events: [calculationLog(142, 966349)] }))
+      .mockImplementationOnce(stalledRequest);
+    let finished = false;
+    const settlement = fetchCycleCalculationHeights(
+      { 141: 964249, 142: 966349, 143: 968449 },
+      contract,
+      'mainnet',
+      undefined,
+      bonds.lastCalculationHeightByCycle,
+      deadline
+    ).then(heights => {
+      finished = true;
+      return heights;
+    });
+    await jest.advanceTimersByTimeAsync(4999);
+    expect(finished).toBe(false);
+    await jest.advanceTimersByTimeAsync(1);
+    await expect(settlement).resolves.toEqual({ 142: 966349, 143: 968449 });
+    expect(fetchMock).toHaveBeenCalledTimes(4);
+    expect(fetchMock.mock.calls[3][1]?.signal?.aborted).toBe(true);
+    expect(jest.getTimerCount()).toBe(0);
+  } finally {
+    jest.useRealTimers();
+  }
+});
+
+test('a slow 404 does not give the legacy bond fallback a fresh timeout', async () => {
+  jest.useFakeTimers();
+  try {
+    fetchMock
+      .mockImplementationOnce(
+        () =>
+          new Promise(resolve => {
+            setTimeout(() => resolve({ ok: false, status: 404 } as Response), 10000);
+          })
+      )
+      .mockImplementationOnce(stalledRequest);
+    const rejected = expect(fetchBondRewards([1], 'testnet', undefined, contract)).rejects.toThrow(
+      'timed out'
+    );
+    await jest.advanceTimersByTimeAsync(10000);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock.mock.calls[1][1]?.signal?.aborted).toBe(false);
+    await jest.advanceTimersByTimeAsync(5000);
+    await rejected;
+    expect(fetchMock.mock.calls[1][1]?.signal?.aborted).toBe(true);
+    expect(jest.getTimerCount()).toBe(0);
+  } finally {
+    jest.useRealTimers();
+  }
+});
+
+test('expired deadlines skip all requests and preserve known settlement heights', async () => {
+  const deadline = Date.now() - 1;
+  await expect(fetchBondRewards([1], 'mainnet', undefined, contract, deadline)).rejects.toThrow(
+    'timed out'
+  );
+  await expect(
+    fetchCycleCalculationHeights(
+      { 142: 966349, 143: 968449 },
+      contract,
+      'mainnet',
+      undefined,
+      { 143: 968449 },
+      deadline
+    )
   ).resolves.toEqual({ 143: 968449 });
   expect(fetchMock).not.toHaveBeenCalled();
 });

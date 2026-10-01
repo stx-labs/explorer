@@ -104,14 +104,16 @@ test('overview fetches final cycle blocks independently of activity', async () =
     [bond.index],
     'testnet',
     undefined,
-    poxInfo.contract_id
+    poxInfo.contract_id,
+    expect.any(Number)
   );
   expect(data.fetchCycleCalculationHeights).toHaveBeenCalledWith(
     { 9: 8999, 10: 9899, 11: 10799 },
     poxInfo.contract_id,
     'testnet',
     undefined,
-    {}
+    {},
+    jest.mocked(data.fetchBondRewards).mock.calls[0][4]
   );
   expect(data.fetchBurnBlockTimes).toHaveBeenCalledWith(
     expect.arrayContaining([9000, 9899, 9900, 10799, 10800, 11699]),
@@ -151,6 +153,43 @@ test('cycle settlement remains independent of unavailable bond histories', async
     expect(page.props.lastCalculationHeightByCycle).toEqual({ 11: 10799 });
   } finally {
     error.mockRestore();
+  }
+});
+
+test('overview does not restart the history deadline after a stalled bond scan', async () => {
+  jest.useFakeTimers();
+  const error = jest.spyOn(console, 'error').mockImplementation(() => {});
+  try {
+    const deadline = Date.now() + 15000;
+    jest.mocked(data.fetchBondRewards).mockImplementationOnce(
+      () =>
+        new Promise((_resolve, reject) => {
+          setTimeout(() => reject(new Error('Reward history request timed out')), 15000);
+        })
+    );
+    const pending = loadStakingOverview('mainnet');
+    await jest.advanceTimersByTimeAsync(15000);
+    const result = await pending;
+    expect(data.fetchBondRewards).toHaveBeenCalledWith(
+      [bond.index],
+      'mainnet',
+      undefined,
+      poxInfo.contract_id,
+      deadline
+    );
+    expect(data.fetchCycleCalculationHeights).toHaveBeenCalledWith(
+      { 9: 8999, 10: 9899, 11: 10799 },
+      poxInfo.contract_id,
+      'mainnet',
+      undefined,
+      undefined,
+      deadline
+    );
+    expect(result.bonds).toEqual([bond]);
+    expect(result.rewarded).toBeUndefined();
+  } finally {
+    error.mockRestore();
+    jest.useRealTimers();
   }
 });
 

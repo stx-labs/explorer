@@ -749,16 +749,27 @@ export interface BondRewards {
 const MAX_REWARD_HISTORY_REQUESTS = 250;
 const REWARD_HISTORY_TIMEOUT_MS = 15_000;
 
+export function createRewardHistoryDeadline(): number {
+  return Date.now() + REWARD_HISTORY_TIMEOUT_MS;
+}
+
+class RewardHistoryTimeout extends Error {
+  constructor() {
+    super('Reward history request timed out');
+  }
+}
+
 async function withRewardHistoryBudget<T>(
+  deadline: number,
   load: (fetchRequest: typeof stacksAPIFetch) => Promise<T>
 ): Promise<T> {
+  const remainingMs = deadline - Date.now();
+  if (remainingMs <= 0) throw new RewardHistoryTimeout();
   const controller = new AbortController();
-  const timeout = setTimeout(
-    () => controller.abort(new Error('Reward history request timed out')),
-    REWARD_HISTORY_TIMEOUT_MS
-  );
+  const timeout = setTimeout(() => controller.abort(new RewardHistoryTimeout()), remainingMs);
   let requests = 0;
   const fetchRequest: typeof stacksAPIFetch = (url, options) => {
+    if (Date.now() >= deadline) controller.abort(new RewardHistoryTimeout());
     if (controller.signal.aborted) throw controller.signal.reason;
     if (requests >= MAX_REWARD_HISTORY_REQUESTS) {
       throw new Error('Reward history request limit exceeded');
@@ -768,6 +779,9 @@ async function withRewardHistoryBudget<T>(
   };
   try {
     return await load(fetchRequest);
+  } catch (error) {
+    if (controller.signal.aborted) throw controller.signal.reason;
+    throw error;
   } finally {
     clearTimeout(timeout);
     controller.abort();
@@ -792,9 +806,10 @@ export async function fetchBondRewards(
   bondIndexes: number[],
   chain: string,
   api?: string,
-  poxContractId?: string
+  poxContractId?: string,
+  deadline = createRewardHistoryDeadline()
 ): Promise<BondRewards> {
-  return withRewardHistoryBudget(async fetchRequest => {
+  return withRewardHistoryBudget(deadline, async fetchRequest => {
     const result: BondRewards = {
       byBondIndex: {},
       lastCalculationHeightByCycle: {},
@@ -899,7 +914,7 @@ export async function fetchBondRewards(
     return result;
   }).catch(error => {
     if (error instanceof StakingEndpointUnavailable && poxContractId) {
-      return fetchLegacyBondRewards(poxContractId, chain, api);
+      return fetchLegacyBondRewards(poxContractId, chain, api, deadline);
     }
     throw error;
   });
@@ -912,7 +927,8 @@ export async function fetchCycleCalculationHeights(
   poxContractId: string,
   chain: string,
   api?: string,
-  knownHeights: Record<number, number> = {}
+  knownHeights: Record<number, number> = {},
+  deadline = createRewardHistoryDeadline()
 ): Promise<Record<number, number>> {
   const heights = { ...knownHeights };
   const complete = () =>
@@ -927,8 +943,12 @@ export async function fetchCycleCalculationHeights(
         heights[cycle] = Math.max(heights[cycle] ?? -1, height);
       }
     },
-    complete
-  );
+    complete,
+    deadline
+  ).catch(error => {
+    if (!(error instanceof RewardHistoryTimeout)) throw error;
+    logError(error, 'Staking cycle settlement: reward history timed out', { chain });
+  });
   return heights;
 }
 
@@ -937,9 +957,10 @@ async function forEachRewardCalculation(
   chain: string,
   api: string | undefined,
   visit: (tx: RawTx, reprs: string[], cycle: number, height: number) => void,
-  complete: () => boolean = () => false
+  complete: () => boolean,
+  deadline: number
 ): Promise<void> {
-  await withRewardHistoryBudget(async fetchRequest => {
+  await withRewardHistoryBudget(deadline, async fetchRequest => {
     const apiUrl = getApiUrl(chain, api);
     const seenTxIds = new Set<string>();
     for (let offset = 0; ; offset += MAX_PAGE_LIMIT) {
@@ -989,40 +1010,48 @@ async function forEachRewardCalculation(
 async function fetchLegacyBondRewards(
   poxContractId: string,
   chain: string,
-  api?: string
+  api: string | undefined,
+  deadline: number
 ): Promise<BondRewards> {
   const result: BondRewards = {
     byBondIndex: {},
     lastCalculationHeightByCycle: {},
     settlementsByBond: {},
   };
-  await forEachRewardCalculation(poxContractId, chain, api, (tx, reprs, cycle, height) => {
-    result.lastCalculationHeightByCycle[cycle] = Math.max(
-      result.lastCalculationHeightByCycle[cycle] ?? -1,
-      height
-    );
-    const seenBonds = new Set<number>();
-    for (const repr of reprs.filter(repr => readTopic(repr) === 'bond-distribution')) {
-      const index = readUint(repr, 'bond-index');
-      const rewardedSats = readUint(repr, 'bond-rewards');
-      if (
-        index === undefined ||
-        !Number.isSafeInteger(Number(index)) ||
-        rewardedSats === undefined ||
-        seenBonds.has(Number(index))
-      ) {
-        throw new Error('Invalid legacy bond distribution');
+  await forEachRewardCalculation(
+    poxContractId,
+    chain,
+    api,
+    (tx, reprs, cycle, height) => {
+      result.lastCalculationHeightByCycle[cycle] = Math.max(
+        result.lastCalculationHeightByCycle[cycle] ?? -1,
+        height
+      );
+      const seenBonds = new Set<number>();
+      for (const repr of reprs.filter(repr => readTopic(repr) === 'bond-distribution')) {
+        const index = readUint(repr, 'bond-index');
+        const rewardedSats = readUint(repr, 'bond-rewards');
+        if (
+          index === undefined ||
+          !Number.isSafeInteger(Number(index)) ||
+          rewardedSats === undefined ||
+          seenBonds.has(Number(index))
+        ) {
+          throw new Error('Invalid legacy bond distribution');
+        }
+        const key = Number(index);
+        seenBonds.add(key);
+        result.byBondIndex[key] = (result.byBondIndex[key] ?? BigInt(0)) + rewardedSats;
+        (result.settlementsByBond[key] ??= []).push({
+          calculationHeight: height,
+          timestampMs: (tx.block_time ?? tx.burn_block_time) * 1000,
+          principalSats: readUint(repr, 'bond-staked-sats'),
+          rewardedSats,
+        });
       }
-      const key = Number(index);
-      seenBonds.add(key);
-      result.byBondIndex[key] = (result.byBondIndex[key] ?? BigInt(0)) + rewardedSats;
-      (result.settlementsByBond[key] ??= []).push({
-        calculationHeight: height,
-        timestampMs: (tx.block_time ?? tx.burn_block_time) * 1000,
-        principalSats: readUint(repr, 'bond-staked-sats'),
-        rewardedSats,
-      });
-    }
-  });
+    },
+    () => false,
+    deadline
+  );
   return result;
 }

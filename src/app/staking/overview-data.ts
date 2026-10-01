@@ -3,6 +3,7 @@ import { handleSettledResult } from '@/app/address/[principal]/page-data';
 import type { StakingPageData } from './PageClient';
 import { PREVIOUS_CYCLES_LIMIT } from './consts';
 import {
+  createRewardHistoryDeadline,
   fetchBondRegistrations,
   fetchBondRewards,
   fetchBondsPage,
@@ -69,6 +70,7 @@ export async function loadStakingOverview(chain: string, api?: string): Promise<
       firstBurnchainBlockHeight + (cycle.cycle_number + 1) * rewardCycleLength - 1,
     ])
   );
+  const rewardHistoryDeadline = createRewardHistoryDeadline();
   const [
     cycleRewardsResult,
     rewardedResult,
@@ -86,7 +88,8 @@ export async function loadStakingOverview(chain: string, api?: string): Promise<
           bonds.map(bond => bond.index),
           chain,
           api,
-          poxInfo?.contract_id
+          poxInfo?.contract_id,
+          rewardHistoryDeadline
         )
       : undefined,
     featuredIndex !== undefined ? fetchBondRegistrations(featuredIndex, chain, api) : undefined,
@@ -134,7 +137,8 @@ export async function loadStakingOverview(chain: string, api?: string): Promise<
           poxInfo.contract_id,
           chain,
           api,
-          rewarded?.lastCalculationHeightByCycle
+          rewarded?.lastCalculationHeightByCycle,
+          rewardHistoryDeadline
         )
       : undefined,
   ]);
