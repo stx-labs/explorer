@@ -26,7 +26,7 @@ import {
 } from '@phosphor-icons/react';
 import type { ColumnDef } from '@tanstack/react-table';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useOptimistic, useState, useTransition } from 'react';
 
 import type { Transaction } from '@stacks/stacks-blockchain-api-types';
 
@@ -181,9 +181,22 @@ const activityColumns: ColumnDef<StakingActivityEvent>[] = [
   },
 ];
 
-function ActionFilter({ selected }: { selected?: ActivityGroup }) {
+interface ActivityFilterControl {
+  isPending: boolean;
+  onChange: (group?: ActivityGroup) => void;
+}
+
+function ActionFilter({
+  selected,
+  control,
+}: {
+  selected?: ActivityGroup;
+  control?: ActivityFilterControl;
+}) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [isPending, startTransition] = useTransition();
+  const [optimisticGroup, setOptimisticGroup] = useOptimistic(selected ?? ALL_GROUPS);
 
   const hrefFor = useCallback(
     (group?: string) => {
@@ -203,9 +216,15 @@ function ActionFilter({ selected }: { selected?: ActivityGroup }) {
     <TabsRoot
       variant="primary"
       size="redesignMd"
-      value={selected ?? ALL_GROUPS}
+      value={optimisticGroup}
+      activationMode="manual"
       onValueChange={({ value }) =>
-        router.replace(hrefFor(value === ALL_GROUPS ? undefined : value), { scroll: false })
+        startTransition(() => {
+          setOptimisticGroup(value);
+          const group = value === ALL_GROUPS ? undefined : (value as ActivityGroup);
+          if (control) control.onChange(group);
+          else router.replace(hrefFor(group), { scroll: false });
+        })
       }
       aria-label="Filter activity by event type"
     >
@@ -224,6 +243,15 @@ function ActionFilter({ selected }: { selected?: ActivityGroup }) {
           </TabsList>
         </ScrollIndicator>
       </Flex>
+      <Text
+        role="status"
+        aria-live="polite"
+        textStyle="text-regular-xs"
+        color="textSecondary"
+        minH={4}
+      >
+        {isPending || control?.isPending ? 'Loading activity…' : ''}
+      </Text>
     </TabsRoot>
   );
 }
@@ -234,12 +262,12 @@ function groupLabel(group?: ActivityGroup): string {
 
 function NoActivity({
   bondIndex,
-  txWindow,
   group,
+  historyTruncated,
 }: {
   bondIndex?: number;
-  txWindow?: number;
   group?: ActivityGroup;
+  historyTruncated?: boolean;
 }) {
   const glyph = group ? GROUP_ICONS[group] : <ClockCounterClockwise />;
   const badge = (
@@ -262,10 +290,9 @@ function NoActivity({
       <Stack minH="9rem" gap={3} align="center" justify="center">
         {badge}
         <Stack gap={1} align="center">
-          <Text textStyle="text-medium-sm">No recent activity for {bondLabel(bondIndex)}</Text>
-          <Text textStyle="text-regular-sm" color="textSecondary" textAlign="center">
-            Its events are not among the {txWindow ?? 'most recent'} newest staking transactions.
-            Older activity is not shown here.
+          <Text textStyle="text-medium-sm">
+            No {historyTruncated ? 'recent ' : ''}
+            {groupLabel(group)} for {bondLabel(bondIndex)}
           </Text>
         </Stack>
       </Stack>
@@ -287,14 +314,18 @@ export function StakingActivity({
   bondIndex,
   txWindow,
   incomplete,
+  historyTruncated,
+  filterControl,
 }: {
   events: StakingActivityEvent[];
   incomplete?: boolean;
+  historyTruncated?: boolean;
   selectedGroup?: ActivityGroup;
   pageSize?: number;
   standalone?: boolean;
   bondIndex?: number;
   txWindow?: number;
+  filterControl?: ActivityFilterControl;
 }) {
   const network = useGlobalContext().activeNetwork;
   const [pageIndex, setPageIndex] = useState(0);
@@ -331,7 +362,7 @@ export function StakingActivity({
           )}
         </Flex>
       )}
-      <ActionFilter selected={selectedGroup} />
+      <ActionFilter selected={selectedGroup} control={filterControl} />
       <Text textStyle="text-regular-xs" color="textSecondary">
         Reward amounts are sBTC credited by the contract. Onward payment by signer-managers is
         separate.
@@ -341,7 +372,14 @@ export function StakingActivity({
           Some activity could not be loaded. Refresh the page to try again.
         </Text>
       )}
+      {historyTruncated && (
+        <Text role="status" textStyle="text-regular-sm" color="textSecondary">
+          This bond history may be incomplete. Only the newest {txWindow ? `${txWindow} ` : ''}
+          staking transactions were searched.
+        </Text>
+      )}
       <Table
+        isLoading={filterControl?.isPending && events.length === 0}
         data={page}
         columns={activityColumns}
         emptyTableUi={
@@ -350,7 +388,11 @@ export function StakingActivity({
               Activity unavailable
             </Text>
           ) : (
-            <NoActivity bondIndex={bondIndex} txWindow={txWindow} group={selectedGroup} />
+            <NoActivity
+              bondIndex={bondIndex}
+              group={selectedGroup}
+              historyTruncated={historyTruncated}
+            />
           )
         }
         tableContainerWrapper={table => (

@@ -137,11 +137,13 @@ export const cycleColumns: ColumnDef<CycleRow>[] = [
               : `${row.yieldEstimated ? '~' : ''}${row.apyPercent.toFixed(2)}%`
           }
           note={
-            row.apyPercent === undefined
-              ? 'Prices are unavailable or this network’s cycle is too short to annualize.'
-              : row.yieldEstimated
-                ? 'Estimated APY using current BTC and STX prices because historical prices or the cycle-end timestamp are unavailable.'
-                : undefined
+            row.totalStackedStx === 0
+              ? 'No STX was staked.'
+              : row.apyPercent === undefined
+                ? 'Prices are unavailable or this network’s cycle is too short to annualize.'
+                : row.yieldEstimated
+                  ? 'Estimated APY using current BTC and STX prices because historical prices or the cycle-end timestamp are unavailable.'
+                  : undefined
           }
         />
       );

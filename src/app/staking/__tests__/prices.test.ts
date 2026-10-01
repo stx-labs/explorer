@@ -28,7 +28,7 @@ const input = {
   },
   rewards: {
     cycleNumber: 141,
-    rewardsPerMicroStx: BigInt('1000000000000'),
+    rewardsSats: BigInt(1),
     stakedMicroStx: BigInt('1000000'),
   },
   pox5FirstCycleId: 141,

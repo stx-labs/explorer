@@ -35,6 +35,8 @@
     "@contentful/rich-text-react-renderer": "16.0.1",
     "@contentful/rich-text-types": "17.0.0",
     "@date-fns/utc": "2.1.0",
+    "@emotion/cache": "11.14.0",
+    "@emotion/react": "11.14.0",
     "@emotion/styled": "11.14.0",
     "@leather.io/models": "0.31.0",
     "@leather.io/query": "2.35.1",

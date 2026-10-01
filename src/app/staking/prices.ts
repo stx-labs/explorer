@@ -1,4 +1,5 @@
 import { LUNAR_CRUSH_API_KEY } from '@/common/constants/env';
+import { ensureError, logError } from '@/common/utils/error-utils';
 
 export interface DailyPrices {
   btc: Map<string, number>;
@@ -31,7 +32,7 @@ async function fetchDailySeries(
     next: { revalidate: REVALIDATE_SECONDS, tags: [`staking-prices-${coin}`] },
     headers: { Authorization: `Bearer ${LUNAR_CRUSH_API_KEY}` },
   });
-  if (!response.ok) return prices;
+  if (!response.ok) throw new Error(`Staking ${coin} price lookup failed: ${response.status}`);
   const data: { data?: { time?: number; open?: number; close?: number }[] } = await response.json();
   for (const point of data?.data ?? []) {
     if (typeof point?.time !== 'number') continue;
@@ -47,15 +48,21 @@ export async function fetchDailyPrices(startMs: number, endMs: number): Promise<
   // Cover the padded UTC dates with stable URLs, rather than a new cache key each second.
   const start = (Math.floor(startMs / (day * 1000)) - 1) * day;
   const end = (Math.floor(endMs / (day * 1000)) + 2) * day;
-  try {
-    const [btc, stx] = await Promise.all([
-      fetchDailySeries('btc', start, end),
-      fetchDailySeries('stx', start, end),
-    ]);
-    return { btc, stx };
-  } catch {
-    return { btc: new Map(), stx: new Map() };
-  }
+  const results = await Promise.allSettled([
+    fetchDailySeries('btc', start, end),
+    fetchDailySeries('stx', start, end),
+  ]);
+  const failures = results.filter(
+    (result): result is PromiseRejectedResult => result.status === 'rejected'
+  );
+  if (failures.length)
+    logError(ensureError(failures[0].reason), 'Staking daily prices: partial fetch failure', {
+      failureCount: failures.length,
+    });
+  return {
+    btc: results[0].status === 'fulfilled' ? results[0].value : new Map(),
+    stx: results[1].status === 'fulfilled' ? results[1].value : new Map(),
+  };
 }
 
 export function getCyclePrices(prices: DailyPrices, endedMs: number): CyclePrices {
