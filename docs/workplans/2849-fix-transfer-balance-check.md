@@ -23,6 +23,8 @@ None - `bignumber.js` is already a dependency; the helper follows the faucet pag
 - [x] Compare the amount and the balance in microstacks, using BigNumber
 - [x] Use the helper in the form validation
 - [x] Add tests for over, at and under the balance, and for missing values
+- [x] Floor to whole microstacks before comparing, so validation matches the amount `stacksToMicro`
+      sends (review: `5.0000001` STX against a 5 STX balance was rejected but sends 5,000,000 µSTX)
 
 ## Verification Steps
 1. `pnpm test:unit` - the new helper tests pass
