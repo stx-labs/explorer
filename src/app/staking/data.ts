@@ -2,6 +2,7 @@ import { stacksAPIFetch } from '@/api/stacksAPIFetch';
 import type { PoxInfo } from '@/common/queries/usePoxInforRaw';
 import { ensureError, logError } from '@/common/utils/error-utils';
 import { getApiUrl } from '@/common/utils/network-utils';
+import 'server-only';
 
 import type { ActivityGroup } from './activity-filter';
 import { DISTRIBUTIONS_PER_BOND, REWARDS_PRECISION } from './consts';
@@ -363,10 +364,7 @@ async function fetchTxsByFunction(
     });
     const response = await fetchRequest(`${apiUrl}/extended/v1/tx?${params}`, {
       cache,
-      next:
-        cache === 'no-store'
-          ? undefined
-          : { revalidate: REVALIDATE_SECONDS, tags: ['staking-transactions'] },
+      next: cache === 'no-store' ? undefined : { revalidate: 15, tags: ['staking-transactions'] },
     });
     if (!response.ok) {
       throw new Error(`Failed to fetch ${functionName} transactions: ${response.status}`);
@@ -635,13 +633,14 @@ export async function fetchStakingActivity(
           functionName,
           txWindow + 1,
           0,
-          'no-store',
+          'default',
           fetchRequest
         ).catch(activityFailure);
         return txs.map(tx => ({ tx, activityGroup }));
       })
     )
   );
+  // This bounds the global scan, not proof that this bond has omitted events.
   const historyTruncated = bondIndex !== undefined && pages.flat().length > txWindow;
   const txs = pages
     .flat()
@@ -799,7 +798,22 @@ export function createRewardHistoryDeadline(): number {
 class RewardHistoryTimeout extends Error {
   constructor() {
     super('Reward history request timed out');
+    this.name = 'RewardHistoryTimeout';
   }
+}
+
+export function handleRewardHistoryResult<T>(
+  result: PromiseSettledResult<T>,
+  context: string
+): T | undefined {
+  if (result.status === 'fulfilled') return result.value;
+  logError(
+    result.reason,
+    context,
+    {},
+    result.reason instanceof RewardHistoryTimeout ? 'warning' : 'error'
+  );
+  return undefined;
 }
 
 async function withRewardHistoryBudget<T>(
@@ -957,7 +971,15 @@ export async function fetchBondRewards(
     return result;
   }).catch(error => {
     if (error instanceof StakingEndpointUnavailable && poxContractId) {
-      return fetchLegacyBondRewards(poxContractId, chain, api, deadline);
+      return fetchLegacyBondRewards(poxContractId, chain, api, deadline).then(result => ({
+        ...result,
+        byBondIndex: Object.fromEntries(
+          bondIndexes.map(index => [index, result.byBondIndex[index] ?? BigInt(0)])
+        ),
+        settlementsByBond: Object.fromEntries(
+          bondIndexes.map(index => [index, result.settlementsByBond[index] ?? []])
+        ),
+      }));
     }
     throw error;
   });
@@ -990,7 +1012,7 @@ export async function fetchCycleCalculationHeights(
     deadline
   ).catch(error => {
     if (!(error instanceof RewardHistoryTimeout)) throw error;
-    logError(error, 'Staking cycle settlement: reward history timed out', { chain });
+    logError(error, 'Staking cycle settlement: reward history timed out', { chain }, 'warning');
   });
   return heights;
 }

@@ -373,9 +373,9 @@ export function StakingActivity({
         </Text>
       )}
       {historyTruncated && (
-        <Text role="status" textStyle="text-regular-sm" color="textSecondary">
-          This bond history may be incomplete. Only the newest {txWindow ? `${txWindow} ` : ''}
-          staking transactions were searched.
+        <Text textStyle="text-regular-xs" color="textSecondary">
+          Showing matches from the newest {txWindow ? `${txWindow} ` : ''}staking transactions
+          across all bonds. Older activity may not be included.
         </Text>
       )}
       <Table

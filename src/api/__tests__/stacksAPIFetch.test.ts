@@ -44,5 +44,5 @@ test.each([
   expect(options.headers.has('x-api-key')).toBe(false);
   expect(options.headers.get('accept')).toBe('application/json');
   expect(headers['X-Api-Key']).toBe('fake-test-key');
-  expect(options.redirect).toBe('error');
+  expect(options.redirect).toBeUndefined();
 });

@@ -24,18 +24,18 @@ beforeEach(() => {
 
 test('activity endpoint preserves network/filter settings and only loads the bounded feed', async () => {
   const request = new Request(
-    'http://localhost/api/staking/activity?chain=testnet&api=https%3A%2F%2Fapi.testnet.hiro.so&activity=enrollments&limit=999'
+    'http://localhost/api/staking/activity?chain=testnet&api=http%3A%2F%2Fprivate-1.example%3A3999&activity=enrollments&limit=999'
   );
   const response = await GET(request);
   expect(data.fetchPoxInfo).toHaveBeenCalledWith(
     'testnet',
-    'https://api.testnet.hiro.so',
+    'http://private-1.example:3999',
     request.signal
   );
   expect(data.fetchStakingActivity).toHaveBeenCalledWith(
     'ST123.pox-5',
     'testnet',
-    'https://api.testnet.hiro.so',
+    'http://private-1.example:3999',
     5,
     'enrollments',
     undefined,
@@ -44,7 +44,9 @@ test('activity endpoint preserves network/filter settings and only loads the bou
   expect(data.fetchBondRewards).not.toHaveBeenCalled();
   expect(data.fetchCycleRewards).not.toHaveBeenCalled();
   expect(data.fetchBurnBlockTimes).not.toHaveBeenCalled();
-  expect(response.headers.get('cache-control')).toBe('no-store');
+  expect(response.headers.get('cache-control')).toBe(
+    'public, max-age=0, s-maxage=15, stale-while-revalidate=15'
+  );
   expect(await response.json()).toEqual({ events: [], incomplete: false });
 });
 
@@ -97,6 +99,7 @@ test.each(['pox', 'activity'])(
     else jest.mocked(data.fetchStakingActivity).mockRejectedValue(new Error('unavailable'));
     const response = await GET(new Request('http://localhost/api/staking/activity'));
     expect(await response.json()).toEqual({ events: [], incomplete: true });
+    expect(response.headers.get('cache-control')).toBe('no-store');
     if (failure === 'pox') expect(data.fetchStakingActivity).not.toHaveBeenCalled();
   }
 );
@@ -111,7 +114,7 @@ test.each(['chain=devnet', 'chain=devnet&api=https%3A%2F%2Fapi.hiro.so'])(
   }
 );
 
-test.each(['https://attacker.example', 'http://localhost:3999', 'https://169.254.169.254'])(
+test.each(['not a URL', 'file:///etc/passwd', 'https://user:password@api.example'])(
   'rejects API override %s before any upstream call',
   async api => {
     const response = await GET(

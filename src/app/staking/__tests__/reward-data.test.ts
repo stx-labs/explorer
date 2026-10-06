@@ -1,4 +1,5 @@
 import { stacksAPIFetch } from '@/api/stacksAPIFetch';
+import { logError } from '@/common/utils/error-utils';
 
 import {
   createRewardHistoryDeadline,
@@ -388,6 +389,7 @@ test('a slow 404 does not give the legacy bond fallback a fresh timeout', async 
 });
 
 test('expired deadlines skip all requests and preserve known settlement heights', async () => {
+  jest.mocked(logError).mockClear();
   const deadline = Date.now() - 1;
   await expect(fetchBondRewards([1], 'mainnet', undefined, contract, deadline)).rejects.toThrow(
     'timed out'
@@ -403,6 +405,12 @@ test('expired deadlines skip all requests and preserve known settlement heights'
     )
   ).resolves.toEqual({ 143: 968449 });
   expect(fetchMock).not.toHaveBeenCalled();
+  expect(logError).toHaveBeenCalledWith(
+    expect.objectContaining({ name: 'RewardHistoryTimeout' }),
+    expect.any(String),
+    { chain: 'mainnet' },
+    'warning'
+  );
 });
 
 test('verifies a cycle without bonds, ignores failed calculations and foreign logs', async () => {

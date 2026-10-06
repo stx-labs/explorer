@@ -58,7 +58,7 @@ export function toBondRow(
   const lockedSats = toBigInt(bond.balances?.locked?.btc);
   const activationHeight = bond.schedule?.activation?.bitcoin_height ?? 0;
   const unlockHeight = bond.schedule?.unlock?.bitcoin_height ?? 0;
-  const rewardedSats = rewardsByBond ? (rewardsByBond[bond.index] ?? BigInt(0)) : undefined;
+  const rewardedSats = rewardsByBond?.[bond.index];
   return {
     activationDate:
       currentBurnHeight === undefined

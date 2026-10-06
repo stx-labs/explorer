@@ -4,8 +4,8 @@ export async function stacksAPIFetch(url: string, options: RequestInit = {}) {
   const reqHeaders = new Headers(options.headers || {});
 
   reqHeaders.delete('x-api-key');
-  if (isTrustedStacksApiUrl(url)) {
-    reqHeaders.set('x-api-key', process.env.EXPLORER_STACKS_API_KEY || '');
+  if (isTrustedStacksApiUrl(url) && process.env.EXPLORER_STACKS_API_KEY) {
+    reqHeaders.set('x-api-key', process.env.EXPLORER_STACKS_API_KEY);
   }
 
   try {
@@ -20,8 +20,8 @@ export async function stacksAPIFetch(url: string, options: RequestInit = {}) {
 
   return fetch(url, {
     ...options,
-    // Do not let an allowed destination redirect credentials or server requests elsewhere.
-    redirect: 'error',
+    // Never forward the server key through a redirect; uncredentialed custom APIs may redirect.
+    redirect: reqHeaders.has('x-api-key') ? 'error' : options.redirect,
     headers: reqHeaders,
   });
 }

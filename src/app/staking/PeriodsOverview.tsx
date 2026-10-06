@@ -132,7 +132,7 @@ export function PeriodsOverview({
             schedule,
             capacitySats: toBigInt(bond.parameters?.btc_capacity),
             lockedSats: toBigInt(bond.balances?.locked?.btc),
-            rewardedSats: rewardsByBond ? (rewardsByBond[bond.index] ?? BigInt(0)) : undefined,
+            rewardedSats: rewardsByBond?.[bond.index],
             targetRateBps: bond.parameters?.target_rate_bps,
             realizedRate: getRealizedBondRate(
               bond,

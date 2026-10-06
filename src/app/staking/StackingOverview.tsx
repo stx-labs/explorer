@@ -19,7 +19,7 @@ import { useCallback, useMemo } from 'react';
 import { MAINNET_HISTORIC_CYCLES, PREVIOUS_CYCLES_LIMIT, STAKING_LINKS } from './consts';
 import { CycleRow, toCycleRow } from './cycle-transforms';
 import { cycleColumns } from './cycleColumns';
-import { CycleRewards, PoxCycle } from './data';
+import type { CycleRewards, PoxCycle } from './data';
 import type { DailyPrices } from './prices';
 import { burnHeightToApproximateTimestamp, formatTermDuration } from './projections';
 import type { CurrentCycleEstimate } from './reward-estimate';

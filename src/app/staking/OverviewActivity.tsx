@@ -2,6 +2,7 @@
 
 import { useShallowRouter } from '@/common/hooks/useShallowRouter';
 import { THIRTY_SECONDS } from '@/common/queries/query-stale-time';
+import { ensureError, logError } from '@/common/utils/error-utils';
 import { useQuery } from '@tanstack/react-query';
 import { useSearchParams } from 'next/navigation';
 
@@ -25,15 +26,20 @@ export function OverviewActivity({
   const searchParams = useSearchParams();
   const { replace } = useShallowRouter();
   const group = parseActivityGroup(searchParams?.get('activity') ?? undefined);
-  const { data, isFetching, isError } = useQuery({
+  const { data, isFetching, isError, isFetchedAfterMount } = useQuery({
     queryKey: ['staking-activity-feed', chain, api, group],
     queryFn: async ({ signal }): Promise<StakingActivityResult> => {
       const params = new URLSearchParams({ chain });
       if (api !== undefined) params.set('api', api);
       if (group) params.set('activity', group);
-      const response = await fetch(`/api/staking/activity?${params}`, { signal });
-      if (!response.ok) throw new Error(`Activity request failed: ${response.status}`);
-      return response.json();
+      try {
+        const response = await fetch(`/api/staking/activity?${params}`, { signal });
+        if (!response.ok) throw new Error(`Activity request failed: ${response.status}`);
+        return await response.json();
+      } catch (error) {
+        if (!signal.aborted) logError(ensureError(error), 'Staking activity request', { chain });
+        throw error;
+      }
     },
     initialData: group === initialGroup ? initialData : undefined,
     initialDataUpdatedAt,
@@ -41,12 +47,15 @@ export function OverviewActivity({
     refetchOnWindowFocus: false,
     retry: false,
   });
+  // The shared server QueryClient may contain data from an earlier request.
+  const usingInitialData = group === initialGroup && !isFetchedAfterMount;
+  const activity = usingInitialData ? initialData : data;
 
   return (
     <StakingActivity
-      events={data?.events ?? []}
+      events={activity?.events ?? []}
       selectedGroup={group}
-      incomplete={isError || data?.incomplete}
+      incomplete={(!usingInitialData && isError) || activity?.incomplete}
       filterControl={{
         isPending: isFetching,
         onChange: nextGroup => {

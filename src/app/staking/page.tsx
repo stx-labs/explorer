@@ -7,7 +7,7 @@ import { ActivitySection } from './ActivitySection';
 import { StakingPageClient } from './PageClient';
 import { StakingLoading } from './StakingLoading';
 import { UnsupportedStakingNetwork } from './UnsupportedStakingNetwork';
-import { parseActivityGroup } from './data';
+import { parseActivityGroup } from './activity-filter';
 import { loadStakingOverview } from './overview-data';
 import { getStakingPageApiUrl } from './page-network';
 
@@ -15,7 +15,7 @@ async function OverviewSection({
   data,
   section,
 }: {
-  data: ReturnType<typeof loadStakingOverview>;
+  data: ReturnType<typeof loadStakingOverview>['bonds'];
   section: 'bonds' | 'stacking';
 }) {
   return <StakingPageClient {...await data} section={section} />;
@@ -31,7 +31,7 @@ export default async function StakingPage({
   const allowedApi = getStakingPageApiUrl('/staking', params);
   if (!allowedApi) return <UnsupportedStakingNetwork />;
   const group = parseActivityGroup(activity);
-  // Shared by both overview sections; activity filters are not inputs to this loader.
+  // Start independent section loaders; activity filters do not reload the overview.
   const data = loadStakingOverview(chain, allowedApi);
   return (
     <Stack gap={{ base: 16, md: 18, lg: 20, xl: 24 }}>
@@ -40,7 +40,7 @@ export default async function StakingPage({
           Bitcoin Staking
         </Text>
         <Suspense fallback={<StakingLoading label="Loading bonds…" />}>
-          <OverviewSection data={data} section="bonds" />
+          <OverviewSection data={data.bonds} section="bonds" />
         </Suspense>
         <Suspense
           key={`${chain}:${api ?? ''}:${group ?? 'all'}`}
@@ -50,7 +50,7 @@ export default async function StakingPage({
         </Suspense>
       </Stack>
       <Suspense fallback={<StakingLoading label="Loading STX staking…" />}>
-        <OverviewSection data={data} section="stacking" />
+        <OverviewSection data={data.stacking} section="stacking" />
       </Suspense>
     </Stack>
   );

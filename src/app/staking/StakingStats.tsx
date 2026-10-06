@@ -87,7 +87,7 @@ export function StakingStats({
 
   const bondedSats = toBigInt(featuredBond.balances?.locked?.btc);
   const pairedMicroStx = toBigInt(featuredBond.balances?.locked?.stx);
-  const rewardedSats = rewardsByBond ? (rewardsByBond[featuredBond.index] ?? BigInt(0)) : undefined;
+  const rewardedSats = rewardsByBond?.[featuredBond.index];
   const bondedBtc = bondedSats === undefined ? undefined : satsToBtc(bondedSats);
   const pairedStx = pairedMicroStx === undefined ? undefined : microStxToStx(pairedMicroStx);
 

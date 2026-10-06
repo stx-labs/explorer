@@ -4,13 +4,19 @@ import { redirect } from 'next/navigation';
 
 import { UnsupportedStakingNetwork } from '../UnsupportedStakingNetwork';
 import { BONDS_PAGE_SIZE } from '../consts';
-import { fetchBondRewards, fetchBurnBlockTimes, fetchPoxInfo } from '../data';
+import {
+  fetchBondRewards,
+  fetchBurnBlockTimes,
+  fetchPoxInfo,
+  handleRewardHistoryResult,
+} from '../data';
 import { getStakingPageApiUrl } from '../page-network';
 import { BondsPageClient } from './PageClient';
 import { fetchBondPageAtIndex } from './page-data';
 import { bondPageHref, parseBondPage } from './pagination';
 
 interface BondsSearchParams {
+  [key: string]: string | string[] | undefined;
   chain?: string;
   api?: string;
   page?: string;
@@ -36,6 +42,10 @@ export default async function StakingBondsPage(props: {
   const canonicalPage = pageIndex > 0 ? String(pageIndex + 1) : undefined;
   if (bondsPage && page !== canonicalPage) {
     const params = new URLSearchParams();
+    for (const [key, value] of Object.entries(searchParams)) {
+      if (Array.isArray(value)) value.forEach(item => params.append(key, item));
+      else if (value !== undefined) params.set(key, value);
+    }
     params.set('chain', chain);
     if (requestedApi !== undefined) params.set('api', api);
     redirect(bondPageHref(params, pageIndex));
@@ -62,7 +72,7 @@ export default async function StakingBondsPage(props: {
         )
       : undefined,
   ]);
-  const rewarded = handleSettledResult(rewardedResult, 'Bonds page: fetch bond rewards');
+  const rewarded = handleRewardHistoryResult(rewardedResult, 'Bonds page: fetch bond rewards');
 
   const burnBlockTimes = handleSettledResult(timesResult, 'Bonds page: burn block times');
 

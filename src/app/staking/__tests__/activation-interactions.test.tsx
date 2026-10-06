@@ -55,12 +55,10 @@ test.each([
     );
     expect(screen.getByText(emptyMessage)).toBeInTheDocument();
     expect(Boolean(screen.queryByText(/Some activity could not be loaded/))).toBe(incomplete);
-    expect(Boolean(screen.queryByText(/This bond history may be incomplete/))).toBe(
-      historyTruncated
-    );
-    expect(Boolean(screen.queryByText(/Only the newest 60 staking transactions/))).toBe(
-      historyTruncated
-    );
+    expect(Boolean(screen.queryByText(/Showing matches from the newest/))).toBe(historyTruncated);
+    expect(
+      Boolean(screen.queryByText(/across all bonds. Older activity may not be included/))
+    ).toBe(historyTruncated);
     if (incomplete) expect(screen.queryByText(/No (recent )?activity for/)).not.toBeInTheDocument();
     if (!historyTruncated)
       expect(screen.queryByText(/Older activity is not shown/)).not.toBeInTheDocument();
@@ -174,6 +172,9 @@ test('bond page navigation preserves network settings and announces the pending 
     scroll: true,
   });
   expect(status).toHaveTextContent('Loading bonds');
+  expect(status.closest('[aria-busy="true"]')).toBeNull();
+  expect(screen.getByRole('table')).toHaveAttribute('aria-busy', 'true');
+  expect(screen.getByRole('button', { name: 'Go to next page' })).toBeDisabled();
   await act(async () => {
     finish();
   });

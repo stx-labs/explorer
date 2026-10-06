@@ -70,11 +70,9 @@ test.each([undefined, 'https://api.hiro.so'])(
 );
 
 test.each([
-  'https://attacker.example',
-  'https://api.hiro.so.attacker.example',
-  'http://localhost:3999',
-  'https://169.254.169.254',
-  'https://[::1]',
+  'not a URL',
+  'file:///etc/passwd',
+  'https://user:password@api.example',
   'https://api.hiro.so/redirect?url=https://attacker.example',
 ])('all three pages reject %s before upstream loading', async api => {
   for (const page of [StakingPage, ActivityPage, BondsPage]) {

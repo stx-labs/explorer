@@ -228,8 +228,8 @@ describe('fetchStakingActivity', () => {
     expect(fetchMock.mock.calls.some(([url]) => url.includes('offset=50'))).toBe(true);
     for (const [url, options] of fetchMock.mock.calls) {
       if (url.includes('function_name=')) {
-        expect(options?.cache).toBe('no-store');
-        expect(options?.next).toBeUndefined();
+        expect(options?.cache).toBe('default');
+        expect(options?.next?.revalidate).toBe(15);
       } else if (url.includes('/extended/v1/tx/')) {
         expect(options?.next?.revalidate).toBe(86400);
       }

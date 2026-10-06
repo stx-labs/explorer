@@ -84,7 +84,9 @@ beforeEach(() => {
 
 test('overview fetches final cycle blocks independently of activity', async () => {
   jest.mocked(data.fetchStakingActivity).mockResolvedValue({ events: [], incomplete: true });
-  const overview = await loadStakingOverview('testnet');
+  const sections = loadStakingOverview('testnet');
+  const overview = await sections.stacking;
+  await sections.bonds;
   expect(data.fetchPoxInfo).toHaveBeenCalledWith('testnet', undefined);
   expect(data.fetchCycleRewards).toHaveBeenCalledWith(
     [12, 11, 10, 9],
@@ -124,7 +126,9 @@ test('overview fetches final cycle blocks independently of activity', async () =
 
 test('overview retains a usable failure state when PoX cannot be loaded', async () => {
   jest.mocked(data.fetchPoxInfo).mockRejectedValueOnce(new Error('API unavailable'));
-  const overview = await loadStakingOverview('mainnet');
+  const sections = loadStakingOverview('mainnet');
+  const overview = await sections.stacking;
+  await sections.bonds;
   expect(overview.poxInfo).toBeUndefined();
   expect(data.fetchCycleRewards).not.toHaveBeenCalled();
   expect(fetchCurrentCycleEstimate).not.toHaveBeenCalled();
@@ -133,7 +137,9 @@ test('overview retains a usable failure state when PoX cannot be loaded', async 
 test('cycle settlement remains independent of unavailable bond histories', async () => {
   jest.mocked(data.fetchBondRewards).mockRejectedValueOnce(new Error('Bond events unavailable'));
   jest.mocked(data.fetchCycleCalculationHeights).mockResolvedValueOnce({ 11: 10799 });
-  const overview = await loadStakingOverview('mainnet');
+  const sections = loadStakingOverview('mainnet');
+  const overview = await sections.stacking;
+  await sections.bonds;
   expect(overview.rewarded).toBeUndefined();
   expect(overview.lastCalculationHeightByCycle).toEqual({ 11: 10799 });
 });
@@ -147,14 +153,18 @@ test('a failed settlement fallback preserves final calculations already proven b
   jest
     .mocked(data.fetchCycleCalculationHeights)
     .mockRejectedValueOnce(new Error('API unavailable'));
-  const overview = await loadStakingOverview('mainnet');
+  const sections = loadStakingOverview('mainnet');
+  const overview = await sections.stacking;
+  await sections.bonds;
   expect(overview.lastCalculationHeightByCycle).toEqual({ 11: 10799 });
 });
 
 test('overview uses verified featured-bond details from the existing setup loader', async () => {
   const verified = { ...bond, transaction: undefined };
   jest.mocked(fetchFeaturedBond).mockResolvedValueOnce(verified);
-  const result = await loadStakingOverview('testnet');
+  const sections = loadStakingOverview('testnet');
+  const result = await sections.bonds;
+  await sections.stacking;
   expect(fetchFeaturedBond).toHaveBeenCalledWith(bond.index, 'testnet', undefined);
   expect(result.bonds[0]).toBe(verified);
   expect(result.bondsUnavailable).toBe(false);
@@ -172,6 +182,7 @@ test('bonds route follows opaque cursors and normalizes an out-of-range URL', as
         chain: 'testnet',
         api: 'https://api.testnet.hiro.so',
         page: '999',
+        tag: ['a', 'b'],
       }),
     })
   ).rejects.toThrow('Redirect:');
@@ -190,7 +201,7 @@ test('bonds route follows opaque cursors and normalizes an out-of-range URL', as
     'opaque:last'
   );
   expect(redirect).toHaveBeenCalledWith(
-    '/staking/bonds?chain=testnet&api=https%3A%2F%2Fapi.testnet.hiro.so&page=3'
+    '/staking/bonds?chain=testnet&api=https%3A%2F%2Fapi.testnet.hiro.so&page=3&tag=a&tag=b'
   );
 });
 
@@ -278,8 +289,64 @@ test('overview exact date lookups are bounded by the timeline window', async () 
     },
   }));
   jest.mocked(data.fetchBondsPage).mockResolvedValueOnce({ bonds, total: 50, nextCursor: null });
-  await loadStakingOverview('testnet');
+  await Promise.all(Object.values(loadStakingOverview('testnet')));
   const heights = jest.mocked(data.fetchBurnBlockTimes).mock.calls[0][0];
-  expect(heights).toHaveLength(11 * 5 + 4 * 2);
+  expect(heights).toHaveLength(11 * 5);
   expect(heights).not.toContain(bonds[0].schedule.activation.bitcoin_height);
+});
+
+test('bonds can render while stacking prices are still loading', async () => {
+  let finish!: (value: Awaited<ReturnType<typeof fetchDailyPrices>>) => void;
+  jest.mocked(fetchDailyPrices).mockReturnValueOnce(
+    new Promise(resolve => {
+      finish = resolve;
+    })
+  );
+  const sections = loadStakingOverview('testnet');
+  expect((await sections.bonds).bonds[0].index).toBe(bond.index);
+  finish({ btc: new Map(), stx: new Map() });
+  await sections.stacking;
+});
+
+test('other bond history cannot block stacking or erase featured rewards when its budget fails', async () => {
+  const older = { ...bond, index: 2, status: 'unlocked' };
+  jest
+    .mocked(data.fetchBondsPage)
+    .mockResolvedValueOnce({ bonds: [bond, older], total: 2, nextCursor: null });
+  const featured = {
+    byBondIndex: { [bond.index]: BigInt(42) },
+    settlementsByBond: { [bond.index]: [] },
+    lastCalculationHeightByCycle: { 11: 10799 },
+  };
+  let fail!: (error: Error) => void;
+  jest
+    .mocked(data.fetchBondRewards)
+    .mockImplementationOnce(async () => featured)
+    .mockImplementationOnce(
+      () =>
+        new Promise((_resolve, reject) => {
+          fail = reject;
+        })
+    );
+  const sections = loadStakingOverview('testnet');
+  await sections.stacking;
+  fail(new Error('Reward history request limit exceeded'));
+  const result = await sections.bonds;
+  expect(result.rewarded?.byBondIndex[bond.index]).toBe(BigInt(42));
+  expect(result.rewarded?.byBondIndex[older.index]).toBeUndefined();
+});
+
+test('an exhausted featured-history deadline does not trigger another settlement scan', async () => {
+  const now = Date.now();
+  const clock = jest.spyOn(Date, 'now').mockReturnValue(now);
+  jest.mocked(data.fetchBondRewards).mockImplementationOnce(async () => {
+    clock.mockReturnValue(now + 15001);
+    throw new Error('timed out');
+  });
+  try {
+    await Promise.all(Object.values(loadStakingOverview('testnet')));
+    expect(data.fetchCycleCalculationHeights).not.toHaveBeenCalled();
+  } finally {
+    clock.mockRestore();
+  }
 });

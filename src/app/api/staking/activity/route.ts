@@ -17,7 +17,13 @@ export async function GET(request: Request) {
       parseActivityGroup(params.get('activity') ?? undefined),
       request.signal
     );
-    return Response.json(activity, { headers: { 'Cache-Control': 'no-store' } });
+    return Response.json(activity, {
+      headers: {
+        'Cache-Control': activity.incomplete
+          ? 'no-store'
+          : 'public, max-age=0, s-maxage=15, stale-while-revalidate=15',
+      },
+    });
   } catch (error) {
     if (request.signal.aborted) return new Response(null, { status: 499 });
     throw error;

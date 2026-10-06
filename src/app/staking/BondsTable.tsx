@@ -194,6 +194,7 @@ function NoBondsYet() {
 }
 
 type BondsTableProps = {
+  isPending?: boolean;
   bonds: Bond[];
   unavailable?: boolean;
   currentBurnHeight: number | undefined;
@@ -243,6 +244,7 @@ function ClientPaginatedBondsTable(props: BondsTableProps) {
 }
 
 function BondTableView({
+  isPending,
   bonds,
   unavailable,
   currentBurnHeight,
@@ -279,7 +281,7 @@ function BondTableView({
         </TableContainer>
       )}
       scrollIndicatorWrapper={table => <ScrollIndicator>{table}</ScrollIndicator>}
-      tableProps={{ mt: { base: -3, lg: -4 } }}
+      tableProps={{ mt: { base: -3, lg: -4 }, 'aria-busy': isPending }}
     />
   );
 }

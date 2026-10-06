@@ -56,7 +56,8 @@ export function StakingPageClient({
 }: StakingPageData & { section: 'bonds' | 'stacking' }) {
   const { featuredIndex, featuredBond, nextBond, scheduledBonds } = getBondProjections(
     bonds,
-    rewardCycleLength
+    rewardCycleLength,
+    currentBurnHeight
   );
   if (section === 'stacking')
     return poxInfo ? (
@@ -123,7 +124,7 @@ export function StakingPageClient({
               burnBlockTimes={burnBlockTimes}
               settlements={
                 featuredIndex !== undefined && rewarded
-                  ? (rewarded.settlementsByBond[featuredIndex] ?? [])
+                  ? rewarded.settlementsByBond[featuredIndex]
                   : undefined
               }
               enrollments={enrollments}

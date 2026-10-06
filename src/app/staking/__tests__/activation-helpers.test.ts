@@ -92,3 +92,12 @@ test('an empty timeline leaves the full projected window available', () => {
     forwardOnChain: 0,
   });
 });
+
+test('skips projected slots at or before the current height, including after every bond unlocks', () => {
+  const currentHeight = 100800;
+  const result = getBondProjections([{ ...bond, status: 'unlocked' }], 900, currentHeight);
+  expect(result.scheduledBonds).toHaveLength(6);
+  expect(result.scheduledBonds[0].activationHeight).toBe(102600);
+  expect(result.scheduledBonds.every(next => next.activationHeight > currentHeight)).toBe(true);
+  expect(getBondProjections([bond], 900, 10800).nextBond?.activationHeight).toBe(12600);
+});

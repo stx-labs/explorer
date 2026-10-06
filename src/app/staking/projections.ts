@@ -319,13 +319,20 @@ export function projectScheduledBonds(
   latestKnownIndex: number,
   latestKnownActivationHeight: number,
   rewardCycleLength: number,
-  count: number
+  count: number,
+  currentBurnHeight = 0
 ): { index: number; activationHeight: number; termEndHeight: number }[] {
   const gapBlocks = BOND_GAP_CYCLES * rewardCycleLength;
   const termBlocks = BOND_TERM_CYCLES * rewardCycleLength;
+  if (!Number.isFinite(gapBlocks) || gapBlocks <= 0 || !Number.isFinite(currentBurnHeight))
+    return [];
+  const firstSlot = Math.max(
+    1,
+    Math.floor((currentBurnHeight - latestKnownActivationHeight) / gapBlocks) + 1
+  );
   return Array.from({ length: Math.max(count, 0) }, (_, offset) => {
-    const index = latestKnownIndex + offset + 1;
-    const activationHeight = latestKnownActivationHeight + gapBlocks * (offset + 1);
+    const index = latestKnownIndex + offset + firstSlot;
+    const activationHeight = latestKnownActivationHeight + gapBlocks * (offset + firstSlot);
     return { index, activationHeight, termEndHeight: activationHeight + termBlocks };
   });
 }
@@ -403,10 +410,20 @@ export function getTimelineBondWindow(
   return { onChain, forwardOnChain: onChain.length - (current - from) };
 }
 
-export function getBondProjections(bonds: Bond[], rewardCycleLength: number) {
+export function getBondProjections(
+  bonds: Bond[],
+  rewardCycleLength: number,
+  currentBurnHeight = 0
+) {
   const featuredIndex = getFeaturedBondIndex(bonds);
   const featuredBond = bonds.find(bond => bond.index === featuredIndex);
-  const onChainNext = bonds.find(bond => bond.index === (featuredIndex ?? 0) + 1);
+  const onChainNext = [...bonds]
+    .sort((a, b) => a.index - b.index)
+    .find(
+      bond =>
+        bond.index > (featuredIndex ?? 0) &&
+        bond.schedule.activation.bitcoin_height > currentBurnHeight
+    );
   const nextBond = onChainNext
     ? {
         index: onChainNext.index,
@@ -418,7 +435,8 @@ export function getBondProjections(bonds: Bond[], rewardCycleLength: number) {
           featuredBond.index,
           featuredBond.schedule.activation.bitcoin_height,
           rewardCycleLength,
-          1
+          1,
+          currentBurnHeight
         )[0]
       : undefined;
   const latest = [...bonds].sort((a, b) => b.index - a.index)[0];
@@ -428,7 +446,8 @@ export function getBondProjections(bonds: Bond[], rewardCycleLength: number) {
           latest.index,
           latest.schedule.activation.bitcoin_height,
           rewardCycleLength,
-          SCHEDULED_BONDS_AHEAD
+          SCHEDULED_BONDS_AHEAD,
+          currentBurnHeight
         )
       : [];
   return { featuredIndex, featuredBond, nextBond, scheduledBonds };

@@ -1,3 +1,4 @@
+import { logError } from '@/common/utils/error-utils';
 import { renderWithProviders } from '@/common/utils/test-utils/render-utils';
 import { act, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -6,6 +7,10 @@ import { OverviewActivity } from '../OverviewActivity';
 import type { StakingActivityResult } from '../data';
 
 const mockReplace = jest.fn();
+jest.mock('@/common/utils/error-utils', () => ({
+  ...jest.requireActual('@/common/utils/error-utils'),
+  logError: jest.fn(),
+}));
 jest.mock('next/navigation', () => ({
   useRouter: () => ({ replace: mockReplace }),
   useSearchParams: () => {
@@ -37,6 +42,7 @@ const initialProps = () => ({
 beforeEach(() => {
   mockReplace.mockReset();
   mockFetch.mockReset();
+  jest.mocked(logError).mockClear();
   global.fetch = mockFetch;
   global.ResizeObserver = jest.fn().mockImplementation(() => ({
     observe: jest.fn(),
@@ -129,6 +135,7 @@ test('failed activity requests show unavailable feedback without navigating the 
   expect(await screen.findByText('Activity unavailable')).toBeInTheDocument();
   expect(screen.getByText(/Some activity could not be loaded/)).toBeInTheDocument();
   expect(mockReplace).not.toHaveBeenCalled();
+  expect(logError).toHaveBeenCalledTimes(1);
 });
 
 test('query cache is isolated by chain and custom API', async () => {
