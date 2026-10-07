@@ -5,6 +5,15 @@ jest.mock('@/common/constants/env', () => ({
   DEFAULT_TESTNET_SERVER: 'https://api.testnet.hiro.so',
 }));
 
+const originalPrivateApi = process.env.STAKING_PRIVATE_API_URL;
+beforeEach(() => {
+  process.env.STAKING_PRIVATE_API_URL = 'https://private-1.example/api';
+});
+afterEach(() => {
+  if (originalPrivateApi === undefined) delete process.env.STAKING_PRIVATE_API_URL;
+  else process.env.STAKING_PRIVATE_API_URL = originalPrivateApi;
+});
+
 test('uses configured networks and canonicalizes API overrides', () => {
   expect(getAllowedStakingApiUrl('mainnet')).toBe('https://api.hiro.so');
   expect(getAllowedStakingApiUrl('testnet')).toBe('https://api.testnet.hiro.so');
@@ -15,7 +24,9 @@ test('uses configured networks and canonicalizes API overrides', () => {
   expect(getAllowedStakingApiUrl('testnet', 'https://private-1.example/api/')).toBe(
     'https://private-1.example/api'
   );
-  expect(getAllowedStakingApiUrl('testnet', 'http://localhost:3999')).toBe('http://localhost:3999');
+  expect(isTrustedStacksApiUrl('https://private-1.example/api/v2/pox')).toBe(false);
+  delete process.env.STAKING_PRIVATE_API_URL;
+  expect(getAllowedStakingApiUrl('testnet', 'https://private-1.example/api')).toBeUndefined();
 });
 
 test.each(['devnet', 'unknown', '', 'MAINNET', ' testnet '])(
@@ -38,16 +49,20 @@ test.each([
   '//api.hiro.so',
   'file:///etc/passwd',
   'not a URL',
-])('does not trust %s with server credentials', value => {
+])('rejects unconfigured destinations and withholds server credentials: %s', value => {
+  expect(getAllowedStakingApiUrl('testnet', value)).toBeUndefined();
   expect(isTrustedStacksApiUrl(value)).toBe(false);
 });
 
 test.each([
+  'https://private-1.example',
+  'https://private-1.example/api/other',
+  'https://private-1.example.attacker.example/api',
   'not a URL',
   'file:///etc/passwd',
   'https://user:password@api.example',
   'https://api.hiro.so?next=https://attacker.example',
   'https://api.hiro.so#fragment',
-])('rejects malformed API bases, credentials, queries and fragments: %s', value => {
+])('rejects unmatched or malformed API bases: %s', value => {
   expect(getAllowedStakingApiUrl('mainnet', value)).toBeUndefined();
 });

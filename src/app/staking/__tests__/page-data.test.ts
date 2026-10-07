@@ -41,7 +41,7 @@ test.each([
     const result = await fetchFeaturedBond(bond.index, chain, api);
 
     expect(fetchBond).toHaveBeenCalledWith(bond.index, chain, api);
-    expect(fetchTx).toHaveBeenCalledWith(expectedApi, '0xsetup');
+    expect(fetchTx).toHaveBeenCalledWith(expectedApi, '0xsetup', { redirect: 'error' });
     expect(result).toEqual({
       ...bondWithSetup,
       transaction: {

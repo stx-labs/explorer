@@ -227,6 +227,7 @@ describe('fetchStakingActivity', () => {
     expect(events.at(-1)?.blockHeight).toBe(8_900_006);
     expect(fetchMock.mock.calls.some(([url]) => url.includes('offset=50'))).toBe(true);
     for (const [url, options] of fetchMock.mock.calls) {
+      expect(options?.redirect).toBe('error');
       if (url.includes('function_name=')) {
         expect(options?.cache).toBe('default');
         expect(options?.next?.revalidate).toBe(15);

@@ -2,7 +2,7 @@ import { Text } from '@/ui/Text';
 import { Stack } from '@chakra-ui/react';
 
 export const UNSUPPORTED_STAKING_NETWORK =
-  'Staking data is unavailable for this network. Select mainnet or testnet with a valid API address.';
+  'Staking data is unavailable for this network. Select a configured mainnet or testnet API.';
 
 export function UnsupportedStakingNetwork() {
   return (

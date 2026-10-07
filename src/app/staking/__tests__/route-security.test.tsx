@@ -70,6 +70,8 @@ test.each([undefined, 'https://api.hiro.so'])(
 );
 
 test.each([
+  'https://unconfigured.example',
+  'http://localhost:3999',
   'not a URL',
   'file:///etc/passwd',
   'https://user:password@api.example',

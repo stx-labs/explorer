@@ -16,10 +16,16 @@ jest.mock('@/common/utils/error-utils', () => ({
   logError: jest.fn(),
 }));
 
+const originalPrivateApi = process.env.STAKING_PRIVATE_API_URL;
 beforeEach(() => {
+  process.env.STAKING_PRIVATE_API_URL = 'http://private-1.example:3999';
   jest.clearAllMocks();
   jest.mocked(data.fetchPoxInfo).mockResolvedValue({ contract_id: 'ST123.pox-5' } as never);
   jest.mocked(data.fetchStakingActivity).mockResolvedValue({ events: [], incomplete: false });
+});
+afterEach(() => {
+  if (originalPrivateApi === undefined) delete process.env.STAKING_PRIVATE_API_URL;
+  else process.env.STAKING_PRIVATE_API_URL = originalPrivateApi;
 });
 
 test('activity endpoint preserves network/filter settings and only loads the bounded feed', async () => {
@@ -114,7 +120,7 @@ test.each(['chain=devnet', 'chain=devnet&api=https%3A%2F%2Fapi.hiro.so'])(
   }
 );
 
-test.each(['not a URL', 'file:///etc/passwd', 'https://user:password@api.example'])(
+test.each(['https://custom.example', 'http://localhost:3999', 'https://user:password@api.example'])(
   'rejects API override %s before any upstream call',
   async api => {
     const response = await GET(

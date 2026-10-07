@@ -272,9 +272,11 @@ export async function fetchContractInfo(
 
 export async function fetchTx(
   apiUrl: string,
-  txId: string
+  txId: string,
+  options: Pick<RequestInit, 'redirect'> = {}
 ): Promise<Transaction | MempoolTransaction> {
   const response = await stacksAPIFetch(`${apiUrl}/extended/v1/tx/${txId}`, {
+    ...options,
     cache: 'default',
     next: {
       revalidate: CONFIRMED_TX_REVALIDATION_TIMEOUT_IN_SECONDS,

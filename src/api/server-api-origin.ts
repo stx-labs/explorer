@@ -23,10 +23,19 @@ export function isTrustedStacksApiUrl(value: string): boolean {
   return url?.protocol === 'https:' && configuredApis.some(api => api.origin === url.origin);
 }
 
-/** Custom networks use HTTP(S) API bases, matching Explorer's server-side loaders. */
+/** Staking fetches use deployment-configured bases, never visitor-selected destinations. */
 export function getAllowedStakingApiUrl(chain: string, api?: string): string | undefined {
   if (chain !== NetworkModes.Mainnet && chain !== NetworkModes.Testnet) return undefined;
   const url = parseApiUrl(getApiUrl(chain, api));
   if (!url || url.search || url.hash) return undefined;
-  return url.href.replace(/\/+$/, '');
+  const privateApi = parseApiUrl(process.env.STAKING_PRIVATE_API_URL ?? '');
+  const allowed = [...configuredApis, privateApi].find(
+    base =>
+      base &&
+      !base.search &&
+      !base.hash &&
+      base.origin === url.origin &&
+      base.pathname.replace(/\/+$/, '') === url.pathname.replace(/\/+$/, '')
+  );
+  return allowed?.href.replace(/\/+$/, '');
 }

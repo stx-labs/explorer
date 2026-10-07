@@ -87,6 +87,7 @@ export async function fetchBondsPage(
   const params = new URLSearchParams({ limit: String(Math.min(limit, MAX_PAGE_LIMIT)) });
   if (cursor !== undefined) params.set('cursor', cursor);
   const response = await stacksAPIFetch(`${apiUrl}/extended/v3/staking/bonds?${params}`, {
+    redirect: 'error',
     signal,
     cache: 'default',
     next: { revalidate: REVALIDATE_SECONDS, tags: ['staking-bonds'] },
@@ -113,6 +114,7 @@ export async function fetchBond(
   const response = await stacksAPIFetch(
     `${getApiUrl(chain, api)}/extended/v3/staking/bonds/${index}`,
     {
+      redirect: 'error',
       signal,
       cache: 'default',
       next: { revalidate: REVALIDATE_SECONDS, tags: [`staking-bond-${index}`] },
@@ -145,6 +147,7 @@ export async function fetchBondRegistrations(
     const response = await stacksAPIFetch(
       `${apiUrl}/extended/v3/staking/bonds/${index}/registrations?${params}`,
       {
+        redirect: 'error',
         cache: 'default',
         next: { revalidate: REVALIDATE_SECONDS, tags: [`staking-bond-${index}-registrations`] },
       }
@@ -179,6 +182,7 @@ export async function fetchPoxInfo(
   if (signal?.aborted) throw signal.reason;
   const apiUrl = getApiUrl(chain, api);
   const response = await stacksAPIFetch(`${apiUrl}/v2/pox`, {
+    redirect: 'error',
     signal,
     cache: 'default',
     next: { revalidate: REVALIDATE_SECONDS, tags: ['staking-pox'] },
@@ -205,6 +209,7 @@ export async function fetchPoxCycles(chain: string, api?: string, limit = 10): P
   const apiUrl = getApiUrl(chain, api);
   const params = new URLSearchParams({ limit: String(limit) });
   const response = await stacksAPIFetch(`${apiUrl}/extended/v2/pox/cycles?${params}`, {
+    redirect: 'error',
     cache: 'default',
     next: { revalidate: REVALIDATE_SECONDS, tags: ['staking-pox-cycles'] },
   });
@@ -254,6 +259,7 @@ async function callPoxReadOnly(
   const response = await stacksAPIFetch(
     `${apiUrl}/v2/contracts/call-read/${contractAddress}/${contractName}/${functionName}`,
     {
+      redirect: 'error',
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ sender: contractAddress, arguments: [cycleArg, noneArg] }),
@@ -284,6 +290,7 @@ export async function fetchCycleRewards(
   const results = await Promise.all(
     Array.from(new Set(cycleNumbers)).map(async cycleNumber => {
       const response = await stacksAPIFetch(`${apiUrl}/extended/v3/staking/cycles/${cycleNumber}`, {
+        redirect: 'error',
         cache: 'default',
         next: { revalidate: REVALIDATE_SECONDS, tags: [`staking-cycle-rewards-${cycleNumber}`] },
       });
@@ -363,6 +370,7 @@ async function fetchTxsByFunction(
       function_name: functionName,
     });
     const response = await fetchRequest(`${apiUrl}/extended/v1/tx?${params}`, {
+      redirect: 'error',
       cache,
       next: cache === 'no-store' ? undefined : { revalidate: 15, tags: ['staking-transactions'] },
     });
@@ -402,6 +410,7 @@ async function fetchTxEvents(
       event_offset: String(offset),
     });
     const response = await fetchRequest(`${apiUrl}/extended/v1/tx/${txId}?${params}`, {
+      redirect: 'error',
       cache: 'default',
       next: {
         revalidate: settled ? SETTLED_REVALIDATE_SECONDS : REVALIDATE_SECONDS,
@@ -529,6 +538,7 @@ export async function fetchBurnBlockTimes(
           const response = await stacksAPIFetch(
             `${getApiUrl(chain, api)}/extended/v2/burn-blocks/${height}`,
             {
+              redirect: 'error',
               cache: 'default',
               next: { revalidate: SETTLED_REVALIDATE_SECONDS, tags: [`burn-block-${height}`] },
             }
@@ -889,6 +899,7 @@ export async function fetchBondRewards(
             const response = await fetchRequest(
               `${getApiUrl(chain, api)}/extended/v3/staking/bonds/${index}/events?${params}`,
               {
+                redirect: 'error',
                 cache: 'default',
                 next: { revalidate: REVALIDATE_SECONDS, tags: [`staking-bond-${index}-events`] },
               }
