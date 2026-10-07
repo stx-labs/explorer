@@ -1,8 +1,41 @@
+import { logError } from '@/common/utils/error-utils';
+
 import { fetchDailyPrices } from '../prices';
+
+jest.mock('@/common/utils/error-utils', () => ({
+  ...jest.requireActual('@/common/utils/error-utils'),
+  logError: jest.fn(),
+}));
 
 jest.mock('@/common/constants/env', () => ({ LUNAR_CRUSH_API_KEY: 'test-key' }));
 
 afterEach(() => jest.restoreAllMocks());
+beforeEach(() => jest.mocked(logError).mockClear());
+
+test('reports failed price requests once while preserving the available asset', async () => {
+  jest
+    .spyOn(globalThis, 'fetch')
+    .mockResolvedValueOnce({ ok: false, status: 503 } as Response)
+    .mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ data: [{ time: Date.UTC(2026, 8, 1) / 1000, close: 1 }] }),
+    } as Response);
+  const prices = await fetchDailyPrices(Date.UTC(2026, 8, 1), Date.UTC(2026, 8, 2));
+  expect(prices.btc.size).toBe(0);
+  expect(prices.stx.get('2026-09-01')).toBe(1);
+  expect(logError).toHaveBeenCalledTimes(1);
+});
+
+test('reports two rejected price requests as a single failure with a count', async () => {
+  jest.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('offline'));
+  await fetchDailyPrices(Date.UTC(2026, 8, 1), Date.UTC(2026, 8, 2));
+  expect(logError).toHaveBeenCalledTimes(1);
+  expect(logError).toHaveBeenCalledWith(
+    expect.any(Error),
+    'Staking daily prices: partial fetch failure',
+    { failureCount: 2 }
+  );
+});
 
 test('reuses daily price URLs throughout the same UTC date range with full padding', async () => {
   const fetchMock = jest.spyOn(globalThis, 'fetch').mockResolvedValue({

@@ -193,7 +193,58 @@ function NoBondsYet() {
   );
 }
 
-export function BondsTable({
+type BondsTableProps = {
+  isPending?: boolean;
+  bonds: Bond[];
+  unavailable?: boolean;
+  currentBurnHeight: number | undefined;
+  nowMs: number;
+  rewardsByBond?: Record<number, bigint>;
+  settlementsByBond?: BondRewards['settlementsByBond'];
+  burnBlockTimes?: Record<number, number>;
+  pageSize?: number;
+  serverPagination?: Pick<
+    NonNullable<React.ComponentProps<typeof Table>['pagination']>,
+    'pageIndex' | 'pageSize' | 'totalRows' | 'onPageChange'
+  >;
+  fullPage?: boolean;
+};
+
+export function BondsTable(props: BondsTableProps) {
+  const sorted = useMemo(() => [...props.bonds].sort((a, b) => b.index - a.index), [props.bonds]);
+  return props.serverPagination ? (
+    <BondTableView {...props} bonds={sorted} />
+  ) : (
+    <ClientPaginatedBondsTable {...props} bonds={sorted} />
+  );
+}
+
+function ClientPaginatedBondsTable(props: BondsTableProps) {
+  const { bonds, pageSize = BONDS_TABLE_LIMIT } = props;
+  const [pageIndex, setPageIndex] = useState(0);
+  useEffect(() => {
+    setPageIndex(0);
+  }, [bonds, pageSize]);
+  return (
+    <BondTableView
+      {...props}
+      bonds={bonds.slice(pageIndex * pageSize, (pageIndex + 1) * pageSize)}
+      serverPagination={
+        bonds.length > pageSize
+          ? {
+              pageIndex,
+              pageSize,
+              totalRows: bonds.length,
+              onPageChange: next => setPageIndex(next.pageIndex),
+            }
+          : undefined
+      }
+    />
+  );
+}
+
+function BondTableView({
+  isPending,
   bonds,
   unavailable,
   currentBurnHeight,
@@ -201,49 +252,15 @@ export function BondsTable({
   rewardsByBond,
   settlementsByBond,
   burnBlockTimes = {},
-  pageSize = BONDS_TABLE_LIMIT,
+  serverPagination,
   fullPage = false,
-}: {
-  bonds: Bond[];
-  unavailable?: boolean;
-  currentBurnHeight: number;
-  nowMs: number;
-  rewardsByBond?: Record<number, bigint>;
-  settlementsByBond?: BondRewards['settlementsByBond'];
-  burnBlockTimes?: Record<number, number>;
-  pageSize?: number;
-  fullPage?: boolean;
-}) {
-  const [pageIndex, setPageIndex] = useState(0);
-  useEffect(() => {
-    setPageIndex(0);
-  }, [bonds, pageSize]);
-
+}: BondsTableProps) {
   const data = useMemo(
     () =>
-      [...bonds]
-        .sort((a, b) => b.index - a.index)
-        .slice(pageIndex * pageSize, (pageIndex + 1) * pageSize)
-        .map(bond =>
-          toBondRow(
-            bond,
-            currentBurnHeight,
-            nowMs,
-            rewardsByBond,
-            burnBlockTimes,
-            settlementsByBond
-          )
-        ),
-    [
-      bonds,
-      currentBurnHeight,
-      nowMs,
-      rewardsByBond,
-      burnBlockTimes,
-      settlementsByBond,
-      pageIndex,
-      pageSize,
-    ]
+      bonds.map(bond =>
+        toBondRow(bond, currentBurnHeight, nowMs, rewardsByBond, burnBlockTimes, settlementsByBond)
+      ),
+    [bonds, currentBurnHeight, nowMs, rewardsByBond, burnBlockTimes, settlementsByBond]
   );
   return (
     <Table
@@ -254,15 +271,9 @@ export function BondsTable({
       columns={bondColumns}
       emptyTableUi={<NoBondsYet />}
       pagination={
-        !unavailable && bonds.length > pageSize
-          ? {
-              manualPagination: true,
-              pageIndex,
-              pageSize,
-              totalRows: bonds.length,
-              onPageChange: next => setPageIndex(next.pageIndex),
-            }
-          : undefined
+        unavailable || !serverPagination
+          ? undefined
+          : { ...serverPagination, manualPagination: true }
       }
       tableContainerWrapper={table => (
         <TableContainer pt={{ base: 3, lg: 4 }} minH={fullPage ? '500px' : undefined}>
@@ -270,7 +281,7 @@ export function BondsTable({
         </TableContainer>
       )}
       scrollIndicatorWrapper={table => <ScrollIndicator>{table}</ScrollIndicator>}
-      tableProps={{ mt: { base: -3, lg: -4 } }}
+      tableProps={{ mt: { base: -3, lg: -4 }, 'aria-busy': isPending }}
     />
   );
 }

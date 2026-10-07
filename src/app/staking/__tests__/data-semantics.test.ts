@@ -20,7 +20,7 @@ const input = {
   cycle,
   rewards: {
     cycleNumber: 143,
-    rewardsPerMicroStx: BigInt('1000000000000'),
+    rewardsSats: BigInt(2),
     stakedMicroStx: BigInt('2000000'),
   },
   pox5FirstCycleId: 141,
@@ -73,10 +73,14 @@ test('missing signer counts use zero', () => {
 test('a zero-share STX tranche stays zero instead of receiving a projected residual', () => {
   const row = toCycleRow({
     ...input,
-    rewards: { ...input.rewards, stakedMicroStx: BigInt(0), rewardsPerMicroStx: BigInt(0) },
+    rewards: { ...input.rewards, stakedMicroStx: BigInt(0), rewardsSats: BigInt(0) },
+    lastCalculationHeightByCycle: { 143: input.cycleStartHeight(144) - 1 },
+    btcPrice: 100000,
+    stxPrice: 1,
   });
   expect(row.totalStackedStx).toBe(0);
   expect(row.rewardsSats).toBe(BigInt(0));
+  expect(row.apyPercent).toBeUndefined();
 });
 
 test('missing PoX-5 rewards do not fall back to combined stake', () => {

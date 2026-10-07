@@ -19,13 +19,9 @@ import { useCallback, useMemo } from 'react';
 import { MAINNET_HISTORIC_CYCLES, PREVIOUS_CYCLES_LIMIT, STAKING_LINKS } from './consts';
 import { CycleRow, toCycleRow } from './cycle-transforms';
 import { cycleColumns } from './cycleColumns';
-import { CycleRewards, PoxCycle } from './data';
+import type { CycleRewards, PoxCycle } from './data';
 import type { DailyPrices } from './prices';
-import {
-  burnHeightToApproximateTimestamp,
-  formatTermDuration,
-  getCycleStackerRewardsSatsBigInt,
-} from './projections';
+import { burnHeightToApproximateTimestamp, formatTermDuration } from './projections';
 import type { CurrentCycleEstimate } from './reward-estimate';
 import { formatBurnDate, formatDateWithYear, formatSbtc, formatUsd } from './utils';
 
@@ -100,14 +96,7 @@ export function StackingOverview({
 
   const estimate =
     currentCycleEstimate?.cycleNumber === currentCycleId ? currentCycleEstimate : undefined;
-  const currentCycleSats =
-    estimate?.creditedSats ??
-    (currentCycleRewards
-      ? getCycleStackerRewardsSatsBigInt(
-          currentCycleRewards.rewardsPerMicroStx,
-          currentCycleRewards.stakedMicroStx
-        )
-      : undefined);
+  const currentCycleSats = currentCycleRewards?.rewardsSats ?? estimate?.creditedSats;
   const currentRewardText =
     currentCycleSats !== undefined
       ? `${formatSbtc(currentCycleSats, 2)} rewarded so far`
@@ -353,9 +342,11 @@ export function StackingOverview({
                 </Flex>
                 <Text textStyle="text-regular-sm" color="textSecondary">
                   {previousRow.settled
-                    ? previousRow.yieldEstimated
-                      ? 'Gross APY estimated at current prices, assuming repeated cycle returns.'
-                      : 'Gross APY at historical daily prices, assuming repeated cycle returns.'
+                    ? previousRow.totalStackedStx === 0
+                      ? 'No STX was staked.'
+                      : previousRow.yieldEstimated
+                        ? 'Gross APY estimated at current prices, assuming repeated cycle returns.'
+                        : 'Gross APY at historical daily prices, assuming repeated cycle returns.'
                     : 'Final reward calculation pending or unverified.'}
                 </Text>
               </Stack>

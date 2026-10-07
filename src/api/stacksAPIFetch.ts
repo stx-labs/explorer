@@ -1,7 +1,12 @@
+import { isTrustedStacksApiUrl } from './server-api-origin';
+
 export async function stacksAPIFetch(url: string, options: RequestInit = {}) {
   const reqHeaders = new Headers(options.headers || {});
 
-  reqHeaders.set('x-api-key', process.env.EXPLORER_STACKS_API_KEY || '');
+  reqHeaders.delete('x-api-key');
+  if (isTrustedStacksApiUrl(url) && process.env.EXPLORER_STACKS_API_KEY) {
+    reqHeaders.set('x-api-key', process.env.EXPLORER_STACKS_API_KEY);
+  }
 
   try {
     const { headers: getHeaders } = await import('next/headers');
@@ -15,6 +20,8 @@ export async function stacksAPIFetch(url: string, options: RequestInit = {}) {
 
   return fetch(url, {
     ...options,
+    // Never forward the server key through a redirect; uncredentialed custom APIs may redirect.
+    redirect: reqHeaders.has('x-api-key') ? 'error' : options.redirect,
     headers: reqHeaders,
   });
 }

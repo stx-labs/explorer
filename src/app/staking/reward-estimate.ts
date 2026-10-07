@@ -47,6 +47,7 @@ export async function fetchCurrentCycleEstimate(
 ): Promise<CurrentCycleEstimate> {
   const apiUrl = getApiUrl(chain, api);
   const response = await stacksAPIFetch(`${apiUrl}/extended/v2/blocks?limit=1`, {
+    redirect: 'error',
     cache: 'default',
     next: { revalidate: 60, tags: ['staking-estimate-tip'] },
   });
@@ -61,6 +62,7 @@ export async function fetchCurrentCycleEstimate(
     const result = await stacksAPIFetch(
       `${apiUrl}/v2/contracts/call-read/${address}/${name}/${fn}?tip=${tip}`,
       {
+        redirect: 'error',
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sender: address, arguments: args.map(cvToHex) }),

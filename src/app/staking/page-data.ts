@@ -11,7 +11,7 @@ export async function fetchFeaturedBond(index: number, chain: string, api?: stri
   try {
     // The bond endpoint can report the current burn height alongside the setup timestamp.
     // Read both from the confirmed setup transaction so the lifecycle stays chronological.
-    const tx = await fetchTx(getApiUrl(chain, api), bond.transaction.tx_id);
+    const tx = await fetchTx(getApiUrl(chain, api), bond.transaction.tx_id, { redirect: 'error' });
     if (!('burn_block_height' in tx) || !tx.canonical || tx.burn_block_height <= 0) {
       throw new Error('Bond setup transaction is not confirmed');
     }
