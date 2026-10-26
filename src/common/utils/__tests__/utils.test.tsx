@@ -5,6 +5,7 @@ import {
   abbreviateNumber,
   addSepBetweenStrings,
   capitalize,
+  formatFtBalance,
   formatNumber,
   formatStacksAmount,
   ftDecimals,
@@ -427,6 +428,29 @@ describe('getFtDecimalAdjustedBalance', () => {
 describe('ftDecimals', () => {
   test('should format with decimals', () => {
     expect(ftDecimals(1000, 2)).toBe('10');
+  });
+});
+
+describe('formatFtBalance', () => {
+  test('applies known decimals', () => {
+    expect(formatFtBalance('1234500', 2)).toBe('12,345');
+  });
+
+  test('applies 0 decimals when the token really has 0 decimals', () => {
+    expect(formatFtBalance('1234500', 0)).toBe('1,234,500');
+  });
+
+  test('shows raw units and says decimals are unknown when they are missing', () => {
+    expect(formatFtBalance('221575704960232', undefined)).toBe(
+      '221,575,704,960,232 raw units (decimals unknown)'
+    );
+    expect(formatFtBalance('1000', null)).toBe('1,000 raw units (decimals unknown)');
+  });
+
+  test('keeps every digit of large raw amounts', () => {
+    expect(formatFtBalance('123456789012345678901', undefined)).toBe(
+      '123,456,789,012,345,678,901 raw units (decimals unknown)'
+    );
   });
 });
 
