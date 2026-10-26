@@ -1,3 +1,4 @@
+import { STX_DECIMALS } from '@/app/stx/consts';
 import { SBTC_DECIMALS, getSbtcAssetId } from '@/app/token/[tokenId]/consts';
 import {
   PriceSummaryItemValue,
@@ -11,7 +12,11 @@ import { StackingCardItem } from '@/common/components/id-pages/Overview';
 import { AddressTxsTable } from '@/common/components/table/table-examples/AddressTxsTable';
 import { ADDRESS_ID_PAGE_RECENT_ADDRESS_TXS_LIMIT } from '@/common/components/table/table-examples/consts';
 import { useSbtcNetworkMode } from '@/common/hooks/useSbtcNetworkMode';
-import { getFtDecimalAdjustedBalance, microToStacks } from '@/common/utils/utils';
+import {
+  formatTokenBalance,
+  getFtDecimalAdjustedBalance,
+  microToStacks,
+} from '@/common/utils/utils';
 import { SimpleTag } from '@/ui/Badge';
 import { Button } from '@/ui/Button';
 import { Text } from '@/ui/Text';
@@ -28,6 +33,8 @@ import { AddressBalanceResponse } from '@stacks/stacks-blockchain-api-types';
 import { useAddressIdPageData } from '../AddressIdPageContext';
 
 type TokenBalanceType = 'stx' | 'sbtc';
+
+const BTC_DECIMALS = 8;
 
 export const AddressOverviewTable = () => {
   const {
@@ -83,10 +90,10 @@ const BalanceItem = ({
   tokenBalanceType: TokenBalanceType;
 }) => {
   const tokenTicker = tokenBalanceType === 'stx' ? 'STX' : 'sBTC';
-  const formattedTokenBalance = tokenBalance.toLocaleString('en-US', {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 6,
-  });
+  const formattedTokenBalance = formatTokenBalance(
+    tokenBalance,
+    tokenBalanceType === 'stx' ? STX_DECIMALS : SBTC_DECIMALS
+  );
   const formattedTokenBalanceValue = new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
@@ -234,17 +241,16 @@ export function TokenBalanceAndTokenBalanceUsdValueItem({
   tokenIcon,
   tokenTicker,
   iconProps,
+  maxDecimals = STX_DECIMALS,
 }: {
   tokenBalance: number;
   tokenBalanceUsdValue: number;
   tokenIcon: ReactNode;
   tokenTicker: string;
   iconProps?: IconProps;
+  maxDecimals?: number;
 }) {
-  const formattedTokenBalance = tokenBalance.toLocaleString('en-US', {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 6,
-  });
+  const formattedTokenBalance = formatTokenBalance(tokenBalance, maxDecimals);
   const formattedTokenBalanceValue = new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
@@ -354,6 +360,7 @@ const StackingCard = () => {
               tokenBalanceUsdValue={btcRewards * btcPrice}
               tokenIcon={<BitcoinIcon />}
               tokenTicker="BTC"
+              maxDecimals={BTC_DECIMALS}
               iconProps={{
                 color: 'accent.bitcoin-500',
               }}

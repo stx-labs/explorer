@@ -385,10 +385,33 @@ export const getFtDecimalAdjustedBalance = (
   return initBigNumber(value).shiftedBy(-decimals).toNumber();
 };
 
+const TOKEN_BALANCE_FORMAT: BigNumber.Format = {
+  prefix: '',
+  decimalSeparator: '.',
+  groupSeparator: ',',
+  groupSize: 3,
+  secondaryGroupSize: 0,
+  fractionGroupSeparator: '',
+  fractionGroupSize: 0,
+  suffix: '',
+};
+
+/**
+ * Formats a token amount with at most `maxDecimals` fraction digits.
+ * Extra digits are always rounded down (toward zero), so the displayed
+ * amount never exceeds the real balance.
+ */
+export const formatTokenBalance = (
+  value: number | string | BigNumber,
+  maxDecimals: number
+): string => {
+  return initBigNumber(value)
+    .decimalPlaces(maxDecimals, BigNumber.ROUND_DOWN)
+    .toFormat(TOKEN_BALANCE_FORMAT);
+};
+
 export const ftDecimals = (value: number | string | BigNumber, decimals: number) => {
-  return getFtDecimalAdjustedBalance(value, decimals).toLocaleString('en-US', {
-    maximumFractionDigits: decimals,
-  });
+  return formatTokenBalance(initBigNumber(value).shiftedBy(-decimals), decimals);
 };
 
 export function getLocaleDecimalSeparator() {
