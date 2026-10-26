@@ -5,7 +5,7 @@ import { StackingCardItem } from '@/common/components/id-pages/Overview';
 import { AddressTxsTable } from '@/common/components/table/table-examples/AddressTxsTable';
 import { DEFAULT_OVERVIEW_TAB_TABLE_PAGE_SIZE } from '@/common/components/table/table-examples/consts';
 import { formatNumber, formatUsdValue } from '@/common/utils/string-utils';
-import { formatTimestamp } from '@/common/utils/time-utils';
+import { formatBlockTime } from '@/common/utils/time-utils';
 import { getFtDecimalAdjustedBalance } from '@/common/utils/utils';
 import { SimpleTag } from '@/ui/Badge';
 import { Text } from '@/ui/Text';
@@ -18,7 +18,7 @@ export const TokenIdOverviewTable = () => {
 
   const tokenName = tokenData?.name || '';
   const tokenSymbol = tokenData?.symbol || '';
-  const tokenTxTimestamp = txBlockTime ? formatTimestamp(txBlockTime) : '';
+  const tokenTxTimestamp = txBlockTime ? formatBlockTime(txBlockTime) : '';
   return (
     <Table.Root w="full" h="fit-content">
       <Table.Body h="fit-content">

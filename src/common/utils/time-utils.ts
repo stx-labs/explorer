@@ -119,16 +119,20 @@ export function formatTimestampToRelativeTime(timestampInSeconds: number): strin
   return relativeTime;
 }
 
+/**
+ * Formats a block time as `yyyy-MM-dd HH:mm:ss (UTC)`. It always uses UTC, so the server and the
+ * browser render the same text, and it says so, so readers don't mistake it for local time.
+ */
 export function formatBlockTime(timestampInSeconds: number): string {
   const date = new Date(timestampInSeconds * 1000);
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  const hours = String(date.getHours()).padStart(2, '0');
-  const minutes = String(date.getMinutes()).padStart(2, '0');
-  const seconds = String(date.getSeconds()).padStart(2, '0');
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(date.getUTCDate()).padStart(2, '0');
+  const hours = String(date.getUTCHours()).padStart(2, '0');
+  const minutes = String(date.getUTCMinutes()).padStart(2, '0');
+  const seconds = String(date.getUTCSeconds()).padStart(2, '0');
 
-  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds} (UTC)`;
 }
 
 export function formatTimestampToDateString(timestampInSeconds: number): string {
