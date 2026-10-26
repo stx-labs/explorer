@@ -161,7 +161,11 @@ export function isConfirmedTx<T extends Transaction, U extends MempoolTransactio
 ): tx is T {
   return 'block_height' in tx && tx.block_height !== undefined;
 }
-export const getTxTitle = (tx: Transaction | MempoolTransaction) => {
+/**
+ * @param principal The address whose transactions are being listed, if any. A token transfer to
+ * this address is titled "Receive" instead of "Send".
+ */
+export const getTxTitle = (tx: Transaction | MempoolTransaction, principal?: string) => {
   switch (tx.tx_type) {
     case 'smart_contract':
       return getContractName(tx?.smart_contract?.contract_id);
@@ -173,6 +177,9 @@ export const getTxTitle = (tx: Transaction | MempoolTransaction) => {
         tx.block_height === 1
       ) {
         return 'Stacks 2.0 genesis transfer';
+      }
+      if (principal && tx.token_transfer.recipient_address === principal) {
+        return `Receive ${microToStacksFormatted(tx.token_transfer.amount)} STX`;
       }
       return `Send ${microToStacksFormatted(tx.token_transfer.amount)} STX`;
     case 'coinbase':

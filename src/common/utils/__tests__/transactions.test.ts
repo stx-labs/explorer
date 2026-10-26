@@ -26,4 +26,24 @@ describe('getTxTitle', () => {
     };
     expect(getTxTitle(mempoolTx)).toBe('Send 2.00 STX');
   });
+
+  it('should return receive label for transfers to the listed address', () => {
+    const incomingTx: any = {
+      tx_type: 'token_transfer',
+      block_height: 500,
+      sender_address: 'ST1SENDER',
+      token_transfer: { amount: '3000000', recipient_address: 'ST1TEST' },
+    };
+    expect(getTxTitle(incomingTx, 'ST1TEST')).toBe('Receive 3.00 STX');
+  });
+
+  it('should return send label for transfers from the listed address', () => {
+    const outgoingTx: any = {
+      tx_type: 'token_transfer',
+      block_height: 500,
+      sender_address: 'ST1TEST',
+      token_transfer: { amount: '3000000', recipient_address: 'ST1OTHER' },
+    };
+    expect(getTxTitle(outgoingTx, 'ST1TEST')).toBe('Send 3.00 STX');
+  });
 });

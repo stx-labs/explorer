@@ -32,7 +32,7 @@ export const TransactionTitleCellRenderer = (
   tx: Transaction | MempoolTransaction
 ) => {
   const txStatus = getTransactionStatus(tx);
-  const title = getTxTitle(tx);
+  const title = getTxTitle(tx, principal);
   const txTypeIcon = getTxTypeIcon(principal, tx);
 
   let content = (
