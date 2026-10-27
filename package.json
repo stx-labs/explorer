@@ -46,7 +46,7 @@
     "@next/third-parties": "16.3.6",
     "@phosphor-icons/react": "2.1.7",
     "@reduxjs/toolkit": "1.9.7",
-    "@sentry/nextjs": "10.71.0",
+    "@sentry/nextjs": "10.75.2",
     "@sentry/profiling-node": "10.71.0",
     "@stacks/auth": "7.1.0",
     "@stacks/blockchain-api-client": "9.4.0",
