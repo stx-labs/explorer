@@ -1,24 +1,25 @@
 import { usePrincipalTxSummariesInfinite } from '@/common/queries/usePrincipalTxSummaries';
-import { TransactionSummary } from '@/common/types/tx-v3';
-import { system } from '@/ui/theme/theme';
-import { ChakraProvider } from '@chakra-ui/react';
+import { useFilterAndSortState } from '@/features/txsFilterAndSort/useFilterAndSortState';
 import '@testing-library/jest-dom';
 import { fireEvent, render, screen } from '@testing-library/react';
-import { ReactElement, ReactNode } from 'react';
+import { ReactNode } from 'react';
 
 import { AddressTxsTable } from '../AddressTxsTable';
 
 jest.mock('@/common/queries/usePrincipalTxSummaries', () => ({
   usePrincipalTxSummariesInfinite: jest.fn(),
 }));
+jest.mock('@/features/txsFilterAndSort/useFilterAndSortState', () => ({
+  useFilterAndSortState: jest.fn(),
+}));
 
-// Render the leaf pieces as simple stand-ins so the test targets AddressTxsTable's own
-// wiring (summary mapping, footer) rather than the full tx-item tree.
-jest.mock('@/features/txs-list/v3/FilteredTxSummaries', () => ({
-  FilteredTxSummaries: ({ txs }: { txs: TransactionSummary[] }) => (
+// Mock the table shell + footer so the test targets AddressTxsTable's own wiring (summary → row
+// mapping, type filter, cursor pagination) rather than the full columnar render tree.
+jest.mock('../../Table', () => ({
+  Table: ({ data }: { data: Array<{ transaction: { tx_id: string } }> }) => (
     <div>
-      {txs.map(tx => (
-        <span key={tx.tx_id}>{tx.tx_id}</span>
+      {data.map(row => (
+        <span key={row.transaction.tx_id}>{row.transaction.tx_id}</span>
       ))}
     </div>
   ),
@@ -36,9 +37,6 @@ jest.mock('@/common/components/ListFooter', () => ({
     </button>
   ),
 }));
-jest.mock('@/common/components/loaders/skeleton-transaction', () => ({
-  SkeletonGenericTransactionList: () => <div>loading-skeleton</div>,
-}));
 jest.mock('../../../../../app/_components/ErrorBoundary', () => ({
   ExplorerErrorBoundary: ({ children }: { children: ReactNode }) => <>{children}</>,
 }));
@@ -46,20 +44,34 @@ jest.mock('../../../../../app/_components/ErrorBoundary', () => ({
 const mockInfinite = usePrincipalTxSummariesInfinite as jest.MockedFunction<
   typeof usePrincipalTxSummariesInfinite
 >;
+const mockFilter = useFilterAndSortState as jest.MockedFunction<typeof useFilterAndSortState>;
 
-function summaryItem(tx_id: string) {
-  return { transaction: { tx_id, type: 'token_transfer', event_count: 0 } as TransactionSummary };
+function summaryItem(tx_id: string, type = 'coinbase') {
+  return {
+    transaction: {
+      tx_id,
+      type,
+      sender: { address: 'SP1', nonce: 0 },
+      fee_rate: '0',
+      block: { time: 0 },
+      event_count: 0,
+      ...(type === 'token_transfer'
+        ? { token_transfer: { recipient: 'SP2', amount: '1', memo: null } }
+        : {}),
+    },
+  };
 }
 
 function mockInfiniteResponse(overrides: Record<string, unknown> = {}) {
   mockInfinite.mockReturnValue({
     data: {
       pages: [
-        { results: [summaryItem('0x01'), summaryItem('0x02')] },
-        { results: [summaryItem('0x03')] },
+        { results: [summaryItem('0x01', 'coinbase'), summaryItem('0x02', 'token_transfer')] },
+        { results: [summaryItem('0x03', 'coinbase')] },
       ],
     },
     isLoading: false,
+    isFetching: false,
     isFetchingNextPage: false,
     hasNextPage: true,
     fetchNextPage: jest.fn(),
@@ -67,33 +79,39 @@ function mockInfiniteResponse(overrides: Record<string, unknown> = {}) {
   } as unknown as ReturnType<typeof usePrincipalTxSummariesInfinite>);
 }
 
-function renderWithChakra(ui: ReactElement) {
-  return render(<ChakraProvider value={system}>{ui}</ChakraProvider>);
-}
-
-beforeEach(() => jest.clearAllMocks());
-
-test('shows the skeleton while the first page loads', () => {
-  mockInfiniteResponse({ isLoading: true, data: undefined });
-  renderWithChakra(<AddressTxsTable principal="SP1" />);
-  expect(screen.getByText('loading-skeleton')).toBeInTheDocument();
+beforeEach(() => {
+  jest.clearAllMocks();
+  mockFilter.mockReturnValue({ activeFilters: [] } as unknown as ReturnType<
+    typeof useFilterAndSortState
+  >);
 });
 
-test('maps every page item to its transaction summary and shows the load-more footer', () => {
+test('maps every cursor page item to a table row', () => {
   mockInfiniteResponse();
-  renderWithChakra(<AddressTxsTable principal="SP1" />);
+  render(<AddressTxsTable principal="SP1" />);
 
   expect(screen.getByText('0x01')).toBeInTheDocument();
   expect(screen.getByText('0x02')).toBeInTheDocument();
   expect(screen.getByText('0x03')).toBeInTheDocument();
-  expect(screen.getByRole('button', { name: 'load-more' })).toBeEnabled();
 });
 
 test('load-more triggers the next cursor page', () => {
   const fetchNextPage = jest.fn();
   mockInfiniteResponse({ fetchNextPage });
-  renderWithChakra(<AddressTxsTable principal="SP1" />);
+  render(<AddressTxsTable principal="SP1" />);
 
   fireEvent.click(screen.getByRole('button', { name: 'load-more' }));
   expect(fetchNextPage).toHaveBeenCalledTimes(1);
+});
+
+test('applies the active type filter client-side over the fetched rows', () => {
+  mockInfiniteResponse();
+  mockFilter.mockReturnValue({ activeFilters: ['token_transfer'] } as unknown as ReturnType<
+    typeof useFilterAndSortState
+  >);
+  render(<AddressTxsTable principal="SP1" />);
+
+  expect(screen.getByText('0x02')).toBeInTheDocument();
+  expect(screen.queryByText('0x01')).not.toBeInTheDocument();
+  expect(screen.queryByText('0x03')).not.toBeInTheDocument();
 });

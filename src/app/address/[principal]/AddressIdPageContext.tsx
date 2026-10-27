@@ -1,15 +1,11 @@
 'use client';
 
 import type { CompressedPoxInfo, PrincipalNonces } from '@/app/address/[principal]/page-data';
-// TODO: Temporarily disabled - re-enable when API performance is fixed
-// import { GenericResponseType } from '@/common/hooks/useInfiniteQueryResult';
-// import { CompressedTxAndMempoolTxTableData } from '@/common/utils/transaction-utils';
+import { PrincipalTransactionSummaryListResponse } from '@/common/types/tx-v3';
 import { ReactNode, createContext, useContext, useMemo } from 'react';
 
 import {
   AddressBalanceResponse,
-  // TODO: Temporarily disabled - re-enable when API performance is fixed
-  // AddressTransactionsListResponse,
   BnsNamesOwnByAddressResponse,
   BurnchainRewardsTotal,
 } from '@stacks/stacks-blockchain-api-types';
@@ -21,10 +17,7 @@ interface AddressIdPageDataContextType {
   initialAddressLatestNonceData?: PrincipalNonces;
   initialAddressBNSNamesData?: BnsNamesOwnByAddressResponse;
   initialBurnChainRewardsData?: BurnchainRewardsTotal;
-  // TODO: Temporarily disabled - re-enable when API performance is fixed
-  // initialAddressRecentTransactionsData?:
-  //   | AddressTransactionsListResponse
-  //   | GenericResponseType<CompressedTxAndMempoolTxTableData>;
+  initialAddressRecentTransactionsData?: PrincipalTransactionSummaryListResponse;
   initialPoxInfoData?: CompressedPoxInfo;
   principal: string;
 }
@@ -36,8 +29,7 @@ const DEFAULT_ADDRESS_ID_PAGE_DATA: AddressIdPageDataContextType = {
   initialAddressLatestNonceData: undefined,
   initialAddressBNSNamesData: undefined,
   initialBurnChainRewardsData: undefined,
-  // TODO: Temporarily disabled - re-enable when API performance is fixed
-  // initialAddressRecentTransactionsData: undefined,
+  initialAddressRecentTransactionsData: undefined,
   initialPoxInfoData: undefined,
   principal: '',
 };
@@ -59,8 +51,7 @@ export function AddressIdPageDataProvider({
   initialAddressBNSNamesData,
   initialBurnChainRewardsData,
   initialPoxInfoData,
-  // TODO: Temporarily disabled - re-enable when API performance is fixed
-  // initialAddressRecentTransactionsData,
+  initialAddressRecentTransactionsData,
   principal,
 }: AddressIdPageDataProviderProps) {
   const contextValue = useMemo(
@@ -72,8 +63,7 @@ export function AddressIdPageDataProvider({
       initialAddressBNSNamesData,
       initialBurnChainRewardsData,
       initialPoxInfoData,
-      // TODO: Temporarily disabled - re-enable when API performance is fixed
-      // initialAddressRecentTransactionsData,
+      initialAddressRecentTransactionsData,
       principal,
     }),
     [
@@ -84,8 +74,7 @@ export function AddressIdPageDataProvider({
       initialAddressBNSNamesData,
       initialBurnChainRewardsData,
       initialPoxInfoData,
-      // TODO: Temporarily disabled - re-enable when API performance is fixed
-      // initialAddressRecentTransactionsData,
+      initialAddressRecentTransactionsData,
       principal,
     ]
   );

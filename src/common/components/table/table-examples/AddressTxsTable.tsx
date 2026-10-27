@@ -1,15 +1,16 @@
 'use client';
 
 import { ListFooter } from '@/common/components/ListFooter';
-import { SkeletonGenericTransactionList } from '@/common/components/loaders/skeleton-transaction';
+import { ScrollIndicator } from '@/common/components/ScrollIndicator';
 import { THIRTY_SECONDS } from '@/common/queries/query-stale-time';
 import { usePrincipalTxSummariesInfinite } from '@/common/queries/usePrincipalTxSummaries';
-import { PrincipalTransactionSummary } from '@/common/types/tx-v3';
-import { FilteredTxSummaries } from '@/features/txs-list/v3/FilteredTxSummaries';
-import { Box } from '@chakra-ui/react';
+import { useFilterAndSortState } from '@/features/txsFilterAndSort/useFilterAndSortState';
 import { useMemo } from 'react';
 
 import { ExplorerErrorBoundary } from '../../../../app/_components/ErrorBoundary';
+import { Table } from '../Table';
+import { defaultTableContainer } from './TxsTable';
+import { mapPrincipalTxRow, principalTxsColumns } from './principalTxsTableColumns';
 
 export interface AddressTxsTableProps {
   principal: string;
@@ -21,31 +22,34 @@ function AddressTxsTableBase({ principal }: AddressTxsTableProps) {
     gcTime: THIRTY_SECONDS,
     throwOnError: true,
   });
+  const { activeFilters } = useFilterAndSortState();
 
-  const txs = useMemo(
-    () =>
-      (response.data?.pages.flatMap(page => page?.results ?? []) ?? []).map(
-        (item: PrincipalTransactionSummary) => item.transaction
-      ),
-    [response.data?.pages]
-  );
-
-  if (response.isLoading) {
-    return <SkeletonGenericTransactionList />;
-  }
+  const rowData = useMemo(() => {
+    const txs = (response.data?.pages.flatMap(page => page?.results ?? []) ?? []).map(
+      item => item.transaction
+    );
+    const filtered =
+      activeFilters.length === 0 ? txs : txs.filter(tx => activeFilters.includes(tx.type));
+    return filtered.map(mapPrincipalTxRow);
+  }, [response.data?.pages, activeFilters]);
 
   return (
-    <Box flexGrow={1}>
-      <Box position="relative">
-        <FilteredTxSummaries txs={txs} />
-        <ListFooter
-          isLoading={response.isFetchingNextPage}
-          hasNextPage={response.hasNextPage}
-          fetchNextPage={response.fetchNextPage}
-          label="transactions"
-        />
-      </Box>
-    </Box>
+    <>
+      <Table
+        data={rowData}
+        columns={principalTxsColumns}
+        tableContainerWrapper={defaultTableContainer}
+        scrollIndicatorWrapper={table => <ScrollIndicator>{table}</ScrollIndicator>}
+        isLoading={response.isLoading}
+        isFetching={response.isFetching && !response.isFetchingNextPage}
+      />
+      <ListFooter
+        isLoading={response.isFetchingNextPage}
+        hasNextPage={response.hasNextPage}
+        fetchNextPage={response.fetchNextPage}
+        label="transactions"
+      />
+    </>
   );
 }
 
