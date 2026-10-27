@@ -1,7 +1,6 @@
 import { BalanceCard } from '@/app/address/[principal]/redesign/AddressOverview';
 import { SectionTabsContentContainer, SectionTabsTrigger } from '@/common/components/SectionTabs';
 import { AddressTxsTable } from '@/common/components/table/table-examples/AddressTxsTable';
-import { SMART_CONTRACT_TX_ID_PAGE_ADDRESS_TXS_PAGE_SIZE } from '@/common/components/table/table-examples/consts';
 import { DEFAULT_LIST_LIMIT } from '@/common/constants/constants';
 import { useGlobalContext } from '@/common/context/useGlobalContext';
 import { THIRTY_SECONDS } from '@/common/queries/query-stale-time';
@@ -132,10 +131,7 @@ export function SmartContractTabContent({ tx }: { tx: TxDetailsOf<'smart_contrac
         value={TransactionIdPageTab.Transactions}
         w="100%"
       >
-        <AddressTxsTable
-          principal={tx.smart_contract?.contract_id}
-          pageSize={SMART_CONTRACT_TX_ID_PAGE_ADDRESS_TXS_PAGE_SIZE}
-        />
+        <AddressTxsTable principal={tx.smart_contract?.contract_id} />
       </TabsContent>
       <TabsContent
         key={TransactionIdPageTab.PostConditions}

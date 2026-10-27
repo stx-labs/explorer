@@ -225,7 +225,7 @@ export const MempoolTxSummaryTitleCellRenderer = (tx: MempoolTransactionSummary)
   );
 };
 
-export const EventsCellRenderer = (tx: Transaction | MempoolTransaction) => {
+export const EventsCellRenderer = (tx: Transaction | MempoolTransaction | TransactionSummary) => {
   const eventCount = 'event_count' in tx ? tx.event_count : 0;
 
   if (eventCount === 0) {

@@ -6,10 +6,7 @@ import { ScrollIndicator } from '@/common/components/ScrollIndicator';
 import { SectionTabsTrigger } from '@/common/components/SectionTabs';
 import { AddressTxsTable } from '@/common/components/table/table-examples/AddressTxsTable';
 import { HoldersTable } from '@/common/components/table/table-examples/HoldersTable';
-import {
-  DEFAULT_ADDRESS_TXS_LIMIT,
-  DEFAULT_HOLDERS_TABLE_PAGE_SIZE,
-} from '@/common/components/table/table-examples/consts';
+import { DEFAULT_HOLDERS_TABLE_PAGE_SIZE } from '@/common/components/table/table-examples/consts';
 import { TabsContent, TabsList, TabsRoot } from '@/ui/Tabs';
 import { useState } from 'react';
 
@@ -107,7 +104,7 @@ export const TokenIdTabs = () => {
         <TokenIdOverview />
       </TabsContent>
       <TabsContent value={TokenIdPageTab.Transactions} w="100%">
-        <AddressTxsTable principal={tokenId} pageSize={DEFAULT_ADDRESS_TXS_LIMIT} />
+        <AddressTxsTable principal={tokenId} />
       </TabsContent>
       {showHoldersTab && (
         <TabsContent value={TokenIdPageTab.Holders} w="100%">
