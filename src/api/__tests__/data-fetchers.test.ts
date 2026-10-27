@@ -44,8 +44,11 @@ test('holders and supply fetchers skip invalid asset identifiers', async () => {
   expect(fetchJsonMock).not.toHaveBeenCalled();
 });
 
+const MINED_TX = { tx_id: '0x01', status: 'success', block: { height: 100 } };
+const PENDING_TX = { tx_id: '0x01', status: 'pending', receipt_time: 1700000000 };
+
 test('fetchTx reads the v3 transaction, requesting the given heavy fields', async () => {
-  const tx = { tx_id: '0x01' };
+  const tx = MINED_TX;
   fetchMock.mockResolvedValue(new Response(JSON.stringify(tx)));
 
   await expect(
@@ -62,7 +65,7 @@ test('fetchTx reads the v3 transaction, requesting the given heavy fields', asyn
 });
 
 test('fetchTx omits the include parameter when no heavy fields are requested', async () => {
-  fetchMock.mockResolvedValue(new Response('{}'));
+  fetchMock.mockResolvedValue(new Response(JSON.stringify(MINED_TX)));
 
   await fetchTx('https://api.hiro.so', '0x01');
   expect(fetchMock.mock.calls[0][0]).toBe('https://api.hiro.so/extended/v3/transactions/0x01');
@@ -84,4 +87,40 @@ test('fetchTxEvents reads the first page of v3 transaction events', async () => 
   expect(fetchJsonMock.mock.calls[0][0]).toBe(
     'https://api.hiro.so/extended/v3/transactions/0x01/events?limit=100'
   );
+});
+
+test('fetchTx serves a mined transaction from the data cache', async () => {
+  fetchMock.mockResolvedValue(new Response(JSON.stringify(MINED_TX)));
+
+  await expect(fetchTx('https://api.hiro.so', '0x01')).resolves.toEqual(MINED_TX);
+  expect(fetchMock).toHaveBeenCalledTimes(1);
+  expect(fetchMock.mock.calls[0][1]).toMatchObject({
+    cache: 'default',
+    next: { revalidate: 3, tags: ['tx-id-0x01'] },
+  });
+});
+
+test('fetchTx re-reads a cached pending transaction without the cache', async () => {
+  fetchMock
+    .mockResolvedValueOnce(new Response(JSON.stringify(PENDING_TX)))
+    .mockResolvedValueOnce(new Response(JSON.stringify(MINED_TX)));
+
+  await expect(
+    fetchTx('https://api.hiro.so', '0x01', { include: ['result'], redirect: 'error' })
+  ).resolves.toEqual(MINED_TX);
+  expect(fetchMock).toHaveBeenCalledTimes(2);
+  expect(fetchMock.mock.calls[1][0]).toBe(
+    'https://api.hiro.so/extended/v3/transactions/0x01?include=result'
+  );
+  expect(fetchMock.mock.calls[1][1]).toEqual({ redirect: 'error', cache: 'no-store' });
+});
+
+test('fetchTx surfaces a failed uncached re-read as an ApiError', async () => {
+  fetchMock
+    .mockResolvedValueOnce(new Response(JSON.stringify(PENDING_TX)))
+    .mockResolvedValueOnce(new Response('{}', { status: 404, statusText: 'Not Found' }));
+
+  const error = await fetchTx('https://api.hiro.so', '0x01').catch(e => e);
+  expect(error).toBeInstanceOf(ApiError);
+  expect(error).toMatchObject({ status: 404, endpoint: '/extended/v3/transactions/{tx_id}' });
 });
