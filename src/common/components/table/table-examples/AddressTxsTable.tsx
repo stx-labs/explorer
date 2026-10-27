@@ -1,306 +1,64 @@
 'use client';
 
-import { TxTableAddressColumnData } from '@/common/components/table/table-examples/TxsTable';
-import { GenericResponseType } from '@/common/hooks/useInfiniteQueryResult';
+import { ListFooter } from '@/common/components/ListFooter';
+import { SkeletonGenericTransactionList } from '@/common/components/loaders/skeleton-transaction';
 import { THIRTY_SECONDS } from '@/common/queries/query-stale-time';
-import {
-  getAddressTxsQueryKey,
-  useAddressTxs,
-} from '@/common/queries/useAddressConfirmedTxsWithTransfersInfinite';
-import {
-  CompressedTxAndMempoolTxTableData,
-  getAmount,
-  getToAddress,
-  isConfirmedTx,
-} from '@/common/utils/transaction-utils';
-import { validateStacksContractId } from '@/common/utils/utils';
-import { Text } from '@/ui/Text';
-import { Flex, Stack } from '@chakra-ui/react';
-import { ArrowRight } from '@phosphor-icons/react';
-import { useQueryClient } from '@tanstack/react-query';
-import { ColumnDef, Header, PaginationState } from '@tanstack/react-table';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { usePrincipalTxSummariesInfinite } from '@/common/queries/usePrincipalTxSummaries';
+import { PrincipalTransactionSummary } from '@/common/types/tx-v3';
+import { FilteredTxSummaries } from '@/features/txs-list/v3/FilteredTxSummaries';
+import { Box } from '@chakra-ui/react';
+import { useMemo } from 'react';
 
-import { MempoolTransaction, Transaction } from '@stacks/stacks-blockchain-api-types';
-
-import { ScrollIndicator } from '../../ScrollIndicator';
-import { AddressLinkCellRenderer, FeeCellRenderer } from '../CommonTableCellRenderers';
-import { Table } from '../Table';
-import { DefaultTableColumnHeader } from '../TableComponents';
-import { TableContainer } from '../TableContainer';
-import { TimestampCell, TimestampColumnHeader, TimestampTableMeta } from '../TimestampColumnHeader';
-import { EventsCellRenderer, TransactionTitleCellRenderer } from './AddressTxsTaBleCellRenderers';
-import {
-  IconCellRenderer,
-  TimeStampCellRenderer,
-  TxLinkCellRenderer,
-  TxTypeCellRenderer,
-} from './TxTableCellRenderers';
-
-export enum AddressTxsTableColumns {
-  Transaction = 'transaction',
-  TxId = 'txId',
-  TxType = 'txType',
-  From = 'from',
-  ArrowRight = 'arrowRight',
-  To = 'to',
-  Fee = 'fee',
-  Amount = 'amount',
-  BlockTime = 'blockTime',
-  Events = 'events',
-}
-
-export interface AddressTxsTableData {
-  [AddressTxsTableColumns.Transaction]: AddressTxsTableTransactionTitleColumnData;
-  [AddressTxsTableColumns.TxId]: string;
-  [AddressTxsTableColumns.TxType]: Transaction['tx_type'];
-  [AddressTxsTableColumns.From]: TxTableAddressColumnData;
-  [AddressTxsTableColumns.ArrowRight]: null;
-  [AddressTxsTableColumns.To]: TxTableAddressColumnData;
-  [AddressTxsTableColumns.Fee]: string;
-  [AddressTxsTableColumns.Amount]: number;
-  [AddressTxsTableColumns.BlockTime]: number | undefined;
-  [AddressTxsTableColumns.Events]: AddressTxsTableEventsColumnData;
-}
-
-type AddressTxsTableTransactionTitleColumnData = {
-  principal: string;
-  tx: Transaction | MempoolTransaction;
-};
-
-type AddressTxsTableEventsColumnData = {
-  numEvents: number;
-  txId: string;
-};
-
-export const EVENTS_COLUMN_DEFINITION: ColumnDef<AddressTxsTableData> = {
-  id: AddressTxsTableColumns.Events,
-  header: ({ header }: { header: Header<AddressTxsTableData, unknown> }) => (
-    <Flex alignItems="center" justifyContent="flex-end" w="full">
-      <DefaultTableColumnHeader header={header}>Events</DefaultTableColumnHeader>
-    </Flex>
-  ),
-  accessorKey: AddressTxsTableColumns.Events,
-  cell: info => {
-    const { numEvents, txId } = info.row.original[AddressTxsTableColumns.Events];
-    return (
-      <Flex alignItems="center" justifyContent="flex-end" w="full">
-        {EventsCellRenderer(numEvents, txId)}
-      </Flex>
-    );
-  },
-  enableSorting: false,
-};
-
-export const defaultColumnDefinitions: ColumnDef<AddressTxsTableData>[] = [
-  {
-    id: AddressTxsTableColumns.Transaction,
-    header: 'Transaction',
-    accessorKey: AddressTxsTableColumns.Transaction,
-    cell: info => {
-      const { principal, tx } = info.row.original[AddressTxsTableColumns.Transaction];
-      return TransactionTitleCellRenderer(principal, tx);
-    },
-    enableSorting: false,
-  },
-  {
-    id: AddressTxsTableColumns.TxType,
-    header: 'Type',
-    accessorKey: AddressTxsTableColumns.TxType,
-    cell: info => <TxTypeCellRenderer txType={info.row.original[AddressTxsTableColumns.TxType]} />,
-    enableSorting: false,
-  },
-  {
-    id: AddressTxsTableColumns.TxId,
-    header: 'ID',
-    accessorKey: AddressTxsTableColumns.TxId,
-    cell: info => TxLinkCellRenderer(info.row.original[AddressTxsTableColumns.TxId]),
-    enableSorting: false,
-  },
-  {
-    id: AddressTxsTableColumns.From,
-    header: 'By',
-    accessorKey: AddressTxsTableColumns.From,
-    cell: info => AddressLinkCellRenderer(info.row.original[AddressTxsTableColumns.From]),
-    enableSorting: false,
-  },
-  {
-    id: AddressTxsTableColumns.ArrowRight,
-    header: '',
-    accessorKey: AddressTxsTableColumns.ArrowRight,
-    cell: info => IconCellRenderer(<ArrowRight />),
-    enableSorting: false,
-    size: 45,
-    minSize: 45,
-    maxSize: 45,
-  },
-  {
-    id: AddressTxsTableColumns.To,
-    header: 'Target',
-    accessorKey: AddressTxsTableColumns.To,
-    cell: info => AddressLinkCellRenderer(info.row.original[AddressTxsTableColumns.To]),
-    enableSorting: false,
-  },
-  {
-    id: AddressTxsTableColumns.Fee,
-    header: ({ header }: { header: Header<AddressTxsTableData, unknown> }) => (
-      <Flex alignItems="center" justifyContent="flex-end" w="full">
-        <DefaultTableColumnHeader header={header}>Fee</DefaultTableColumnHeader>
-      </Flex>
-    ),
-    accessorKey: AddressTxsTableColumns.Fee,
-    cell: info => (
-      <Flex alignItems="center" justifyContent="flex-end" w="full">
-        {FeeCellRenderer(info.row.original[AddressTxsTableColumns.Fee])}
-      </Flex>
-    ),
-    enableSorting: false,
-  },
-  {
-    id: AddressTxsTableColumns.BlockTime,
-    header: ({ header, table }: { header: Header<AddressTxsTableData, unknown>; table: any }) => (
-      <TimestampColumnHeader header={header} table={table} />
-    ),
-    accessorKey: AddressTxsTableColumns.BlockTime,
-    cell: ({ getValue, table }: { getValue: () => unknown; table: any }) => (
-      <TimestampCell timestamp={getValue() as number} table={table} />
-    ),
-    enableSorting: false,
-  },
-];
-
-export const columnDefinitionsWithEvents = [...defaultColumnDefinitions, EVENTS_COLUMN_DEFINITION];
+import { ExplorerErrorBoundary } from '../../../../app/_components/ErrorBoundary';
 
 export interface AddressTxsTableProps {
   principal: string;
-  initialData?: GenericResponseType<CompressedTxAndMempoolTxTableData> | undefined;
-  disablePagination?: boolean;
-  columnDefinitions?: ColumnDef<AddressTxsTableData>[];
   pageSize: number;
-  onTotalChange?: (total: number) => void;
+  disablePagination?: boolean;
 }
 
-export function AddressTxsTable({
+function AddressTxsTableBase({
   principal,
-  initialData,
-  disablePagination = false,
-  columnDefinitions,
   pageSize,
+  disablePagination = false,
 }: AddressTxsTableProps) {
-  const [showAbsoluteTime, setShowAbsoluteTime] = useState(false);
-  const [pagination, setPagination] = useState<PaginationState>({
-    pageIndex: 0,
-    pageSize,
+  const response = usePrincipalTxSummariesInfinite(principal, {
+    staleTime: THIRTY_SECONDS,
+    gcTime: THIRTY_SECONDS,
   });
 
-  const handlePageChange = useCallback((page: PaginationState) => {
-    setPagination(prev => ({
-      ...prev,
-      pageIndex: page.pageIndex,
-    }));
-    window?.scrollTo(0, 0); // Smooth scroll to top
-  }, []);
+  const txs = useMemo(() => {
+    const items: PrincipalTransactionSummary[] =
+      response.data?.pages.flatMap(page => page?.results ?? []) ?? [];
+    const summaries = items.map(item => item.transaction);
+    return disablePagination ? summaries.slice(0, pageSize) : summaries;
+  }, [response.data?.pages, disablePagination, pageSize]);
 
-  const queryClient = useQueryClient();
-
-  const isCacheSetWithInitialData = useRef(false);
-  /**
-   * HACK: react query's cache is taking precedence over the initial data, which is causing hydration errors
-   * Setting the gcTime to 0 prevents this from happening but it also prevents us from caching requests as the user paginates through the table
-   * React query's initial data prop does not behave as expected. While it enables us to use the initial data for the first page, the initial data prop makes the logic required to replace initial data when it becomes stale difficult
-   * By explicitly setting the cache for the first page with initial data, we guarantee the table will use the initial data from the server and behave as expected
-   */
-  if (isCacheSetWithInitialData.current === false && initialData) {
-    const queryKey = getAddressTxsQueryKey(
-      principal,
-      pagination.pageSize,
-      pagination.pageIndex * pagination.pageSize
-    );
-    queryClient.setQueryData(queryKey, initialData);
-    isCacheSetWithInitialData.current = true;
+  if (response.isLoading) {
+    return <SkeletonGenericTransactionList />;
   }
 
-  // TODO: Temporarily fetching client-side - re-enable SSR initialData when API performance is fixed
-  let { data, isFetching, isLoading, isError, error } = useAddressTxs(
-    principal,
-    pagination.pageSize,
-    pagination.pageIndex * pagination.pageSize,
-    {
-      staleTime: THIRTY_SECONDS,
-      gcTime: THIRTY_SECONDS,
-    }
-  );
-
-  const { total, results: txs = [] } = data || {};
-
-  const rowData: AddressTxsTableData[] = useMemo(
-    () =>
-      txs.map(tx => {
-        const isConfirmed = isConfirmedTx(tx);
-        const to = getToAddress(tx);
-        const amount = getAmount(tx);
-        const events = isConfirmed ? tx.events || [] : [];
-
-        return {
-          [AddressTxsTableColumns.Transaction]: { principal, tx },
-          [AddressTxsTableColumns.TxId]: tx.tx_id,
-          [AddressTxsTableColumns.TxType]: tx.tx_type,
-          [AddressTxsTableColumns.From]: {
-            address: tx.sender_address,
-            isContract: validateStacksContractId(tx.sender_address),
-          },
-          [AddressTxsTableColumns.ArrowRight]: null,
-          [AddressTxsTableColumns.To]: {
-            address: to,
-            isContract: validateStacksContractId(to),
-          },
-          [AddressTxsTableColumns.Fee]: tx.fee_rate,
-          [AddressTxsTableColumns.Amount]: amount,
-          [AddressTxsTableColumns.BlockTime]: isConfirmed ? tx.block_time : undefined,
-          [AddressTxsTableColumns.Events]: {
-            numEvents: events.length,
-            txId: tx.tx_id,
-          },
-        };
-      }),
-    [principal, txs]
-  );
-
   return (
-    <Table
-      data={rowData}
-      columns={columnDefinitions ?? defaultColumnDefinitions}
-      tableContainerWrapper={table => <TableContainer>{table}</TableContainer>}
-      scrollIndicatorWrapper={table => <ScrollIndicator>{table}</ScrollIndicator>}
-      meta={
-        {
-          toggleTimestamp: {
-            showAbsolute: showAbsoluteTime,
-            toggle: () => setShowAbsoluteTime(!showAbsoluteTime),
-          },
-        } satisfies TimestampTableMeta
-      }
-      pagination={
-        disablePagination
-          ? undefined
-          : {
-              manualPagination: true,
-              pageIndex: pagination.pageIndex,
-              pageSize: pagination.pageSize,
-              totalRows: total || 0,
-              onPageChange: handlePageChange,
-            }
-      }
-      isLoading={isLoading}
-      isFetching={isFetching}
-      error={isError ? (error?.message ?? 'Failed to load transactions') : undefined}
-      emptyTableUi={
-        <Stack justifyContent="center" alignItems="center" h="full" w="full" flex={1} py={16}>
-          <Text textStyle="text-regular-sm" color="textTertiary">
-            This account has no transactions yet
-          </Text>
-        </Stack>
-      }
-    />
+    <Box flexGrow={1}>
+      <Box position="relative">
+        <FilteredTxSummaries txs={txs} />
+        {!disablePagination && (
+          <ListFooter
+            isLoading={response.isFetchingNextPage}
+            hasNextPage={response.hasNextPage}
+            fetchNextPage={response.fetchNextPage}
+            label="transactions"
+          />
+        )}
+      </Box>
+    </Box>
+  );
+}
+
+export function AddressTxsTable(props: AddressTxsTableProps) {
+  return (
+    <ExplorerErrorBoundary tryAgainButton>
+      <AddressTxsTableBase {...props} />
+    </ExplorerErrorBoundary>
   );
 }

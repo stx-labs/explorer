@@ -150,7 +150,7 @@ export function MarketDataCard() {
 }
 
 function MobileTokenIdOverview() {
-  const { initialAddressRecentTransactionsData, tokenId } = useTokenIdPageData();
+  const { tokenId } = useTokenIdPageData();
 
   return (
     <Stack gap={8} hideFrom="lg" className="mobile-token-id-overview">
@@ -164,7 +164,6 @@ function MobileTokenIdOverview() {
         </Text>
         <AddressTxsTable
           principal={tokenId}
-          initialData={initialAddressRecentTransactionsData}
           pageSize={DEFAULT_OVERVIEW_TAB_TABLE_PAGE_SIZE}
           disablePagination
         />
@@ -174,7 +173,7 @@ function MobileTokenIdOverview() {
 }
 
 function DesktopTokenIdOverview() {
-  const { initialAddressRecentTransactionsData, tokenId } = useTokenIdPageData();
+  const { tokenId } = useTokenIdPageData();
 
   return (
     <Grid
@@ -195,7 +194,6 @@ function DesktopTokenIdOverview() {
           </Text>
           <AddressTxsTable
             principal={tokenId}
-            initialData={initialAddressRecentTransactionsData}
             pageSize={DEFAULT_OVERVIEW_TAB_TABLE_PAGE_SIZE}
             disablePagination
           />

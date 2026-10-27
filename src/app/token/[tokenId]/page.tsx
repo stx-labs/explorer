@@ -8,33 +8,20 @@ import {
 import { handleSettledResult } from '@/app/address/[principal]/page-data';
 import { getTokenPrice } from '@/app/getTokenPriceInfo';
 import { CommonSearchParams } from '@/app/transactions/page';
-import { GenericResponseType } from '@/common/hooks/useInfiniteQueryResult';
 import { NetworkModes } from '@/common/types/network';
 import { FtHolderListResponse } from '@/common/types/tokens-v3';
+import { PrincipalTransactionSummaryListResponse } from '@/common/types/tx-v3';
 import { logError } from '@/common/utils/error-utils';
 import { getApiUrl } from '@/common/utils/network-utils';
-import {
-  CompressedTxAndMempoolTxTableData,
-  compressMempoolTransaction,
-  compressTransaction,
-} from '@/common/utils/transaction-utils';
 import { getTxBlockTime, isConfirmedTxDetails } from '@/common/utils/tx-details-utils';
 import { isAddressForNetworkMode, validateStacksContractId } from '@/common/utils/utils';
 
-import {
-  ContractInterfaceResponse,
-  MempoolTransaction,
-  Transaction,
-} from '@stacks/stacks-blockchain-api-types';
+import { ContractInterfaceResponse } from '@stacks/stacks-blockchain-api-types';
 
 import TokenIdPageRedesign from './PageClient';
 import { getTokenDataFromLunarCrush, getTokenDataFromStacksApi, mergeTokenData } from './page-data';
 import { TokenIdPageDataProvider } from './redesign/context/TokenIdPageContext';
 import { MergedTokenData } from './types';
-
-function isConfirmedTx<T extends Transaction, U extends MempoolTransaction>(tx: T | U): tx is T {
-  return 'block_height' in tx && tx.block_height !== undefined;
-}
 
 export default async function (props: {
   params: Promise<{ tokenId: string }>;
@@ -68,9 +55,7 @@ export default async function (props: {
     stxPrice: 0,
     btcPrice: 0,
   };
-  let initialAddressRecentTransactionsData:
-    | GenericResponseType<CompressedTxAndMempoolTxTableData>
-    | undefined;
+  let initialAddressRecentTransactionsData: PrincipalTransactionSummaryListResponse | undefined;
   let tokenData: MergedTokenData | undefined;
   let txId: string | undefined;
   let txBlockTime: number | undefined;
@@ -148,18 +133,7 @@ export default async function (props: {
 
       txBlockTime = tx && isConfirmedTxDetails(tx) ? getTxBlockTime(tx) : undefined;
 
-      const compressedRecentAddressTransactions = recentAddressTransactions
-        ? {
-            ...recentAddressTransactions,
-            results: recentAddressTransactions?.results.map(tx => {
-              if (isConfirmedTx<Transaction, MempoolTransaction>(tx)) {
-                return compressTransaction(tx);
-              }
-              return compressMempoolTransaction(tx);
-            }),
-          }
-        : undefined;
-      initialAddressRecentTransactionsData = compressedRecentAddressTransactions;
+      initialAddressRecentTransactionsData = recentAddressTransactions;
     } catch (error) {
       logError(
         error as Error,

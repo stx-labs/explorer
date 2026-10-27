@@ -4,10 +4,7 @@ import { AvailableFunctions } from '@/app/txid/[txId]/redesign/function-called/A
 import { Source } from '@/app/txid/[txId]/redesign/source/Source';
 import { ScrollIndicator } from '@/common/components/ScrollIndicator';
 import { SectionTabsTrigger } from '@/common/components/SectionTabs';
-import {
-  AddressTxsTable,
-  columnDefinitionsWithEvents,
-} from '@/common/components/table/table-examples/AddressTxsTable';
+import { AddressTxsTable } from '@/common/components/table/table-examples/AddressTxsTable';
 import { HoldersTable } from '@/common/components/table/table-examples/HoldersTable';
 import {
   DEFAULT_ADDRESS_TXS_LIMIT,
@@ -110,11 +107,7 @@ export const TokenIdTabs = () => {
         <TokenIdOverview />
       </TabsContent>
       <TabsContent value={TokenIdPageTab.Transactions} w="100%">
-        <AddressTxsTable
-          principal={tokenId}
-          pageSize={DEFAULT_ADDRESS_TXS_LIMIT}
-          columnDefinitions={columnDefinitionsWithEvents}
-        />
+        <AddressTxsTable principal={tokenId} pageSize={DEFAULT_ADDRESS_TXS_LIMIT} />
       </TabsContent>
       {showHoldersTab && (
         <TabsContent value={TokenIdPageTab.Holders} w="100%">

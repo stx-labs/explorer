@@ -2,17 +2,10 @@ import dynamic from 'next/dynamic';
 import { FC } from 'react';
 
 import { ExplorerErrorBoundary } from '../../../app/_components/ErrorBoundary';
+import { AddressConfirmedTxs } from '../../../app/address/[principal]/tx-lists/AddressConfirmedTxs';
 import { Section } from '../../../common/components/Section';
 import { SkeletonTxsList } from '../SkeletonTxsList';
 import { TxListTabsBase } from './TxListTabsBase';
-
-const AddressConfirmedTxsList = dynamic(
-  () => import('../AddressConfirmedTxsList').then(mod => mod.AddressConfirmedTxsList),
-  {
-    loading: () => <SkeletonTxsList />,
-    ssr: false,
-  }
-);
 
 const AddressMempoolTxsList = dynamic(
   () => import('../AddressMempoolTxsList').then(mod => mod.AddressMempoolTxsList),
@@ -28,7 +21,7 @@ export const AddressTxListTabs: FC<{
   return (
     <ExplorerErrorBoundary Wrapper={Section} wrapperProps={{ padding: '150px 0' }} tryAgainButton>
       <TxListTabsBase
-        confirmedList={<AddressConfirmedTxsList address={address} />}
+        confirmedList={<AddressConfirmedTxs principal={address} />}
         mempoolList={<AddressMempoolTxsList address={address} />}
       />
     </ExplorerErrorBoundary>
