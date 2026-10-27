@@ -257,24 +257,32 @@ export async function fetchTx(
 ): Promise<TxDetails> {
   const { include, ...requestOptions } = options;
   const query = include?.length ? `?include=${include.join(',')}` : '';
-  const response = await stacksAPIFetch(`${apiUrl}/extended/v3/transactions/${txId}${query}`, {
-    ...requestOptions,
+  const url = `${apiUrl}/extended/v3/transactions/${txId}${query}`;
+  const readTx = async (init: RequestInit): Promise<TxDetails> => {
+    const response = await stacksAPIFetch(url, { ...requestOptions, ...init });
+    if (!response.ok) {
+      throw new ApiError({
+        message: `Failed to fetch transaction: ${response.status} ${response.statusText}`,
+        status: response.status,
+        endpoint: '/extended/v3/transactions/{tx_id}',
+        method: 'GET',
+      });
+    }
+    return response.json();
+  };
+
+  const tx = await readTx({
     cache: 'default',
     next: {
       revalidate: CONFIRMED_TX_REVALIDATION_TIMEOUT_IN_SECONDS,
       tags: [getTxTag(txId)],
     },
   });
-  if (!response.ok) {
-    throw new ApiError({
-      message: `Failed to fetch transaction: ${response.status} ${response.statusText}`,
-      status: response.status,
-      endpoint: '/extended/v3/transactions/{tx_id}',
-      method: 'GET',
-    });
-  }
-  const tx: TxDetails = await response.json();
-  return tx;
+  // Next serves a stale cache entry before revalidating it, so a cached copy can still be pending
+  // after the transaction was mined. Mined transactions are final (barring reorgs) and safe to
+  // serve from the cache; a pending one is re-read so the page doesn't lag behind the API.
+  if ('block' in tx) return tx;
+  return readTx({ cache: 'no-store' });
 }
 
 export async function fetchTxEvents(

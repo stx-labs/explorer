@@ -23,6 +23,10 @@ export const TESTNET_BTC_ADDRESS_BASE_URL =
   process.env.NEXT_PUBLIC_TESTNET_BTC_ADDRESS_BASE_URL ||
   'https://mempool.bitcoin.regtest.hiro.so/address';
 
+// How often an open transaction page re-reads a transaction that is still pending.
+export const PENDING_TX_REFETCH_INTERVAL_MS =
+  Number(process.env.NEXT_PUBLIC_PENDING_TX_REFETCH_INTERVAL_MS) || 10_000;
+
 export const DEVNET_PORT = process.env.NEXT_PUBLIC_EXPLORER_DEVNET_PORT || '8000';
 export const DEVNET_SERVER =
   process.env.NEXT_PUBLIC_EXPLORER_DEVNET_SERVER || 'http://localhost:3999';

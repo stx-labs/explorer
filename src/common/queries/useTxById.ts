@@ -4,12 +4,15 @@ import { UseQueryResult, useQuery } from '@tanstack/react-query';
 
 import { callApiWithErrorHandling } from '../../api/callApiWithErrorHandling';
 import { useApiClient } from '../../api/useApiClient';
+import { useGlobalContext } from '../context/useGlobalContext';
 
 export function useTxById(txId?: string, options: any = {}): UseQueryResult<TxDetails> {
   const apiClient = useApiClient();
+  const { activeNetwork } = useGlobalContext();
 
   return useQuery({
-    queryKey: ['txById', txId],
+    // Keyed by API too: the same transaction can differ between APIs (e.g. `?api=` overrides).
+    queryKey: ['txById', activeNetwork.url, txId],
     queryFn: async () => {
       if (!txId) return undefined;
 
