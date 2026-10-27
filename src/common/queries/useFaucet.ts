@@ -21,7 +21,6 @@ export function useFaucet() {
           },
         },
         body: {
-          // @ts-expect-error
           content: 'application/json',
         },
       });
