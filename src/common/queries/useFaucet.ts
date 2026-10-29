@@ -4,6 +4,7 @@ import { ApiError } from '../../api/ApiError';
 import { getErrorMessage } from '../../api/getErrorMessage';
 import { useApiClient } from '../../api/useApiClient';
 import { getAccountBalanceQueryKey } from './useAccountBalance';
+import { PRINCIPAL_MEMPOOL_TX_SUMMARIES_INFINITE_KEY } from './useMempoolTxSummaries';
 
 const ENDPOINT = '/extended/v1/faucets/stx';
 
@@ -38,6 +39,10 @@ export function useFaucet() {
     onSuccess: (_data, { address }) => {
       void queryClient.invalidateQueries({ queryKey: getAccountBalanceQueryKey(address) });
       void queryClient.invalidateQueries({ queryKey: ['addressMempoolTxsInfinite', address] });
+      void queryClient.invalidateQueries({
+        queryKey: [PRINCIPAL_MEMPOOL_TX_SUMMARIES_INFINITE_KEY],
+        refetchType: 'all',
+      });
     },
   });
 }

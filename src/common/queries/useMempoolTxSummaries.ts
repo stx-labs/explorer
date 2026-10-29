@@ -20,10 +20,17 @@ export const mempoolTxSummariesQueryKey = (networkId: number | string, limit: nu
 export const mempoolTxSummariesInfiniteQueryKey = (networkId: number | string, limit: number) =>
   ['mempoolTxSummariesInfinite', networkId, limit] as const;
 
+/**
+ * Query-key base for {@link usePrincipalMempoolTxSummariesInfinite}. Exported so the tx-submit
+ * handlers (faucet, contract call, deploy) can invalidate the Pending-tab feed by prefix without
+ * re-deriving the key — the scenario that drifts if it's written as a literal in several places.
+ */
+export const PRINCIPAL_MEMPOOL_TX_SUMMARIES_INFINITE_KEY = 'principalMempoolTxSummariesInfinite';
+
 export const principalMempoolTxSummariesInfiniteQueryKey = (
   networkId: number | string,
   principal: string
-) => ['principalMempoolTxSummariesInfinite', networkId, principal] as const;
+) => [PRINCIPAL_MEMPOOL_TX_SUMMARIES_INFINITE_KEY, networkId, principal] as const;
 
 /**
  * Cursor-paginated feed of a principal's pending (mempool) transactions from
