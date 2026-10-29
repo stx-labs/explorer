@@ -8,7 +8,7 @@ import { PrincipalTransactionSummaryListResponse } from '@/common/types/tx-v3';
 import { useMemo } from 'react';
 
 import { Table } from '../Table';
-import { defaultTableContainer } from './TxsTable';
+import { TableContainer } from '../TableContainer';
 import { mapPrincipalTxRow, principalTxsColumns } from './principalTxsTableColumns';
 
 interface AddressRecentTxsTableProps {
@@ -42,7 +42,9 @@ function AddressRecentTxsTableBase({
     <Table
       data={rowData}
       columns={principalTxsColumns}
-      tableContainerWrapper={defaultTableContainer}
+      // A capped preview sizes to its rows — unlike `defaultTableContainer`, which reserves a
+      // `minH` meant for full, paginated tables and would leave empty space under 3 rows.
+      tableContainerWrapper={table => <TableContainer>{table}</TableContainer>}
       scrollIndicatorWrapper={table => <ScrollIndicator>{table}</ScrollIndicator>}
       isLoading={isLoading}
     />

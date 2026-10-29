@@ -7,6 +7,7 @@ import { TransactionSummary } from '@/common/types/tx-v3';
 import { formatTimestampLocalized, formatTimestampToRelativeTime } from '@/common/utils/time-utils';
 import { validateStacksContractId } from '@/common/utils/utils';
 import { getV3ToAddress } from '@/features/txs-list/utils';
+import { V3StxPrice } from '@/features/txs-list/v3/V3StxPrice';
 import { Flex } from '@chakra-ui/react';
 import { ArrowRight } from '@phosphor-icons/react';
 import { ColumnDef, Header } from '@tanstack/react-table';
@@ -33,6 +34,23 @@ export interface PrincipalTxTableData {
   [TxTableColumns.BlockTime]: number;
 }
 
+// The transaction title, with the inline USD value badge for token transfers (toggle-aware via the
+// ShowValueMenu) — restoring the value cell the summary list showed before these tables.
+function TransactionTitleCell({ tx }: { tx: TransactionSummary }) {
+  if (tx.type !== 'token_transfer') {
+    return TxSummaryTitleCellRenderer(tx);
+  }
+  return (
+    <Flex alignItems="center">
+      {TxSummaryTitleCellRenderer(tx)}
+      <V3StxPrice
+        value={Number(tx.token_transfer.amount)}
+        bitcoinBlockTime={tx.bitcoin_block.time}
+      />
+    </Flex>
+  );
+}
+
 const rightAlignedHeader =
   (label: string) =>
   ({ header }: { header: Header<PrincipalTxTableData, unknown> }) => (
@@ -46,7 +64,7 @@ export const principalTxsColumns: ColumnDef<PrincipalTxTableData>[] = [
     id: TxTableColumns.Transaction,
     header: 'Transaction',
     accessorKey: TxTableColumns.Transaction,
-    cell: info => TxSummaryTitleCellRenderer(info.getValue() as TransactionSummary),
+    cell: info => <TransactionTitleCell tx={info.getValue() as TransactionSummary} />,
     enableSorting: false,
   },
   {
