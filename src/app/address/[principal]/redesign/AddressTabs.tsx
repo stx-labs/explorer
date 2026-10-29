@@ -6,12 +6,12 @@ import {
   useDeepLinkTabOnValueChange,
 } from '@/common/components/SectionTabs';
 import { FungibleTokensTableWithFilters } from '@/common/components/table/fungible-tokens-table/FungibleTokensTableWithFilters';
+import { AddressMempoolTxsTable } from '@/common/components/table/table-examples/AddressMempoolTxsTable';
 import { ADDRESS_ID_PAGE_FUNGIBLE_TOKENS_LIMIT } from '@/common/components/table/table-examples/consts';
 import { useNftHoldings } from '@/common/queries/useNftHoldings';
 import { usePrincipalTxSummaries } from '@/common/queries/usePrincipalTxSummaries';
 import { validateStacksContractId } from '@/common/utils/utils';
 import { Skeleton } from '@/components/ui/skeleton';
-import { AddressMempoolTxsList } from '@/features/txs-list/AddressMempoolTxsList';
 import { TabsContent, TabsList, TabsRoot } from '@/ui/Tabs';
 import dynamic from 'next/dynamic';
 import { useSearchParams } from 'next/navigation';
@@ -149,7 +149,7 @@ export const AddressTabs = ({ principal }: { principal: string }) => {
         <AddressConfirmedTxs principal={principal} />
       </TabsContent>
       <TabsContent key={AddressIdPageTab.Pending} value={AddressIdPageTab.Pending}>
-        <AddressMempoolTxsList address={principal} />
+        <AddressMempoolTxsTable principal={principal} />
       </TabsContent>
       <TabsContent key={AddressIdPageTab.Tokens} value={AddressIdPageTab.Tokens}>
         <FungibleTokensTableWithFilters
