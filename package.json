@@ -154,7 +154,7 @@
     "storybook-addon-next-router": "4.0.2",
     "ts-unused-exports": "11.0.1",
     "typescript": "5.8.2",
-    "vite": "6.4.3",
+    "vite": "6.4.5",
     "whatwg-fetch": "3.6.20"
   },
   "homepage": "https://explorer.hiro.so",
@@ -189,7 +189,7 @@
       "@types/react-dom": "19.2.0",
       "axios": "1.20.0",
       "uuid": "11.1.1",
-      "vite": "6.4.3",
+      "vite": "6.4.5",
       "sharp": "0.35.4"
     }
   }
