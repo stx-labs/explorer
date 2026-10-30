@@ -1,5 +1,6 @@
 import { stacksAPIFetch, stacksAPIFetchJson } from '@/api/stacksAPIFetch';
 import { PoxInfo } from '@/common/queries/usePoxInforRaw';
+import { PrincipalTransactionSummaryListResponse } from '@/common/types/tx-v3';
 import { NUM_TEN_MINUTES_IN_DAY } from '@/common/utils/consts';
 import { logError } from '@/common/utils/error-utils';
 import { FT_BALANCES_PAGE_SIZE, fetchAllFtBalances } from '@/common/utils/ft-balances';
@@ -8,7 +9,6 @@ import { validateStacksContractId } from '@/common/utils/utils';
 import { OperationResponse } from '@stacks/blockchain-api-client';
 import {
   AddressBalanceResponse,
-  AddressTransactionsListResponse,
   BnsNamesOwnByAddressResponse,
   BurnchainRewardsTotal,
 } from '@stacks/stacks-blockchain-api-types';
@@ -16,8 +16,6 @@ import {
 export type PrincipalNonces = OperationResponse['/extended/v3/principals/{principal}/nonces'];
 type StxBalanceResponse = OperationResponse['/extended/v2/addresses/{principal}/balances/stx'];
 type FtBalancesResponse = OperationResponse['/extended/v2/addresses/{principal}/balances/ft'];
-type AddressTransactionsResponse =
-  OperationResponse['/extended/v2/addresses/{address}/transactions'];
 
 export const getAddressBalancesTag = (principal: string) => `address-balances-${principal}`;
 export const getAddressLatestNonceTag = (principal: string) => `address-latest-nonce-${principal}`;
@@ -188,9 +186,9 @@ export function compressPoxInfo(poxInfo: PoxInfo): CompressedPoxInfo {
 export async function fetchRecentTransactions(
   apiUrl: string,
   principal: string
-): Promise<AddressTransactionsListResponse> {
-  const data = await stacksAPIFetchJson<AddressTransactionsResponse>(
-    `${apiUrl}/extended/v2/addresses/${encodeURIComponent(principal)}/transactions?limit=${ADDRESS_RECENT_TRANSACTIONS_LIMIT}`,
+): Promise<PrincipalTransactionSummaryListResponse> {
+  return stacksAPIFetchJson<PrincipalTransactionSummaryListResponse>(
+    `${apiUrl}/extended/v3/principals/${encodeURIComponent(principal)}/transactions?limit=${ADDRESS_RECENT_TRANSACTIONS_LIMIT}`,
     {
       cache: 'default',
       next: {
@@ -200,11 +198,6 @@ export async function fetchRecentTransactions(
     },
     'Failed to fetch recent transactions'
   );
-
-  return {
-    ...data,
-    results: (data.results ?? []).map(item => item.tx),
-  } as AddressTransactionsListResponse;
 }
 
 export function handleSettledResult<T>(

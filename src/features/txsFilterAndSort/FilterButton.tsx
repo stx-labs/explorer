@@ -68,10 +68,12 @@ export const FilterButton = memo(() => {
   }, [setIsFocused]);
   const isHoveredOrFocused = isHovered || isFocused;
 
-  const { setActiveFilters } = useFilterAndSortState();
+  const { activeFilters, setActiveFilters } = useFilterAndSortState();
 
+  // Controlled by the route-scoped Redux filters so the menu reflects filters that persist across
+  // navigation (otherwise the table stays filtered while the control shows no selection).
   const { value: selectedFilters, getItemProps: getCheckboxProps } = useCheckboxGroup({
-    defaultValue: [],
+    value: activeFilters,
     onValueChange: (value: string[]) => {
       setActiveFilters(value);
     },

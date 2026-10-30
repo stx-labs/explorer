@@ -8,7 +8,7 @@ import { Circle } from '@/common/components/Circle';
 import { BurnBlockLink, ExplorerLink } from '@/common/components/ExplorerLinks';
 import { SectionTabsContentContainer } from '@/common/components/SectionTabs';
 import { StackingCardItem } from '@/common/components/id-pages/Overview';
-import { AddressTxsTable } from '@/common/components/table/table-examples/AddressTxsTable';
+import { AddressRecentTxsTable } from '@/common/components/table/table-examples/AddressRecentTxsTable';
 import { ADDRESS_ID_PAGE_RECENT_ADDRESS_TXS_LIMIT } from '@/common/components/table/table-examples/consts';
 import { useSbtcNetworkMode } from '@/common/hooks/useSbtcNetworkMode';
 import { getFtDecimalAdjustedBalance, microToStacks } from '@/common/utils/utils';
@@ -438,9 +438,7 @@ export function MinerCard() {
 }
 
 export const AddressOverview = () => {
-  // TODO: Temporarily disabled - re-enable when API performance is fixed
-  // const { initialAddressRecentTransactionsData, principal } = useAddressIdPageData();
-  const { principal } = useAddressIdPageData();
+  const { initialAddressRecentTransactionsData, principal } = useAddressIdPageData();
 
   return (
     <Grid templateColumns={{ base: '100%', lg: '75% 25%' }} gap={2} w="full" minW={0}>
@@ -457,11 +455,9 @@ export const AddressOverview = () => {
           <Text textStyle="heading-xs" color="textPrimary">
             Recent transactions
           </Text>
-          <AddressTxsTable
+          <AddressRecentTxsTable
             principal={principal}
-            // TODO: Temporarily disabled - re-enable when API performance is fixed
-            // initialData={initialAddressRecentTransactionsData}
-            disablePagination
+            initialData={initialAddressRecentTransactionsData}
             pageSize={ADDRESS_ID_PAGE_RECENT_ADDRESS_TXS_LIMIT}
           />
         </Stack>

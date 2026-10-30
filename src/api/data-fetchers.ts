@@ -4,7 +4,12 @@ import { LUNAR_CRUSH_API_KEY } from '@/common/constants/env';
 import { PoxInfo } from '@/common/queries/usePoxInforRaw';
 import { LunarCrushCoinRedesign } from '@/common/types/lunarCrush';
 import { FtHolderListResponse, FtSupplyResponse } from '@/common/types/tokens-v3';
-import { TxDetails, TxDetailsIncludeField, TxEventListResponse } from '@/common/types/tx-v3';
+import {
+  PrincipalTransactionSummaryListResponse,
+  TxDetails,
+  TxDetailsIncludeField,
+  TxEventListResponse,
+} from '@/common/types/tx-v3';
 import { logError } from '@/common/utils/error-utils';
 import { FT_BALANCES_PAGE_SIZE, fetchAllFtBalances } from '@/common/utils/ft-balances';
 import { validateAssettId } from '@/common/utils/utils';
@@ -12,7 +17,6 @@ import { validateAssettId } from '@/common/utils/utils';
 import { OperationResponse } from '@stacks/blockchain-api-client';
 import {
   AddressBalanceResponse,
-  AddressTransactionsListResponse,
   BnsNamesOwnByAddressResponse,
   BurnchainRewardsTotal,
   MempoolTransaction,
@@ -23,8 +27,6 @@ import type { operations } from '@stacks/token-metadata-api-client/lib/generated
 
 type StxBalanceResponse = OperationResponse['/extended/v2/addresses/{principal}/balances/stx'];
 type FtBalancesResponse = OperationResponse['/extended/v2/addresses/{principal}/balances/ft'];
-type AddressTransactionsResponse =
-  OperationResponse['/extended/v2/addresses/{address}/transactions'];
 
 type FtMetadataResponse =
   operations['getFtMetadata']['responses']['200']['content']['application/json'];
@@ -158,9 +160,9 @@ export async function fetchPoxInfoRaw(apiUrl: string): Promise<PoxInfo> {
 export async function fetchRecentTransactions(
   apiUrl: string,
   principal: string
-): Promise<AddressTransactionsListResponse> {
-  const data = await stacksAPIFetchJson<AddressTransactionsResponse>(
-    `${apiUrl}/extended/v2/addresses/${encodeURIComponent(principal)}/transactions?limit=${ADDRESS_RECENT_TRANSACTIONS_LIMIT}`,
+): Promise<PrincipalTransactionSummaryListResponse> {
+  return stacksAPIFetchJson<PrincipalTransactionSummaryListResponse>(
+    `${apiUrl}/extended/v3/principals/${encodeURIComponent(principal)}/transactions?limit=${ADDRESS_RECENT_TRANSACTIONS_LIMIT}`,
     {
       cache: 'default',
       next: {
@@ -170,11 +172,6 @@ export async function fetchRecentTransactions(
     },
     'Failed to fetch recent transactions'
   );
-
-  return {
-    ...data,
-    results: (data.results ?? []).map(item => item.tx),
-  } as AddressTransactionsListResponse;
 }
 
 export async function fetchTokenMetadata(

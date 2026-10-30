@@ -1,5 +1,6 @@
 'use client';
 
+import { PRINCIPAL_MEMPOOL_TX_SUMMARIES_INFINITE_KEY } from '@/common/queries/useMempoolTxSummaries';
 import { Box, Button, Flex, Icon, Stack } from '@chakra-ui/react';
 import { Toolbox, X } from '@phosphor-icons/react';
 import { useQueryClient } from '@tanstack/react-query';
@@ -37,6 +38,10 @@ export function LeftSection() {
         network: getConnectNetworkString(network),
       });
       void queryClient.invalidateQueries({ queryKey: ['addressMempoolTxsInfinite'] });
+      void queryClient.invalidateQueries({
+        queryKey: [PRINCIPAL_MEMPOOL_TX_SUMMARIES_INFINITE_KEY],
+        refetchType: 'all',
+      });
     } catch (e: any) {
       setDeployError(e?.message || 'Deployment failed');
     }

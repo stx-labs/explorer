@@ -13,6 +13,11 @@ export type PrincipalTransactionSummary =
 export type PrincipalTransactionSummaryListResponse =
   OperationResponse['get_principal_transactions'];
 
+export type MempoolTransactionSummary =
+  OperationResponse['get_mempool_transactions']['results'][number];
+
+export type MempoolTransactionSummaryListResponse = OperationResponse['get_mempool_transactions'];
+
 /** A transaction as returned by `GET /extended/v3/transactions/{tx_id}`: mined or still pending. */
 export type TxDetails = OperationResponse['get_transaction'];
 

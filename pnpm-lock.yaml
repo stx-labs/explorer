@@ -80,8 +80,8 @@ importers:
         specifier: 7.1.0
         version: 7.1.0
       '@stacks/blockchain-api-client':
-        specifier: 9.4.0
-        version: 9.4.0
+        specifier: 9.7.1
+        version: 9.7.1
       '@stacks/common':
         specifier: 7.0.2
         version: 7.0.2
@@ -2433,8 +2433,8 @@ packages:
   '@stacks/auth@7.1.0':
     resolution: {integrity: sha512-I2Wlk2ucM0roXSF7aDUThyLQan3PIkqC7QQ1ZL1ulorha7IraqubasJX8j/q/ZE58z9gQnPOf0ayf0r0ocNOuQ==}
 
-  '@stacks/blockchain-api-client@9.4.0':
-    resolution: {integrity: sha512-+Z+F/8w3o8OBzfjgMa5Y3mks0sa9j3K3Ry+1wP9MhFWipcXnGMgiQoO4EuVpYwpJME92jFqQg/hk0UMaxLtcdw==}
+  '@stacks/blockchain-api-client@9.7.1':
+    resolution: {integrity: sha512-MnHsz9XDL7bMpb63n+3F8CXPcYWsg8Ro4oWMZTMvaLs24kujb6w6+91UvckwzxQZxRcBGdWw/wnnMvhBWLRbxQ==}
 
   '@stacks/common@6.16.0':
     resolution: {integrity: sha512-PnzvhrdGRMVZvxTulitlYafSK4l02gPCBBoI9QEoTqgSnv62oaOXhYAUUkTMFKxdHW1seVEwZsrahuXiZPIAwg==}
@@ -6605,17 +6605,17 @@ packages:
     resolution: {integrity: sha512-7x81NCL719oNbsq/3mh+hVrAWmFuEYUqrq/Iw3kUzH8ReypT9QQ0BLoJS7/G9k6N81XjW4qHWtjWwe/9eLy1EQ==}
     engines: {node: '>=12'}
 
-  openapi-fetch@0.10.6:
-    resolution: {integrity: sha512-6xXfvIEL/POtLGOaFPsp3O+pDe+J3DZYxbD9BrsQHXOTeNK8z/gsWHT6adUy1KcpQOhmkerMzlQrJM6DbN55dQ==}
-
   openapi-fetch@0.12.5:
     resolution: {integrity: sha512-FnAMWLt0MNL6ComcL4q/YbB1tUgyz5YnYtwA1+zlJ5xcucmK5RlWsgH1ynxmEeu8fGJkYjm8armU/HVpORc9lw==}
 
-  openapi-typescript-helpers@0.0.11:
-    resolution: {integrity: sha512-xofUHlVFq+BMquf3nh9I8N2guHckW6mrDO/F3kaFgrL7MGbjldDnQ9TIT+rkH/+H0LiuO+RuZLnNmsJwsjwUKg==}
+  openapi-fetch@0.17.0:
+    resolution: {integrity: sha512-PsbZR1wAPcG91eEthKhN+Zn92FMHxv+/faECIwjXdxfTODGSGegYv0sc1Olz+HYPvKOuoXfp+0pA2XVt2cI0Ig==}
 
   openapi-typescript-helpers@0.0.15:
     resolution: {integrity: sha512-opyTPaunsklCBpTK8JGef6mfPhLSnyy5a0IN9vKtx3+4aExf+KxEqYwIy3hqkedXIB97u357uLMJsOnm3GVjsw==}
+
+  openapi-typescript-helpers@0.1.0:
+    resolution: {integrity: sha512-OKTGPthhivLw/fHz6c3OPtg72vi86qaMlqbJuVJ23qOvQ+53uw1n7HdmkJFibloF7QEjDrDkzJiOJuockM/ljw==}
 
   opener@1.5.2:
     resolution: {integrity: sha512-ur5UIdyw5Y7yEj9wLzhqXiy6GZ3Mwx0yGI+5sMn2r0N0v3cKJvUmFH5yPP+WXh9e0xfyzyJX95D8l088DNFj7A==}
@@ -7419,8 +7419,8 @@ packages:
     resolution: {integrity: sha512-iOBWFgUX7caIZiuutICxVgX1SdxwAVFFKwt1EvMYYec/NWO5meOJ6K5uQxhrYBdQJne4KxiqZc+KptFOWFSI9w==}
     engines: {node: '>=18'}
 
-  socket.io-client@4.8.3:
-    resolution: {integrity: sha512-uP0bpjWrjQmUt5DTHq9RuoCBdFJF10cdX9X+a368j/Ft0wmaVgxlrjvK3kjvgCODOMMOz9lcaRzxmso0bTWZ/g==}
+  socket.io-client@4.8.4:
+    resolution: {integrity: sha512-7wjKAvVXYOJsbmUgkWbnhPD4bFpkqrUR0++XOjpGFmqDqsqV1CI93VTraeExLxpjxEqrWgFoSRZu1ihjLWfkAA==}
     engines: {node: '>=10.0.0'}
 
   socket.io-parser@4.2.7:
@@ -10794,12 +10794,12 @@ snapshots:
     transitivePeerDependencies:
       - encoding
 
-  '@stacks/blockchain-api-client@9.4.0':
+  '@stacks/blockchain-api-client@9.7.1':
     dependencies:
-      eventemitter3: 4.0.7
+      eventemitter3: 5.0.4
       jsonrpc-lite: 2.2.0
-      openapi-fetch: 0.10.6
-      socket.io-client: 4.8.3
+      openapi-fetch: 0.17.0
+      socket.io-client: 4.8.4
     transitivePeerDependencies:
       - bufferutil
       - supports-color
@@ -16437,17 +16437,17 @@ snapshots:
       is-docker: 2.2.1
       is-wsl: 2.2.0
 
-  openapi-fetch@0.10.6:
-    dependencies:
-      openapi-typescript-helpers: 0.0.11
-
   openapi-fetch@0.12.5:
     dependencies:
       openapi-typescript-helpers: 0.0.15
 
-  openapi-typescript-helpers@0.0.11: {}
+  openapi-fetch@0.17.0:
+    dependencies:
+      openapi-typescript-helpers: 0.1.0
 
   openapi-typescript-helpers@0.0.15: {}
+
+  openapi-typescript-helpers@0.1.0: {}
 
   opener@1.5.2: {}
 
@@ -17320,7 +17320,7 @@ snapshots:
       ansi-styles: 6.2.3
       is-fullwidth-code-point: 5.1.0
 
-  socket.io-client@4.8.3:
+  socket.io-client@4.8.4:
     dependencies:
       '@socket.io/component-emitter': 3.1.2
       debug: 4.4.3

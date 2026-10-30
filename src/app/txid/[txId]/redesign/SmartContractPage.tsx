@@ -1,12 +1,11 @@
 import { BalanceCard } from '@/app/address/[principal]/redesign/AddressOverview';
 import { SectionTabsContentContainer, SectionTabsTrigger } from '@/common/components/SectionTabs';
 import { AddressTxsTable } from '@/common/components/table/table-examples/AddressTxsTable';
-import { SMART_CONTRACT_TX_ID_PAGE_ADDRESS_TXS_PAGE_SIZE } from '@/common/components/table/table-examples/consts';
 import { DEFAULT_LIST_LIMIT } from '@/common/constants/constants';
 import { useGlobalContext } from '@/common/context/useGlobalContext';
 import { THIRTY_SECONDS } from '@/common/queries/query-stale-time';
 import { useAccountBalance } from '@/common/queries/useAccountBalance';
-import { useAddressConfirmedTxsWithTransfers } from '@/common/queries/useAddressConfirmedTxsWithTransfersInfinite';
+import { usePrincipalTxSummaries } from '@/common/queries/usePrincipalTxSummaries';
 import { TxDetailsOf } from '@/common/types/tx-v3';
 import { TabsContent } from '@/ui/Tabs';
 import { Grid, Stack } from '@chakra-ui/react';
@@ -41,10 +40,9 @@ export function SmartContractTabTriggers({
   tx: TxDetailsOf<'smart_contract'>;
   selectedTab: TransactionIdPageTab;
 }) {
-  let { data } = useAddressConfirmedTxsWithTransfers(
+  let { data } = usePrincipalTxSummaries(
     'smart_contract' in tx ? tx.smart_contract.contract_id : '',
     DEFAULT_LIST_LIMIT,
-    0,
     {
       staleTime: THIRTY_SECONDS,
       gcTime: THIRTY_SECONDS,
@@ -133,11 +131,7 @@ export function SmartContractTabContent({ tx }: { tx: TxDetailsOf<'smart_contrac
         value={TransactionIdPageTab.Transactions}
         w="100%"
       >
-        <AddressTxsTable
-          principal={tx.smart_contract?.contract_id}
-          initialData={undefined}
-          pageSize={SMART_CONTRACT_TX_ID_PAGE_ADDRESS_TXS_PAGE_SIZE}
-        />
+        <AddressTxsTable principal={tx.smart_contract?.contract_id} />
       </TabsContent>
       <TabsContent
         key={TransactionIdPageTab.PostConditions}

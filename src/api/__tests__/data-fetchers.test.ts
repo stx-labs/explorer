@@ -2,7 +2,14 @@
 import { stacksAPIFetch, stacksAPIFetchJson } from '@/api/stacksAPIFetch';
 
 import { ApiError } from '../ApiError';
-import { fetchFtSupply, fetchHolders, fetchTx, fetchTxEvents } from '../data-fetchers';
+import {
+  fetchFtSupply,
+  fetchHolders,
+  fetchRecentTransactions,
+  fetchTx,
+  fetchTxEvents,
+  getAddressRecentTransactionsTag,
+} from '../data-fetchers';
 
 jest.mock('@/api/stacksAPIFetch', () => ({
   stacksAPIFetch: jest.fn(),
@@ -87,6 +94,23 @@ test('fetchTxEvents reads the first page of v3 transaction events', async () => 
   expect(fetchJsonMock.mock.calls[0][0]).toBe(
     'https://api.hiro.so/extended/v3/transactions/0x01/events?limit=100'
   );
+});
+
+test('fetchRecentTransactions reads the v3 principal transactions endpoint', async () => {
+  const PRINCIPAL = 'SP2J6ZY48GV1EZ5V2V5RB9MP66SW86PYKKNRV9EJ7';
+  const page = {
+    total: 1,
+    limit: 3,
+    cursor: { next: null, previous: null, current: null },
+    results: [{ transaction: { tx_id: '0x02', type: 'token_transfer', event_count: 2 } }],
+  };
+  fetchJsonMock.mockResolvedValue(page);
+
+  await expect(fetchRecentTransactions('https://api.hiro.so', PRINCIPAL)).resolves.toEqual(page);
+
+  const [url, options] = fetchJsonMock.mock.calls[0];
+  expect(url).toBe(`https://api.hiro.so/extended/v3/principals/${PRINCIPAL}/transactions?limit=3`);
+  expect(options?.next?.tags).toEqual([getAddressRecentTransactionsTag(PRINCIPAL)]);
 });
 
 test('fetchTx serves a mined transaction from the data cache', async () => {

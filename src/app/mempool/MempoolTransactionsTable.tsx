@@ -1,19 +1,18 @@
 'use client';
 
-import { MempoolTableWithFilters } from '@/common/components/table/mempool-table/MempoolTableWithFilters';
-import { GenericResponseType } from '@/common/hooks/useInfiniteQueryResult';
-import { CompressedMempoolTxTableData } from '@/common/utils/transaction-utils';
+import { MempoolTransactionSummaryListResponse } from '@/common/types/tx-v3';
+import { FilterButton } from '@/features/txsFilterAndSort/FilterButton';
 import { Text } from '@/ui/Text';
-import { Stack } from '@chakra-ui/react';
+import { Flex, Stack } from '@chakra-ui/react';
+
+import { MempoolTxsSummaryTable } from './MempoolTxsSummaryTable';
 
 interface MempoolTransactionsTableProps {
-  initialMempoolTxData?: GenericResponseType<CompressedMempoolTxTableData>;
-  searchParams?: Record<string, string>;
+  initialMempoolTxData?: MempoolTransactionSummaryListResponse;
 }
 
 export default function MempoolTransactionsTable({
   initialMempoolTxData,
-  searchParams,
 }: MempoolTransactionsTableProps) {
   return (
     <Stack gap={5} mt={{ base: 0, '2xl': 12 }}>
@@ -21,7 +20,10 @@ export default function MempoolTransactionsTable({
         Pending transactions
       </Text>
       <Stack gap={5}>
-        <MempoolTableWithFilters initialData={initialMempoolTxData} searchParams={searchParams} />
+        <Flex gap={2} flexWrap={'wrap'}>
+          <FilterButton />
+        </Flex>
+        <MempoolTxsSummaryTable initialData={initialMempoolTxData} />
       </Stack>
     </Stack>
   );

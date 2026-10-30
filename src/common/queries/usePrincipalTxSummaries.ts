@@ -1,7 +1,9 @@
 import {
   InfiniteData,
+  UseInfiniteQueryResult,
   UseQueryResult,
   UseSuspenseInfiniteQueryResult,
+  useInfiniteQuery,
   useQuery,
   useSuspenseInfiniteQuery,
 } from '@tanstack/react-query';
@@ -39,6 +41,36 @@ export function useSuspensePrincipalTxSummariesInfinite(
     getNextPageParam: getNextCursorPageParam,
     initialPageParam: undefined as string | undefined,
     staleTime: TWO_MINUTES,
+    ...options,
+  });
+}
+
+export function usePrincipalTxSummariesInfinite(
+  principal: string,
+  options: any = {}
+): UseInfiniteQueryResult<InfiniteData<PrincipalTransactionSummaryListResponse>> {
+  const apiClient = useApiClient();
+  const { activeNetwork } = useGlobalContext();
+  return useInfiniteQuery({
+    queryKey: ['principalTxSummariesInfinite', activeNetwork.networkId, principal],
+    queryFn: async ({ pageParam }: { pageParam: string | undefined }) =>
+      await callApiWithErrorHandling(
+        apiClient,
+        '/extended/v3/principals/{principal}/transactions',
+        {
+          params: {
+            path: { principal },
+            query: {
+              limit: ADDRESS_ID_PAGE_ADDRESS_TXS_LIMIT,
+              ...(pageParam ? { cursor: pageParam } : {}),
+            },
+          },
+        }
+      ),
+    getNextPageParam: getNextCursorPageParam,
+    initialPageParam: undefined as string | undefined,
+    staleTime: TWO_MINUTES,
+    enabled: !!principal,
     ...options,
   });
 }

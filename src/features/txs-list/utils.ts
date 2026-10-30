@@ -2,7 +2,7 @@ import { TransactionType } from '@stacks/stacks-blockchain-api-types';
 
 import { TransactionStatus } from '../../common/constants/constants';
 import { TxStatus } from '../../common/types/tx';
-import { TransactionSummary } from '../../common/types/tx-v3';
+import { MempoolTransactionSummary, TransactionSummary } from '../../common/types/tx-v3';
 import { getContractName, microToStacksFormatted } from '../../common/utils/utils';
 
 // v3 list endpoints only return confirmed, canonical txs, so the microblock/non-canonical
@@ -32,7 +32,7 @@ export function getV3TxTitle(tx: TransactionSummary): string {
   }
 }
 
-export function getV3ToAddress(tx: TransactionSummary): string {
+export function getV3ToAddress(tx: TransactionSummary | MempoolTransactionSummary): string {
   switch (tx.type) {
     case 'token_transfer':
       return tx.token_transfer.recipient;
@@ -42,6 +42,29 @@ export function getV3ToAddress(tx: TransactionSummary): string {
       return tx.contract_call.contract_id;
     default:
       return '';
+  }
+}
+
+/**
+ * Title for a mempool (pending) transaction summary. Mempool summaries carry no `block`, so unlike
+ * {@link getV3TxTitle} the block-height-derived labels fall back to generic ones.
+ */
+export function getV3MempoolTxTitle(tx: MempoolTransactionSummary): string {
+  switch (tx.type) {
+    case 'smart_contract':
+      return getContractName(tx.smart_contract.contract_id);
+    case 'contract_call':
+      return tx.contract_call.function_name;
+    case 'token_transfer':
+      return `Send ${microToStacksFormatted(tx.token_transfer.amount)} STX`;
+    case 'coinbase':
+      return 'Coinbase';
+    case 'poison_microblock':
+      return 'Poison microblock transaction';
+    case 'tenure_change':
+      return 'Tenure change';
+    default:
+      return (tx as MempoolTransactionSummary).tx_id;
   }
 }
 

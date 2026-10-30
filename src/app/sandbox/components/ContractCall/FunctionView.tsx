@@ -1,5 +1,6 @@
 'use client';
 
+import { PRINCIPAL_MEMPOOL_TX_SUMMARIES_INFINITE_KEY } from '@/common/queries/useMempoolTxSummaries';
 import { Box, Flex, Stack } from '@chakra-ui/react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Form, Formik, FormikErrors } from 'formik';
@@ -224,6 +225,10 @@ export const FunctionView: FC<FunctionViewProps> = ({ fn, contractId, cancelButt
               postConditionMode: postConditionModeNames[submittedPostConditionMode],
             });
             void queryClient.invalidateQueries({ queryKey: ['addressMempoolTxsInfinite'] });
+            void queryClient.invalidateQueries({
+              queryKey: [PRINCIPAL_MEMPOOL_TX_SUMMARIES_INFINITE_KEY],
+              refetchType: 'all',
+            });
           } catch (error) {
             logError(error as Error, 'Error submitting sandbox contract call', {
               contractId,

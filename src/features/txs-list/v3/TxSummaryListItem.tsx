@@ -2,22 +2,16 @@
 
 import { Box, Flex, FlexProps, HStack, Icon, Stack } from '@chakra-ui/react';
 import { ArrowRight } from '@phosphor-icons/react';
-import { FC, memo, useEffect, useMemo, useState } from 'react';
+import { FC, memo, useEffect, useState } from 'react';
 
-import { ExplorerErrorBoundary } from '../../../app/_components/ErrorBoundary';
 import { TxLink } from '../../../common/components/ExplorerLinks';
 import { TwoColsListItem } from '../../../common/components/TwoColumnsListItem';
 import { TxIcon } from '../../../common/components/TxIcon';
 import { PrincipalLink } from '../../../common/components/transaction-item';
-import { useGlobalContext } from '../../../common/context/useGlobalContext';
-import { useStxPrice } from '../../../common/queries/useCurrentPrices';
-import { useAppSelector } from '../../../common/state/hooks';
-import { TransactionValueFilterTypes } from '../../../common/state/slices/transaction-value-filter-slice';
 import { TransactionSummary } from '../../../common/types/tx-v3';
 import {
   MICROSTACKS_IN_STACKS,
   getContractName,
-  getUsdValue,
   microToStacksFormatted,
   toRelativeTime,
   truncateMiddleDeprecated,
@@ -26,6 +20,7 @@ import { Text } from '../../../ui/Text';
 import { Tooltip } from '../../../ui/Tooltip';
 import { Caption } from '../../../ui/typography';
 import { getTransactionTypeLabel, getV3TxStatus } from '../utils';
+import { V3StxPrice } from './V3StxPrice';
 
 interface TxSummaryListItemProps extends FlexProps {
   tx: TransactionSummary;
@@ -34,63 +29,6 @@ interface TxSummaryListItemProps extends FlexProps {
 const TxSummaryIcon: FC<{ tx: TransactionSummary }> = memo(({ tx }) => (
   <TxIcon txType={tx.type} txStatus={getV3TxStatus(tx.status)} />
 ));
-
-const V3StxPriceBase: FC<{ value: number; bitcoinBlockTime: number }> = ({
-  value,
-  bitcoinBlockTime,
-}) => {
-  const blockBurnTimeIso = useMemo(
-    () => (bitcoinBlockTime ? new Date(bitcoinBlockTime * 1000).toISOString() : undefined),
-    [bitcoinBlockTime]
-  );
-  const { data: historicalStxPrice } = useStxPrice(blockBurnTimeIso, {
-    enabled: !!blockBurnTimeIso,
-  });
-  const { data: currentStxPrice } = useStxPrice();
-
-  const activeTransactionValueFilter = useAppSelector(
-    state => state.activeTransactionValueFilter.activeTransactionValueFilter
-  );
-  const currentPriceFormatted = useMemo(
-    () => getUsdValue(value, currentStxPrice, true),
-    [currentStxPrice, value]
-  );
-  const historicalPriceFormatted = useMemo(
-    () => getUsdValue(value, historicalStxPrice, true),
-    [historicalStxPrice, value]
-  );
-
-  const isMainnet = useGlobalContext().activeNetwork.mode === 'mainnet';
-  if (!isMainnet) return null;
-
-  return (
-    <Flex
-      height="24px"
-      justifyContent={'center'}
-      alignItems={'center'}
-      borderRadius="md"
-      padding="0px 8px"
-      ml={'5px'}
-      fontSize={'xs'}
-      _focus={{ outline: 0 }}
-      flexShrink={0}
-      suppressHydrationWarning={true}
-      bg={'stxPrice.background'}
-      _hover={{ bg: 'purple.400' }}
-      color={'black'}
-    >
-      {activeTransactionValueFilter === TransactionValueFilterTypes.CurrentValue
-        ? currentPriceFormatted
-        : historicalPriceFormatted}
-    </Flex>
-  );
-};
-
-const V3StxPrice: FC<{ value: number; bitcoinBlockTime: number }> = props => (
-  <ExplorerErrorBoundary renderContent={() => null}>
-    <V3StxPriceBase {...props} />
-  </ExplorerErrorBoundary>
-);
 
 const TxSummaryTitle: FC<{ tx: TransactionSummary }> = ({ tx }) => {
   switch (tx.type) {

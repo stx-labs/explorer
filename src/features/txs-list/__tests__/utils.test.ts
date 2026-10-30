@@ -1,9 +1,12 @@
 import { TransactionStatus } from '../../../common/constants/constants';
-import { TransactionSummary } from '../../../common/types/tx-v3';
-import { getV3ToAddress, getV3TxStatus, getV3TxTitle } from '../utils';
+import { MempoolTransactionSummary, TransactionSummary } from '../../../common/types/tx-v3';
+import { getV3MempoolTxTitle, getV3ToAddress, getV3TxStatus, getV3TxTitle } from '../utils';
 
 const summary = (overrides: Record<string, unknown>): TransactionSummary =>
   ({ block: { height: 1000 }, ...overrides }) as unknown as TransactionSummary;
+
+const mempoolSummary = (overrides: Record<string, unknown>): MempoolTransactionSummary =>
+  ({ tx_id: '0xabc', status: 'pending', ...overrides }) as unknown as MempoolTransactionSummary;
 
 describe('getV3TxStatus', () => {
   it('maps success to the anchor-block status', () => {
@@ -47,11 +50,45 @@ describe('getV3TxTitle', () => {
   });
 });
 
+describe('getV3MempoolTxTitle', () => {
+  it('renders the function name for a contract call', () => {
+    expect(
+      getV3MempoolTxTitle(
+        mempoolSummary({ type: 'contract_call', contract_call: { function_name: 'transfer' } })
+      )
+    ).toBe('transfer');
+  });
+
+  it('formats a token transfer amount', () => {
+    expect(
+      getV3MempoolTxTitle(
+        mempoolSummary({ type: 'token_transfer', token_transfer: { amount: '1000000' } })
+      )
+    ).toBe('Send 1.00 STX');
+  });
+
+  it('uses a generic coinbase label (mempool summaries carry no block height)', () => {
+    expect(getV3MempoolTxTitle(mempoolSummary({ type: 'coinbase' }))).toBe('Coinbase');
+  });
+
+  it('uses a generic tenure change label', () => {
+    expect(getV3MempoolTxTitle(mempoolSummary({ type: 'tenure_change' }))).toBe('Tenure change');
+  });
+});
+
 describe('getV3ToAddress', () => {
   it('returns the recipient for a token transfer', () => {
     expect(
       getV3ToAddress(summary({ type: 'token_transfer', token_transfer: { recipient: 'SP123' } }))
     ).toBe('SP123');
+  });
+
+  it('returns the recipient for a mempool token transfer summary', () => {
+    expect(
+      getV3ToAddress(
+        mempoolSummary({ type: 'token_transfer', token_transfer: { recipient: 'SP456' } })
+      )
+    ).toBe('SP456');
   });
 
   it('returns the contract id for a contract call', () => {
