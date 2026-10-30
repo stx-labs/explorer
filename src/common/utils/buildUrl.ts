@@ -1,3 +1,4 @@
+import { NetworkModeUrlMap } from '../constants/network';
 import { Network } from '../types/network';
 import { isLocalhost } from './network-utils';
 
@@ -6,7 +7,9 @@ export function getQueryParams(network: Network) {
 
   if (network?.isSubnet) {
     suffix += `&subnet=${network.url}`;
-  } else if (network?.isCustomNetwork) {
+  } else if (network?.isCustomNetwork || network?.url !== NetworkModeUrlMap[network?.mode]) {
+    // Any network served from a non-default URL (devnet, staking testnet, user-added APIs) needs
+    // the api param so server-side fetchers hit the same API as the client.
     suffix += `&api=${network.url}`;
   }
 
