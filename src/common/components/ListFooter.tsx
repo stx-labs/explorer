@@ -1,6 +1,7 @@
 'use client';
 
-import { Box, BoxProps, Icon } from '@chakra-ui/react';
+import { Text } from '@/ui/Text';
+import { Box, BoxProps, Icon, Stack } from '@chakra-ui/react';
 import { ArrowUpRight } from '@phosphor-icons/react';
 import React from 'react';
 
@@ -9,6 +10,8 @@ import { ExplorerLink } from './ExplorerLinks';
 
 interface SectionFooterButtonPropsBase extends BoxProps {
   isLoading?: boolean;
+  /** The last "Load more" request failed; the button becomes a retry. */
+  isError?: boolean;
   hasNextPage?: boolean;
   fetchNextPage?: () => void;
   href?: string;
@@ -18,6 +21,7 @@ interface SectionFooterButtonPropsBase extends BoxProps {
 export const ListFooter: React.FC<SectionFooterButtonPropsBase> = ({
   fetchNextPage,
   isLoading,
+  isError,
   href,
   label,
   hasNextPage,
@@ -40,9 +44,16 @@ export const ListFooter: React.FC<SectionFooterButtonPropsBase> = ({
   if (fetchNextPage && hasNextPage) {
     return (
       <Box {...rest} width="full">
-        <Button variant="secondary" onClick={() => fetchNextPage()} width="full">
-          {isLoading ? 'Loading...' : `Load more ${label}`}
-        </Button>
+        <Stack gap={2} alignItems="center">
+          {isError && !isLoading && (
+            <Text textStyle="text-regular-sm" color="textError">
+              Failed to load more {label}.
+            </Text>
+          )}
+          <Button variant="secondary" onClick={() => fetchNextPage()} width="full">
+            {isLoading ? 'Loading...' : isError ? 'Try again' : `Load more ${label}`}
+          </Button>
+        </Stack>
       </Box>
     );
   }

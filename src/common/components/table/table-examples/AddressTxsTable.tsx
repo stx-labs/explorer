@@ -2,25 +2,32 @@
 
 import { ListFooter } from '@/common/components/ListFooter';
 import { ScrollIndicator } from '@/common/components/ScrollIndicator';
+import { throwOnFirstPageError } from '@/common/hooks/useCursorInfiniteQueryResult';
 import { THIRTY_SECONDS } from '@/common/queries/query-stale-time';
 import { usePrincipalTxSummariesInfinite } from '@/common/queries/usePrincipalTxSummaries';
 import { useFilterAndSortState } from '@/features/txsFilterAndSort/useFilterAndSortState';
+import { ColumnDef } from '@tanstack/react-table';
 import { useMemo } from 'react';
 
 import { ExplorerErrorBoundary } from '../../../../app/_components/ErrorBoundary';
 import { Table } from '../Table';
 import { defaultTableContainer } from './TxsTable';
-import { mapPrincipalTxRow, principalTxsColumns } from './principalTxsTableColumns';
+import {
+  PrincipalTxTableData,
+  mapPrincipalTxRow,
+  principalTxsColumns,
+} from './principalTxsTableColumns';
 
 export interface AddressTxsTableProps {
   principal: string;
+  columns?: ColumnDef<PrincipalTxTableData>[];
 }
 
-function AddressTxsTableBase({ principal }: AddressTxsTableProps) {
+function AddressTxsTableBase({ principal, columns = principalTxsColumns }: AddressTxsTableProps) {
   const response = usePrincipalTxSummariesInfinite(principal, {
     staleTime: THIRTY_SECONDS,
     gcTime: THIRTY_SECONDS,
-    throwOnError: true,
+    throwOnError: throwOnFirstPageError,
   });
   const { activeFilters } = useFilterAndSortState();
 
@@ -37,7 +44,7 @@ function AddressTxsTableBase({ principal }: AddressTxsTableProps) {
     <>
       <Table
         data={rowData}
-        columns={principalTxsColumns}
+        columns={columns}
         tableContainerWrapper={defaultTableContainer}
         scrollIndicatorWrapper={table => <ScrollIndicator>{table}</ScrollIndicator>}
         isLoading={response.isLoading}
@@ -45,6 +52,7 @@ function AddressTxsTableBase({ principal }: AddressTxsTableProps) {
       />
       <ListFooter
         isLoading={response.isFetchingNextPage}
+        isError={response.isFetchNextPageError}
         hasNextPage={response.hasNextPage}
         fetchNextPage={response.fetchNextPage}
         label="transactions"

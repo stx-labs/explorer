@@ -1,4 +1,10 @@
-import { CursorResponseType, getNextCursorPageParam } from '../useCursorInfiniteQueryResult';
+import { Query } from '@tanstack/react-query';
+
+import {
+  CursorResponseType,
+  getNextCursorPageParam,
+  throwOnFirstPageError,
+} from '../useCursorInfiniteQueryResult';
 
 const page = (next: string | null): CursorResponseType<unknown> => ({
   limit: 20,
@@ -18,5 +24,18 @@ describe('getNextCursorPageParam', () => {
 
   it('returns undefined when there is no page', () => {
     expect(getNextCursorPageParam(undefined)).toBeUndefined();
+  });
+});
+
+describe('throwOnFirstPageError', () => {
+  const queryWithData = (data: unknown) => ({ state: { data } }) as unknown as Query;
+
+  it('throws when the first page failed (nothing loaded yet)', () => {
+    expect(throwOnFirstPageError(new Error('boom'), queryWithData(undefined))).toBe(true);
+  });
+
+  it('keeps loaded rows when a later page or refetch failed', () => {
+    const data = { pages: [page('1:0:0')], pageParams: [undefined] };
+    expect(throwOnFirstPageError(new Error('boom'), queryWithData(data))).toBe(false);
   });
 });

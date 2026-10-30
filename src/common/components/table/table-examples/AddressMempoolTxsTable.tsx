@@ -2,6 +2,7 @@
 
 import { ListFooter } from '@/common/components/ListFooter';
 import { ScrollIndicator } from '@/common/components/ScrollIndicator';
+import { throwOnFirstPageError } from '@/common/hooks/useCursorInfiniteQueryResult';
 import { THIRTY_SECONDS } from '@/common/queries/query-stale-time';
 import { usePrincipalMempoolTxSummariesInfinite } from '@/common/queries/useMempoolTxSummaries';
 import { useFilterAndSortState } from '@/features/txsFilterAndSort/useFilterAndSortState';
@@ -20,7 +21,7 @@ function AddressMempoolTxsTableBase({ principal }: AddressMempoolTxsTableProps) 
   const response = usePrincipalMempoolTxSummariesInfinite(principal, {
     staleTime: THIRTY_SECONDS,
     gcTime: THIRTY_SECONDS,
-    throwOnError: true,
+    throwOnError: throwOnFirstPageError,
   });
   const { activeFilters } = useFilterAndSortState();
 
@@ -43,6 +44,7 @@ function AddressMempoolTxsTableBase({ principal }: AddressMempoolTxsTableProps) 
       />
       <ListFooter
         isLoading={response.isFetchingNextPage}
+        isError={response.isFetchNextPageError}
         hasNextPage={response.hasNextPage}
         fetchNextPage={response.fetchNextPage}
         label="transactions"

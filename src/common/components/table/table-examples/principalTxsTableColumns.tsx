@@ -13,6 +13,7 @@ import { ArrowRight } from '@phosphor-icons/react';
 import { ColumnDef, Header } from '@tanstack/react-table';
 
 import {
+  EventsCellRenderer,
   IconCellRenderer,
   TimeStampCellRenderer,
   TxLinkCellRenderer,
@@ -32,6 +33,7 @@ export interface PrincipalTxTableData {
   [TxTableColumns.To]: TxTableAddressColumnData;
   [TxTableColumns.Fee]: string;
   [TxTableColumns.BlockTime]: number;
+  [TxTableColumns.Events]: TransactionSummary;
 }
 
 // The transaction title, with the inline USD value badge for token transfers (toggle-aware via the
@@ -133,6 +135,24 @@ export const principalTxsColumns: ColumnDef<PrincipalTxTableData>[] = [
   },
 ];
 
+const eventsColumn: ColumnDef<PrincipalTxTableData> = {
+  id: TxTableColumns.Events,
+  header: rightAlignedHeader('Events'),
+  accessorKey: TxTableColumns.Events,
+  cell: info => (
+    <Flex alignItems="center" justifyContent="flex-end" w="full">
+      {EventsCellRenderer(info.getValue() as TransactionSummary)}
+    </Flex>
+  ),
+  enableSorting: false,
+};
+
+/** {@link principalTxsColumns} plus the summary's `event_count`, for the token Transactions tab. */
+export const principalTxsColumnsWithEvents: ColumnDef<PrincipalTxTableData>[] = [
+  ...principalTxsColumns,
+  eventsColumn,
+];
+
 export const mapPrincipalTxRow = (tx: TransactionSummary): PrincipalTxTableData => {
   const to = getV3ToAddress(tx);
   return {
@@ -150,5 +170,6 @@ export const mapPrincipalTxRow = (tx: TransactionSummary): PrincipalTxTableData 
     },
     [TxTableColumns.Fee]: tx.fee_rate,
     [TxTableColumns.BlockTime]: tx.block.time,
+    [TxTableColumns.Events]: tx,
   };
 };

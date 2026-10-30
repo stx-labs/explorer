@@ -1,5 +1,6 @@
 'use client';
 
+import { ExplorerErrorBoundary } from '@/app/_components/ErrorBoundary';
 import {
   AddressLinkCellRenderer,
   FeeCellRenderer,
@@ -19,6 +20,7 @@ import {
 import { TX_TABLE_PAGE_SIZE } from '@/common/components/table/table-examples/consts';
 import { TxTableColumns } from '@/common/components/table/table-examples/types';
 import { useGlobalContext } from '@/common/context/useGlobalContext';
+import { throwOnFirstPageError } from '@/common/hooks/useCursorInfiniteQueryResult';
 import {
   mempoolTxSummariesInfiniteQueryKey,
   useMempoolTxSummariesInfinite,
@@ -138,11 +140,11 @@ const mapRow = (tx: MempoolTransactionSummary): MempoolTxSummaryTableData => {
 
 const getType = (tx: MempoolTransactionSummary) => tx.type;
 
-export function MempoolTxsSummaryTable({
-  initialData,
-}: {
+interface MempoolTxsSummaryTableProps {
   initialData: MempoolTransactionSummaryListResponse | undefined;
-}) {
+}
+
+function MempoolTxsSummaryTableBase({ initialData }: MempoolTxsSummaryTableProps) {
   const queryClient = useQueryClient();
   const { activeNetwork } = useGlobalContext();
   const isCacheSetWithInitialData = useRef(false);
@@ -156,7 +158,9 @@ export function MempoolTxsSummaryTable({
     isCacheSetWithInitialData.current = true;
   }
 
-  const response = useMempoolTxSummariesInfinite(TX_TABLE_PAGE_SIZE);
+  const response = useMempoolTxSummariesInfinite(TX_TABLE_PAGE_SIZE, {
+    throwOnError: throwOnFirstPageError,
+  });
   const txs = useMemo(
     () => response.data?.pages.flatMap(page => page.results ?? []) ?? [],
     [response.data?.pages]
@@ -176,11 +180,20 @@ export function MempoolTxsSummaryTable({
       isLoading={response.isLoading}
       isFetching={response.isFetching}
       isFetchingNextPage={response.isFetchingNextPage}
+      isFetchNextPageError={response.isFetchNextPageError}
       hasNextPage={response.hasNextPage}
       fetchNextPage={response.fetchNextPage}
       refetch={response.refetch}
       tableContainer={defaultTableContainer}
       onRefresh={onRefresh}
     />
+  );
+}
+
+export function MempoolTxsSummaryTable(props: MempoolTxsSummaryTableProps) {
+  return (
+    <ExplorerErrorBoundary tryAgainButton>
+      <MempoolTxsSummaryTableBase {...props} />
+    </ExplorerErrorBoundary>
   );
 }

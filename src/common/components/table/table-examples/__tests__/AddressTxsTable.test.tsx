@@ -1,3 +1,4 @@
+import { throwOnFirstPageError } from '@/common/hooks/useCursorInfiniteQueryResult';
 import { usePrincipalTxSummariesInfinite } from '@/common/queries/usePrincipalTxSummaries';
 import { useFilterAndSortState } from '@/features/txsFilterAndSort/useFilterAndSortState';
 import '@testing-library/jest-dom';
@@ -16,8 +17,14 @@ jest.mock('@/features/txsFilterAndSort/useFilterAndSortState', () => ({
 // Mock the table shell + footer so the test targets AddressTxsTable's own wiring (summary → row
 // mapping, type filter, cursor pagination) rather than the full columnar render tree.
 jest.mock('../../Table', () => ({
-  Table: ({ data }: { data: Array<{ transaction: { tx_id: string } }> }) => (
-    <div>
+  Table: ({
+    data,
+    columns,
+  }: {
+    data: Array<{ transaction: { tx_id: string } }>;
+    columns: Array<{ id: string }>;
+  }) => (
+    <div data-testid="table" data-columns={columns.map(c => c.id).join(',')}>
       {data.map(row => (
         <span key={row.transaction.tx_id}>{row.transaction.tx_id}</span>
       ))}
@@ -27,13 +34,15 @@ jest.mock('../../Table', () => ({
 jest.mock('@/common/components/ListFooter', () => ({
   ListFooter: ({
     hasNextPage,
+    isError,
     fetchNextPage,
   }: {
     hasNextPage?: boolean;
+    isError?: boolean;
     fetchNextPage: () => void;
   }) => (
     <button disabled={!hasNextPage} onClick={() => fetchNextPage()}>
-      load-more
+      {isError ? 'retry' : 'load-more'}
     </button>
   ),
 }));
@@ -114,4 +123,29 @@ test('applies the active type filter client-side over the fetched rows', () => {
   expect(screen.getByText('0x02')).toBeInTheDocument();
   expect(screen.queryByText('0x01')).not.toBeInTheDocument();
   expect(screen.queryByText('0x03')).not.toBeInTheDocument();
+});
+
+test('only hands first-page failures to the error boundary', () => {
+  mockInfiniteResponse();
+  render(<AddressTxsTable principal="SP1" />);
+
+  expect(mockInfinite).toHaveBeenCalledWith(
+    'SP1',
+    expect.objectContaining({ throwOnError: throwOnFirstPageError })
+  );
+});
+
+test('keeps loaded rows and offers a retry when loading more failed', () => {
+  mockInfiniteResponse({ isFetchNextPageError: true });
+  render(<AddressTxsTable principal="SP1" />);
+
+  expect(screen.getByText('0x01')).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'retry' })).toBeInTheDocument();
+});
+
+test('renders custom columns (e.g. the token tab Events column)', () => {
+  mockInfiniteResponse();
+  render(<AddressTxsTable principal="SP1" columns={[{ id: 'events' }]} />);
+
+  expect(screen.getByTestId('table')).toHaveAttribute('data-columns', 'events');
 });

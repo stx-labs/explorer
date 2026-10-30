@@ -1,5 +1,6 @@
 'use client';
 
+import { ExplorerErrorBoundary } from '@/app/_components/ErrorBoundary';
 import {
   AddressLinkCellRenderer,
   FeeCellRenderer,
@@ -19,6 +20,7 @@ import {
 import { TX_TABLE_PAGE_SIZE } from '@/common/components/table/table-examples/consts';
 import { TxTableColumns } from '@/common/components/table/table-examples/types';
 import { useGlobalContext } from '@/common/context/useGlobalContext';
+import { throwOnFirstPageError } from '@/common/hooks/useCursorInfiniteQueryResult';
 import {
   confirmedTxSummariesInfiniteQueryKey,
   useConfirmedTxSummariesInfinite,
@@ -135,11 +137,11 @@ const mapRow = (tx: TransactionSummary): ConfirmedTxSummaryTableData => {
 
 const getType = (tx: TransactionSummary) => tx.type;
 
-export function ConfirmedTxsSummaryTable({
-  initialData,
-}: {
+interface ConfirmedTxsSummaryTableProps {
   initialData: TransactionSummaryListResponse | undefined;
-}) {
+}
+
+function ConfirmedTxsSummaryTableBase({ initialData }: ConfirmedTxsSummaryTableProps) {
   const queryClient = useQueryClient();
   const { activeNetwork } = useGlobalContext();
   const isCacheSetWithInitialData = useRef(false);
@@ -153,7 +155,9 @@ export function ConfirmedTxsSummaryTable({
     isCacheSetWithInitialData.current = true;
   }
 
-  const response = useConfirmedTxSummariesInfinite(TX_TABLE_PAGE_SIZE);
+  const response = useConfirmedTxSummariesInfinite(TX_TABLE_PAGE_SIZE, {
+    throwOnError: throwOnFirstPageError,
+  });
   const txs = useMemo(
     () => response.data?.pages.flatMap(page => page.results ?? []) ?? [],
     [response.data?.pages]
@@ -168,10 +172,19 @@ export function ConfirmedTxsSummaryTable({
       isLoading={response.isLoading}
       isFetching={response.isFetching}
       isFetchingNextPage={response.isFetchingNextPage}
+      isFetchNextPageError={response.isFetchNextPageError}
       hasNextPage={response.hasNextPage}
       fetchNextPage={response.fetchNextPage}
       refetch={response.refetch}
       tableContainer={defaultTableContainer}
     />
+  );
+}
+
+export function ConfirmedTxsSummaryTable(props: ConfirmedTxsSummaryTableProps) {
+  return (
+    <ExplorerErrorBoundary tryAgainButton>
+      <ConfirmedTxsSummaryTableBase {...props} />
+    </ExplorerErrorBoundary>
   );
 }

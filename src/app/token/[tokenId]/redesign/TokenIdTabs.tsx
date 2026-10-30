@@ -7,6 +7,7 @@ import { SectionTabsTrigger } from '@/common/components/SectionTabs';
 import { AddressTxsTable } from '@/common/components/table/table-examples/AddressTxsTable';
 import { HoldersTable } from '@/common/components/table/table-examples/HoldersTable';
 import { DEFAULT_HOLDERS_TABLE_PAGE_SIZE } from '@/common/components/table/table-examples/consts';
+import { principalTxsColumnsWithEvents } from '@/common/components/table/table-examples/principalTxsTableColumns';
 import { TabsContent, TabsList, TabsRoot } from '@/ui/Tabs';
 import { useState } from 'react';
 
@@ -104,7 +105,7 @@ export const TokenIdTabs = () => {
         <TokenIdOverview />
       </TabsContent>
       <TabsContent value={TokenIdPageTab.Transactions} w="100%">
-        <AddressTxsTable principal={tokenId} />
+        <AddressTxsTable principal={tokenId} columns={principalTxsColumnsWithEvents} />
       </TabsContent>
       {showHoldersTab && (
         <TabsContent value={TokenIdPageTab.Holders} w="100%">

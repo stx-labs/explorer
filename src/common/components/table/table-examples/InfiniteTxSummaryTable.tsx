@@ -20,6 +20,8 @@ export interface InfiniteTxSummaryTableProps<TSummary, TRow> {
   isLoading: boolean;
   isFetching: boolean;
   isFetchingNextPage: boolean;
+  /** The last "Load more" page failed; loaded rows stay and the footer offers a retry. */
+  isFetchNextPageError: boolean;
   hasNextPage: boolean;
   fetchNextPage: () => void;
   refetch: () => void;
@@ -69,6 +71,8 @@ function RefreshBanner({ message, onClick }: { message: string; onClick: () => v
  * Columnar table over a cursor-paginated v3 summary feed. Pages are appended via a "Load more"
  * footer (cursor pagination can't jump to arbitrary pages), and the type filter is applied
  * client-side over the already-fetched rows since v3 list endpoints only accept `limit` + `cursor`.
+ * First-page failures aren't handled here: callers query with `throwOnFirstPageError` under an
+ * error boundary so they render an error + retry rather than an empty table.
  */
 export function InfiniteTxSummaryTable<TSummary, TRow>({
   txs,
@@ -78,6 +82,7 @@ export function InfiniteTxSummaryTable<TSummary, TRow>({
   isLoading,
   isFetching,
   isFetchingNextPage,
+  isFetchNextPageError,
   hasNextPage,
   fetchNextPage,
   refetch,
@@ -139,6 +144,7 @@ export function InfiniteTxSummaryTable<TSummary, TRow>({
       />
       <ListFooter
         isLoading={isFetchingNextPage}
+        isError={isFetchNextPageError}
         hasNextPage={hasNextPage}
         fetchNextPage={fetchNextPage}
         label={label}
