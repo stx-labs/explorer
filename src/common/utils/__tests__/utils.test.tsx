@@ -7,6 +7,7 @@ import {
   capitalize,
   formatNumber,
   formatStacksAmount,
+  formatTokenBalance,
   ftDecimals,
   getAssetNameParts,
   getContractIdFromAssetId,
@@ -427,6 +428,39 @@ describe('getFtDecimalAdjustedBalance', () => {
 describe('ftDecimals', () => {
   test('should format with decimals', () => {
     expect(ftDecimals(1000, 2)).toBe('10');
+  });
+
+  test('should show the full token precision', () => {
+    expect(ftDecimals('189672', 8)).toBe('0.00189672');
+    expect(ftDecimals('123456789012345', 8)).toBe('1,234,567.89012345');
+  });
+
+  test('should never round a large-decimal balance up', () => {
+    // 0.999999999999999999 cannot be represented as a JS number and used to show as "1"
+    expect(ftDecimals('999999999999999999', 18)).toBe('0.999999999999999999');
+  });
+});
+
+describe('formatTokenBalance', () => {
+  test('should round down instead of up', () => {
+    expect(formatTokenBalance(0.00189672, 6)).toBe('0.001896');
+    expect(formatTokenBalance('1.9999999', 6)).toBe('1.999999');
+  });
+
+  test('should keep values that fit within the decimals unchanged', () => {
+    expect(formatTokenBalance(0.00189672, 8)).toBe('0.00189672');
+    expect(formatTokenBalance(0.29, 6)).toBe('0.29');
+    expect(formatTokenBalance(0, 6)).toBe('0');
+  });
+
+  test('should group thousands and drop trailing zeros', () => {
+    expect(formatTokenBalance('1234567.500000', 6)).toBe('1,234,567.5');
+    expect(formatTokenBalance(1000, 6)).toBe('1,000');
+  });
+
+  test('should never use exponential notation', () => {
+    expect(formatTokenBalance(1e-7, 8)).toBe('0.0000001');
+    expect(formatTokenBalance(1e-9, 8)).toBe('0');
   });
 });
 
