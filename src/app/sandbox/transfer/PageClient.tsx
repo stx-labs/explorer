@@ -22,6 +22,7 @@ import { Text } from '../../../ui/Text';
 import { Caption, Title } from '../../../ui/typography';
 import { useUser } from '../hooks/useUser';
 import { transferStx } from '../utils/walletTransactions';
+import { exceedsStxBalance } from './utils';
 
 const PageClient: NextPage = () => {
   const { data: feeData } = useFeeTransfer();
@@ -51,7 +52,7 @@ const PageClient: NextPage = () => {
         if (!values.amount) {
           _errors.amount = 'You need to specify an amount to send.';
         }
-        if (Number(balance?.stx?.balance || '0') < (values.amount || 0)) {
+        if (exceedsStxBalance(values.amount, balance?.stx?.balance)) {
           _errors.amount = "Sorry, you don't have enough STX to make this transfer.";
         }
         return _errors;
