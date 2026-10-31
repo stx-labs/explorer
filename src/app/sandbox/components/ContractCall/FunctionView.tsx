@@ -39,9 +39,8 @@ import {
   PostConditionForm,
   PostConditionParameters,
   checkFunctionParameters,
-  checkPostConditionParameters,
-  getPostCondition,
-  isPostConditionParameter,
+  checkPostConditions,
+  getPostConditions,
 } from './PostConditionForm';
 import { ReadOnlyField } from './ReadOnlyField';
 
@@ -68,23 +67,21 @@ export type FormikSetFieldValueFunction = (
   shouldValidate?: boolean
 ) => Promise<void | FormikErrors<FunctionFormikState>>;
 
-export type FunctionFormikState = FormType & PostConditionParameters;
+export type FunctionFormikState = FormType & {
+  postConditionMode: PostConditionMode;
+  postConditions: PostConditionParameters[];
+};
 
 export const FunctionView: FC<FunctionViewProps> = ({ fn, contractId, cancelButton }) => {
   const [readOnlyValue, setReadonlyValue] = useState<ClarityValue[]>();
+  const [submitError, setSubmitError] = useState<string>();
   const network = useGlobalContext().activeNetwork;
   const queryClient = useQueryClient();
   const isReadOnly = fn.access === 'read_only';
 
-  const initialPostConditionParameterValues: PostConditionParameters = {
+  const initialPostConditionParameterValues = {
     postConditionMode: isReadOnly ? PostConditionMode.Allow : PostConditionMode.Deny,
-    postConditionType: undefined,
-    postConditionAddress: undefined,
-    postConditionAmount: undefined,
-    postConditionConditionCode: undefined,
-    postConditionAssetName: undefined,
-    postConditionAssetAddress: undefined,
-    postConditionAssetContractName: undefined,
+    postConditions: [] as PostConditionParameters[],
   };
 
   const initialFunctionParameterValues = useMemo(
@@ -138,19 +135,17 @@ export const FunctionView: FC<FunctionViewProps> = ({ fn, contractId, cancelButt
       validateOnBlur={false}
       validate={values => {
         const functionParametersErrors = checkFunctionParameters(fn, values);
-        const postConditionParametersErrors = checkPostConditionParameters(values);
-        const errors = Object.assign({}, functionParametersErrors, postConditionParametersErrors);
+        const postConditionParametersErrors = checkPostConditions(values.postConditions);
+        const errors: FormikErrors<FunctionFormikState> = { ...functionParametersErrors };
+        if (postConditionParametersErrors.some(error => Object.keys(error).length > 0)) {
+          errors.postConditions = postConditionParametersErrors;
+        }
         return errors;
       }}
       onSubmit={async values => {
         const final: Record<string, ClarityValue> = {};
 
-        Object.keys(values).forEach(arg => {
-          if (isPostConditionParameter(arg)) {
-            return;
-          }
-          const type = fn.args.find(({ name }) => name === arg)?.type;
-          if (!type) return;
+        fn.args.forEach(({ name: arg, type }) => {
           const tuple = getTuple(type);
           const isList = isClarityAbiList(type);
           const optionalType = isClarityAbiOptional(type) ? type?.optional : undefined;
@@ -187,44 +182,24 @@ export const FunctionView: FC<FunctionViewProps> = ({ fn, contractId, cancelButt
           }
         });
 
-        const {
-          postConditionMode,
-          postConditionType,
-          postConditionAddress,
-          postConditionConditionCode,
-          postConditionAmount,
-          postConditionAssetAddress,
-          postConditionAssetContractName,
-          postConditionAssetName,
-        } = values;
-
-        const submittedPostConditionMode = postConditionMode ?? PostConditionMode.Deny;
+        const submittedPostConditionMode = values.postConditionMode ?? PostConditionMode.Deny;
 
         if (fn.access === 'public') {
+          setSubmitError(undefined);
           try {
             await callContract({
               contract: contractId,
               functionName: fn.name,
               functionArgs: Object.values(final),
               network: getConnectNetworkString(network),
-              postConditions:
-                submittedPostConditionMode === PostConditionMode.Allow
-                  ? undefined
-                  : postConditionType == null
-                    ? []
-                    : getPostCondition({
-                        postConditionType,
-                        postConditionAddress,
-                        postConditionConditionCode,
-                        postConditionAmount,
-                        postConditionAssetAddress,
-                        postConditionAssetContractName,
-                        postConditionAssetName,
-                      }),
+              postConditions: getPostConditions(values.postConditions),
               postConditionMode: postConditionModeNames[submittedPostConditionMode],
             });
             void queryClient.invalidateQueries({ queryKey: ['addressMempoolTxsInfinite'] });
           } catch (error) {
+            setSubmitError(
+              error instanceof Error ? error.message : 'Unable to prepare the contract call.'
+            );
             logError(error as Error, 'Error submitting sandbox contract call', {
               contractId,
               functionName: fn.name,
@@ -255,29 +230,7 @@ export const FunctionView: FC<FunctionViewProps> = ({ fn, contractId, cancelButt
               <Box p={4}>
                 <Form onSubmit={handleSubmit}>
                   <Stack gap={4}>
-                    {!isReadOnly && (
-                      <Stack gap={3}>
-                        <Flex justifyContent="flex-end" alignItems="center" gap={2} flexWrap="wrap">
-                          <Text fontSize="sm">Post-conditions:</Text>
-                          <Select
-                            defaultValue={[postConditionModeNames[postConditionMode]]}
-                            items={postConditionModeOptions}
-                            label="Post-condition mode"
-                            onValueChange={details => {
-                              const mode = postConditionModeFromName(details.value[0]);
-                              if (mode == null) return;
-                              setFieldValue('postConditionMode', mode);
-                            }}
-                            size="sm"
-                          />
-                        </Flex>
-                        <Alert
-                          status="neutral"
-                          description={postConditionModeDescriptions[postConditionMode]}
-                        />
-                      </Stack>
-                    )}
-                    {fn.args.length && (
+                    {fn.args.length > 0 && (
                       <>
                         {fn.args.map(({ name, type }) => (
                           <Argument
@@ -292,11 +245,44 @@ export const FunctionView: FC<FunctionViewProps> = ({ fn, contractId, cancelButt
                       </>
                     )}
                     {fn.access === 'public' && (
-                      <PostConditionForm
-                        values={values}
-                        errors={errors}
-                        formikSetFieldValue={setFieldValue}
-                        handleChange={handleChange}
+                      <Stack gap={4} pt={2}>
+                        <Flex
+                          justifyContent="space-between"
+                          alignItems="center"
+                          gap={2}
+                          flexWrap="wrap"
+                        >
+                          <Text fontSize="sm" fontWeight="semibold">
+                            Post-conditions
+                          </Text>
+                          <Select
+                            items={postConditionModeOptions}
+                            label="Post-condition mode"
+                            value={[postConditionModeNames[postConditionMode]]}
+                            onValueChange={details => {
+                              const mode = postConditionModeFromName(details.value[0]);
+                              if (mode == null) return;
+                              void setFieldValue('postConditionMode', mode);
+                            }}
+                            size="sm"
+                          />
+                        </Flex>
+                        <Alert
+                          status="neutral"
+                          description={postConditionModeDescriptions[postConditionMode]}
+                        />
+                        <PostConditionForm
+                          values={values}
+                          errors={errors}
+                          formikSetFieldValue={setFieldValue}
+                        />
+                      </Stack>
+                    )}
+                    {submitError && (
+                      <Alert
+                        status="error"
+                        title="Could not prepare contract call"
+                        description={submitError}
                       />
                     )}
                     <Stack alignItems="center" justifyContent="center">
