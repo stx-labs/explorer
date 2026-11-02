@@ -4,6 +4,7 @@ import { useGlobalContext } from '@/common/context/useGlobalContext';
 import { TransactionSummaryListResponse } from '@/common/types/tx-v3';
 import { buildUrl } from '@/common/utils/buildUrl';
 import { FilterButton } from '@/features/txsFilterAndSort/FilterButton';
+import { useSyncTypeFiltersWithUrl } from '@/features/txsFilterAndSort/useSyncTypeFiltersWithUrl';
 import { ButtonLink } from '@/ui/ButtonLink';
 import { Text } from '@/ui/Text';
 import { Flex, Stack } from '@chakra-ui/react';
@@ -16,6 +17,7 @@ export default function ({
   initialData: TransactionSummaryListResponse | undefined;
 }) {
   const network = useGlobalContext().activeNetwork;
+  useSyncTypeFiltersWithUrl();
 
   return (
     <Stack gap={24} fontFamily="var(--font-instrument-sans)">
