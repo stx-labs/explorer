@@ -3,6 +3,7 @@ import {
   formatTimestampLocalized,
   formatTimestampTo12HourTime,
   formatTimestampToRelativeTime,
+  getSupportedBrowserLocale,
 } from '../time-utils';
 
 describe('Timezones', () => {
@@ -175,5 +176,34 @@ describe('formatTimestampLocalized', () => {
     expect(result).toMatch(/\d{1,2}\/\d{1,2}\/\d{4}/);
     expect(result).toMatch(/\d{2}:\d{2}:\d{2}/);
     expect(result).toMatch(/[A-Z]{3,4}/);
+  });
+});
+
+describe('getSupportedBrowserLocale', () => {
+  const mockNavigatorLocales = (languages: string[], language = languages[0]) => {
+    jest.spyOn(navigator, 'languages', 'get').mockReturnValue(languages);
+    jest.spyOn(navigator, 'language', 'get').mockReturnValue(language as string);
+  };
+
+  afterEach(() => jest.restoreAllMocks());
+
+  it('uses the first supported browser locale', () => {
+    mockNavigatorLocales(['de-DE', 'en-US']);
+    expect(getSupportedBrowserLocale()).toBe('de-DE');
+  });
+
+  it('skips malformed locale tags instead of throwing', () => {
+    mockNavigatorLocales(['en-US@posix', 'fr-FR']);
+    expect(getSupportedBrowserLocale()).toBe('fr-FR');
+  });
+
+  it('falls back to en-US when no browser locale is usable', () => {
+    mockNavigatorLocales(['en-US@posix']);
+    expect(getSupportedBrowserLocale()).toBe('en-US');
+  });
+
+  it('keeps formatTimestampLocalized working with a malformed browser locale', () => {
+    mockNavigatorLocales(['en-US@posix']);
+    expect(() => formatTimestampLocalized(1717248896)).not.toThrow();
   });
 });

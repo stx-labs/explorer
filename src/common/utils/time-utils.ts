@@ -55,6 +55,30 @@ export function formatTimestampTo12HourTime(
   return `${hours}:${paddedMinutes}${options?.includeSeconds ? `:${paddedSeconds}` : ''}${ampm ? ` ${ampm}` : ''}${tzLabel ? ` ${tzLabel}` : ''}`;
 }
 
+const FALLBACK_LOCALE = 'en-US';
+
+/**
+ * The first browser locale `Intl.DateTimeFormat` supports, else `en-US`. An unsupported or
+ * malformed tag (e.g. `C`, `en-US@posix`) makes `new Intl.DateTimeFormat` throw a RangeError, which
+ * would take down every table rendering a localized timestamp.
+ */
+export function getSupportedBrowserLocale(): string {
+  if (typeof navigator === 'undefined') return FALLBACK_LOCALE;
+  const candidates = navigator.languages?.length
+    ? navigator.languages
+    : navigator.language
+      ? [navigator.language]
+      : [];
+  for (const candidate of candidates) {
+    try {
+      if (Intl.DateTimeFormat.supportedLocalesOf(candidate).length > 0) return candidate;
+    } catch {
+      // Structurally invalid tag: supportedLocalesOf throws a RangeError. Try the next one.
+    }
+  }
+  return FALLBACK_LOCALE;
+}
+
 export function formatTimestamp(
   timestampInSeconds: number,
   formatString: string = 'yyyy-MM-dd HH:mm:ss',
@@ -84,16 +108,7 @@ export function formatTimestamp(
     ...(includeTimezone && { timeZoneName: 'short' }),
   };
 
-  let locale = 'en-US';
-  if (typeof navigator !== 'undefined') {
-    if (navigator.languages && navigator.languages.length > 0) {
-      locale = navigator.languages[0];
-    } else if (navigator.language) {
-      locale = navigator.language;
-    }
-  }
-
-  const formatter = new Intl.DateTimeFormat(locale, options);
+  const formatter = new Intl.DateTimeFormat(getSupportedBrowserLocale(), options);
   return formatter.format(date);
 }
 
