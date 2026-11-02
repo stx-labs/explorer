@@ -75,6 +75,12 @@ export function usePrincipalTxSummariesInfinite(
   });
 }
 
+export const principalTxSummariesQueryKey = (
+  networkId: number | string,
+  principal: string,
+  limit: number
+) => ['principalTxSummaries', networkId, principal, limit] as const;
+
 export function usePrincipalTxSummaries(
   principal: string,
   limit: number,
@@ -83,7 +89,7 @@ export function usePrincipalTxSummaries(
   const apiClient = useApiClient();
   const { activeNetwork } = useGlobalContext();
   return useQuery({
-    queryKey: ['principalTxSummaries', activeNetwork.networkId, principal, limit],
+    queryKey: principalTxSummariesQueryKey(activeNetwork.networkId, principal, limit),
     queryFn: async () =>
       await callApiWithErrorHandling(
         apiClient,

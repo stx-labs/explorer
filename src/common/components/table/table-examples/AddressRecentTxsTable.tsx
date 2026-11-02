@@ -2,14 +2,20 @@
 
 import { ExplorerErrorBoundary } from '@/app/_components/ErrorBoundary';
 import { ScrollIndicator } from '@/common/components/ScrollIndicator';
+import { useGlobalContext } from '@/common/context/useGlobalContext';
+import { throwOnFirstPageError } from '@/common/hooks/useCursorInfiniteQueryResult';
 import { THIRTY_SECONDS } from '@/common/queries/query-stale-time';
-import { usePrincipalTxSummaries } from '@/common/queries/usePrincipalTxSummaries';
+import {
+  principalTxSummariesQueryKey,
+  usePrincipalTxSummaries,
+} from '@/common/queries/usePrincipalTxSummaries';
 import { PrincipalTransactionSummaryListResponse } from '@/common/types/tx-v3';
-import { useMemo } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { useMemo, useRef } from 'react';
 
 import { Table } from '../Table';
 import { TableContainer } from '../TableContainer';
-import { mapPrincipalTxRow, principalTxsColumns } from './principalTxsTableColumns';
+import { confirmedTxSummaryColumns, toPrincipalTxSummaryRow } from './txSummaryColumns';
 
 interface AddressRecentTxsTableProps {
   principal: string;
@@ -23,15 +29,27 @@ function AddressRecentTxsTableBase({
   pageSize,
   initialData,
 }: AddressRecentTxsTableProps) {
+  const queryClient = useQueryClient();
+  const { activeNetwork } = useGlobalContext();
+  const isCacheSetWithInitialData = useRef(false);
+
+  // react-query's initialData prop misbehaves across hydration, so seed the cache explicitly.
+  if (!isCacheSetWithInitialData.current && initialData) {
+    queryClient.setQueryData(
+      principalTxSummariesQueryKey(activeNetwork.networkId, principal, pageSize),
+      initialData
+    );
+    isCacheSetWithInitialData.current = true;
+  }
+
   const { data, isLoading } = usePrincipalTxSummaries(principal, pageSize, {
-    initialData,
     staleTime: THIRTY_SECONDS,
     gcTime: THIRTY_SECONDS,
-    throwOnError: true,
+    throwOnError: throwOnFirstPageError,
   });
 
   const rowData = useMemo(
-    () => (data?.results ?? []).map(item => mapPrincipalTxRow(item.transaction)),
+    () => (data?.results ?? []).map(toPrincipalTxSummaryRow),
     [data?.results]
   );
 
@@ -41,7 +59,7 @@ function AddressRecentTxsTableBase({
   return (
     <Table
       data={rowData}
-      columns={principalTxsColumns}
+      columns={confirmedTxSummaryColumns}
       // A capped preview sizes to its rows — unlike `defaultTableContainer`, which reserves a
       // `minH` meant for full, paginated tables and would leave empty space under 3 rows.
       tableContainerWrapper={table => <TableContainer>{table}</TableContainer>}

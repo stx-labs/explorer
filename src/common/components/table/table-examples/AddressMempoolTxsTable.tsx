@@ -5,13 +5,14 @@ import { ScrollIndicator } from '@/common/components/ScrollIndicator';
 import { throwOnFirstPageError } from '@/common/hooks/useCursorInfiniteQueryResult';
 import { THIRTY_SECONDS } from '@/common/queries/query-stale-time';
 import { usePrincipalMempoolTxSummariesInfinite } from '@/common/queries/useMempoolTxSummaries';
+import { filterByType } from '@/features/txs-list/utils';
 import { useFilterAndSortState } from '@/features/txsFilterAndSort/useFilterAndSortState';
 import { useMemo } from 'react';
 
 import { ExplorerErrorBoundary } from '../../../../app/_components/ErrorBoundary';
 import { Table } from '../Table';
 import { defaultTableContainer } from './TxsTable';
-import { mapPrincipalMempoolTxRow, principalMempoolTxsColumns } from './principalMempoolTxsColumns';
+import { mempoolTxSummaryColumns, toTxSummaryRow } from './txSummaryColumns';
 
 export interface AddressMempoolTxsTableProps {
   principal: string;
@@ -27,16 +28,14 @@ function AddressMempoolTxsTableBase({ principal }: AddressMempoolTxsTableProps) 
 
   const rowData = useMemo(() => {
     const txs = response.data?.pages.flatMap(page => page?.results ?? []) ?? [];
-    const filtered =
-      activeFilters.length === 0 ? txs : txs.filter(tx => activeFilters.includes(tx.type));
-    return filtered.map(mapPrincipalMempoolTxRow);
+    return filterByType(txs, activeFilters).map(tx => toTxSummaryRow(tx));
   }, [response.data?.pages, activeFilters]);
 
   return (
     <>
       <Table
         data={rowData}
-        columns={principalMempoolTxsColumns}
+        columns={mempoolTxSummaryColumns}
         tableContainerWrapper={defaultTableContainer}
         scrollIndicatorWrapper={table => <ScrollIndicator>{table}</ScrollIndicator>}
         isLoading={response.isLoading}
@@ -46,7 +45,7 @@ function AddressMempoolTxsTableBase({ principal }: AddressMempoolTxsTableProps) 
         isLoading={response.isFetchingNextPage}
         isError={response.isFetchNextPageError}
         hasNextPage={response.hasNextPage}
-        fetchNextPage={response.fetchNextPage}
+        fetchNextPage={() => response.fetchNextPage({ cancelRefetch: false })}
         label="transactions"
       />
     </>

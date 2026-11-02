@@ -25,6 +25,17 @@ export function throwOnFirstPageError(_error: unknown, query: Query<any, any, an
   return query.state.data === undefined;
 }
 
+/**
+ * Drops every cached page but the first, so a refetch reloads one page instead of re-requesting each
+ * loaded "Load more" page in sequence. Pass to `queryClient.setQueryData` before refetching.
+ */
+export function trimToFirstPage<TPage, TPageParam>(
+  data: InfiniteData<TPage, TPageParam> | undefined
+): InfiniteData<TPage, TPageParam> | undefined {
+  if (!data || data.pages.length <= 1) return data;
+  return { pages: data.pages.slice(0, 1), pageParams: data.pageParams.slice(0, 1) };
+}
+
 export function useSuspenseCursorInfiniteQueryResult<T>(
   response: UseSuspenseInfiniteQueryResult<InfiniteData<CursorResponseType<T>>>,
   limit?: number

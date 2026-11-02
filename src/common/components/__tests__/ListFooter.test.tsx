@@ -18,7 +18,7 @@ describe('ListFooter', () => {
     render(<ListFooter hasNextPage isError fetchNextPage={fetchNextPage} label="transactions" />, {
       wrapper: ChakraProviderWrapper,
     });
-    expect(screen.getByText('Failed to load more transactions.')).toBeInTheDocument();
+    expect(screen.getByRole('alert')).toHaveTextContent('Failed to load more transactions.');
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
     expect(fetchNextPage).toHaveBeenCalledTimes(1);
   });

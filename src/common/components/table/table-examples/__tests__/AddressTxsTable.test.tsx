@@ -21,12 +21,12 @@ jest.mock('../../Table', () => ({
     data,
     columns,
   }: {
-    data: Array<{ transaction: { tx_id: string } }>;
+    data: Array<{ tx: { tx_id: string } }>;
     columns: Array<{ id: string }>;
   }) => (
     <div data-testid="table" data-columns={columns.map(c => c.id).join(',')}>
       {data.map(row => (
-        <span key={row.transaction.tx_id}>{row.transaction.tx_id}</span>
+        <span key={row.tx.tx_id}>{row.tx.tx_id}</span>
       ))}
     </div>
   ),
@@ -64,10 +64,13 @@ function summaryItem(tx_id: string, type = 'coinbase') {
       fee_rate: '0',
       block: { time: 0 },
       event_count: 0,
+      sponsor: null,
       ...(type === 'token_transfer'
         ? { token_transfer: { recipient: 'SP2', amount: '1', memo: null } }
         : {}),
     },
+    involvement: 'sender',
+    balance_changes: { stx: { sent: '0', received: '0', net: '0' } },
   };
 }
 
@@ -110,7 +113,7 @@ test('load-more triggers the next cursor page', () => {
   render(<AddressTxsTable principal="SP1" />);
 
   fireEvent.click(screen.getByRole('button', { name: 'load-more' }));
-  expect(fetchNextPage).toHaveBeenCalledTimes(1);
+  expect(fetchNextPage).toHaveBeenCalledWith({ cancelRefetch: false });
 });
 
 test('applies the active type filter client-side over the fetched rows', () => {

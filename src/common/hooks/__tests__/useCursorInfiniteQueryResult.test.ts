@@ -4,6 +4,7 @@ import {
   CursorResponseType,
   getNextCursorPageParam,
   throwOnFirstPageError,
+  trimToFirstPage,
 } from '../useCursorInfiniteQueryResult';
 
 const page = (next: string | null): CursorResponseType<unknown> => ({
@@ -37,5 +38,21 @@ describe('throwOnFirstPageError', () => {
   it('keeps loaded rows when a later page or refetch failed', () => {
     const data = { pages: [page('1:0:0')], pageParams: [undefined] };
     expect(throwOnFirstPageError(new Error('boom'), queryWithData(data))).toBe(false);
+  });
+});
+
+describe('trimToFirstPage', () => {
+  it('keeps only the first page and its page param', () => {
+    const data = {
+      pages: [page('2:0:0'), page('1:0:0'), page(null)],
+      pageParams: [undefined, '2:0:0', '1:0:0'],
+    };
+    expect(trimToFirstPage(data)).toEqual({ pages: [data.pages[0]], pageParams: [undefined] });
+  });
+
+  it('returns single-page and missing data unchanged', () => {
+    const data = { pages: [page(null)], pageParams: [undefined] };
+    expect(trimToFirstPage(data)).toBe(data);
+    expect(trimToFirstPage(undefined)).toBeUndefined();
   });
 });

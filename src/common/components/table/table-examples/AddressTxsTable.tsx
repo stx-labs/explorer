@@ -5,6 +5,7 @@ import { ScrollIndicator } from '@/common/components/ScrollIndicator';
 import { throwOnFirstPageError } from '@/common/hooks/useCursorInfiniteQueryResult';
 import { THIRTY_SECONDS } from '@/common/queries/query-stale-time';
 import { usePrincipalTxSummariesInfinite } from '@/common/queries/usePrincipalTxSummaries';
+import { filterByType } from '@/features/txs-list/utils';
 import { useFilterAndSortState } from '@/features/txsFilterAndSort/useFilterAndSortState';
 import { ColumnDef } from '@tanstack/react-table';
 import { useMemo } from 'react';
@@ -13,17 +14,20 @@ import { ExplorerErrorBoundary } from '../../../../app/_components/ErrorBoundary
 import { Table } from '../Table';
 import { defaultTableContainer } from './TxsTable';
 import {
-  PrincipalTxTableData,
-  mapPrincipalTxRow,
-  principalTxsColumns,
-} from './principalTxsTableColumns';
+  TxSummaryTableRow,
+  confirmedTxSummaryColumns,
+  toPrincipalTxSummaryRow,
+} from './txSummaryColumns';
 
 export interface AddressTxsTableProps {
   principal: string;
-  columns?: ColumnDef<PrincipalTxTableData>[];
+  columns?: ColumnDef<TxSummaryTableRow>[];
 }
 
-function AddressTxsTableBase({ principal, columns = principalTxsColumns }: AddressTxsTableProps) {
+function AddressTxsTableBase({
+  principal,
+  columns = confirmedTxSummaryColumns,
+}: AddressTxsTableProps) {
   const response = usePrincipalTxSummariesInfinite(principal, {
     staleTime: THIRTY_SECONDS,
     gcTime: THIRTY_SECONDS,
@@ -32,12 +36,12 @@ function AddressTxsTableBase({ principal, columns = principalTxsColumns }: Addre
   const { activeFilters } = useFilterAndSortState();
 
   const rowData = useMemo(() => {
-    const txs = (response.data?.pages.flatMap(page => page?.results ?? []) ?? []).map(
-      item => item.transaction
+    const items = response.data?.pages.flatMap(page => page?.results ?? []) ?? [];
+    // Filter on the summary item (not just its transaction) so its balance_changes stay available
+    // to infer the principal's sent/received direction.
+    return filterByType(items, activeFilters, item => item.transaction.type).map(
+      toPrincipalTxSummaryRow
     );
-    const filtered =
-      activeFilters.length === 0 ? txs : txs.filter(tx => activeFilters.includes(tx.type));
-    return filtered.map(mapPrincipalTxRow);
   }, [response.data?.pages, activeFilters]);
 
   return (
@@ -54,7 +58,7 @@ function AddressTxsTableBase({ principal, columns = principalTxsColumns }: Addre
         isLoading={response.isFetchingNextPage}
         isError={response.isFetchNextPageError}
         hasNextPage={response.hasNextPage}
-        fetchNextPage={response.fetchNextPage}
+        fetchNextPage={() => response.fetchNextPage({ cancelRefetch: false })}
         label="transactions"
       />
     </>

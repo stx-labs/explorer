@@ -1,11 +1,11 @@
 'use client';
 
-import { Flex, HStack, Icon, useCheckboxGroup } from '@chakra-ui/react';
+import { Flex, HStack, Icon, Menu } from '@chakra-ui/react';
 import { ArrowBendDownRight, FunnelSimple } from '@phosphor-icons/react';
 import { ReactNode, memo, useCallback, useState } from 'react';
 
-import { Checkbox, CheckboxProps } from '../../components/ui/checkbox';
-import { MenuContent, MenuItem, MenuRoot, MenuTrigger } from '../../components/ui/menu';
+import { Checkbox } from '../../components/ui/checkbox';
+import { MenuContent, MenuRoot, MenuTrigger } from '../../components/ui/menu';
 import { Text } from '../../ui/Text';
 import ClarityIcon from '../../ui/icons/ClarityIcon';
 import CubeSparkleIcon from '../../ui/icons/CubeSparkleIcon';
@@ -13,30 +13,34 @@ import DiagonalArrowsIcon from '../../ui/icons/DiagonalArrowsIcon';
 import FunctionXIcon from '../../ui/icons/FunctionX';
 import { useFilterAndSortState } from './useFilterAndSortState';
 
+// A real menu checkbox item (role="menuitemcheckbox", toggled by click/Enter/Space, menu stays
+// open). The Checkbox is display-only so the item, not a nested input, owns the checked state.
 function FilterItem({
   label,
   icon,
   value,
-  selectedFilters,
-  checkboxProps,
+  checked,
+  onCheckedChange,
 }: {
   label: string;
   icon: ReactNode;
   value: string;
-  selectedFilters: (string | number)[];
-  checkboxProps: CheckboxProps;
+  checked: boolean;
+  onCheckedChange: (checked: boolean) => void;
 }) {
   return (
-    <MenuItem
+    <Menu.CheckboxItem
       bg={'surface'}
       _hover={{ bg: 'none' }}
       _active={{ bg: 'none' }}
       _focus={{ bg: 'none' }}
       value={value}
+      checked={checked}
+      onCheckedChange={onCheckedChange}
+      closeOnSelect={false}
     >
       <HStack
         gap={2}
-        as="label"
         width={'full'}
         px={4}
         py={3}
@@ -45,9 +49,9 @@ function FilterItem({
       >
         {icon}
         <Text fontSize={'sm'}>{label}</Text>
-        <Checkbox ml={'auto'} checked={selectedFilters.includes(value)} {...checkboxProps} />
+        <Checkbox ml={'auto'} checked={checked} aria-hidden pointerEvents={'none'} tabIndex={-1} />
       </HStack>
-    </MenuItem>
+    </Menu.CheckboxItem>
   );
 }
 
@@ -72,11 +76,13 @@ export const FilterButton = memo(() => {
 
   // Controlled by the route-scoped Redux filters so the menu reflects filters that persist across
   // navigation (otherwise the table stays filtered while the control shows no selection).
-  const { value: selectedFilters, getItemProps: getCheckboxProps } = useCheckboxGroup({
-    value: activeFilters,
-    onValueChange: (value: string[]) => {
-      setActiveFilters(value);
-    },
+  const getItemProps = (value: string) => ({
+    value,
+    checked: activeFilters.includes(value),
+    onCheckedChange: (checked: boolean) =>
+      setActiveFilters(
+        checked ? [...activeFilters, value] : activeFilters.filter(filter => filter !== value)
+      ),
   });
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -110,7 +116,7 @@ export const FilterButton = memo(() => {
           <Icon h={4} w={4} color={isHoveredOrFocused || isMenuOpen ? 'text' : 'textSubdued'}>
             <FunnelSimple />
           </Icon>
-          <Text>Filters {selectedFilters.length > 0 && `(${selectedFilters.length})`}</Text>
+          <Text>Filters {activeFilters.length > 0 && `(${activeFilters.length})`}</Text>
         </Flex>
       </MenuTrigger>
       <MenuContent bg={'surface'}>
@@ -121,9 +127,7 @@ export const FilterButton = memo(() => {
               <CubeSparkleIcon />
             </Icon>
           }
-          value={'coinbase'}
-          selectedFilters={selectedFilters}
-          checkboxProps={getCheckboxProps({ value: 'coinbase' })}
+          {...getItemProps('coinbase')}
         />
         <FilterItem
           label={'Contract deploy'}
@@ -132,9 +136,7 @@ export const FilterButton = memo(() => {
               <ClarityIcon />
             </Icon>
           }
-          value={'smart_contract'}
-          selectedFilters={selectedFilters}
-          checkboxProps={getCheckboxProps({ value: 'smart_contract' })}
+          {...getItemProps('smart_contract')}
         />
         <FilterItem
           label={'Function call'}
@@ -143,9 +145,7 @@ export const FilterButton = memo(() => {
               <FunctionXIcon />
             </Icon>
           }
-          value={'contract_call'}
-          selectedFilters={selectedFilters}
-          checkboxProps={getCheckboxProps({ value: 'contract_call' })}
+          {...getItemProps('contract_call')}
         />
         <FilterItem
           label={'Tenure change'}
@@ -154,9 +154,7 @@ export const FilterButton = memo(() => {
               <ArrowBendDownRight />
             </Icon>
           }
-          value={'tenure_change'}
-          selectedFilters={selectedFilters}
-          checkboxProps={getCheckboxProps({ value: 'tenure_change' })}
+          {...getItemProps('tenure_change')}
         />
         <FilterItem
           label={'Token transfer'}
@@ -165,9 +163,7 @@ export const FilterButton = memo(() => {
               <DiagonalArrowsIcon />
             </Icon>
           }
-          value={'token_transfer'}
-          selectedFilters={selectedFilters}
-          checkboxProps={getCheckboxProps({ value: 'token_transfer' })}
+          {...getItemProps('token_transfer')}
         />
       </MenuContent>
     </MenuRoot>

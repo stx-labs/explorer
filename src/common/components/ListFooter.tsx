@@ -46,7 +46,7 @@ export const ListFooter: React.FC<SectionFooterButtonPropsBase> = ({
       <Box {...rest} width="full">
         <Stack gap={2} alignItems="center">
           {isError && !isLoading && (
-            <Text textStyle="text-regular-sm" color="textError">
+            <Text textStyle="text-regular-sm" color="textError" role="alert">
               Failed to load more {label}.
             </Text>
           )}

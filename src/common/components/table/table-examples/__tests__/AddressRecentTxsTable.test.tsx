@@ -1,4 +1,6 @@
+import { throwOnFirstPageError } from '@/common/hooks/useCursorInfiniteQueryResult';
 import { usePrincipalTxSummaries } from '@/common/queries/usePrincipalTxSummaries';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
 import { ReactNode } from 'react';
@@ -6,16 +8,20 @@ import { ReactNode } from 'react';
 import { AddressRecentTxsTable } from '../AddressRecentTxsTable';
 
 jest.mock('@/common/queries/usePrincipalTxSummaries', () => ({
+  ...jest.requireActual('@/common/queries/usePrincipalTxSummaries'),
   usePrincipalTxSummaries: jest.fn(),
+}));
+jest.mock('@/common/context/useGlobalContext', () => ({
+  useGlobalContext: () => ({ activeNetwork: { networkId: 1 } }),
 }));
 
 // Mock the table shell so the test targets AddressRecentTxsTable's own wiring (single-page query,
 // summary → row mapping, SSR seed) rather than the full columnar render tree.
 jest.mock('../../Table', () => ({
-  Table: ({ data }: { data: Array<{ transaction: { tx_id: string } }> }) => (
+  Table: ({ data }: { data: Array<{ tx: { tx_id: string } }> }) => (
     <div>
       {data.map(row => (
-        <span key={row.transaction.tx_id}>{row.transaction.tx_id}</span>
+        <span key={row.tx.tx_id}>{row.tx.tx_id}</span>
       ))}
     </div>
   ),
@@ -35,7 +41,10 @@ function summaryItem(tx_id: string) {
       fee_rate: '0',
       block: { time: 0 },
       event_count: 0,
+      sponsor: null,
     },
+    involvement: 'sender',
+    balance_changes: { stx: { sent: '0', received: '0', net: '0' } },
   };
 }
 
@@ -48,17 +57,25 @@ function mockResponse(overrides: Record<string, unknown> = {}) {
   } as unknown as ReturnType<typeof usePrincipalTxSummaries>);
 }
 
-beforeEach(() => jest.clearAllMocks());
+let queryClient: QueryClient;
+const wrapper = ({ children }: { children: ReactNode }) => (
+  <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+);
+
+beforeEach(() => {
+  jest.clearAllMocks();
+  queryClient = new QueryClient();
+});
 
 test('renders a row per recent transaction summary', () => {
   mockResponse();
-  render(<AddressRecentTxsTable principal="SP1" pageSize={3} />);
+  render(<AddressRecentTxsTable principal="SP1" pageSize={3} />, { wrapper });
 
   expect(screen.getByText('0x01')).toBeInTheDocument();
   expect(screen.getByText('0x02')).toBeInTheDocument();
 });
 
-test('requests the single page at the given size and seeds it from the SSR initial data', () => {
+test('seeds the query cache from the SSR initial data instead of passing initialData', () => {
   mockResponse();
   const initialData = {
     total: 1,
@@ -66,7 +83,15 @@ test('requests the single page at the given size and seeds it from the SSR initi
     cursor: { next: null, previous: null, current: null },
     results: [summaryItem('0x01')],
   };
-  render(<AddressRecentTxsTable principal="SP1" pageSize={3} initialData={initialData as never} />);
+  render(
+    <AddressRecentTxsTable principal="SP1" pageSize={3} initialData={initialData as never} />,
+    {
+      wrapper,
+    }
+  );
 
-  expect(mockSingle).toHaveBeenCalledWith('SP1', 3, expect.objectContaining({ initialData }));
+  expect(queryClient.getQueryData(['principalTxSummaries', 1, 'SP1', 3])).toBe(initialData);
+  const [, , options] = mockSingle.mock.calls[0];
+  expect(options).not.toHaveProperty('initialData');
+  expect(options).toEqual(expect.objectContaining({ throwOnError: throwOnFirstPageError }));
 });

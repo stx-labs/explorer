@@ -1,6 +1,13 @@
 import { TransactionStatus } from '../../../common/constants/constants';
 import { MempoolTransactionSummary, TransactionSummary } from '../../../common/types/tx-v3';
-import { getV3MempoolTxTitle, getV3ToAddress, getV3TxStatus, getV3TxTitle } from '../utils';
+import {
+  filterByType,
+  getV3MempoolTxTitle,
+  getV3ToAddress,
+  getV3TxStatus,
+  getV3TxTitle,
+  parseTransactionTypeParam,
+} from '../utils';
 
 const summary = (overrides: Record<string, unknown>): TransactionSummary =>
   ({ block: { height: 1000 }, ...overrides }) as unknown as TransactionSummary;
@@ -107,5 +114,49 @@ describe('getV3ToAddress', () => {
 
   it('returns empty for types without a target', () => {
     expect(getV3ToAddress(summary({ type: 'coinbase' }))).toBe('');
+  });
+});
+
+describe('filterByType', () => {
+  const txs = [
+    { tx_id: '0x01', type: 'coinbase' },
+    { tx_id: '0x02', type: 'token_transfer' },
+    { tx_id: '0x03', type: 'contract_call' },
+  ];
+
+  it('keeps every tx when no type is selected', () => {
+    expect(filterByType(txs, [])).toBe(txs);
+  });
+
+  it('keeps only txs of the selected types', () => {
+    expect(filterByType(txs, ['coinbase', 'contract_call']).map(tx => tx.tx_id)).toEqual([
+      '0x01',
+      '0x03',
+    ]);
+  });
+
+  it('reads the type through getType for wrapped items', () => {
+    const items = txs.map(transaction => ({ transaction }));
+    const filtered = filterByType(items, ['token_transfer'], item => item.transaction.type);
+    expect(filtered.map(item => item.transaction.tx_id)).toEqual(['0x02']);
+  });
+});
+
+describe('parseTransactionTypeParam', () => {
+  it('parses a comma-separated list of known types', () => {
+    expect(parseTransactionTypeParam('coinbase,token_transfer')).toEqual([
+      'coinbase',
+      'token_transfer',
+    ]);
+  });
+
+  it('drops unknown and duplicate types', () => {
+    expect(parseTransactionTypeParam('coinbase, bogus,coinbase')).toEqual(['coinbase']);
+  });
+
+  it('returns undefined when the param is absent or has no known type', () => {
+    expect(parseTransactionTypeParam(null)).toBeUndefined();
+    expect(parseTransactionTypeParam('')).toBeUndefined();
+    expect(parseTransactionTypeParam('bogus')).toBeUndefined();
   });
 });

@@ -84,3 +84,40 @@ export const getTransactionTypeLabel = (value: TransactionType) => {
       return 'Tenure change';
   }
 };
+
+/**
+ * Applies the type filter (the FilterButton selection) client-side: v3 list endpoints only take
+ * `limit` + `cursor`, so filtering happens over the pages already fetched. No filter keeps every tx.
+ * Pass `getType` for wrapped items (e.g. principal summaries, whose tx is under `transaction`).
+ */
+export function filterByType<T extends { type: string }>(txs: T[], types: string[]): T[];
+export function filterByType<T>(items: T[], types: string[], getType: (item: T) => string): T[];
+export function filterByType<T>(
+  items: T[],
+  types: string[],
+  getType: (item: T) => string = item => (item as { type: string }).type
+): T[] {
+  return types.length === 0 ? items : items.filter(item => types.includes(getType(item)));
+}
+
+/** The tx types the FilterButton offers, i.e. the values accepted in the `transactionType` URL param. */
+export const TX_TYPE_FILTER_VALUES = [
+  'coinbase',
+  'smart_contract',
+  'contract_call',
+  'tenure_change',
+  'token_transfer',
+] as const;
+
+/**
+ * Parses the comma-separated `transactionType` URL param into known filter values, ignoring unknown
+ * ones. Returns undefined when the param is absent or has no known type.
+ */
+export function parseTransactionTypeParam(value: string | null | undefined): string[] | undefined {
+  const types = (value ?? '')
+    .split(',')
+    .map(type => type.trim())
+    .filter(type => (TX_TYPE_FILTER_VALUES as readonly string[]).includes(type));
+  const unique = types.filter((type, index) => types.indexOf(type) === index);
+  return unique.length > 0 ? unique : undefined;
+}

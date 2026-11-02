@@ -16,10 +16,10 @@ jest.mock('@/features/txsFilterAndSort/useFilterAndSortState', () => ({
 // Mock the table shell + footer so the test targets the component's own wiring (mempool summary →
 // row mapping, type filter, cursor pagination) rather than the full columnar render tree.
 jest.mock('../../Table', () => ({
-  Table: ({ data }: { data: Array<{ transaction: { tx_id: string } }> }) => (
+  Table: ({ data }: { data: Array<{ tx: { tx_id: string } }> }) => (
     <div>
       {data.map(row => (
-        <span key={row.transaction.tx_id}>{row.transaction.tx_id}</span>
+        <span key={row.tx.tx_id}>{row.tx.tx_id}</span>
       ))}
     </div>
   ),
@@ -98,7 +98,7 @@ test('load-more triggers the next cursor page', () => {
   render(<AddressMempoolTxsTable principal="SP1" />);
 
   fireEvent.click(screen.getByRole('button', { name: 'load-more' }));
-  expect(fetchNextPage).toHaveBeenCalledTimes(1);
+  expect(fetchNextPage).toHaveBeenCalledWith({ cancelRefetch: false });
 });
 
 test('applies the active type filter client-side', () => {
