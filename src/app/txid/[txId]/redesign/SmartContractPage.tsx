@@ -1,7 +1,6 @@
 import { BalanceCard } from '@/app/address/[principal]/redesign/AddressOverview';
 import { SectionTabsContentContainer, SectionTabsTrigger } from '@/common/components/SectionTabs';
 import { AddressTxsTable } from '@/common/components/table/table-examples/AddressTxsTable';
-import { DEFAULT_LIST_LIMIT } from '@/common/constants/constants';
 import { useGlobalContext } from '@/common/context/useGlobalContext';
 import { THIRTY_SECONDS } from '@/common/queries/query-stale-time';
 import { useAccountBalance } from '@/common/queries/useAccountBalance';
@@ -40,9 +39,10 @@ export function SmartContractTabTriggers({
   tx: TxDetailsOf<'smart_contract'>;
   selectedTab: TransactionIdPageTab;
 }) {
+  // Only the total is needed for the tab count, so fetch a single row.
   let { data } = usePrincipalTxSummaries(
     'smart_contract' in tx ? tx.smart_contract.contract_id : '',
-    DEFAULT_LIST_LIMIT,
+    1,
     {
       staleTime: THIRTY_SECONDS,
       gcTime: THIRTY_SECONDS,
