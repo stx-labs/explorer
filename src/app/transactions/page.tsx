@@ -1,13 +1,14 @@
-import { stacksAPIFetch } from '@/api/stacksAPIFetch';
+import { stacksAPIFetchJson } from '@/api/stacksAPIFetch';
 import { TX_TABLE_PAGE_SIZE } from '@/common/components/table/table-examples/consts';
-import { GenericResponseType } from '@/common/hooks/useInfiniteQueryResult';
-import { fetchBnsAddress } from '@/common/queries/bns-queries';
 import { NetworkModes } from '@/common/types/network';
+import { TransactionSummaryListResponse, TransactionSummaryType } from '@/common/types/tx-v3';
 import { logError } from '@/common/utils/error-utils';
-import { getApiUrl } from '@/common/utils/network-utils';
-import { CompressedTxTableData, compressTransactions } from '@/common/utils/transaction-utils';
-import { hasBnsExtension } from '@/common/utils/utils';
-import 'react-datepicker/dist/react-datepicker.css';
+import { getApiUrl, sanitizeNetworkUrlForTag } from '@/common/utils/network-utils';
+import {
+  TX_TYPE_FILTER_VALUES,
+  parseTransactionTypeParam,
+  toTypeParam,
+} from '@/features/txs-list/utils';
 
 import Page from './PageClient';
 
@@ -35,74 +36,43 @@ export interface TxPageFilters {
 
 export default async function (props: { searchParams: Promise<TxPageSearchParams> }) {
   const searchParams = await props.searchParams;
-  const { startTime, endTime, chain, api, fromAddress, toAddress, transactionType } = searchParams;
+  const { chain, api, ssr = 'true', transactionType } = searchParams;
+  const isSSRDisabled = ssr === 'false';
 
   const apiUrl = getApiUrl(chain || NetworkModes.Mainnet, api);
 
-  let initialTxTableData: GenericResponseType<CompressedTxTableData> | undefined;
+  let initialData: TransactionSummaryListResponse | undefined;
+  // The first page for the `transactionType` filter in the URL, which the client starts out with.
+  const initialTypes: TransactionSummaryType[] = toTypeParam(
+    parseTransactionTypeParam(transactionType) ?? [],
+    TX_TYPE_FILTER_VALUES
+  );
 
-  try {
-    let bnsAddress;
-    if (apiUrl && hasBnsExtension(fromAddress)) {
-      bnsAddress = await fetchBnsAddress(apiUrl, fromAddress!);
+  if (!isSSRDisabled) {
+    try {
+      const query = new URLSearchParams({ limit: String(TX_TABLE_PAGE_SIZE) });
+      initialTypes.forEach(type => query.append('type', type));
+      const fetchUrl = `${apiUrl}/extended/v3/transactions?${query}`;
+      // stacksAPIFetchJson throws on non-2xx so an error body is never cached as a summary page.
+      initialData = await stacksAPIFetchJson<TransactionSummaryListResponse>(fetchUrl, {
+        next: {
+          revalidate: 20, // nextjs caches the response for 20s (about 2-3 blocks)
+        },
+      });
+    } catch (error) {
+      logError(
+        error as Error,
+        'Transaction page server-side fetch for initial data',
+        // Custom API URLs can carry credentials or tokens in their query string.
+        {
+          api: api && sanitizeNetworkUrlForTag(api),
+          chain,
+          apiUrl: sanitizeNetworkUrlForTag(apiUrl),
+        },
+        'error'
+      );
     }
-    if (apiUrl && hasBnsExtension(toAddress)) {
-      bnsAddress = await fetchBnsAddress(apiUrl, toAddress!);
-    }
-
-    const params = new URLSearchParams({
-      limit: `${TX_TABLE_PAGE_SIZE}`,
-      offset: '0',
-      ...(startTime && { start_time: startTime }),
-      ...(endTime && { end_time: endTime }),
-      ...(fromAddress && { from_address: bnsAddress || fromAddress }),
-      ...(toAddress && { to_address: bnsAddress || toAddress }),
-      ...(transactionType && { type: transactionType }),
-    });
-    const fetchUrl = `${apiUrl}/extended/v1/tx/?${params.toString()}`;
-
-    const response = await stacksAPIFetch(fetchUrl, {
-      next: {
-        revalidate: 20, // nextjs caches the response for 20s (about 2-3 blocks)
-      },
-    });
-
-    const data = await response.json();
-    const compressedData = {
-      ...data,
-      results: compressTransactions(data.results),
-    };
-
-    initialTxTableData = compressedData;
-  } catch (error) {
-    logError(
-      error as Error,
-      'Transaction page server-side fetch for initial data',
-      {
-        api,
-        chain,
-        apiUrl,
-        fromAddress,
-        toAddress,
-        startTime,
-        endTime,
-        transactionType,
-        initialTxTableData,
-      },
-      'error'
-    );
   }
 
-  return (
-    <Page
-      filters={{
-        fromAddress: fromAddress || '',
-        toAddress: toAddress || '',
-        startTime: startTime || '',
-        endTime: endTime || '',
-        transactionType: transactionType ? transactionType.split(',') : [],
-      }}
-      initialTxTableData={initialTxTableData}
-    />
-  );
+  return <Page initialData={initialData} initialTypes={initialTypes} />;
 }

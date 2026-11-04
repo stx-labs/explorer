@@ -26,6 +26,7 @@ type TxOrder = Exclude<TxsQuery['order'], undefined>;
 export enum TxFilterAndSortTypes {
   HomepageTxFilter = 'HomepageTxFilter',
   TxsPageTxFilter = 'TxsPageTxFilter',
+  MempoolPageTxFilter = 'MempoolPageTxFilter',
   TxPageTxFilter = 'TxPageTxFilter',
   BlocksPageTxFilter = 'BlocksPageTxFilter',
   SandboxTxFilter = 'SandboxTxFilter',

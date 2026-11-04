@@ -1,33 +1,28 @@
 'use client';
 
-import { TxTableFilters } from '@/common/components/table/filters/TxTableFilters';
-import { TxTableFiltersModal } from '@/common/components/table/filters/TxTableFiltersModal';
-import { TxsTableWithFilters } from '@/common/components/table/tx-table/TxsTableWithFilters';
 import { useGlobalContext } from '@/common/context/useGlobalContext';
-import { GenericResponseType } from '@/common/hooks/useInfiniteQueryResult';
+import { TransactionSummaryListResponse, TransactionSummaryType } from '@/common/types/tx-v3';
 import { buildUrl } from '@/common/utils/buildUrl';
-import { CompressedTxTableData } from '@/common/utils/transaction-utils';
+import { FilterButton } from '@/features/txsFilterAndSort/FilterButton';
+import { useSyncTypeFiltersWithUrl } from '@/features/txsFilterAndSort/useSyncTypeFiltersWithUrl';
 import { ButtonLink } from '@/ui/ButtonLink';
 import { Text } from '@/ui/Text';
 import { Flex, Stack } from '@chakra-ui/react';
 
-import {
-  TxTableFiltersProvider,
-  TxTableFilters as TxTableFiltersType,
-} from '../../common/components/table/tx-table/useTxTableFilters';
+import { ConfirmedTxsSummaryTable } from './ConfirmedTxsSummaryTable';
 
 export default function ({
-  initialTxTableData,
-  filters,
+  initialData,
+  initialTypes,
 }: {
-  initialTxTableData: GenericResponseType<CompressedTxTableData> | undefined;
-  filters: TxTableFiltersType;
+  initialData: TransactionSummaryListResponse | undefined;
+  initialTypes: TransactionSummaryType[];
 }) {
   const network = useGlobalContext().activeNetwork;
+  const typeFilters = useSyncTypeFiltersWithUrl();
 
   return (
     <Stack gap={24} fontFamily="var(--font-instrument-sans)">
-      {/* <Overview /> */}
       <Stack gap={8}>
         <Flex
           justifyContent={'space-between'}
@@ -43,17 +38,14 @@ export default function ({
           </ButtonLink>
         </Flex>
         <Stack gap={5}>
-          <TxTableFiltersProvider
-            defaultTransactionType={filters.transactionType}
-            defaultFromAddress={filters.fromAddress}
-            defaultToAddress={filters.toAddress}
-            defaultStartTime={filters.startTime}
-            defaultEndTime={filters.endTime}
-          >
-            <TxTableFilters />
-            <TxsTableWithFilters initialData={initialTxTableData} />
-            <TxTableFiltersModal />
-          </TxTableFiltersProvider>
+          <Flex gap={2} flexWrap={'wrap'}>
+            <FilterButton />
+          </Flex>
+          <ConfirmedTxsSummaryTable
+            initialData={initialData}
+            initialTypes={initialTypes}
+            typeFilters={typeFilters}
+          />
         </Stack>
       </Stack>
     </Stack>

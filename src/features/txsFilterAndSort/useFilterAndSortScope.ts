@@ -11,6 +11,7 @@ import { TxFilterAndSortTypes } from './txsFilterAndSortSlice';
  */
 const pathnameFilterScopeMap: Record<string, TxFilterAndSortTypes> = {
   '/transactions': TxFilterAndSortTypes.TxsPageTxFilter, // Main transactions page
+  '/mempool': TxFilterAndSortTypes.MempoolPageTxFilter, // Mempool page
   '/txid/': TxFilterAndSortTypes.TxPageTxFilter, // Individual transaction page
   '/address/': TxFilterAndSortTypes.AddressTxFilter, // Address details page
   '/block/': TxFilterAndSortTypes.BlocksPageTxFilter, // Block details page

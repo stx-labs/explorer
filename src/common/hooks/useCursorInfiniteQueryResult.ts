@@ -1,4 +1,4 @@
-import { InfiniteData, UseSuspenseInfiniteQueryResult } from '@tanstack/react-query';
+import { InfiniteData, Query, UseSuspenseInfiniteQueryResult } from '@tanstack/react-query';
 import { useMemo } from 'react';
 
 export interface CursorResponseType<T> {
@@ -14,6 +14,26 @@ export interface CursorResponseType<T> {
 
 export function getNextCursorPageParam<T>(lastPage?: CursorResponseType<T>): string | undefined {
   return lastPage?.cursor?.next ?? undefined;
+}
+
+/**
+ * `throwOnError` for cursor-paginated tables: a failed first page is handed to the nearest error
+ * boundary (an error + retry instead of an empty "No results found" table), while a failed
+ * "Load more" or background refetch keeps the rows already loaded.
+ */
+export function throwOnFirstPageError(_error: unknown, query: Query<any, any, any, any>): boolean {
+  return query.state.data === undefined;
+}
+
+/**
+ * Drops every cached page but the first, so a refetch reloads one page instead of re-requesting each
+ * loaded "Load more" page in sequence. Pass to `queryClient.setQueryData` before refetching.
+ */
+export function trimToFirstPage<TPage, TPageParam>(
+  data: InfiniteData<TPage, TPageParam> | undefined
+): InfiniteData<TPage, TPageParam> | undefined {
+  if (!data || data.pages.length <= 1) return data;
+  return { pages: data.pages.slice(0, 1), pageParams: data.pageParams.slice(0, 1) };
 }
 
 export function useSuspenseCursorInfiniteQueryResult<T>(

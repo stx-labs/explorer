@@ -6,12 +6,12 @@ import {
   useDeepLinkTabOnValueChange,
 } from '@/common/components/SectionTabs';
 import { FungibleTokensTableWithFilters } from '@/common/components/table/fungible-tokens-table/FungibleTokensTableWithFilters';
+import { AddressMempoolTxsTable } from '@/common/components/table/table-examples/AddressMempoolTxsTable';
 import { ADDRESS_ID_PAGE_FUNGIBLE_TOKENS_LIMIT } from '@/common/components/table/table-examples/consts';
 import { useNftHoldings } from '@/common/queries/useNftHoldings';
 import { usePrincipalTxSummaries } from '@/common/queries/usePrincipalTxSummaries';
 import { validateStacksContractId } from '@/common/utils/utils';
 import { Skeleton } from '@/components/ui/skeleton';
-import { AddressMempoolTxsList } from '@/features/txs-list/AddressMempoolTxsList';
 import { TabsContent, TabsList, TabsRoot } from '@/ui/Tabs';
 import dynamic from 'next/dynamic';
 import { useSearchParams } from 'next/navigation';
@@ -40,15 +40,16 @@ enum AddressIdPageTab {
 }
 
 export const AddressTabs = ({ principal }: { principal: string }) => {
-  // TODO: Temporarily disabled - re-enable when API performance is fixed
-  // const { initialAddressRecentTransactionsData, initialAddressBalancesData } =
-  //   useAddressIdPageData();
-  // const totalAddressTransactions = initialAddressRecentTransactionsData?.total || 0;
-  const { initialAddressBalancesData } = useAddressIdPageData();
+  const { initialAddressRecentTransactionsData, initialAddressBalancesData } =
+    useAddressIdPageData();
 
-  // TODO: Temporarily fetching client-side - re-enable SSR when API performance is fixed
-  const { data: transactionsData } = usePrincipalTxSummaries(principal, 1);
-  const totalAddressTransactions = transactionsData?.total || 0;
+  // The SSR recent-transactions page already carries the principal's total; only fall back to a
+  // `limit=1` client fetch when it's missing (`ssr=false` or a failed server fetch).
+  const { data: transactionsData } = usePrincipalTxSummaries(principal, 1, {
+    enabled: !!principal && !initialAddressRecentTransactionsData,
+  });
+  const totalAddressTransactions =
+    (initialAddressRecentTransactionsData ?? transactionsData)?.total || 0;
 
   const totalAddressFungibleTokens = Object.entries(
     initialAddressBalancesData?.fungible_tokens || {}
@@ -149,7 +150,7 @@ export const AddressTabs = ({ principal }: { principal: string }) => {
         <AddressConfirmedTxs principal={principal} />
       </TabsContent>
       <TabsContent key={AddressIdPageTab.Pending} value={AddressIdPageTab.Pending}>
-        <AddressMempoolTxsList address={principal} />
+        <AddressMempoolTxsTable principal={principal} />
       </TabsContent>
       <TabsContent key={AddressIdPageTab.Tokens} value={AddressIdPageTab.Tokens}>
         <FungibleTokensTableWithFilters

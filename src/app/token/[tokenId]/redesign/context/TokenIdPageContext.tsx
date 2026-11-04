@@ -1,11 +1,10 @@
 'use client';
 
-import { GenericResponseType } from '@/common/hooks/useInfiniteQueryResult';
 import { useContractById } from '@/common/queries/useContractById';
 import { useFtMetadata } from '@/common/queries/useFtMetadata';
 import { useHolders, useTokenSupply } from '@/common/queries/useHolders';
 import { FtHolderListResponse } from '@/common/types/tokens-v3';
-import { CompressedTxAndMempoolTxTableData } from '@/common/utils/transaction-utils';
+import { PrincipalTransactionSummaryListResponse } from '@/common/types/tx-v3';
 import { ReactNode, createContext, useContext, useMemo } from 'react';
 
 import { MergedTokenData } from '../../types';
@@ -13,9 +12,7 @@ import { MergedTokenData } from '../../types';
 interface TokenIdPageDataContextType {
   stxPrice: number;
   btcPrice: number;
-  initialAddressRecentTransactionsData:
-    | GenericResponseType<CompressedTxAndMempoolTxTableData>
-    | undefined;
+  initialAddressRecentTransactionsData: PrincipalTransactionSummaryListResponse | undefined;
   tokenId: string;
   tokenData: MergedTokenData | undefined;
   txBlockTime: number | undefined;

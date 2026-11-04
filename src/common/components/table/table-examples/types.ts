@@ -5,6 +5,8 @@ export enum TxTableColumns {
   From = 'from',
   ArrowRight = 'arrowRight',
   To = 'to',
+  Nonce = 'nonce',
+  BlockHeight = 'blockHeight',
   Fee = 'fee',
   Amount = 'amount',
   BlockTime = 'blockTime',

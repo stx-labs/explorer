@@ -1,9 +1,9 @@
 import { TxLink } from '@/common/components/ExplorerLinks';
 import { TransactionStatus as TransactionStatusEnum } from '@/common/constants/constants';
-import { TransactionSummary } from '@/common/types/tx-v3';
+import { MempoolTransactionSummary, TransactionSummary } from '@/common/types/tx-v3';
 import { getTransactionStatus, getTxTitle } from '@/common/utils/transactions';
 import { truncateHex } from '@/common/utils/utils';
-import { getV3TxStatus, getV3TxTitle } from '@/features/txs-list/utils';
+import { getV3MempoolTxTitle, getV3TxStatus, getV3TxTitle } from '@/features/txs-list/utils';
 import { TransactionTypeBadge } from '@/ui/Badge';
 import { Text } from '@/ui/Text';
 import { Tooltip } from '@/ui/Tooltip';
@@ -208,7 +208,24 @@ export const TxSummaryTitleCellRenderer = (tx: TransactionSummary) => {
   return content;
 };
 
-export const EventsCellRenderer = (tx: Transaction | MempoolTransaction) => {
+export const MempoolTxSummaryTitleCellRenderer = (tx: MempoolTransactionSummary) => {
+  const title = getV3MempoolTxTitle(tx);
+  const content = (
+    <TxLink txId={tx.tx_id} variant="tableLink">
+      <EllipsisText textStyle="text-medium-sm">{title}</EllipsisText>
+    </TxLink>
+  );
+
+  // Mempool summaries are pending (or dropped); surface the status alongside the title.
+  return (
+    <Flex alignItems="center" gap={1.5}>
+      {content}
+      <StatusTag status={tx.status} />
+    </Flex>
+  );
+};
+
+export const EventsCellRenderer = (tx: Transaction | MempoolTransaction | TransactionSummary) => {
   const eventCount = 'event_count' in tx ? tx.event_count : 0;
 
   if (eventCount === 0) {

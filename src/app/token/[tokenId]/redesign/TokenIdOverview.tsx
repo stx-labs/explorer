@@ -2,7 +2,7 @@ import { SummaryItem } from '@/app/txid/[txId]/redesign/tx-summary/SummaryItem';
 import { TokenLink, TxLink } from '@/common/components/ExplorerLinks';
 import { SectionTabsContentContainer } from '@/common/components/SectionTabs';
 import { StackingCardItem } from '@/common/components/id-pages/Overview';
-import { AddressTxsTable } from '@/common/components/table/table-examples/AddressTxsTable';
+import { AddressRecentTxsTable } from '@/common/components/table/table-examples/AddressRecentTxsTable';
 import { DEFAULT_OVERVIEW_TAB_TABLE_PAGE_SIZE } from '@/common/components/table/table-examples/consts';
 import { formatNumber, formatUsdValue } from '@/common/utils/string-utils';
 import { formatTimestamp } from '@/common/utils/time-utils';
@@ -162,11 +162,10 @@ function MobileTokenIdOverview() {
         <Text textStyle="heading-xs" color="textPrimary">
           Recent transactions
         </Text>
-        <AddressTxsTable
+        <AddressRecentTxsTable
           principal={tokenId}
           initialData={initialAddressRecentTransactionsData}
           pageSize={DEFAULT_OVERVIEW_TAB_TABLE_PAGE_SIZE}
-          disablePagination
         />
       </Stack>
     </Stack>
@@ -193,11 +192,10 @@ function DesktopTokenIdOverview() {
           <Text textStyle="heading-xs" color="textPrimary">
             Recent transactions
           </Text>
-          <AddressTxsTable
+          <AddressRecentTxsTable
             principal={tokenId}
             initialData={initialAddressRecentTransactionsData}
             pageSize={DEFAULT_OVERVIEW_TAB_TABLE_PAGE_SIZE}
-            disablePagination
           />
         </Stack>
       </Stack>

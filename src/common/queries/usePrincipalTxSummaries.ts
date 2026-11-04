@@ -1,7 +1,9 @@
 import {
   InfiniteData,
+  UseInfiniteQueryResult,
   UseQueryResult,
   UseSuspenseInfiniteQueryResult,
+  useInfiniteQuery,
   useQuery,
   useSuspenseInfiniteQuery,
 } from '@tanstack/react-query';
@@ -43,6 +45,42 @@ export function useSuspensePrincipalTxSummariesInfinite(
   });
 }
 
+export function usePrincipalTxSummariesInfinite(
+  principal: string,
+  options: any = {}
+): UseInfiniteQueryResult<InfiniteData<PrincipalTransactionSummaryListResponse>> {
+  const apiClient = useApiClient();
+  const { activeNetwork } = useGlobalContext();
+  return useInfiniteQuery({
+    queryKey: ['principalTxSummariesInfinite', activeNetwork.networkId, principal],
+    queryFn: async ({ pageParam }: { pageParam: string | undefined }) =>
+      await callApiWithErrorHandling(
+        apiClient,
+        '/extended/v3/principals/{principal}/transactions',
+        {
+          params: {
+            path: { principal },
+            query: {
+              limit: ADDRESS_ID_PAGE_ADDRESS_TXS_LIMIT,
+              ...(pageParam ? { cursor: pageParam } : {}),
+            },
+          },
+        }
+      ),
+    getNextPageParam: getNextCursorPageParam,
+    initialPageParam: undefined as string | undefined,
+    staleTime: TWO_MINUTES,
+    enabled: !!principal,
+    ...options,
+  });
+}
+
+export const principalTxSummariesQueryKey = (
+  networkId: number | string,
+  principal: string,
+  limit: number
+) => ['principalTxSummaries', networkId, principal, limit] as const;
+
 export function usePrincipalTxSummaries(
   principal: string,
   limit: number,
@@ -51,7 +89,7 @@ export function usePrincipalTxSummaries(
   const apiClient = useApiClient();
   const { activeNetwork } = useGlobalContext();
   return useQuery({
-    queryKey: ['principalTxSummaries', activeNetwork.networkId, principal, limit],
+    queryKey: principalTxSummariesQueryKey(activeNetwork.networkId, principal, limit),
     queryFn: async () =>
       await callApiWithErrorHandling(
         apiClient,

@@ -8,6 +8,7 @@ import {
 } from '@/app/sandbox/types/values';
 import { encodeOptional, encodeOptionalTuple, encodeTuple, getTuple } from '@/app/sandbox/utils';
 import { callContract } from '@/app/sandbox/utils/walletTransactions';
+import { PRINCIPAL_MEMPOOL_TX_SUMMARIES_INFINITE_KEY } from '@/common/queries/useMempoolTxSummaries';
 import { isUint128 } from '@/common/utils/number-utils';
 import { postConditionModeNames } from '@/common/utils/post-condition-mode-utils';
 import { QueryClient } from '@tanstack/react-query';
@@ -136,6 +137,10 @@ export async function handlePublicFunctionCall(
     postConditionMode: postConditionModeNames[postConditionParams.postConditionMode],
   }).then(() => {
     void queryClient.invalidateQueries({ queryKey: ['addressMempoolTxsInfinite'] });
+    void queryClient.invalidateQueries({
+      queryKey: [PRINCIPAL_MEMPOOL_TX_SUMMARIES_INFINITE_KEY],
+      refetchType: 'all',
+    });
   });
 }
 
