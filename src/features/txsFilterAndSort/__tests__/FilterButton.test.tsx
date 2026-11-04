@@ -51,3 +51,10 @@ test('offers only the given types', async () => {
     'Token transfer',
   ]);
 });
+
+test('keeps the display-only checkboxes out of the tab order', async () => {
+  await openMenu();
+  const inputs = document.querySelectorAll('[role="menu"] input[type="checkbox"]');
+  expect(inputs).toHaveLength(5);
+  inputs.forEach(input => expect(input).toHaveAttribute('tabindex', '-1'));
+});

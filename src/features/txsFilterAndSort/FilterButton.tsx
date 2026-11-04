@@ -49,7 +49,14 @@ function FilterItem({
       >
         {icon}
         <Text fontSize={'sm'}>{label}</Text>
-        <Checkbox ml={'auto'} checked={checked} aria-hidden pointerEvents={'none'} tabIndex={-1} />
+        {/* `inputProps` reaches the native input; a root `tabIndex` would only land on its label. */}
+        <Checkbox
+          ml={'auto'}
+          checked={checked}
+          aria-hidden
+          pointerEvents={'none'}
+          inputProps={{ tabIndex: -1 }}
+        />
       </HStack>
     </Menu.CheckboxItem>
   );
