@@ -1,7 +1,7 @@
 'use client';
 
 import { useGlobalContext } from '@/common/context/useGlobalContext';
-import { TransactionSummaryListResponse } from '@/common/types/tx-v3';
+import { TransactionSummaryListResponse, TransactionSummaryType } from '@/common/types/tx-v3';
 import { buildUrl } from '@/common/utils/buildUrl';
 import { FilterButton } from '@/features/txsFilterAndSort/FilterButton';
 import { useSyncTypeFiltersWithUrl } from '@/features/txsFilterAndSort/useSyncTypeFiltersWithUrl';
@@ -13,11 +13,13 @@ import { ConfirmedTxsSummaryTable } from './ConfirmedTxsSummaryTable';
 
 export default function ({
   initialData,
+  initialTypes,
 }: {
   initialData: TransactionSummaryListResponse | undefined;
+  initialTypes: TransactionSummaryType[];
 }) {
   const network = useGlobalContext().activeNetwork;
-  useSyncTypeFiltersWithUrl();
+  const typeFilters = useSyncTypeFiltersWithUrl();
 
   return (
     <Stack gap={24} fontFamily="var(--font-instrument-sans)">
@@ -39,7 +41,11 @@ export default function ({
           <Flex gap={2} flexWrap={'wrap'}>
             <FilterButton />
           </Flex>
-          <ConfirmedTxsSummaryTable initialData={initialData} />
+          <ConfirmedTxsSummaryTable
+            initialData={initialData}
+            initialTypes={initialTypes}
+            typeFilters={typeFilters}
+          />
         </Stack>
       </Stack>
     </Stack>

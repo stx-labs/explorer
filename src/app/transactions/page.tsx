@@ -1,9 +1,14 @@
 import { stacksAPIFetchJson } from '@/api/stacksAPIFetch';
 import { TX_TABLE_PAGE_SIZE } from '@/common/components/table/table-examples/consts';
 import { NetworkModes } from '@/common/types/network';
-import { TransactionSummaryListResponse } from '@/common/types/tx-v3';
+import { TransactionSummaryListResponse, TransactionSummaryType } from '@/common/types/tx-v3';
 import { logError } from '@/common/utils/error-utils';
 import { getApiUrl, sanitizeNetworkUrlForTag } from '@/common/utils/network-utils';
+import {
+  TX_TYPE_FILTER_VALUES,
+  parseTransactionTypeParam,
+  toTypeParam,
+} from '@/features/txs-list/utils';
 
 import Page from './PageClient';
 
@@ -31,19 +36,23 @@ export interface TxPageFilters {
 
 export default async function (props: { searchParams: Promise<TxPageSearchParams> }) {
   const searchParams = await props.searchParams;
-  const { chain, api, ssr = 'true' } = searchParams;
+  const { chain, api, ssr = 'true', transactionType } = searchParams;
   const isSSRDisabled = ssr === 'false';
 
   const apiUrl = getApiUrl(chain || NetworkModes.Mainnet, api);
 
   let initialData: TransactionSummaryListResponse | undefined;
+  // The first page for the `transactionType` filter in the URL, which the client starts out with.
+  const initialTypes: TransactionSummaryType[] = toTypeParam(
+    parseTransactionTypeParam(transactionType) ?? [],
+    TX_TYPE_FILTER_VALUES
+  );
 
-  // v3 `/extended/v3/transactions` only supports `limit` + `cursor` — no server-side address/date/
-  // type filters — so the list is fetched unfiltered and filtered client-side by type (the
-  // `transactionType` URL param is applied on the client by useSyncTypeFiltersWithUrl).
   if (!isSSRDisabled) {
     try {
-      const fetchUrl = `${apiUrl}/extended/v3/transactions?limit=${TX_TABLE_PAGE_SIZE}`;
+      const query = new URLSearchParams({ limit: String(TX_TABLE_PAGE_SIZE) });
+      initialTypes.forEach(type => query.append('type', type));
+      const fetchUrl = `${apiUrl}/extended/v3/transactions?${query}`;
       // stacksAPIFetchJson throws on non-2xx so an error body is never cached as a summary page.
       initialData = await stacksAPIFetchJson<TransactionSummaryListResponse>(fetchUrl, {
         next: {
@@ -65,5 +74,5 @@ export default async function (props: { searchParams: Promise<TxPageSearchParams
     }
   }
 
-  return <Page initialData={initialData} />;
+  return <Page initialData={initialData} initialTypes={initialTypes} />;
 }

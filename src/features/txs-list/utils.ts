@@ -2,7 +2,12 @@ import { TransactionType } from '@stacks/stacks-blockchain-api-types';
 
 import { TransactionStatus } from '../../common/constants/constants';
 import { TxStatus } from '../../common/types/tx';
-import { MempoolTransactionSummary, TransactionSummary } from '../../common/types/tx-v3';
+import {
+  MempoolTransactionSummary,
+  MempoolTransactionSummaryType,
+  TransactionSummary,
+  TransactionSummaryType,
+} from '../../common/types/tx-v3';
 import { getContractName, microToStacksFormatted } from '../../common/utils/utils';
 
 // v3 list endpoints only return confirmed, canonical txs, so the microblock/non-canonical
@@ -86,9 +91,10 @@ export const getTransactionTypeLabel = (value: TransactionType) => {
 };
 
 /**
- * Applies the type filter (the FilterButton selection) client-side: v3 list endpoints only take
- * `limit` + `cursor`, so filtering happens over the pages already fetched. No filter keeps every tx.
- * Pass `getType` for wrapped items (e.g. principal summaries, whose tx is under `transaction`).
+ * Applies the type filter (the FilterButton selection) client-side, for the v3 lists whose endpoints
+ * can't filter by type (block and principal transactions), over the pages already fetched. No filter
+ * keeps every tx. Pass `getType` for wrapped items (e.g. principal summaries, whose tx is under
+ * `transaction`).
  */
 export function filterByType<T extends { type: string }>(txs: T[], types: string[]): T[];
 export function filterByType<T>(items: T[], types: string[], getType: (item: T) => string): T[];
@@ -107,7 +113,23 @@ export const TX_TYPE_FILTER_VALUES = [
   'contract_call',
   'tenure_change',
   'token_transfer',
-] as const;
+] as const satisfies readonly TransactionSummaryType[];
+
+/** The subset of {@link TX_TYPE_FILTER_VALUES} that can be pending, i.e. the mempool's filters. */
+export const MEMPOOL_TX_TYPE_FILTER_VALUES = [
+  'smart_contract',
+  'contract_call',
+  'token_transfer',
+] as const satisfies readonly MempoolTransactionSummaryType[];
+
+/**
+ * Turns a type filter selection into a v3 `type` query param: only the `allowed` types, in their
+ * order rather than the order they were picked in, so the same selection always maps to the same
+ * request and query key. An empty result means no filter.
+ */
+export function toTypeParam<T extends string>(selected: string[], allowed: readonly T[]): T[] {
+  return allowed.filter(type => selected.includes(type));
+}
 
 /**
  * Parses the comma-separated `transactionType` URL param into known filter values, ignoring unknown

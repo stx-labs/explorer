@@ -4,10 +4,8 @@ import { useSubscribeBlocks } from '@/app/_components/BlockList/Sockets/useSubsc
 import { useSubscribeTxs } from '@/app/_components/BlockList/Sockets/useSubscribeTxs';
 import { trimToFirstPage } from '@/common/hooks/useCursorInfiniteQueryResult';
 import { MempoolTransactionSummary, TransactionSummary } from '@/common/types/tx-v3';
-import { filterByType } from '@/features/txs-list/utils';
-import { useFilterAndSortState } from '@/features/txsFilterAndSort/useFilterAndSortState';
 import { InfiniteData, QueryKey, useQueryClient } from '@tanstack/react-query';
-import { ColumnDef } from '@tanstack/react-table';
+import { ColumnDef, SortingState } from '@tanstack/react-table';
 import { type JSX, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { ListFooter } from '../../ListFooter';
@@ -19,9 +17,17 @@ import { TxSummaryTableRow, toTxSummaryRow } from './txSummaryColumns';
 /** Which socket signals new rows: new blocks for the confirmed feed, mempool txs for pending. */
 export type LiveUpdatesSource = 'blocks' | 'mempool';
 
+/** Sorting done by the API: the sortable columns' headers request a new feed in the clicked order. */
+export interface ServerSorting {
+  /** The single column the feed is ordered by. */
+  sorting: SortingState;
+  onSortChange: (columnId: string, order: 'asc' | 'desc') => void;
+}
+
 export interface InfiniteTxSummaryTableProps {
   txs: (TransactionSummary | MempoolTransactionSummary)[];
   columns: ColumnDef<TxSummaryTableRow>[];
+  serverSorting?: ServerSorting;
   /** The feed's infinite query key, so a refresh can trim the cache to its first page. */
   queryKey: QueryKey;
   liveUpdates: LiveUpdatesSource;
@@ -52,14 +58,15 @@ function MempoolListener({ active, onUpdate }: { active: boolean; onUpdate: () =
 
 /**
  * Columnar table over a cursor-paginated v3 summary feed. Pages are appended via a "Load more"
- * footer (cursor pagination can't jump to arbitrary pages), and the type filter is applied
- * client-side over the already-fetched rows since v3 list endpoints only accept `limit` + `cursor`.
+ * footer (cursor pagination can't jump to arbitrary pages). Type filtering and ordering are done
+ * by the API, so the rows are shown as fetched.
  * First-page failures aren't handled here: callers query with `throwOnFirstPageError` under an
  * error boundary so they render an error + retry rather than an empty table.
  */
 export function InfiniteTxSummaryTable({
   txs,
   columns,
+  serverSorting,
   queryKey,
   liveUpdates,
   isLoading,
@@ -73,11 +80,17 @@ export function InfiniteTxSummaryTable({
   onRefresh,
 }: InfiniteTxSummaryTableProps) {
   const queryClient = useQueryClient();
-  const { activeFilters } = useFilterAndSortState();
 
-  const rowData = useMemo(
-    () => filterByType(txs, activeFilters).map(tx => toTxSummaryRow(tx)),
-    [txs, activeFilters]
+  const rowData = useMemo(() => txs.map(tx => toTxSummaryRow(tx)), [txs]);
+
+  const onSortChange = serverSorting?.onSortChange;
+  const handleSort = useCallback(
+    async (columnId: string | undefined, order: 'asc' | 'desc' | undefined) => {
+      if (columnId && order) onSortChange?.(columnId, order);
+      // The Table shows what this returns until the next `data`; the new order comes from the API.
+      return rowData;
+    },
+    [onSortChange, rowData]
   );
 
   const [isSubscriptionActive, setIsSubscriptionActive] = useState(false);
@@ -129,6 +142,12 @@ export function InfiniteTxSummaryTable({
         tableContainerWrapper={tableContainer ? table => tableContainer(table) : undefined}
         scrollIndicatorWrapper={table => <ScrollIndicator>{table}</ScrollIndicator>}
         isLoading={isLoading}
+        {...(serverSorting && {
+          manualSorting: true,
+          initialSorting: serverSorting.sorting,
+          enableSortingRemoval: false,
+          onSort: handleSort,
+        })}
       />
       <ListFooter
         isLoading={isFetchingNextPage}

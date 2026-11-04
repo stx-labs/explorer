@@ -1,6 +1,5 @@
 import { useSubscribeBlocks } from '@/app/_components/BlockList/Sockets/useSubscribeBlocks';
 import { useSubscribeTxs } from '@/app/_components/BlockList/Sockets/useSubscribeTxs';
-import { useFilterAndSortState } from '@/features/txsFilterAndSort/useFilterAndSortState';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import '@testing-library/jest-dom';
 import { act, fireEvent, render, screen } from '@testing-library/react';
@@ -15,17 +14,17 @@ jest.mock('@/app/_components/BlockList/Sockets/useSubscribeBlocks', () => ({
 jest.mock('@/app/_components/BlockList/Sockets/useSubscribeTxs', () => ({
   useSubscribeTxs: jest.fn(),
 }));
-jest.mock('@/features/txsFilterAndSort/useFilterAndSortState', () => ({
-  useFilterAndSortState: jest.fn(),
-}));
 jest.mock('../../Table', () => ({
-  Table: ({ data }: { data: Array<{ tx: { tx_id: string } }> }) => (
-    <div>
-      {data.map(row => (
-        <span key={row.tx.tx_id}>{row.tx.tx_id}</span>
-      ))}
-    </div>
-  ),
+  Table: (props: { data: Array<{ tx: { tx_id: string } }> }) => {
+    mockTableProps(props);
+    return (
+      <div>
+        {props.data.map(row => (
+          <span key={row.tx.tx_id}>{row.tx.tx_id}</span>
+        ))}
+      </div>
+    );
+  },
 }));
 jest.mock('../../../ListFooter', () => ({
   ListFooter: ({ fetchNextPage }: { fetchNextPage: () => void }) => (
@@ -35,7 +34,8 @@ jest.mock('../../../ListFooter', () => ({
 
 const mockBlocks = useSubscribeBlocks as jest.MockedFunction<typeof useSubscribeBlocks>;
 const mockMempool = useSubscribeTxs as jest.MockedFunction<typeof useSubscribeTxs>;
-const mockFilter = useFilterAndSortState as jest.MockedFunction<typeof useFilterAndSortState>;
+const mockTableProps = jest.fn();
+const lastTableProps = () => mockTableProps.mock.calls[mockTableProps.mock.calls.length - 1][0];
 
 const queryKey = ['feed'];
 const tx = (tx_id: string, type = 'coinbase') => ({ tx_id, type }) as never;
@@ -69,9 +69,6 @@ beforeEach(() => {
   jest.clearAllMocks();
   jest.useFakeTimers();
   queryClient = new QueryClient();
-  mockFilter.mockReturnValue({ activeFilters: [] } as unknown as ReturnType<
-    typeof useFilterAndSortState
-  >);
 });
 
 afterEach(() => jest.useRealTimers());
@@ -117,11 +114,28 @@ test('load more does not cancel an in-flight refetch', () => {
   expect(props.fetchNextPage).toHaveBeenCalledWith({ cancelRefetch: false });
 });
 
-test('filters the loaded rows by the selected types', () => {
-  mockFilter.mockReturnValue({ activeFilters: ['token_transfer'] } as unknown as ReturnType<
-    typeof useFilterAndSortState
-  >);
+test('shows every fetched row, since the API already applied the type filter', () => {
   renderTable();
+  expect(screen.getByText('0x01')).toBeInTheDocument();
   expect(screen.getByText('0x02')).toBeInTheDocument();
-  expect(screen.queryByText('0x01')).not.toBeInTheDocument();
+});
+
+test('sorts client-side by default', () => {
+  renderTable();
+  expect(lastTableProps().manualSorting).toBeUndefined();
+  expect(lastTableProps().onSort).toBeUndefined();
+});
+
+test('hands header sorting to the API when serverSorting is given', async () => {
+  const onSortChange = jest.fn();
+  const sorting = [{ id: 'blockTime', desc: true }];
+  renderTable({ serverSorting: { sorting, onSortChange } });
+
+  const { manualSorting, initialSorting, enableSortingRemoval, onSort } = lastTableProps();
+  expect(manualSorting).toBe(true);
+  expect(initialSorting).toBe(sorting);
+  expect(enableSortingRemoval).toBe(false);
+
+  await act(() => onSort('fee', 'asc'));
+  expect(onSortChange).toHaveBeenCalledWith('fee', 'asc');
 });

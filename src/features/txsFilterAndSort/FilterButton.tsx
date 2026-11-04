@@ -55,7 +55,16 @@ function FilterItem({
   );
 }
 
-export const FilterButton = memo(() => {
+const FILTER_ITEMS: { value: string; label: string; icon: ReactNode }[] = [
+  { value: 'coinbase', label: 'Coinbase', icon: <CubeSparkleIcon /> },
+  { value: 'smart_contract', label: 'Contract deploy', icon: <ClarityIcon /> },
+  { value: 'contract_call', label: 'Function call', icon: <FunctionXIcon /> },
+  { value: 'tenure_change', label: 'Tenure change', icon: <ArrowBendDownRight /> },
+  { value: 'token_transfer', label: 'Token transfer', icon: <DiagonalArrowsIcon /> },
+];
+
+/** `types` limits the offered filters, e.g. to the types a list can actually contain. */
+export const FilterButton = memo(({ types }: { types?: readonly string[] }) => {
   const [isHovered, setIsHovered] = useState(false);
   const handleMouseEnter = useCallback(() => {
     setIsHovered(true);
@@ -120,51 +129,14 @@ export const FilterButton = memo(() => {
         </Flex>
       </MenuTrigger>
       <MenuContent bg={'surface'}>
-        <FilterItem
-          label={'Coinbase'}
-          icon={
-            <Icon color={'text'}>
-              <CubeSparkleIcon />
-            </Icon>
-          }
-          {...getItemProps('coinbase')}
-        />
-        <FilterItem
-          label={'Contract deploy'}
-          icon={
-            <Icon color={'text'}>
-              <ClarityIcon />
-            </Icon>
-          }
-          {...getItemProps('smart_contract')}
-        />
-        <FilterItem
-          label={'Function call'}
-          icon={
-            <Icon color={'text'}>
-              <FunctionXIcon />
-            </Icon>
-          }
-          {...getItemProps('contract_call')}
-        />
-        <FilterItem
-          label={'Tenure change'}
-          icon={
-            <Icon color={'text'}>
-              <ArrowBendDownRight />
-            </Icon>
-          }
-          {...getItemProps('tenure_change')}
-        />
-        <FilterItem
-          label={'Token transfer'}
-          icon={
-            <Icon color={'text'}>
-              <DiagonalArrowsIcon />
-            </Icon>
-          }
-          {...getItemProps('token_transfer')}
-        />
+        {FILTER_ITEMS.filter(item => !types || types.includes(item.value)).map(item => (
+          <FilterItem
+            key={item.value}
+            label={item.label}
+            icon={<Icon color={'text'}>{item.icon}</Icon>}
+            {...getItemProps(item.value)}
+          />
+        ))}
       </MenuContent>
     </MenuRoot>
   );

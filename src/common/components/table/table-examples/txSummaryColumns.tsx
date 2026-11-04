@@ -245,9 +245,20 @@ export const blockTxSummaryColumns: TxSummaryColumn[] = confirmedTxSummaryColumn
   column => column.id !== TxTableColumns.BlockHeight
 );
 
-/** Pending transactions: the /mempool feed and the address Pending tab. */
+/** Pending transactions: the address Pending tab. */
 export const mempoolTxSummaryColumns: TxSummaryColumn[] = [
   ...leadingColumns,
   feeColumn,
   timestampColumn('Received'),
 ];
+
+/** The columns the /mempool feed can be ordered by (`sort_by` on the v3 mempool endpoint). */
+export const MEMPOOL_SORTABLE_COLUMNS = [TxTableColumns.Fee, TxTableColumns.BlockTime] as const;
+
+/** {@link mempoolTxSummaryColumns} with sortable Fee and Received headers, for the /mempool feed. */
+export const sortableMempoolTxSummaryColumns: TxSummaryColumn[] = mempoolTxSummaryColumns.map(
+  column =>
+    (MEMPOOL_SORTABLE_COLUMNS as readonly string[]).includes(column.id ?? '')
+      ? { ...column, enableSorting: true }
+      : column
+);

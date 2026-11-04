@@ -6,6 +6,7 @@ import {
   confirmedTxSummaryColumnsWithEvents,
   getTxDirection,
   mempoolTxSummaryColumns,
+  sortableMempoolTxSummaryColumns,
   toPrincipalTxSummaryRow,
 } from '../txSummaryColumns';
 import { TxTableColumns } from '../types';
@@ -99,5 +100,17 @@ describe('shared tx summary column sets', () => {
   it('shows nonce but no block for pending transactions', () => {
     expect(ids(mempoolTxSummaryColumns)).toContain(TxTableColumns.Nonce);
     expect(ids(mempoolTxSummaryColumns)).not.toContain(TxTableColumns.BlockHeight);
+  });
+
+  it('makes only Fee and Received sortable on the /mempool feed', () => {
+    const sortable = (columns: { id?: string; enableSorting?: boolean }[]) =>
+      columns.filter(column => column.enableSorting).map(column => column.id);
+    expect(ids(sortableMempoolTxSummaryColumns)).toEqual(ids(mempoolTxSummaryColumns));
+    expect(sortable(sortableMempoolTxSummaryColumns)).toEqual([
+      TxTableColumns.Fee,
+      TxTableColumns.BlockTime,
+    ]);
+    // The address Pending tab's endpoint can't sort.
+    expect(sortable(mempoolTxSummaryColumns)).toEqual([]);
   });
 });

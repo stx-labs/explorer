@@ -1,12 +1,15 @@
 import { TransactionStatus } from '../../../common/constants/constants';
 import { MempoolTransactionSummary, TransactionSummary } from '../../../common/types/tx-v3';
 import {
+  MEMPOOL_TX_TYPE_FILTER_VALUES,
+  TX_TYPE_FILTER_VALUES,
   filterByType,
   getV3MempoolTxTitle,
   getV3ToAddress,
   getV3TxStatus,
   getV3TxTitle,
   parseTransactionTypeParam,
+  toTypeParam,
 } from '../utils';
 
 const summary = (overrides: Record<string, unknown>): TransactionSummary =>
@@ -158,5 +161,23 @@ describe('parseTransactionTypeParam', () => {
     expect(parseTransactionTypeParam(null)).toBeUndefined();
     expect(parseTransactionTypeParam('')).toBeUndefined();
     expect(parseTransactionTypeParam('bogus')).toBeUndefined();
+  });
+});
+
+describe('toTypeParam', () => {
+  it('orders the selection canonically so it maps to one request and query key', () => {
+    expect(toTypeParam(['token_transfer', 'coinbase'], TX_TYPE_FILTER_VALUES)).toEqual(
+      toTypeParam(['coinbase', 'token_transfer'], TX_TYPE_FILTER_VALUES)
+    );
+  });
+
+  it('keeps only the types the endpoint accepts', () => {
+    expect(
+      toTypeParam(['coinbase', 'contract_call', 'bogus'], MEMPOOL_TX_TYPE_FILTER_VALUES)
+    ).toEqual(['contract_call']);
+  });
+
+  it('returns no types, i.e. no filter, for an empty selection', () => {
+    expect(toTypeParam([], TX_TYPE_FILTER_VALUES)).toEqual([]);
   });
 });

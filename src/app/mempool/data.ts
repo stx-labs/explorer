@@ -5,8 +5,8 @@ import { MempoolTransactionSummaryListResponse } from '@/common/types/tx-v3';
 import { logError } from '@/common/utils/error-utils';
 import { getApiUrl } from '@/common/utils/network-utils';
 
-// v3 `/extended/v3/mempool/transactions` only supports `limit` + `cursor` — no server-side
-// address/sort filters — so the list is fetched unfiltered and filtered client-side by type.
+// The first page of the default view (every type, newest received first); the client applies the
+// type filter and sort the user picks.
 export async function fetchUIMempoolTransactions(
   chain: string,
   api?: string

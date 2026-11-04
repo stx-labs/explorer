@@ -68,3 +68,24 @@ test('writes later selection changes to the URL and clears the param when emptie
   rerender();
   expect(mockUpdateUrl).toHaveBeenLastCalledWith(undefined);
 });
+
+test('returns the URL types until Redux holds them, so the first query is already filtered', () => {
+  mockSearch = 'transactionType=coinbase';
+  const setActiveFilters = mockFilters(['contract_call']);
+  const { result, rerender } = renderHook(() => useSyncTypeFiltersWithUrl());
+
+  // The first render precedes the effect that copies the URL into Redux.
+  expect(result.current).toEqual(['coinbase']);
+  rerender();
+  expect(result.current).toEqual(['coinbase']);
+
+  act(() => setActiveFilters(['token_transfer']));
+  rerender();
+  expect(result.current).toEqual(['token_transfer']);
+});
+
+test('returns the remembered selection when the URL has none', () => {
+  mockFilters(['contract_call']);
+  const { result } = renderHook(() => useSyncTypeFiltersWithUrl());
+  expect(result.current).toEqual(['contract_call']);
+});
