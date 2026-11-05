@@ -55,7 +55,7 @@ export const AddressTabs = ({ principal }: { principal: string }) => {
     initialAddressBalancesData?.fungible_tokens || {}
   ).length;
 
-  const { data: nftHoldings } = useNftHoldings(principal, 1, 0);
+  const { data: nftHoldings } = useNftHoldings(principal, 1);
   const totalAddressNonFungibleTokens = nftHoldings?.total ?? 0;
 
   const isContract = validateStacksContractId(principal);
