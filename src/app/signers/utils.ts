@@ -1,11 +1,21 @@
 import { SIGNER_KEY_MAP } from './consts';
 import type { StakingSigner, StakingSignerStaker, StakingType } from './data/useStakingSigners';
+import type { SignerLocation } from './useSignerLocations';
 
 export function getSignerKeyName(signerKey: string) {
   if (signerKey in SIGNER_KEY_MAP) {
     return SIGNER_KEY_MAP[signerKey].name;
   }
   return 'unknown';
+}
+
+// The crawler sends ll: null for nodes it can't geolocate, such as carrier-grade NAT addresses
+export function getSignerCoordinates(locations: SignerLocation[]): { lat: number; lng: number }[] {
+  return locations.flatMap(({ ll }) =>
+    Array.isArray(ll) && Number.isFinite(ll[0]) && Number.isFinite(ll[1])
+      ? [{ lat: ll[0], lng: ll[1] }]
+      : []
+  );
 }
 
 export function isPox5Contract(poxContractId: string | undefined): boolean {

@@ -67,6 +67,18 @@ export const SIGNER_KEY_MAP: Record<string, { poolOperator: string; name: string
     poolOperator: '',
     name: 'Xverse',
   },
+  '0x021acd08580abb387c45d44cc742fffe0f61c17db534331495a246f315a0d9404f': {
+    poolOperator: 'SP8HK160YD5GHXP69VGA0TC7AQJ1X4CDW3XVERSE.xverse-signer-manager-1',
+    name: 'Xverse',
+  },
+  '0x0285f4c617c4065e429d1666dcfd885c52e223acfc042aa2c2855adc93034e6975': {
+    poolOperator: 'SP8HK160YD5GHXP69VGA0TC7AQJ1X4CDW3XVERSE.xverse-signer-manager-2',
+    name: 'Xverse',
+  },
+  '0x02f37e08d25d8a660caf66b9cb3a09b1ce055cbb5f57186d92af43268d722408da': {
+    poolOperator: 'SP8HK160YD5GHXP69VGA0TC7AQJ1X4CDW3XVERSE.xverse-signer-manager-3',
+    name: 'Xverse',
+  },
   '0x02b20a0603a409270d4421d89a831e8f7b2fa7c5f2d8872d7aa94737334d10c194': {
     poolOperator: 'SP3CPP71K21BKT8952BN0FFZQDEDKQ3BMB9M9J8X4',
     name: 'Luxor',
@@ -98,6 +110,54 @@ export const SIGNER_KEY_MAP: Record<string, { poolOperator: string; name: string
   '0x03810f16994e46ad0401ddf8d4b112b23bdcda3594688c089850c88c2206ac6ded': {
     poolOperator: 'SPEMC1B9BG0BNGMDVQE1SG2DY8X95ZS157N98P7N.signer-manager-stakin-1',
     name: 'Stakin by The Tie',
+  },
+  '0x023d6e4adbd5e7bedd5a1e1b85940e1e8c6c34924fd0d584e5e15d84c8572083d9': {
+    poolOperator: 'SPMPMA1V6P430M8C91QS1G9XJ95S59JS1TZFZ4Q4.fastpool-max500-signer-manager',
+    name: 'Fast Pool',
+  },
+  '0x03bed482eb9586ae7ddd77de81d76839d88a5efb5618b5ab88817f9c697f7b1590': {
+    poolOperator: 'SP4SZE494VC2YC5JYG7AYFQ44F5Q4PYV7DVMDPBG.native-pool-signer-manager-v2',
+    name: 'Stacking DAO',
+  },
+  '0x02bcfeb0fd2bafa20d865999467d5b9a00d4ef5e37fbaca27d45ee0dbaf13e0596': {
+    poolOperator: 'SP4SZE494VC2YC5JYG7AYFQ44F5Q4PYV7DVMDPBG.signer-manager-stacking-dao-v1',
+    name: 'Stacking DAO',
+  },
+  '0x0309126df3691918f25f8872819bc8268e9e1e0d92d0494fa4fb9783589a1392fa': {
+    poolOperator: 'SP4SZE494VC2YC5JYG7AYFQ44F5Q4PYV7DVMDPBG.signer-manager-foundry-v1',
+    name: 'Foundry (StackingDAO)',
+  },
+  '0x027af6b78b484b2c129dab7e490e8438f9a6eb4890071335a5781d483073866b9a': {
+    poolOperator: 'SP4SZE494VC2YC5JYG7AYFQ44F5Q4PYV7DVMDPBG.signer-manager-hashkey-v1',
+    name: 'HashKey (StackingDAO)',
+  },
+  '0x02c54d8b1ba4b7207f78f861c60f8a67433c264a11ac9b6b7773476e9f6c008e49': {
+    poolOperator: 'SP4SZE494VC2YC5JYG7AYFQ44F5Q4PYV7DVMDPBG.signer-manager-infstones-v1',
+    name: 'InfStones (StackingDAO)',
+  },
+  '0x038265445ac9fa77d96bf6f3eee74e287deb10aeef2f2e3f96581a6bb765de8240': {
+    poolOperator: 'SP4SZE494VC2YC5JYG7AYFQ44F5Q4PYV7DVMDPBG.signer-manager-juicy-stake-v1',
+    name: 'Juicy Stake (StackingDAO)',
+  },
+  '0x023f96d7650baa87d09beca7d024a14a3f84dada24de608d2221d81a967f82c368': {
+    poolOperator: 'SP3ZA8J49HPS7M3KD7EB01Y0ZAJS7VJS2NG87MDGN.planbetter-signer-manager',
+    name: 'Planbetter Pool',
+  },
+  '0x021e5bc15e37b6946ec0d384e746386e62e82ffee1054b778f8ad22d85bb7f9056': {
+    poolOperator: 'SP1N3G8X1X2FTZFD5Y9MAT8KHE1FVBE2GPKAPVSSV.meria-signer-manager',
+    name: 'Meria',
+  },
+  '0x0216436e7785e1dc55cf4350ac1f90e45daf0ec5b57bce13a32551a513446e71d1': {
+    poolOperator: 'SP206Y7BR5NFCR517VGVX04BSGNA5425GM6DMF9H.signer-manager-hashkeycloud-2',
+    name: 'HashKey Cloud',
+  },
+  '0x025e6a2fdb9962638262cb6fde940355718908ff5f13f8cbb71e34ed1982577a1e': {
+    poolOperator: 'SP206Y7BR5NFCR517VGVX04BSGNA5425GM6DMF9H.signer-manager-hashkeycloud-v1',
+    name: 'HashKey Cloud',
+  },
+  '0x038d545b66cc01a93fe405e14d6432432d81ec03e296d55cf3c07b143a4407aa4a': {
+    poolOperator: 'SPV9K21TBFAK4KNRJXF5DFP8N7W46G4V9RCJDC22.juice-pool-stx-signer',
+    name: 'Juice Pool',
   },
 };
 export const mobileBorderCss = {

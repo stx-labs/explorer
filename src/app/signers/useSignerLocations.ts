@@ -5,10 +5,10 @@ import { TEN_MINUTES } from '../../common/queries/query-stale-time';
 
 const SIGNER_LOCATION_QUERY_KEY = 'signer-addresses';
 
-interface SignerLocation {
+export interface SignerLocation {
   ip: string;
-  country: string;
-  ll: [number, number];
+  country: string | null;
+  ll: [number, number] | null;
   public: boolean;
 }
 
