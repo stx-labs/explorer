@@ -9,6 +9,7 @@ import SignersMap from './SignersMap';
 import { getContinent } from './continentUtils';
 import { SignersMapSkeleton } from './skeleton';
 import { useSignersLocation } from './useSignerLocations';
+import { getSignerCoordinates } from './utils';
 
 export enum Continent {
   NorthAmerica = 'North America',
@@ -90,7 +91,7 @@ export function SignersMapComponentLayout({ map, pills }: { map: ReactNode; pill
 export function SignersMapComponentBase() {
   const [activeContinent, setActiveContinent] = useState<Continent | null>(null);
   const { data: signersLocations } = useSignersLocation();
-  const signersLocationData = signersLocations.map(({ ll }) => ({ lat: ll[0], lng: ll[1] }));
+  const signersLocationData = getSignerCoordinates(signersLocations);
   const continentSignersCount: Record<Continent, number> = {
     [Continent.NorthAmerica]: 0,
     [Continent.SouthAmerica]: 0,

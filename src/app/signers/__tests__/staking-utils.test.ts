@@ -5,8 +5,20 @@ import {
   dedupeStakers,
   formatStakerTypeSplit,
   getPoxContractFirstCycleId,
+  getSignerCoordinates,
   isPox5Contract,
 } from '../utils';
+
+describe('getSignerCoordinates', () => {
+  test('maps located nodes and skips ones without coordinates', () => {
+    expect(
+      getSignerCoordinates([
+        { ip: '100.64.119.97', country: null, ll: null, public: false },
+        { ip: '104.238.205.27', country: 'US', ll: [25.8119, -80.2318], public: false },
+      ])
+    ).toEqual([{ lat: 25.8119, lng: -80.2318 }]);
+  });
+});
 
 describe('isPox5Contract', () => {
   test('detects the pox-5 contract', () => {
