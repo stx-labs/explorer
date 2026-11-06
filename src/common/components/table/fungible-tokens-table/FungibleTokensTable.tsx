@@ -8,7 +8,7 @@ import {
   formatHoldingPercentage,
   getTokenImageUrlFromTokenMetadata,
 } from '@/common/utils/fungible-token-utils';
-import { ftDecimals, getAssetNameParts } from '@/common/utils/utils';
+import { formatFtBalance, getAssetNameParts } from '@/common/utils/utils';
 import { useQueryClient } from '@tanstack/react-query';
 import { ColumnDef, PaginationState } from '@tanstack/react-table';
 import { useCallback, useMemo, useRef, useState } from 'react';
@@ -178,7 +178,7 @@ export function FungibleTokensTable({
         const ticker = ft.symbol || deriveTokenTickerFromAssetId(tokenAssetId);
         const name = ft.metadata?.name || ft.name || asset;
         const imageUrl = ft.metadata ? getTokenImageUrlFromTokenMetadata(ft.metadata) : undefined;
-        const balance = ftDecimals(ft?.balance, ft?.decimals || 0);
+        const balance = formatFtBalance(ft.balance, ft.decimals);
 
         return {
           [FungibleTokenTableColumns.Token]: {
