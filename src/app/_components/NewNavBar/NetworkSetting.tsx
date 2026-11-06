@@ -1,8 +1,7 @@
 'use client';
 
 import { openModal } from '@/common/components/modals/modal-slice';
-import { DEFAULT_DEVNET_SERVER, MODALS } from '@/common/constants/constants';
-import { DEFAULT_MAINNET_SERVER, DEFAULT_TESTNET_SERVER } from '@/common/constants/env';
+import { MODALS } from '@/common/constants/constants';
 import { useGlobalContext } from '@/common/context/useGlobalContext';
 import { useCustomNetworkApiInfo } from '@/common/queries/useCustomNetworkApiInfo';
 import { useAppDispatch } from '@/common/state/hooks';
@@ -81,21 +80,17 @@ const NetworkLabel = ({ network }: { network: Network }) => {
   const { activeNetwork, removeCustomNetwork } = useGlobalContext();
   const isActiveNetwork = activeNetwork.url === network.url;
 
-  const isMainnet = network.url === DEFAULT_MAINNET_SERVER;
-  const isTestnet = network.url === DEFAULT_TESTNET_SERVER;
-  const isDefault = isMainnet || isTestnet;
-  const isDevnet = network.url === DEFAULT_DEVNET_SERVER;
-
   const isLocalNetwork = isLocalhost(network.url);
 
+  // Only user-added networks are probed for availability; built-in ones are always listed.
   const { error, isFetching } = useCustomNetworkApiInfo(network.url, {
-    enabled: !!network.url && !isDefault && !isLocalNetwork,
+    enabled: !!network.url && !!network.isCustomNetwork && !isLocalNetwork,
   });
   const isDisabled = isFetching || !!error;
 
   const isNetworkRemovable = useMemo(
-    () => network.isCustomNetwork && !isDevnet && !isActiveNetwork,
-    [network.isCustomNetwork, isDevnet, isActiveNetwork]
+    () => network.isCustomNetwork && !isActiveNetwork,
+    [network.isCustomNetwork, isActiveNetwork]
   );
 
   const [isDeletingNetwork, setIsDeletingNetwork] = useState(false);
