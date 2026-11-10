@@ -99,9 +99,12 @@ jobs:
     needs: resolve-env
     if: needs.resolve-env.outputs.should_run == 'true'
     environment: ${{ needs.resolve-env.outputs.environment }}
+    # One build per environment at a time, whatever the ref: every run writes the
+    # same SSM image-tag parameter, so runs must finish in the order they started.
+    # A newer queued run replaces an older queued one; a running build is never cancelled.
     concurrency:
-      group: docker-build-explorer-${{ needs.resolve-env.outputs.environment }}-${{ github.ref }}
-      cancel-in-progress: true
+      group: docker-build-explorer-${{ needs.resolve-env.outputs.environment }}
+      cancel-in-progress: false
     steps:
       - name: Configure AWS Credentials via OIDC
         id: configure_aws
@@ -126,7 +129,6 @@ jobs:
             ${{ steps.ecr_login.outputs.registry }}/${{ vars.AWS_ECR_REPOSITORY }}
           tags: |
             type=raw,value=${{ env.image_tag }}
-            type=raw,value=latest,enable=${{ needs.resolve-env.outputs.environment == 'environment/explorer-mainnet' }}
 
       - name: Build and Push
         id: docker_build

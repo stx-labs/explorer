@@ -41,7 +41,7 @@ Repository maintainers / infra owners for variable names and IAM.
 
 ### Non-blocking
 
-- Should PR-label builds also move the SSM parameter? Currently they do, consistent with them already pushing (and tagging `latest` for production).
+- Should PR-label builds also move the SSM parameter? Currently they do, consistent with them already pushing.
 
 ## Acceptable Tradeoffs
 
@@ -53,5 +53,5 @@ In Progress
 
 ## Notes
 
-- Existing Explorer-specific behaviour kept: PR-label trigger, `explorer-<sha>` tag, `latest` on production, `vars.AWS_ROLE_ARN`, `vars.AWS_ECR_REPOSITORY`.
+- Existing Explorer-specific behaviour kept: PR-label trigger, `explorer-<sha>` tag, `vars.AWS_ROLE_ARN`, `vars.AWS_ECR_REPOSITORY`.
 - `packages: write` from the reference was not copied; nothing is pushed to GHCR.
