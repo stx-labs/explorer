@@ -6,11 +6,11 @@ on:
       environment:
         description: "Environment name"
         required: true
-        default: environment/staging
+        default: environment/explorer-testnet
         type: choice
         options:
-          - environment/staging
-          - environment/production
+          - environment/explorer-testnet
+          - environment/explorer-mainnet
   pull_request:
     branches:
       - main
@@ -24,6 +24,7 @@ permissions:
 
 env:
   docker_platforms: "linux/amd64"
+  image_tag: explorer-${{ github.sha }}
 
 jobs:
   resolve-env:
@@ -38,7 +39,7 @@ jobs:
       - name: Resolve Environment
         id: set_env
         run: |
-          ALLOWED_ENVS=("environment/staging" "environment/production")
+          ALLOWED_ENVS=("environment/explorer-testnet" "environment/explorer-mainnet")
 
           is_allowed_env() {
             local candidate="$1"
@@ -106,7 +107,7 @@ jobs:
         id: configure_aws
         uses: stx-labs/actions/aws/configure-aws-credentials@c946e6695d77cbb9a9ede3320e7d2128c71dc090
         with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
           aws-region: ${{ vars.AWS_REGION }}
 
       - name: Login to Amazon ECR
@@ -124,8 +125,8 @@ jobs:
           images: |
             ${{ steps.ecr_login.outputs.registry }}/${{ vars.AWS_ECR_REPOSITORY }}
           tags: |
-            type=raw,value=explorer-${{ github.sha }}
-            type=raw,value=latest,enable=${{ needs.resolve-env.outputs.environment == 'environment/production' }}
+            type=raw,value=${{ env.image_tag }}
+            type=raw,value=latest,enable=${{ needs.resolve-env.outputs.environment == 'environment/explorer-mainnet' }}
 
       - name: Build and Push
         id: docker_build
@@ -158,5 +159,54 @@ jobs:
         id: generate_attestation
         uses: stx-labs/actions/attest-build-provenance@c946e6695d77cbb9a9ede3320e7d2128c71dc090
         with:
+          # MUST be the untagged repository name. A tagged subject-name fails with
+          # "Invalid image name" — an attestation identifies its subject by digest.
           subject-name: ${{ steps.ecr_login.outputs.registry }}/${{ vars.AWS_ECR_REPOSITORY }}
           subject-digest: ${{ steps.docker_build.outputs.digest }}
+
+      # Record the tag CI just pushed so a deploy can read it from SSM.
+      # Runs last: only move the parameter once the image is pushed AND attested.
+      - name: Publish Image Tag to Parameter Store
+        id: publish_image_tag
+        env:
+          PARAMETER_NAME: ${{ vars.AWS_SSM_IMAGE_TAG_PARAMETER }}
+          IMAGE_TAG: ${{ env.image_tag }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${PARAMETER_NAME}" ]; then
+            echo "::error::AWS_SSM_IMAGE_TAG_PARAMETER is not set on this environment; refusing to guess the parameter path."
+            exit 1
+          fi
+
+          aws ssm put-parameter \
+            --name "${PARAMETER_NAME}" \
+            --value "${IMAGE_TAG}" \
+            --type String \
+            --overwrite
+
+          echo "Recorded tag ${IMAGE_TAG} at ${PARAMETER_NAME}"
+
+      - name: Build Summary
+        if: always()
+        env:
+          IMAGE_REF: ${{ steps.ecr_login.outputs.registry }}/${{ vars.AWS_ECR_REPOSITORY }}
+          IMAGE_TAG: ${{ env.image_tag }}
+          IMAGE_DIGEST: ${{ steps.docker_build.outputs.digest }}
+          PARAMETER_NAME: ${{ vars.AWS_SSM_IMAGE_TAG_PARAMETER }}
+          PARAMETER_OUTCOME: ${{ steps.publish_image_tag.outcome }}
+        run: |
+          {
+            echo "### Explorer image"
+            echo ""
+            echo "| Field | Value |"
+            echo "| --- | --- |"
+            echo "| Tag | \`${IMAGE_TAG}\` |"
+            echo "| Image | \`${IMAGE_REF}:${IMAGE_TAG}\` |"
+            echo "| Digest | \`${IMAGE_DIGEST:-(not built)}\` |"
+            echo "| Tag parameter | \`${PARAMETER_NAME:-(unset)}\` (${PARAMETER_OUTCOME:-skipped}) |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if [ -n "${IMAGE_DIGEST}" ]; then
+            echo "::notice title=Image tag::${IMAGE_TAG}"
+          fi
