@@ -24,7 +24,10 @@ permissions:
 
 env:
   docker_platforms: "linux/amd64"
-  image_tag: explorer-${{ github.sha }}
+  # On pull_request, github.sha is the temporary merge commit; use the PR head so
+  # the tag names a real commit. The checkout step pins the same SHA.
+  source_sha: ${{ github.event.pull_request.head.sha || github.sha }}
+  image_tag: explorer-${{ github.event.pull_request.head.sha || github.sha }}
 
 jobs:
   resolve-env:
@@ -99,12 +102,13 @@ jobs:
     needs: resolve-env
     if: needs.resolve-env.outputs.should_run == 'true'
     environment: ${{ needs.resolve-env.outputs.environment }}
-    # One build per environment at a time, whatever the ref: every run writes the
-    # same SSM image-tag parameter, so runs must finish in the order they started.
-    # A newer queued run replaces an older queued one; a running build is never cancelled.
+    # Dispatch (release) builds write the SSM image-tag parameter, so they run one
+    # at a time per environment and are never cancelled mid-build.
+    # PR builds never write the parameter: they get a per-ref group, so they cannot
+    # cancel a queued release build, and a new push supersedes the previous PR build.
     concurrency:
-      group: docker-build-explorer-${{ needs.resolve-env.outputs.environment }}
-      cancel-in-progress: false
+      group: docker-build-explorer-${{ needs.resolve-env.outputs.environment }}-${{ github.event_name == 'workflow_dispatch' && 'release' || github.ref }}
+      cancel-in-progress: ${{ github.event_name == 'pull_request' }}
     steps:
       - name: Configure AWS Credentials via OIDC
         id: configure_aws
@@ -120,6 +124,8 @@ jobs:
       - name: Checkout Repository
         id: checkout_repository
         uses: stx-labs/actions/checkout@c946e6695d77cbb9a9ede3320e7d2128c71dc090
+        with:
+          ref: ${{ env.source_sha }}
 
       - name: Docker Metadata
         id: docker_metadata
@@ -168,8 +174,11 @@ jobs:
 
       # Record the tag CI just pushed so a deploy can read it from SSM.
       # Runs last: only move the parameter once the image is pushed AND attested.
+      # Dispatch only (which is restricted to main), for testnet and mainnet alike:
+      # a PR-label build pushes and attests its image but never moves the parameter.
       - name: Publish Image Tag to Parameter Store
         id: publish_image_tag
+        if: github.event_name == 'workflow_dispatch'
         env:
           PARAMETER_NAME: ${{ vars.AWS_SSM_IMAGE_TAG_PARAMETER }}
           IMAGE_TAG: ${{ env.image_tag }}

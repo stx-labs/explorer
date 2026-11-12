@@ -41,7 +41,7 @@ Repository maintainers / infra owners for variable names and IAM.
 
 ### Non-blocking
 
-- Should PR-label builds also move the SSM parameter? Currently they do, consistent with them already pushing.
+- Should PR-label builds also move the SSM parameter? Resolved in review: no. Only `workflow_dispatch` (main only) writes the parameter, for testnet and mainnet alike. PR-label builds push and attest an image tagged with the PR head SHA, in their own per-ref concurrency group.
 
 ## Acceptable Tradeoffs
 
