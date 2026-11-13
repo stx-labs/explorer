@@ -2,6 +2,7 @@ import { UseQueryResult, useQuery } from '@tanstack/react-query';
 
 import { callApiWithErrorHandling } from '../../api/callApiWithErrorHandling';
 import { useApiClient } from '../../api/useApiClient';
+import { useGlobalContext } from '../context/useGlobalContext';
 import { PrincipalNftBalanceListResponse } from '../types/tokens-v3';
 import { ONE_MINUTE } from './query-stale-time';
 
@@ -9,8 +10,15 @@ const DEFAULT_NFT_HOLDINGS_LIMIT = 50;
 
 export const NFT_HOLDINGS_QUERY_KEY = 'nftHoldings';
 
-export function getNftHoldingsQueryKey(principal: string, limit: number, cursor?: string) {
-  return [NFT_HOLDINGS_QUERY_KEY, principal, limit, cursor];
+// Keyed by API too: the same principal can exist on several networks (e.g. testnet and devnet), and
+// cursors from one API are meaningless to another.
+export function getNftHoldingsQueryKey(
+  apiUrl: string,
+  principal: string,
+  limit: number,
+  cursor?: string
+) {
+  return [NFT_HOLDINGS_QUERY_KEY, apiUrl, principal, limit, cursor];
 }
 
 /**
@@ -24,8 +32,9 @@ export function useNftHoldings(
   options: any = {}
 ): UseQueryResult<PrincipalNftBalanceListResponse> {
   const apiClient = useApiClient();
+  const { activeNetworkKey } = useGlobalContext();
   return useQuery<PrincipalNftBalanceListResponse>({
-    queryKey: getNftHoldingsQueryKey(principal, limit, cursor),
+    queryKey: getNftHoldingsQueryKey(activeNetworkKey, principal, limit, cursor),
     queryFn: async () =>
       await callApiWithErrorHandling(
         apiClient,

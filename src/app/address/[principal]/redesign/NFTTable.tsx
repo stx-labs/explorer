@@ -1,5 +1,6 @@
 import { Card } from '@/common/components/Card';
 import { TablePaginationControls } from '@/common/components/table/TablePaginationControls';
+import { useGlobalContext } from '@/common/context/useGlobalContext';
 import { useBulkFtMetadata } from '@/common/queries/useBulkTokenMetadata';
 import { useNftHoldings } from '@/common/queries/useNftHoldings';
 import { getContractIdFromAssetId } from '@/common/utils/utils';
@@ -22,6 +23,7 @@ interface NftItem {
 
 export function NFTTable() {
   const { principal } = useAddressIdPageData();
+  const { activeNetworkKey } = useGlobalContext();
 
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
@@ -31,11 +33,12 @@ export function NFTTable() {
   // needs no cursor; each later one is learned from the previous page's `cursor.next`.
   const [pageCursors, setPageCursors] = useState<(string | undefined)[]>([undefined]);
 
-  // Cursors only apply to the principal they came from, so start over from the first page on
-  // client-side navigation to another address.
-  const [cursorsPrincipal, setCursorsPrincipal] = useState(principal);
-  if (cursorsPrincipal !== principal) {
-    setCursorsPrincipal(principal);
+  // Cursors only apply to the principal and API they came from, so start over from the first page
+  // on client-side navigation to another address or network.
+  const cursorsScope = `${activeNetworkKey}|${principal}`;
+  const [cursorsFor, setCursorsFor] = useState(cursorsScope);
+  if (cursorsFor !== cursorsScope) {
+    setCursorsFor(cursorsScope);
     setPageCursors([undefined]);
     setPagination(prev => ({ ...prev, pageIndex: 0 }));
   }
@@ -43,7 +46,7 @@ export function NFTTable() {
   const { data: nftHoldings } = useNftHoldings(
     principal,
     pagination.pageSize,
-    cursorsPrincipal === principal ? pageCursors[pagination.pageIndex] : undefined
+    cursorsFor === cursorsScope ? pageCursors[pagination.pageIndex] : undefined
   );
   const nextCursor = nftHoldings?.cursor?.next ?? undefined;
 

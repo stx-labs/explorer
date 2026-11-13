@@ -3,12 +3,20 @@ import { renderHook, waitFor } from '@testing-library/react';
 import React from 'react';
 
 import { useApiClient } from '../../../api/useApiClient';
+import { useGlobalContext } from '../../context/useGlobalContext';
 import { useNftHoldings } from '../useNftHoldings';
 
 jest.mock('../../../api/useApiClient');
 const mockUseApiClient = useApiClient as jest.MockedFunction<typeof useApiClient>;
 
+jest.mock('../../context/useGlobalContext');
+const mockUseGlobalContext = useGlobalContext as jest.MockedFunction<typeof useGlobalContext>;
+
 const mockClient = { GET: jest.fn() } as any;
+
+function setActiveNetworkKey(activeNetworkKey: string) {
+  mockUseGlobalContext.mockReturnValue({ activeNetworkKey } as ReturnType<typeof useGlobalContext>);
+}
 
 const PRINCIPAL = 'SP2J6ZY48GV1EZ5V2V5RB9MP66SW86PYKKNRV9EJ7';
 
@@ -35,6 +43,7 @@ const createWrapper = () => {
 beforeEach(() => {
   jest.clearAllMocks();
   mockUseApiClient.mockReturnValue(mockClient);
+  setActiveNetworkKey('https://api.testnet.hiro.so');
 });
 
 describe('useNftHoldings', () => {
@@ -70,6 +79,20 @@ describe('useNftHoldings', () => {
         },
       }
     );
+  });
+
+  it('does not reuse cached holdings from another API for the same principal', async () => {
+    mockClient.GET.mockResolvedValue({ data: holdingsPage, error: undefined });
+    const wrapper = createWrapper();
+
+    const first = renderHook(() => useNftHoldings(PRINCIPAL, 10), { wrapper });
+    await waitFor(() => expect(first.result.current.isSuccess).toBe(true));
+    expect(mockClient.GET).toHaveBeenCalledTimes(1);
+
+    setActiveNetworkKey('http://localhost:3999');
+    const second = renderHook(() => useNftHoldings(PRINCIPAL, 10), { wrapper });
+    await waitFor(() => expect(second.result.current.isSuccess).toBe(true));
+    expect(mockClient.GET).toHaveBeenCalledTimes(2);
   });
 
   it('does not fetch without a principal', () => {

@@ -1,3 +1,4 @@
+import { useGlobalContext } from '@/common/context/useGlobalContext';
 import { useNftHoldings } from '@/common/queries/useNftHoldings';
 import { system } from '@/ui/theme/theme';
 import { ChakraProvider } from '@chakra-ui/react';
@@ -13,6 +14,7 @@ jest.mock('@/common/queries/useNftHoldings', () => ({ useNftHoldings: jest.fn() 
 jest.mock('@/common/queries/useBulkTokenMetadata', () => ({
   useBulkFtMetadata: () => ({ metadataMap: new Map() }),
 }));
+jest.mock('@/common/context/useGlobalContext', () => ({ useGlobalContext: jest.fn() }));
 jest.mock('../../AddressIdPageContext', () => ({ useAddressIdPageData: jest.fn() }));
 jest.mock('../CollectibleCard', () => ({
   CollectibleCard: ({ assetId, tokenId }: { assetId: string; tokenId: bigint | string }) => (
@@ -21,6 +23,7 @@ jest.mock('../CollectibleCard', () => ({
 }));
 
 const mockUseNftHoldings = useNftHoldings as jest.MockedFunction<typeof useNftHoldings>;
+const mockUseGlobalContext = useGlobalContext as jest.MockedFunction<typeof useGlobalContext>;
 const mockUseAddressIdPageData = useAddressIdPageData as jest.MockedFunction<
   typeof useAddressIdPageData
 >;
@@ -41,10 +44,15 @@ function setPrincipal(principal: string) {
   >);
 }
 
+function setActiveNetworkKey(activeNetworkKey: string) {
+  mockUseGlobalContext.mockReturnValue({ activeNetworkKey } as ReturnType<typeof useGlobalContext>);
+}
+
 beforeEach(() => {
   jest.clearAllMocks();
   window.scrollTo = jest.fn();
   setPrincipal('SP1OWNER');
+  setActiveNetworkKey('https://api.testnet.hiro.so');
   mockUseNftHoldings.mockImplementation((_principal, limit, cursor) => {
     const page = PAGES[cursor ?? 'first'];
     return {
@@ -108,5 +116,25 @@ test('restarts from the first page when the principal changes', async () => {
   expect(await screen.findByText(`${ASSET_ID}#1`)).toBeInTheDocument();
   expect(mockUseNftHoldings).toHaveBeenLastCalledWith('SP2OTHER', PAGE_SIZE, undefined);
   expect(mockUseNftHoldings).not.toHaveBeenCalledWith('SP2OTHER', PAGE_SIZE, 'cursor-2');
+  expect(screen.getByText('Page 1 of 3')).toBeInTheDocument();
+});
+
+test('restarts from the first page when the active API changes for the same principal', async () => {
+  const { rerender } = renderTable();
+
+  fireEvent.click(screen.getByLabelText('Go to next page'));
+  expect(await screen.findByText(`${ASSET_ID}#11`)).toBeInTheDocument();
+  mockUseNftHoldings.mockClear();
+
+  setActiveNetworkKey('http://localhost:3999');
+  rerender(
+    <ChakraProvider value={system}>
+      <NFTTable />
+    </ChakraProvider>
+  );
+
+  expect(await screen.findByText(`${ASSET_ID}#1`)).toBeInTheDocument();
+  expect(mockUseNftHoldings).toHaveBeenLastCalledWith('SP1OWNER', PAGE_SIZE, undefined);
+  expect(mockUseNftHoldings).not.toHaveBeenCalledWith('SP1OWNER', PAGE_SIZE, 'cursor-2');
   expect(screen.getByText('Page 1 of 3')).toBeInTheDocument();
 });
