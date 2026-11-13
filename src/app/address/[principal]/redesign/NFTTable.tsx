@@ -1,5 +1,6 @@
 import { Card } from '@/common/components/Card';
 import { TablePaginationControls } from '@/common/components/table/TablePaginationControls';
+import { useGlobalContext } from '@/common/context/useGlobalContext';
 import { useBulkFtMetadata } from '@/common/queries/useBulkTokenMetadata';
 import { useNftHoldings } from '@/common/queries/useNftHoldings';
 import { getContractIdFromAssetId } from '@/common/utils/utils';
@@ -7,15 +8,12 @@ import { Box, Flex, Grid } from '@chakra-ui/react';
 import { PaginationState } from '@tanstack/react-table';
 import { useCallback, useMemo, useState } from 'react';
 
-import { NftBalance } from '@stacks/stacks-blockchain-api-types';
 import { cvToJSON, hexToCV } from '@stacks/transactions';
 
 import { useAddressIdPageData } from '../AddressIdPageContext';
 import { CollectibleCard } from './CollectibleCard';
 
 const ITEMS_PER_PAGE = 10;
-
-export type NftBalanceWithAssetId = NftBalance & { asset_identifier: string };
 
 interface NftItem {
   assetId: string;
@@ -25,24 +23,51 @@ interface NftItem {
 
 export function NFTTable() {
   const { principal } = useAddressIdPageData();
+  const { activeNetworkKey } = useGlobalContext();
 
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
     pageSize: ITEMS_PER_PAGE,
   });
+  // Holdings are cursor-paginated: pageCursors[i] is the cursor that fetches page i. The first page
+  // needs no cursor; each later one is learned from the previous page's `cursor.next`.
+  const [pageCursors, setPageCursors] = useState<(string | undefined)[]>([undefined]);
+
+  // Cursors only apply to the principal and API they came from, so start over from the first page
+  // on client-side navigation to another address or network.
+  const cursorsScope = `${activeNetworkKey}|${principal}`;
+  const [cursorsFor, setCursorsFor] = useState(cursorsScope);
+  if (cursorsFor !== cursorsScope) {
+    setCursorsFor(cursorsScope);
+    setPageCursors([undefined]);
+    setPagination(prev => ({ ...prev, pageIndex: 0 }));
+  }
+
   const { data: nftHoldings } = useNftHoldings(
     principal,
     pagination.pageSize,
-    pagination.pageIndex * pagination.pageSize
+    cursorsFor === cursorsScope ? pageCursors[pagination.pageIndex] : undefined
   );
+  const nextCursor = nftHoldings?.cursor?.next ?? undefined;
 
-  const handlePageChange = useCallback((page: PaginationState) => {
-    setPagination(prev => ({
-      ...prev,
-      pageIndex: page.pageIndex,
-    }));
-    window?.scrollTo(0, 0); // Smooth scroll to top
-  }, []);
+  const handlePageChange = useCallback(
+    (page: PaginationState) => {
+      const isNextPage = page.pageIndex === pagination.pageIndex + 1;
+      const isVisitedPage = page.pageIndex < pageCursors.length;
+      if (isNextPage && !isVisitedPage) {
+        if (!nextCursor) return;
+        setPageCursors(prev => [...prev, nextCursor]);
+      } else if (!isVisitedPage) {
+        return;
+      }
+      setPagination(prev => ({
+        ...prev,
+        pageIndex: page.pageIndex,
+      }));
+      window?.scrollTo(0, 0); // Smooth scroll to top
+    },
+    [pagination.pageIndex, pageCursors.length, nextCursor]
+  );
 
   const totalRows = nftHoldings?.total ?? 0;
 
@@ -100,6 +125,7 @@ export function NFTTable() {
             pageSize={pagination.pageSize}
             totalRows={totalRows}
             onPageChange={handlePageChange}
+            previousNextOnly
           />
         </Flex>
       )}
