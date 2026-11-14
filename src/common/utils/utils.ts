@@ -391,6 +391,20 @@ export const ftDecimals = (value: number | string | BigNumber, decimals: number)
   });
 };
 
+/**
+ * Formats a fungible token balance for display. When the token's decimals are unknown (for example,
+ * it has no metadata), it shows the raw base-unit amount and says so, instead of guessing 0 decimals.
+ */
+export const formatFtBalance = (
+  value: number | string | BigNumber,
+  decimals: number | null | undefined
+) => {
+  if (decimals == null) {
+    return `${new BigNumber(value).toFormat()} raw units (decimals unknown)`;
+  }
+  return ftDecimals(value, decimals);
+};
+
 export function getLocaleDecimalSeparator() {
   return Intl.NumberFormat('en-US')
     .formatToParts(1.1)
