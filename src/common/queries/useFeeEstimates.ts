@@ -8,7 +8,7 @@ export function useFeeEstimates() {
   const { activeNetwork } = useGlobalContext();
 
   return useQuery({
-    queryKey: ['feeEstimates', activeNetwork.mode],
+    queryKey: ['feeEstimates', activeNetwork.mode, activeNetwork.url],
     queryFn: async () => {
       return await fetchSampleTxsFeeEstimate(
         activeNetwork.mode as 'mainnet' | 'testnet',
