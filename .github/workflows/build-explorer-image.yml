@@ -112,24 +112,24 @@ jobs:
     steps:
       - name: Configure AWS Credentials via OIDC
         id: configure_aws
-        uses: stx-labs/actions/aws/configure-aws-credentials@c946e6695d77cbb9a9ede3320e7d2128c71dc090
+        uses: stacks-sbtc/actions/aws/configure-aws-credentials@e33bab33a7b152490b4b0332b1adc38aa9a2104b
         with:
           role-to-assume: ${{ vars.AWS_ROLE_ARN }}
           aws-region: ${{ vars.AWS_REGION }}
 
       - name: Login to Amazon ECR
         id: ecr_login
-        uses: stx-labs/actions/aws/amazon-ecr-login@c946e6695d77cbb9a9ede3320e7d2128c71dc090
+        uses: stacks-sbtc/actions/aws/amazon-ecr-login@e33bab33a7b152490b4b0332b1adc38aa9a2104b
 
       - name: Checkout Repository
         id: checkout_repository
-        uses: stx-labs/actions/checkout@c946e6695d77cbb9a9ede3320e7d2128c71dc090
+        uses: stacks-sbtc/actions/checkout@e33bab33a7b152490b4b0332b1adc38aa9a2104b
         with:
           ref: ${{ env.source_sha }}
 
       - name: Docker Metadata
         id: docker_metadata
-        uses: stx-labs/actions/docker/metadata-action@c946e6695d77cbb9a9ede3320e7d2128c71dc090
+        uses: stacks-sbtc/actions/docker/metadata-action@e33bab33a7b152490b4b0332b1adc38aa9a2104b
         with:
           images: |
             ${{ steps.ecr_login.outputs.registry }}/${{ vars.AWS_ECR_REPOSITORY }}
@@ -138,7 +138,7 @@ jobs:
 
       - name: Build and Push
         id: docker_build
-        uses: stx-labs/actions/docker/build-push-action@c946e6695d77cbb9a9ede3320e7d2128c71dc090
+        uses: stacks-sbtc/actions/docker/build-push-action@e33bab33a7b152490b4b0332b1adc38aa9a2104b
         with:
           file: ./Dockerfile
           context: .
@@ -165,7 +165,7 @@ jobs:
 
       - name: Generate artifact attestation
         id: generate_attestation
-        uses: stx-labs/actions/attest-build-provenance@c946e6695d77cbb9a9ede3320e7d2128c71dc090
+        uses: stacks-sbtc/actions/attest-build-provenance@e33bab33a7b152490b4b0332b1adc38aa9a2104b
         with:
           # MUST be the untagged repository name. A tagged subject-name fails with
           # "Invalid image name" — an attestation identifies its subject by digest.
