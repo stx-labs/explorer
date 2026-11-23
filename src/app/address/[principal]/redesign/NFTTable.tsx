@@ -1,10 +1,11 @@
 import { Card } from '@/common/components/Card';
 import { TablePaginationControls } from '@/common/components/table/TablePaginationControls';
-import { useGlobalContext } from '@/common/context/useGlobalContext';
 import { useBulkFtMetadata } from '@/common/queries/useBulkTokenMetadata';
 import { useNftHoldings } from '@/common/queries/useNftHoldings';
 import { getContractIdFromAssetId } from '@/common/utils/utils';
-import { Box, Flex, Grid } from '@chakra-ui/react';
+import { Button } from '@/ui/Button';
+import { Text } from '@/ui/Text';
+import { Box, Flex, Grid, Stack } from '@chakra-ui/react';
 import { PaginationState } from '@tanstack/react-table';
 import { useCallback, useMemo, useState } from 'react';
 
@@ -23,7 +24,6 @@ interface NftItem {
 
 export function NFTTable() {
   const { principal } = useAddressIdPageData();
-  const { activeNetworkKey } = useGlobalContext();
 
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
@@ -33,31 +33,23 @@ export function NFTTable() {
   // needs no cursor; each later one is learned from the previous page's `cursor.next`.
   const [pageCursors, setPageCursors] = useState<(string | undefined)[]>([undefined]);
 
-  // Cursors only apply to the principal and API they came from, so start over from the first page
-  // on client-side navigation to another address or network.
-  const cursorsScope = `${activeNetworkKey}|${principal}`;
-  const [cursorsFor, setCursorsFor] = useState(cursorsScope);
-  if (cursorsFor !== cursorsScope) {
-    setCursorsFor(cursorsScope);
-    setPageCursors([undefined]);
-    setPagination(prev => ({ ...prev, pageIndex: 0 }));
-  }
-
-  const { data: nftHoldings } = useNftHoldings(
-    principal,
-    pagination.pageSize,
-    cursorsFor === cursorsScope ? pageCursors[pagination.pageIndex] : undefined
-  );
+  // Cursors only apply to the principal and API they came from; AddressTabs remounts this table
+  // (resetting the page and cursors) when either changes.
+  const {
+    data: nftHoldings,
+    isError,
+    refetch,
+  } = useNftHoldings(principal, pagination.pageSize, pageCursors[pagination.pageIndex]);
   const nextCursor = nftHoldings?.cursor?.next ?? undefined;
 
   const handlePageChange = useCallback(
     (page: PaginationState) => {
-      const isNextPage = page.pageIndex === pagination.pageIndex + 1;
-      const isVisitedPage = page.pageIndex < pageCursors.length;
-      if (isNextPage && !isVisitedPage) {
+      if (page.pageIndex === pagination.pageIndex + 1) {
+        // Always step forward with the cursor of the page on screen, never one stored on an earlier
+        // visit: the page may have refetched since, and an old cursor would skip or repeat NFTs.
         if (!nextCursor) return;
-        setPageCursors(prev => [...prev, nextCursor]);
-      } else if (!isVisitedPage) {
+        setPageCursors(prev => [...prev.slice(0, page.pageIndex), nextCursor]);
+      } else if (page.pageIndex < 0 || page.pageIndex >= pageCursors.length) {
         return;
       }
       setPagination(prev => ({
@@ -71,7 +63,9 @@ export function NFTTable() {
 
   const totalRows = nftHoldings?.total ?? 0;
 
-  const shouldShowPagination = totalRows > ITEMS_PER_PAGE;
+  // Keep the pager on later pages even if the total shrinks, so the user can always get back.
+  const shouldShowPagination =
+    pagination.pageIndex > 0 || totalRows > ITEMS_PER_PAGE || !!nextCursor;
 
   // Parse NFT items and extract contract IDs with token IDs for bulk search
   const nftItems: NftItem[] = useMemo(() => {
@@ -103,20 +97,29 @@ export function NFTTable() {
   return (
     <Box>
       <Card h="full" w="full" p={3} borderColor="redesignBorderSecondary" bg="transparent">
-        <Grid templateColumns="repeat(auto-fill, minmax(162px, 1fr));" gap={4} p={4}>
-          {nftItems.map(item => {
-            const searchKey = `${item.contractId}:${item.tokenId}`;
-            const metadata = metadataMap.get(searchKey) ?? metadataMap.get(item.contractId);
-            return (
-              <CollectibleCard
-                key={`${item.assetId}-${item.tokenId}`}
-                assetId={item.assetId}
-                tokenId={item.tokenId}
-                metadataImageUrl={metadata?.metadata?.cached_image}
-              />
-            );
-          })}
-        </Grid>
+        {isError ? (
+          <Stack gap={3} alignItems="flex-start" p={4}>
+            <Text fontSize="sm">Failed to load collectibles.</Text>
+            <Button variant="redesignPrimary" onClick={() => refetch()}>
+              Try again
+            </Button>
+          </Stack>
+        ) : (
+          <Grid templateColumns="repeat(auto-fill, minmax(162px, 1fr));" gap={4} p={4}>
+            {nftItems.map(item => {
+              const searchKey = `${item.contractId}:${item.tokenId}`;
+              const metadata = metadataMap.get(searchKey) ?? metadataMap.get(item.contractId);
+              return (
+                <CollectibleCard
+                  key={`${item.assetId}-${item.tokenId}`}
+                  assetId={item.assetId}
+                  tokenId={item.tokenId}
+                  metadataImageUrl={metadata?.metadata?.cached_image}
+                />
+              );
+            })}
+          </Grid>
+        )}
       </Card>
       {shouldShowPagination && (
         <Flex justifyContent="center">
@@ -126,6 +129,7 @@ export function NFTTable() {
             totalRows={totalRows}
             onPageChange={handlePageChange}
             previousNextOnly
+            hasNextPage={!!nextCursor}
           />
         </Flex>
       )}

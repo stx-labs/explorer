@@ -1,4 +1,4 @@
-import { UseQueryResult, useQuery } from '@tanstack/react-query';
+import { UseQueryOptions, UseQueryResult, useQuery } from '@tanstack/react-query';
 
 import { callApiWithErrorHandling } from '../../api/callApiWithErrorHandling';
 import { useApiClient } from '../../api/useApiClient';
@@ -22,14 +22,16 @@ export function getNftHoldingsQueryKey(
 }
 
 /**
- * NFT instances currently owned by a principal, ordered by asset identifier and value.
- * Cursor-paginated: pass the previous page's `cursor.next` to get the following page.
+ * NFT instances currently owned by a principal, newest first by when each was received (the block
+ * position of the mint or transfer that gave it to the principal). Cursor-paginated: pass the
+ * previous page's `cursor.next` (`block_height:microblock_sequence:tx_index:event_index`) to get the
+ * following page.
  */
 export function useNftHoldings(
   principal: string,
   limit = DEFAULT_NFT_HOLDINGS_LIMIT,
   cursor?: string,
-  options: any = {}
+  options: Omit<UseQueryOptions<PrincipalNftBalanceListResponse>, 'queryKey' | 'queryFn'> = {}
 ): UseQueryResult<PrincipalNftBalanceListResponse> {
   const apiClient = useApiClient();
   const { activeNetworkKey } = useGlobalContext();

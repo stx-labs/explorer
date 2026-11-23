@@ -8,6 +8,7 @@ import {
 import { FungibleTokensTableWithFilters } from '@/common/components/table/fungible-tokens-table/FungibleTokensTableWithFilters';
 import { AddressMempoolTxsTable } from '@/common/components/table/table-examples/AddressMempoolTxsTable';
 import { ADDRESS_ID_PAGE_FUNGIBLE_TOKENS_LIMIT } from '@/common/components/table/table-examples/consts';
+import { useGlobalContext } from '@/common/context/useGlobalContext';
 import { useNftHoldings } from '@/common/queries/useNftHoldings';
 import { usePrincipalTxSummaries } from '@/common/queries/usePrincipalTxSummaries';
 import { validateStacksContractId } from '@/common/utils/utils';
@@ -42,6 +43,7 @@ enum AddressIdPageTab {
 export const AddressTabs = ({ principal }: { principal: string }) => {
   const { initialAddressRecentTransactionsData, initialAddressBalancesData } =
     useAddressIdPageData();
+  const { activeNetworkKey } = useGlobalContext();
 
   // The SSR recent-transactions page already carries the principal's total; only fall back to a
   // `limit=1` client fetch when it's missing (`ssr=false` or a failed server fetch).
@@ -159,7 +161,8 @@ export const AddressTabs = ({ principal }: { principal: string }) => {
         />
       </TabsContent>
       <TabsContent key={AddressIdPageTab.Collectibles} value={AddressIdPageTab.Collectibles}>
-        <NFTTable />
+        {/* NFT cursors only apply to the API and principal they came from: remount to start over. */}
+        <NFTTable key={`${activeNetworkKey}|${principal}`} />
       </TabsContent>
       {isContract && (
         <TabsContent key={AddressIdPageTab.SourceCode} value={AddressIdPageTab.SourceCode} w="100%">

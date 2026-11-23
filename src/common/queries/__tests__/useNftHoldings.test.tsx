@@ -65,7 +65,7 @@ describe('useNftHoldings', () => {
   it('passes the cursor to fetch a later page', async () => {
     mockClient.GET.mockResolvedValueOnce({ data: holdingsPage, error: undefined });
 
-    const { result } = renderHook(() => useNftHoldings(PRINCIPAL, 10, '0x01:SP000.a::b'), {
+    const { result } = renderHook(() => useNftHoldings(PRINCIPAL, 10, '150:0:2:1'), {
       wrapper: createWrapper(),
     });
 
@@ -75,7 +75,7 @@ describe('useNftHoldings', () => {
       {
         params: {
           path: { principal: PRINCIPAL },
-          query: { limit: 10, cursor: '0x01:SP000.a::b' },
+          query: { limit: 10, cursor: '150:0:2:1' },
         },
       }
     );
