@@ -8,7 +8,7 @@ import {
 import { Text } from '@/ui/Text';
 import { Button, Flex, Grid, HStack, Input, Separator } from '@chakra-ui/react';
 import { PaginationState } from '@tanstack/react-table';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useState } from 'react';
 
 export interface TablePaginationControlsProps {
   pageIndex: number; // the current page index
@@ -17,6 +17,9 @@ export interface TablePaginationControlsProps {
   onPageChange: (page: PaginationState) => void; // the callback to handle page indexchange
   onPageSizeChange?: (page: PaginationState) => void; // the callback to handle page size change
   previousNextOnly?: boolean; // cursor-paginated data can only move one page at a time
+  // Cursor-paginated data: whether the current page has a next cursor. When set, it decides whether
+  // "next" is enabled, instead of totalRows, which can disagree with the cursors as data changes.
+  hasNextPage?: boolean;
 }
 
 export function TablePaginationControls({
@@ -25,9 +28,19 @@ export function TablePaginationControls({
   totalRows,
   onPageChange,
   previousNextOnly = false,
+  hasNextPage,
 }: TablePaginationControlsProps) {
   const [inputValue, setInputValue] = useState<string>('');
-  const pageCount = Math.ceil(totalRows / pageSize);
+  const isCursorDriven = hasNextPage !== undefined;
+  const pageCount = isCursorDriven
+    ? hasNextPage
+      ? Math.max(Math.ceil(totalRows / pageSize), pageIndex + 2)
+      : pageIndex + 1
+    : Math.ceil(totalRows / pageSize);
+  // The pagination component enables "next" from its row count, so give it one that matches.
+  const paginationCount = isCursorDriven
+    ? (pageIndex + (hasNextPage ? 2 : 1)) * pageSize
+    : totalRows;
 
   const handlePageChange = useCallback(
     (pageChangeDetails: PageChangeDetails) => {
@@ -46,8 +59,6 @@ export function TablePaginationControls({
     },
     [handlePageChange, pageSize]
   );
-
-  const numPages = useMemo(() => Math.ceil(totalRows / pageSize), [totalRows, pageSize]);
 
   return (
     <Grid
@@ -70,7 +81,7 @@ export function TablePaginationControls({
         <PaginationRoot
           page={pageIndex + 1} // the current page index, +1 because the pagination component is 1-based
           pageSize={pageSize} // the current page size, how many rows per page
-          count={totalRows} // the total number of rows
+          count={paginationCount} // the total number of rows
           siblingCount={1} // the number of sibling pages to show on either side of the current page
           onPageChange={handlePageChange} // the callback to handle page index change
           css={{
@@ -96,7 +107,7 @@ export function TablePaginationControls({
             <PaginationPrevTrigger aria-label="Go to previous page" />
             {previousNextOnly ? (
               <Text fontSize="xs" color="textTertiary" whiteSpace="nowrap">
-                Page {pageIndex + 1} of {numPages}
+                Page {pageIndex + 1} of {pageCount}
               </Text>
             ) : (
               <HStack gap={1}>
@@ -123,7 +134,7 @@ export function TablePaginationControls({
         </PaginationRoot>
       </Flex>
 
-      {numPages > 5 && !previousNextOnly && (
+      {pageCount > 5 && !previousNextOnly && (
         <>
           <Separator
             orientation={{ base: 'horizontal', lg: 'vertical' }}
