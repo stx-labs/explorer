@@ -277,7 +277,9 @@ export const getUsdValue = (
  * @param {String || Number} amountInStacks - the amount of stacks to convert
  */
 export const stacksToMicro = (amountInStacks: string | number) =>
-  amountInStacks ? Math.floor(Number(amountInStacks) * MICROSTACKS_IN_STACKS) : 0;
+  amountInStacks
+    ? new BigNumber(amountInStacks).shiftedBy(6).integerValue(BigNumber.ROUND_FLOOR).toNumber()
+    : 0;
 
 // TODO: Move to account/address utils file
 export const getContractName = (fullyRealizedName: string): string =>
