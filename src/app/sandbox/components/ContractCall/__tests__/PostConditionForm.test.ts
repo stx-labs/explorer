@@ -1,160 +1,267 @@
 import {
+  Cl,
   FungibleConditionCode,
-  PostConditionMode,
+  NonFungibleConditionCode,
   PostConditionType,
   PoxConditionCode,
+  postConditionToHex,
 } from '@stacks/transactions';
 
-import { FunctionFormikState } from '../FunctionView';
-import { checkPostConditionParameters, getPostCondition } from '../PostConditionForm';
+import {
+  PostConditionParameters,
+  checkPostConditionParameters,
+  checkPostConditions,
+  getPostCondition,
+  getPostConditions,
+} from '../PostConditionForm';
+
+const originalTextEncoder = global.TextEncoder;
+
+beforeAll(() => {
+  Object.assign(global, {
+    TextEncoder: class TextEncoder {
+      encode(value: string) {
+        return Uint8Array.from(Buffer.from(value));
+      }
+    },
+  });
+});
+
+afterAll(() => {
+  Object.assign(global, { TextEncoder: originalTextEncoder });
+});
+
+const address = 'SP2J6ZY48GV1EZ5V2V5RB9MP66SW86PYKKNRV9EJ7';
+const contractPrincipal = `${address}.asset-contract-name`;
+const asset = `${contractPrincipal}::asset-name`;
+
+const validFungiblePostCondition: PostConditionParameters = {
+  postConditionType: PostConditionType.Fungible,
+  postConditionConditionCode: FungibleConditionCode.Equal,
+  postConditionAddress: 'origin',
+  postConditionAmount: '12345',
+  postConditionAsset: asset,
+};
 
 describe('checkPostConditionParameters', () => {
-  // TODO: fix this test
-  it('should return no errors when post condition is not enabled', () => {
-    const pcValues: FunctionFormikState = {
-      postConditionMode: PostConditionMode.Allow,
-      postConditionType: PostConditionType.Fungible,
-      postConditionConditionCode: FungibleConditionCode.Equal,
-      postConditionAddress: 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM',
-      postConditionAmount: 12345,
-      postConditionAssetAddress: 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM',
-      postConditionAssetContractName: 'asset-contract-name',
-      postConditionAssetName: 'asset-name',
-    } as FunctionFormikState;
-
-    expect(checkPostConditionParameters(pcValues)).toEqual({});
+  it('requires a type for every added post condition', () => {
+    expect(checkPostConditionParameters({})).toEqual({
+      postConditionType: 'Post-condition type is required',
+    });
   });
 
-  it('should return no errors when all values are correct', () => {
-    const pcValues: FunctionFormikState = {
-      postConditionMode: PostConditionMode.Deny,
-      postConditionType: PostConditionType.Fungible,
-      postConditionConditionCode: FungibleConditionCode.Equal,
-      postConditionAddress: 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM',
-      postConditionAmount: 12345,
-      postConditionAssetAddress: 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM',
-      postConditionAssetContractName: 'asset-contract-name',
-      postConditionAssetName: 'asset-name',
-    } as FunctionFormikState;
-
-    expect(checkPostConditionParameters(pcValues)).toEqual({});
+  it('accepts origin, standard principals, and contract principals', () => {
+    expect(checkPostConditionParameters(validFungiblePostCondition)).toEqual({});
+    expect(
+      checkPostConditionParameters({
+        ...validFungiblePostCondition,
+        postConditionAddress: address,
+      })
+    ).toEqual({});
+    expect(
+      checkPostConditionParameters({
+        ...validFungiblePostCondition,
+        postConditionAddress: contractPrincipal,
+      })
+    ).toEqual({});
   });
 
-  it('should return no errors if postConditionType is missing in deny mode', () => {
-    const pcValues: FunctionFormikState = {
-      postConditionMode: PostConditionMode.Deny,
-      postConditionType: undefined,
-      postConditionConditionCode: FungibleConditionCode.Equal,
-      postConditionAddress: 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM',
-      postConditionAmount: 12345,
-      postConditionAssetAddress: 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM',
-      postConditionAssetContractName: 'asset-contract-name',
-      postConditionAssetName: 'asset-name',
-    } as FunctionFormikState;
+  it('trims values before validating and constructing a post condition', () => {
+    const params = {
+      ...validFungiblePostCondition,
+      postConditionAddress: `  ${address}  `,
+      postConditionAsset: `  ${asset}  `,
+      postConditionAmount: '  12345  ',
+    };
 
-    expect(checkPostConditionParameters(pcValues)).toEqual({});
+    expect(checkPostConditionParameters(params)).toEqual({});
+    expect(getPostCondition(params)).toEqual({
+      type: 'ft-postcondition',
+      address,
+      condition: 'eq',
+      asset,
+      amount: '12345',
+    });
   });
 
-  it('should return error if postConditionConditionCode is missing', () => {
-    const pcValues: FunctionFormikState = {
-      postConditionMode: PostConditionMode.Deny,
-      postConditionType: PostConditionType.Fungible,
-      postConditionConditionCode: undefined,
-      postConditionAddress: 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM',
-      postConditionAmount: 12345,
-      postConditionAssetAddress: 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM',
-      postConditionAssetContractName: 'asset-contract-name',
-      postConditionAssetName: 'asset-name',
-    } as FunctionFormikState;
+  it('accepts the maximum u64 amount as a string without losing precision', () => {
+    expect(
+      checkPostConditionParameters({
+        ...validFungiblePostCondition,
+        postConditionAmount: '18446744073709551615',
+      })
+    ).toEqual({});
+  });
 
-    expect(checkPostConditionParameters(pcValues)).toEqual({
+  it('returns an error when the condition code is missing', () => {
+    expect(
+      checkPostConditionParameters({
+        ...validFungiblePostCondition,
+        postConditionConditionCode: undefined,
+      })
+    ).toEqual({
       postConditionConditionCode: 'Condition Code is required',
     });
   });
 
-  it('should return error for invalid Stacks address', () => {
-    const pcValues: FunctionFormikState = {
-      postConditionMode: PostConditionMode.Deny,
-      postConditionType: PostConditionType.Fungible,
-      postConditionConditionCode: FungibleConditionCode.Equal,
-      postConditionAddress: 'INVALID_ADDRESS',
-      postConditionAmount: 12345,
-      postConditionAssetAddress: 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM',
-      postConditionAssetContractName: 'asset-contract-name',
-      postConditionAssetName: 'asset-name',
-    } as FunctionFormikState;
-
-    expect(checkPostConditionParameters(pcValues)).toEqual({
-      postConditionAddress: 'Invalid Stacks address',
+  it('returns an error for an invalid principal', () => {
+    expect(
+      checkPostConditionParameters({
+        ...validFungiblePostCondition,
+        postConditionAddress: 'INVALID_ADDRESS',
+      })
+    ).toEqual({
+      postConditionAddress: 'Enter origin, a Stacks address, or a contract principal',
     });
   });
 
-  it('should return error if postConditionAmount is not a valid number', () => {
-    const pcValues: FunctionFormikState = {
-      postConditionMode: PostConditionMode.Deny,
-      postConditionType: PostConditionType.Fungible,
-      postConditionConditionCode: FungibleConditionCode.Equal,
-      postConditionAddress: 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM',
-      postConditionAmount: -1,
-      postConditionAssetAddress: 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM',
-      postConditionAssetContractName: 'asset-contract-name',
-      postConditionAssetName: 'asset-name',
-    } as FunctionFormikState;
+  it.each(['-1', '1.5', '1e3', '18446744073709551616'])(
+    'returns an error for invalid amount %s',
+    postConditionAmount => {
+      expect(
+        checkPostConditionParameters({
+          ...validFungiblePostCondition,
+          postConditionAmount,
+        })
+      ).toEqual({
+        postConditionAmount: 'Enter an integer from 0 to 18446744073709551615',
+      });
+    }
+  );
 
-    expect(checkPostConditionParameters(pcValues)).toEqual({
-      postConditionAmount: 'Invalid amount',
+  it('validates fully-qualified assets and NFT Clarity identifiers', () => {
+    expect(
+      checkPostConditionParameters({
+        ...validFungiblePostCondition,
+        postConditionAsset: `${address}.bad.contract::asset`,
+      })
+    ).toEqual({
+      postConditionAsset: 'Enter an asset identifier in address.contract::token format',
+    });
+    expect(
+      checkPostConditionParameters({
+        postConditionType: PostConditionType.NonFungible,
+        postConditionConditionCode: NonFungibleConditionCode.Sends,
+        postConditionAddress: 'origin',
+        postConditionAsset: asset,
+        postConditionAssetId: 'not clarity',
+      })
+    ).toEqual({ postConditionAssetId: 'Enter a valid Clarity value, such as u1' });
+  });
+
+  it('returns every field error for one post condition', () => {
+    expect(
+      checkPostConditionParameters({
+        ...validFungiblePostCondition,
+        postConditionAddress: 'INVALID_ADDRESS',
+        postConditionAmount: '-1',
+        postConditionAsset: undefined,
+      })
+    ).toEqual({
+      postConditionAmount: 'Enter an integer from 0 to 18446744073709551615',
+      postConditionAddress: 'Enter origin, a Stacks address, or a contract principal',
+      postConditionAsset: 'Asset identifier is required',
     });
   });
 
-  it('should return multiple errors if there are multiple errors', () => {
-    const pcValues: FunctionFormikState = {
-      postConditionMode: PostConditionMode.Deny,
-      postConditionType: PostConditionType.Fungible,
-      postConditionConditionCode: FungibleConditionCode.Equal,
-      postConditionAddress: 'INVALID_ADDRESS',
-      postConditionAmount: -1,
-      postConditionAssetAddress: 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM',
-      postConditionAssetContractName: undefined,
-      postConditionAssetName: 'asset-name',
-    } as FunctionFormikState;
-
-    expect(checkPostConditionParameters(pcValues)).toEqual({
-      postConditionAmount: 'Invalid amount',
-      postConditionAddress: 'Invalid Stacks address',
-      postConditionAssetContractName: 'Asset Contract Name is required',
-    });
+  it('keeps validation errors aligned with their post-condition index', () => {
+    expect(checkPostConditions([validFungiblePostCondition, {}])).toEqual([
+      {},
+      { postConditionType: 'Post-condition type is required' },
+    ]);
   });
 });
 
-describe('getPostCondition', () => {
-  const address = 'SP2J6ZY48GV1EZ5V2V5RB9MP66SW86PYKKNRV9EJ7';
-
-  it('builds the pox-5 staking and pox post conditions', () => {
-    expect(
-      getPostCondition({
+describe('post-condition builders', () => {
+  it('builds every supported post-condition type into serializable wire data', () => {
+    const postConditions = getPostConditions([
+      {
+        postConditionType: PostConditionType.STX,
+        postConditionAddress: 'origin',
+        postConditionConditionCode: FungibleConditionCode.Equal,
+        postConditionAmount: '100',
+      },
+      validFungiblePostCondition,
+      {
+        postConditionType: PostConditionType.NonFungible,
+        postConditionAddress: contractPrincipal,
+        postConditionConditionCode: NonFungibleConditionCode.Sends,
+        postConditionAsset: asset,
+        postConditionAssetId: 'u42',
+      },
+      {
         postConditionType: PostConditionType.Staking,
         postConditionAddress: address,
         postConditionConditionCode: FungibleConditionCode.LessEqual,
-        postConditionAmount: 1100000,
-      })
-    ).toEqual([{ type: 'staking-postcondition', address, condition: 'lte', amount: '1100000' }]);
-
-    expect(
-      getPostCondition({
+        postConditionAmount: '1100000',
+      },
+      {
         postConditionType: PostConditionType.PoX,
-        postConditionAddress: address,
+        postConditionAddress: 'origin',
         postConditionConditionCode: PoxConditionCode.WillPerform,
-      })
-    ).toEqual([{ type: 'pox-postcondition', address, condition: 'will-perform' }]);
+      },
+    ]);
+
+    expect(postConditions).toEqual([
+      { type: 'stx-postcondition', address: 'origin', condition: 'eq', amount: '100' },
+      {
+        type: 'ft-postcondition',
+        address: 'origin',
+        condition: 'eq',
+        asset,
+        amount: '12345',
+      },
+      {
+        type: 'nft-postcondition',
+        address: contractPrincipal,
+        condition: 'sent',
+        asset,
+        assetId: Cl.uint(42),
+      },
+      {
+        type: 'staking-postcondition',
+        address,
+        condition: 'lte',
+        amount: '1100000',
+      },
+      { type: 'pox-postcondition', address: 'origin', condition: 'will-perform' },
+    ]);
+    expect(() => postConditions.map(postConditionToHex)).not.toThrow();
   });
 
-  it('returns an empty list rather than [undefined] when nothing matches', () => {
+  it('builds multiple post conditions in form order', () => {
     expect(
+      getPostConditions([
+        {
+          postConditionType: PostConditionType.STX,
+          postConditionAddress: address,
+          postConditionConditionCode: FungibleConditionCode.LessEqual,
+          postConditionAmount: '18446744073709551615',
+        },
+        {
+          postConditionType: PostConditionType.PoX,
+          postConditionAddress: address,
+          postConditionConditionCode: PoxConditionCode.WillPerform,
+        },
+      ])
+    ).toEqual([
+      {
+        type: 'stx-postcondition',
+        address,
+        condition: 'lte',
+        amount: '18446744073709551615',
+      },
+      { type: 'pox-postcondition', address, condition: 'will-perform' },
+    ]);
+  });
+
+  it('throws rather than silently dropping an invalid configured condition', () => {
+    expect(() =>
       getPostCondition({
         postConditionType: PostConditionType.PoX,
         postConditionAddress: address,
         postConditionConditionCode: FungibleConditionCode.Equal,
       })
-    ).toEqual([]);
+    ).toThrow('Invalid PoX Post Condition configuration');
   });
 });
