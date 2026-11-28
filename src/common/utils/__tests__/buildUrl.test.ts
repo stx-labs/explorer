@@ -54,13 +54,22 @@ describe('getQueryParams', () => {
     expect(getQueryParams(network)).toBe('?chain=mainnet&api=https://custom-api.example.com');
   });
 
-  it('should add ssr=false for localhost networks', () => {
+  it('should add api param for built-in networks served from a non-default URL', () => {
+    const network = buildNetwork({
+      label: 'Staking',
+      url: 'https://api.staking-testnet.hiro.so',
+      mode: NetworkModes.Testnet,
+    });
+    expect(getQueryParams(network)).toBe('?chain=testnet&api=https://api.staking-testnet.hiro.so');
+  });
+
+  it('should add api and ssr=false for localhost networks', () => {
     const network = buildNetwork({
       label: 'Devnet',
       url: 'http://localhost:3999',
       mode: NetworkModes.Mainnet,
     });
-    expect(getQueryParams(network)).toBe('?chain=mainnet&ssr=false');
+    expect(getQueryParams(network)).toBe('?chain=mainnet&api=http://localhost:3999&ssr=false');
   });
 });
 
@@ -184,7 +193,7 @@ describe('buildUrl', () => {
         mode: NetworkModes.Mainnet,
       });
       expect(buildUrl('/address/SP123?tab=tokens', localhostNetwork)).toBe(
-        '/address/SP123?tab=tokens&chain=mainnet&ssr=false'
+        '/address/SP123?tab=tokens&chain=mainnet&api=http://localhost:3999&ssr=false'
       );
     });
   });
